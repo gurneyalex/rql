@@ -1,0 +1,12 @@
+include doc/*.html
+include doc/*.txt
+include doc/makefile
+
+include rqlmodule/*.hh
+include makefile
+include parser.g
+
+include README
+include TODO 
+include ChangeLog
+include DEPENDS

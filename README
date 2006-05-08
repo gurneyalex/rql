@@ -1,0 +1,5 @@
+This package provides base library for the Relationship Query Language
+
+INSTALL
+-------
+python setup.py install

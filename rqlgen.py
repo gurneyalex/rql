@@ -1,0 +1,203 @@
+"""Generation of RQL string
+
+Copyright (c) 2003-2004 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+http://www.logilab.fr/ -- mailto:contact@logilab.fr
+"""
+
+__revision__ = "$Id: rqlgen.py,v 1.5 2005-02-25 21:34:14 nico Exp $"
+
+NOT = 1
+
+
+class RQLGenerator(object):
+    """
+    Helper class to generate RQL strings
+    """
+
+
+    def select(self, e_type, nupplets=(), groups=(), sorts=()) :
+        """
+        return a RQL selection query
+        
+        * type is the desired entity's type (maybe 'Any')
+        * nupplets is a list of 4-uples
+            (subject, relation, object, not)
+          where :
+           * <subject> and <object> maybe a string designing a variable or a
+             constant. The special variable X represents the searched set of
+             entities
+           * <relation> is the statement axis
+           * <not> is a boolean indicating it should be a negative statement
+             (0 -> positive statement, 1 -> negative statement). You may omit
+             this parameter, it default to 0.
+        * groups is a list of variables to use in groups
+        * sorts is a list of sort term. A sort term is a string designing a
+          variable and optionnaly the sort order ('ASC' or 'DESC'). If the
+          sort order is omitted default to 'ASC'
+
+
+        examples :
+        
+        >>> s = RQLGenerator()
+        >>> s.select('Any', (('X', 'eid', 14),) )
+        'Any X\\nWHERE X eid 14'
+        >>> s.select('Person',
+        ...          ( ('X','work_for','S'), ('S','name','"Logilab"'),
+        ...            ('X','firstname','F'), ('X','surname','S') ),
+        ...          sorts=('F ASC', 'S DESC')
+        ...          )
+        'Person X\\nWHERE X work_for S , S name "Logilab" , X firstname F , X surname S\\nSORTBY F ASC, S DESC'
+        """
+        result = [e_type + ' X']
+        if nupplets:
+            result.append(self.where(nupplets))
+        if groups:
+            result.append(self.groupby(groups))
+        if sorts:
+            result.append(self.sortby(sorts))
+        return '\n'.join(result)
+
+                
+    def where(self, nupplets):
+        """ return a where statement
+        
+        * nupplets is a list of 4-uples
+            (subject, relation, object, not)
+          where :
+           * <subject> and <object> maybe a string designing a variable or a
+             constant. The special variable X represents the searched set of
+             entities
+           * <relation> is the statement axis
+           * <not> is a boolean indicating it should be a negative statement
+             (0 -> positive statement, 1 -> negative statement). You may omit
+             this parameter, it default to 0.
+
+
+        examples :
+                     
+        >>> s = RQLGenerator()
+        >>> s.where( (('X', 'eid', 14),) )
+        'WHERE X eid 14'
+        >>> s.where( ( ('X','work_for','S'), ('S','name','"Logilab"'), 
+        ...            ('X','firstname','F'), ('X','surname','S') ) )
+        'WHERE X work_for S , S name "Logilab" , X firstname F , X surname S'
+        """
+        result = ['WHERE']
+        total = len(nupplets)
+        for i in range(total):
+            nupplet = nupplets[i]
+            if len(nupplet) == 4 and nupplet[3] == NOT:
+                result.append('NOT')
+            result.append(str(nupplet[0]))
+            result.append(str(nupplet[1]))
+            result.append(str(nupplet[2]))
+            if i < total - 1:
+                result.append(',')
+        return ' '.join(result)
+
+        
+    def groupby(self, groups):
+        """ return a group by statement
+        
+        * groups is a list of variables to use in groups
+
+
+        example :
+        
+        >>> s = RQLGenerator()
+        >>> s.groupby(('F', 'S'))
+        'GROUPBY F, S'
+        """
+        return 'GROUPBY %s' % ', '.join(groups)
+
+    
+    def sortby(self, sorts):
+        """ return a sort by statement
+        
+        * sorts is a list of sort term. A sort term is a string designing a
+          variable and optionnaly the sort order ('ASC' or 'DESC'). If the
+          sort order is omitted default to 'ASC'
+
+
+        example :
+
+        >>> s = RQLGenerator()
+        >>> s.sortby(('F ASC', 'S DESC'))
+        'SORTBY F ASC, S DESC'
+        """
+        return 'SORTBY %s' % ', '.join(sorts)
+
+
+    def insert(self, e_type, attributes):
+        """ returns an insert statement
+
+        * e_type is the entity type to insert
+
+        * attributes is a list of tuples (attr_name, attr_value)
+
+        example :
+
+        >>> s = RQLGenerator()
+        >>> s.insert('Person', (('firstname', "Clark"), ('lastname', "Kent")))
+        'INSERT Person X: X firstname "Clark", X lastname "Kent"'
+        """
+        restrictions = ['X %s "%s"' % (attr_name, attr_value)
+                        for attr_name, attr_value in attributes] # .items()]
+        return 'INSERT %s X: %s' % (e_type, ', '.join(restrictions))
+
+
+    def delete(self, e_type, attributes):
+        """ returns a delete statement
+
+        * e_type is the entity type to delete
+
+        * attributes is a list of tuples (attr_name, attr_value)
+
+        example :
+
+        >>> s = RQLGenerator()
+        >>> s.delete('Person', (('firstname', "Clark"), ('lastname', "Kent")))
+        'DELETE Person X where X firstname "Clark", X lastname "Kent"'
+        """
+        restrictions = ['X %s "%s"' % (attr_name, attr_value)
+                        for attr_name, attr_value in attributes] # .items()]
+        return 'DELETE %s X where %s' % (e_type, ', '.join(restrictions))
+
+
+    def update(self, e_type, old_descr, new_descr):
+        """ returns a set statement
+
+        * e_type is the entity type to update
+
+        * old_descr is a list of tuples (attr_name, attr_value)
+          that identifies the entity to update
+
+        * new_descr is a list of tuples (attr_name, attr_value)
+          that defines the attributes to update
+
+        example :
+
+        >>> s = RQLGenerator()
+        >>> s.update('Person', (('firstname', "Clark"), ('lastname', "Kent")),
+        ...         (('job', "superhero"), ('nickname', "superman")))
+        'SET X job "superhero", X nickname "superman" WHERE X is "Person", X firstname "Clark", X lastname "Kent"'
+        """
+        old_restrictions = ['X is "%s"' % e_type]
+        old_restrictions += ['X %s "%s"' % (attr_name, attr_value)
+                             for attr_name, attr_value in old_descr]
+        new_restrictions = ['X %s "%s"' % (attr_name, attr_value)
+                            for attr_name, attr_value in new_descr]
+        return 'SET %s WHERE %s' % (', '.join(new_restrictions),
+                                    ', '.join(old_restrictions))
+    
+RQLGENERATOR = RQLGenerator()
+
+def _test():
+    """
+    Launch doctest
+    """
+    import doctest, sys
+    return doctest.testmod(sys.modules[__name__])
+
+if __name__ == "__main__":
+    _test()

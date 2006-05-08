@@ -1,0 +1,54 @@
+ChangeLog for RQL
+=================
+
+  --
+    * fixed syntax tree copy, just call stmt.copy() to have a
+      full deep copy
+    * support for substitute on uid relation in the type analyzer
+      (this implies to give the kwargs dictionary of the query to the 
+      analyzer)
+
+	
+2006-03-28  --  0.4.2
+    * fixed a bug when a variable is related to itself
+    * allow numbers in variable and entity types
+    * C parser (disabled by default)
+
+2006-02-10  --  0.4.1
+    * fix set_distinct so that previous distinct attribute is correctly undoed
+      if necessary
+    * remove a false assertion in remove_selected
+    * remove unnecessary OR from the tree when used with a symetric relation
+	
+2006-01-23  --  0.4.0
+    * fix Constant's type when NOW is used
+    * allow function in ORDERBY expression
+    * refactor some edit extensions
+
+
+2005-07-26  --  0.3.1
+    * close #9629, "Any E WHERE P is Project, P eid E"  foire
+    * fix bug with IN() used in update queries
+
+
+2005-07-06  --  0.3.0
+    * reintroduce analyze restriction from special relations, which may speed
+      up analyzing
+
+
+2005-06-16  --  0.2.0
+    * minor evolutions
+    * added Cpp parser module (not yet activated)
+    * minor performance improvement
+
+2004-09-23  --  0.1.2
+    * minor evolutions
+
+    * bugfixes with constant management (TODAY, etc.)
+
+
+2004-06-10  --  0.1.1
+    * minor evolutions
+
+
+

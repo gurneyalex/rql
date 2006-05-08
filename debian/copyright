@@ -1,0 +1,21 @@
+This package was debianized by Sylvain Thenault <sylvain.thenault@logilab.fr>  Sat, 13 Apr 2002 19:05:23 +0200.
+
+Upstream Author: 
+
+  Sylvain Thenault <devel@logilab.fr>
+
+Copyright:
+
+Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).
+http://www.logilab.fr/ -- mailto:contact@logilab.fr
+
+
+Logilab Closed source License. This code is *NOT* open-source. Usage of this
+code is subject to a licence agreement. If you want to use it, you should
+contact logilab's sales service at commercial@logilab.fr
+
+
+Yapps 2.0 - yet another python parser system
+Amit J Patel, January 1999
+See http://theory.stanford.edu/~amitp/Yapps/ for documentation and updates
+

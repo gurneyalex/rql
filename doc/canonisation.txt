@@ -1,0 +1,175 @@
+from ginco.rql.node_lib import Variable
+
+def sort(canon_dict):
+    canon_dict['all_variables'].sort()
+    for l in canon_dict['restriction'].values():
+        l.sort()
+
+-------------------------------------------------------------------------------
+Any N, N2 where N is Note, N2 is Note, N ecrit_par P1, P1 nom 'jphc', N2 ecrit_par P2, P2 nom 'ocy' ;
+Any Y, X  where X is Note, Y is Note,  X ecrit_par P1, P1 nom 'ocy',  Y ecrit_par P2,  P2 nom 'jphc' ;
+
+
+N = Variable('N')
+N2 = Variable('N2')
+P1 = Variable('P1')
+P2 = Variable('P2')
+
+canon1 = {
+ 'all_variables': [N, N2, P1, P2],
+ 'selected' : [N, N2],
+ 'restriction' : {'is' :        [(N, 'Note'), (N2, 'Note')],
+                  'ecrit_par' : [(N, P1), (N2, P2)],
+                  'nom' :       [(P1, 'jphc'), (P2, 'ocy')]
+                 }
+}
+
+N.name  = 'is_Note:ecrit_par:1' # 1 car c'est la première variable séléctionnée
+N2.name = 'is_Note:ecrit_par:2' # deviner pourquoi 2 ...
+P1.name = 'ecrit_par_jphc'
+P2.name = 'ecrit_par_ocy'
+sort(canon1)
+
+Y = Variable('Y')
+X = Variable('X')
+P1 = Variable('P1')
+P2 = Variable('P2')
+
+canon2 = {
+ 'all_variables': [X, Y, P1, P2],
+ 'selected' : [Y, X],
+ 'restriction' : {'is' :        [(X, 'Note'), (Y, 'Note')],
+                  'ecrit_par' : [(X, P1), (Y, P2)],
+                  'nom' :       [(P1, 'ocy'), (P2, 'jphc')]
+                 }
+}
+
+Y.name  = 'is_Note:ecrit_par:1'
+X.name = 'is_Note:ecrit_par:2'
+P1.name = 'ecrit_par_ocy'
+P2.name = 'ecrit_par_jphc'
+sort(canon2)
+
+
+canon2 == canon1
+
+
+
+-------------------------------------------------------------------------------
+Note N WHERE N ecrit_le D, N ecrit_par P, P nom 'jphc', D day > (today-10);
+Note K WHERE K ecrit_le D, K ecrit_par Y, D day > (today-10), Y nom 'jphc';
+
+N = Variable('N')
+D = Variable('D')
+P = Variable('P')
+canon1 = {
+ 'all_variables': [N, D, P],
+ 'selected' : [N],
+ 'restriction' : {'is' :        [(N, 'Note')],
+                  'day':        [(D, '> (today-10)')],
+                  'ecrit_le' :  [(N, D)],
+                  'ecrit_par' : [(N, P)],
+                  'nom' :       [(P, 'jphc')]
+                 }
+}
+N.name = 'is_Note:ecrit_le:ecrit_par:1'
+D.name = 'ecrit_le:day_> (today-10)'
+P.name = 'ecrit_par:nom_jphc'
+sort(canon1)
+
+
+K = Variable('K')
+D = Variable('D')
+Y = Variable('Y')
+canon2 = {
+ 'all_variables': [K, D, Y],
+ 'selected' : [K],
+ 'restriction' : {'is' :        [(K, 'Note')],
+                  'day':        [(D, '> (today-10)')],
+                  'ecrit_le' :  [(K, D)],
+                  'ecrit_par' : [(K, Y)],
+                  'nom' :       [(Y, 'jphc')]
+                 }
+}
+K.name = 'is_Note:ecrit_le:ecrit_par:1'
+D.name = 'ecrit_le:day_> (today-10)'
+Y.name = 'ecrit_par:nom_jphc'
+sort(canon2)
+
+canon1 == canon2
+
+
+
+-------------------------------------------------------------------------------
+Note N WHERE N ecrit_le D, D day > (today -10), N ecrit_par P, P nom 'jphc' or P nom 'ludal';
+Note K WHERE K ecrit_le D, K ecrit_par Y, D day > (today -10), Y nom in ('jphc', 'ludal');
+
+
+N = Variable('N')
+D = Variable('D')
+P = Variable('P')
+canon1 = {
+ 'all_variables': [N, D, P],
+ 'selected' : [N],
+ 'restriction' : {'is' :        [(N, 'Note')],
+                  'day':        [(D, '> (today-10)')],
+                  'ecrit_le' :  [(N, D)],
+                  'ecrit_par' : [(N, P)],
+                  'nom' :       [(P, 'jphc'), (P, 'ludal')]
+                 }
+}
+N.name = 'is_Note:ecrit_le:ecrit_par:1'
+D.name = 'ecrit_le:day_> (today-10)'
+P.name = 'ecrit_par:nom_jphc'
+sort(canon1)
+
+
+K = Variable('K')
+D = Variable('D')
+Y = Variable('Y')
+canon2 = {
+ 'all_variables': [K, D, Y],
+ 'selected' : [K],
+ 'restriction' : {'is' :        [(K, 'Note')],
+                  'day':        [(D, '> (today-10)')],
+                  'ecrit_le' :  [(K, D)],
+                  'ecrit_par' : [(K, Y)],
+                  'nom' :       [(Y, 'jphc'), (Y, 'ludal')]
+                 }
+}
+K.name = 'is_Note:ecrit_le:ecrit_par:1'
+D.name = 'ecrit_le:day_> (today-10)'
+Y.name = 'ecrit_par:nom_jphc'
+sort(canon2)
+
+canon1 == canon2
+
+
+
+
+*******************************************************************************
+NE MARCHE PAS:
+
+* les expressions RQL
+Note N WHERE N ecrit_le D, D day > (today -10), N ecrit_par P, P nom 'jphc' or P nom 'ludal';
+et
+Note N WHERE N ecrit_le D, D day > (today -10), N ecrit_par P, P nom 'jphc', P nom 'ludal';
+
+
+Note N WHERE N ecrit_le D, D day > (today -10), N ecrit_par P, P nom 'jphc' or P prenom 'ludal';
+et
+Note N WHERE N ecrit_le D, D day > (today -10), N ecrit_par P, P nom 'jphc', P prenom 'ludal';
+
+seront considérées comme identiques avec ce modèle.
+
+
+-->
+ 'restriction' : {'is' :        [(K, 'Note')],
+                  'day':        [(D, '> (today-10)')],
+                  'ecrit_le' :  [(K, D)],
+                  'ecrit_par' : [(K, Y)],
+                  'nom_nom' :       [(Y, 'jphc', Y, 'ludal')]
+                 }
+
+* risque de collision dans les noms de variables non sélectionnées (un
+  exemple ?).

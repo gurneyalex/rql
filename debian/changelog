@@ -1,0 +1,73 @@
+rql (0.4.2-3) unstable; urgency=low
+
+  * fix postrm and prerm script
+
+ -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Wed, 29 Mar 2006 18:37:19 +0200
+
+rql (0.4.2-2) unstable; urgency=low
+
+  * fix dependancies on python-constraint
+
+ -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Wed, 29 Mar 2006 18:20:27 +0200
+
+rql (0.4.2-1) unstable; urgency=low
+
+  * new upstream release including C extensions, so get back to pythonX.X packages...
+
+ -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Tue, 28 Mar 2006 12:10:34 +0200
+
+rql (0.4.1-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Fri, 10 Feb 2006 11:05:48 +0100
+
+rql (0.4.0-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Mon, 23 Jan 2006 11:19:30 +0100
+
+rql (0.3.1-2) unstable; urgency=low
+
+  * reorganization to install into site-python, removing the need for 
+    pythonX.X- packages
+
+ -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Tue, 10 Jan 2006 17:42:53 +0100
+
+rql (0.3.1-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Adrien Di Mascio <Adrien.DiMascio@logilab.fr>  Thu, 28 Jul 2005 17:25:16 +0200
+
+rql (0.3.0-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Wed,  6 Jul 2005 13:57:09 +0200
+
+rql (0.2.0-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Arthur Lutz <arthur.lutz@logilab.fr>  Fri, 17 Jun 2005 17:11:02 +0200
+
+rql (0.1.2-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Adrien Di Mascio <Adrien.DiMascio@logilab.fr>  Thu, 23 Sep 2004 14:17:33 +0200
+
+rql (0.1.1-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Arthur Lutz <arthur.lutz@logilab.fr>  Thu, 10 Jun 2004 16:19:58 +0200
+
+rql (0.1.0-1) unstable; urgency=low
+
+  * initial public release
+
+ -- Sylvain Thenault <sylvain.thenault@logilab.fr>  Tue, 20 Apr 2004 13:34:28 +0200
+

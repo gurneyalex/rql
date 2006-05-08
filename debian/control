@@ -1,0 +1,42 @@
+Source: rql
+Section: python
+Priority: optional
+Maintainer: Sylvain Thenault <sylvain.thenault@logilab.fr> 
+Build-Depends: debhelper (>= 4.0.0), python2.3-dev, python2.4-dev
+Standards-Version: 3.6.2
+
+Package: python-rql
+Architecture: all
+Depends: python (>= 2.3), python (<< 2.4), python2.3-rql (>= ${Source-Version}), python-logilab-common, python-constraint (>= 0.3.0-2)
+Description: relationship query language (RQL) utilities [dummy package]
+ A library providing the base utilities to handle RQL queries,
+ such as a parser, a type inferencer.
+ .
+ This package is an empty dummy package that always depends on a package built
+ for Debian's default Python version.
+
+Package: python-rql-test
+Architecture: all
+Depends: python-rql (>= ${Source-Version}), python-logilab-common
+Description: python-rql's test files
+ This package contains test files shared by the python-rql package. It
+ isn't necessary to install this package unless you want to execute or
+ look at the tests.
+
+Package: python2.3-rql
+Architecture: any
+Depends: python2.3, python-logilab-common, python-constraint (>= 0.3.0-2)
+Description: relationship query language (RQL) utilities [built for python2.3]
+ A library providing the base utilities to handle RQL queries,
+ such as a parser, a type inferencer.
+ .
+ This package is built with Python 2.3.
+
+Package: python2.4-rql
+Architecture: any
+Depends: python2.4, python-logilab-common, python-constraint (>= 0.3.0-2)
+Description: relationship query language (RQL) utilities [built for python2.4]
+ A library providing the base utilities to handle RQL queries,
+ such as a parser, a type inferencer.
+ .
+ This package is built with Python 2.4.

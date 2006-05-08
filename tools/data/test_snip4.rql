@@ -1,0 +1,1 @@
+Any X WHERE E eid 22762, NOT E is_in X, X modification_date D ORDERBY D DESC LIMIT 41;

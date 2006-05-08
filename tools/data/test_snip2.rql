@@ -1,0 +1,1 @@
+DISTINCT Any N, D, C, T, A where N is Note, N diem D, W is Workcase, W concerned_by N, N cost C, N text T, N author A, N diem <= today ORDERBY D DESC LIMIT 40;

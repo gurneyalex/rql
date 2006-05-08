@@ -1,0 +1,13 @@
+TODO list for the rql package
+=============================
+
+* retirer les restrictions e_type = [A-Z][a-z_]*
+                           r_type = [a-z_]*
+
+* detecter les erreurs ASAP pour éviter stcheck
+
+* tests unitaires pour sqlgen
+
+* revoir tutoriel
+
+* specification 1.0

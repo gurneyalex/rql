@@ -1,0 +1,491 @@
+=================================================
+Spécification "Relation Query Language" (Hercule)
+=================================================
+
+:Author: Sylvain Thénault
+:Organization: Logilab
+:Version: $Revision: 1.10 $
+:Date: $Date: 2004-05-18 15:04:13 $
+
+.. contents::
+
+
+
+Introduction
+============
+
+Objectifs de RQL
+----------------
+
+L'objectif est d'avoir un langage mettant l'accent sur le parcours de
+relations. A ce titre les attributs seront donc considérés comme des cas
+particuliers de relations (au niveau de l'implémentation, l'utilisateur du
+langage ne devant quasiment pas voir de différence entre un attribut et une
+relation).
+
+
+Comparaison avec des langages existants
+---------------------------------------
+
+SQL
+```
+RQL s'inspire des fonctionnalités de SQL mais se veut à un plus haut niveau
+(l'implémentation actuelle de RQL génère du SQL). Pour cela il se limite au
+parcours de relations et introduit des variables. L'utilisateur n'a pas besoin
+de connaitre le modèle SQL sous-jacent, mais uniquement le schéma Ginco
+définissant l'application.
+
+Versa
+`````
+Faudrait que je regarde plus en détail, mais voilà déja quelques idées pour
+l'instant...  Versa_ est le langage ressemblant le plus à ce que nous voulions
+faire, mais le modèle de donnée sous-jacent étant du RDF, il y a un certain
+nombre de choses tels que les namespaces ou la manipulation des types RDF qui
+ne nous intéressent pas. Niveau fonctionnalité, Versa_ est très complet
+notamment grâce à de nombreuses fonctions de conversion et de manipulations
+des types de base, dont il faudra peut-être s'inspirer à un moment ou à
+l'autre.  Enfin, La syntaxe est un peu ésotérique.
+
+Voir aussi
+``````````
+RDFQL_
+
+
+Les différents types de requêtes
+--------------------------------
+
+Recherche
+  Ce type de requête permet d'extraire des entités ou des attributs d'entités.
+
+Insertion d'entités
+  Ce type de requête permet d'insérer de nouvelles entités dans la base. On
+  permettra également la création directe de relations sur les entités
+  nouvellement créées.
+
+Mise à jour d'entités, création de relations
+  Ce type de requête permet de mettre à jours des entités existantes dans la base,
+  ou de créer des relations entres des entités existantes.
+
+Suppression d'entités ou de relation
+  Ce type de requête permet de supprimer des entités et relations existantes dans
+  la base.
+
+
+
+Exemples
+========
+
+(voir le tutoriel pour plus d'exemples)
+
+Recherche
+---------
+
+- *recherche de l'objet ayant l'identifiant 53*
+  ::
+
+       Any X WHERE 
+       X eid 53 
+
+- *recherche des documents de type bande dessinée, appartenant à syt et disponible*
+  ::
+
+       Document X WHERE 
+       X occurence_of F, F class C, C name 'Bande dessinée',
+       X owned_by U, U login 'syt',
+       X available true
+
+- *recherche des personnes travaillant pour eurocopter intêressé par la formation*
+  ::
+
+       Personne P WHERE
+       P travaille_pour S, S nom 'Eurocopter',
+       P interesse_par T, T nom 'formation'
+
+- *recherche des notes de moins de 10 jours écrite par jphc ou ocy*
+  ::
+
+       Note N WHERE
+       N ecrit_le D, D day > (today -10), 
+       N ecrit_par P, P nom 'jphc' or P nom 'ocy'
+
+- *recherche des personnes interessées par la formation ou habitant à Paris*
+  ::
+
+       Personne P WHERE
+       (P interesse_par T, T nom 'formation') or
+       (P ville 'Paris')
+
+- *Le nom et le prénom de toutes les personnes, triés*
+  ::
+
+       Any N, P WHERE
+       X is 'Personne', X nom N, X prenom P
+
+  On remarquera que la selection de plusieurs entités force généralement
+  l'utilisation de "Any", car la spécification de type s'applique sinon
+  à toutes les variables séléctionnées. On aurait pu écrire ici 
+  ::
+
+       String N, P WHERE
+       X is 'Personne', X nom N, X prenom P
+
+
+Insertion d'entités
+-------------------
+
+- *insertion d'une nouvelle personne nommée 'bidule'*
+  ::
+
+       INSERT Personne X: X nom 'bidule'
+
+- *insertion d'une nouvelle personne nommée 'bidule', d'une autre nommée 'chouette' et d'une relation 'ami' entre eux*
+  ::
+
+       INSERT Personne X, Personne Y: X nom 'bidule', Y nom 'chouette', X ami Y
+
+- *insertion d'une nouvelle personne nommée 'bidule' et d'une relation 'ami' avec une personne existante nommée 'chouette'*
+  ::
+
+       INSERT Person X: X nom 'bidule', X ami Y WHERE Y nom 'chouette'
+
+
+Mise à jour d'entités, création de relations
+--------------------------------------------
+
+- *renommage de la personne nommée 'bidule' en 'toto', avec modification du prénom*
+  ::
+
+       SET X nom 'toto', X prenom 'original' WHERE X is 'Person', X nom 'bidule'
+
+- *insertion d'une relation de type 'connait' entre les objets reliés par la relation de type 'ami'*
+  ::
+
+       SET X know Y WHERE X ami Y
+
+
+Suppression d'entités ou de relations
+-------------------------------------
+
+- *supression de la personne nommé 'toto'*
+  ::
+
+       DELETE Person X WHERE X nom 'toto'
+
+- *suppression de toutes les relations de type 'ami' partant de la personne nommée 'toto'*
+  ::
+
+       DELETE X ami Y WHERE X is 'Person', X nom 'toto'
+
+
+
+Définition du langage
+=====================
+
+Mots clés réservés
+------------------
+Les mots clés ne sont pas sensibles à la casse. 
+
+::
+
+    DISTINCT, INSERT, SET, DELETE,
+    WHERE, AND, OR, NOT
+    IN, LIKE,
+    TRUE, FALSE, NULL, TODAY,
+    GROUPBY, ORDERBY, ASC, DESC
+
+
+Typage
+------
+
+Au niveau de RQL, on ne fait pas de distinction entre entités et attributs. La
+valeur d'un attribut est considérée comme une entité d'un type particulier (voir
+ci-dessous), lié à une (vrai) entité par une relation du nom de l'attribut.
+
+Il existe un type spécial **Any**, revenant à ne pas spécifier de type.
+
+On peut contraindre les types possibles pour une variable à l'aide de la
+relation spéciale **is**.
+
+Le (les) types possible(s) pour chaque variable est déduit du schema en
+fonction des contraintes exprimées ci-dessus et à l'aide des relations entre
+chaque variable.
+
+Types de bases
+``````````````
+
+Les types de bases supportés sont les chaines (entre doubles ou simples quotes),
+les nombres entiers ou flottant (le séparateur étant le '.'), les dates et les
+booleens. On s'attend donc à recevoir un schema dans lequel les types String,
+Int, Float, Date et Boolean sont définis.
+
+
+Opérateurs
+----------
+
+Opérateurs logiques
+```````````````````
+::
+
+    AND, OR, ','
+
+"," est équivalent à "AND" mais avec la plus petite priorité parmi les
+opérateurs logiques (voir `Priorité des opérateurs`_).
+
+Opérateurs mathématiques
+````````````````````````
+::
+
+    +, -, *, /
+
+Opérateurs de comparaison
+`````````````````````````
+::
+
+    <, <=, >=, >, ~=, IN, LIKE
+
+"LIKE" est équivalent à "~="
+
+Priorité des opérateurs
+```````````````````````
+
+1. '*', '/'
+
+2. '+', '-'
+
+3. 'and'
+
+4. 'or'
+
+5. ','
+
+
+Fonctions
+---------
+
+Fonctions d'aggrégat
+````````````````````
+::
+
+    COUNT, MIN, MAX, AVG, SUM
+
+Fonctions sur les chaines
+`````````````````````````
+::
+
+    UPPER, LOWER
+
+
+Grammaire BNF
+-------------
+Les éléments terminaux sont en majuscules, les non-terminaux en minuscule. La
+valeur des éléments terminaux (entre quotes) correspond à une expression
+régulière Python.
+:: 
+
+    statement ::= (select | delete | insert | update) ';'
+
+
+    # select specific rules
+    select ::= 'DISTINCT'? E_TYPE selected_terms restriction? group? sort?
+
+    selected_terms ::= expression (',' expression)*
+
+    group       ::= 'GROUPBY' VARIABLE (',' VARIABLE)*
+
+    sort        ::= 'ORDERBY' sort_term (',' sort_term)*
+
+    sort_term   ::= VARIABLE sort_method? 
+
+    sort_method ::= 'ASC' | 'DESC'
+
+
+    # delete specific rules
+    delete ::= 'DELETE' (variables_declaration | relations_declaration) restriction?
+
+
+    # insert specific rules
+    insert ::= 'INSERT' variables_declaration (':' relations_declaration)? restriction?
+
+
+    # update specific rules
+    update ::= 'SET' relations_declaration restriction
+
+
+    # common rules
+    variables_declaration ::= E_TYPE VARIABLE (',' E_TYPE VARIABLE)*
+
+    relations_declaration ::= simple_relation (',' simple_relation)*
+
+    simple_relation ::= VARIABLE R_TYPE expression
+
+    restriction ::= 'WHERE' relations
+
+    relations   ::= relation (LOGIC_OP relation)*
+                  | '(' relations ')'
+
+    relation ::= 'NOT'? VARIABLE R_TYPE COMP_OP? expression 
+               | 'NOT'? VARIABLE R_TYPE 'IN' '(' expression (',' expression)* ')'
+    
+    expression ::= var_or_func_or_const (MATH_OP var_or_func_or_const)*
+                 | '(' expression ')'
+
+    var_or_func_or_const ::= VARIABLE | function | constant
+
+    function ::= FUNCTION '(' expression (',' expression)* ')'
+
+    constant ::= KEYWORD | STRING | FLOAT | INT
+
+    # tokens
+    LOGIC_OP ::= ',' | 'OR' | 'AND'
+    MATH_OP  ::= '+' | '-' | '/' | '*'
+    COMP_OP  ::= '>' | '>=' | '=' | '<=' | '<' | '~=' | 'LIKE' 
+
+    FUNCTION ::= 'MIN' | 'MAX' | 'SUM' | 'AVG' | 'COUNT' | 'UPPER' | 'LOWER'
+
+    VARIABLE ::= '[A-Z][A-Z0-9]*'
+    E_TYPE   ::= '[A-Z]\w*'
+    R_TYPE   ::= '[a-z_]+'
+
+    KEYWORD  ::= 'TRUE' | 'FALSE' | 'NULL' | 'TODAY'
+    STRING   ::= "'([^'\]|\\.)*'" | '"([^\"]|\\.)*\"'
+    FLOAT    ::= '\d+\.\d*'
+    INT      ::= '\d+'
+
+
+Remarques
+---------
+
+Tri et groupes
+``````````````
+
+- pour les requêtes groupées (i.e. avec une clause GROUPBY), toutes les
+  variables sélectionnée doivent être groupées
+
+- pour les requête ordonnées (i.e. avec une clause ORDERBY), toutes les
+  variables ordonnéees doivent être sélectionnées
+
+- pour grouper ou/et trier sur les attributs on peut faire : "X,L user U, U
+  login L GROUPBY L,X ORDERBY L"
+
+- si la méthode de tri (SORT_METHOD) n'est pas précisé, alors le tri est
+  ascendant.
+
+Négation
+````````
+
+une requête du type "Document X where not X owned_by U" revient à dire "les
+documents n'ayant pas de relation 'owned_by'". La variable U ne doit être
+utilisée à aucun autre endroit.
+
+
+
+Implémentation
+==============
+
+Représentation interne (arbre syntaxique)
+-----------------------------------------
+
+L'arbre de recherche ne contient pas les variables sélectionnées (i.e. on n'y 
+trouve que ce qui suit le "WHERE").
+
+L'arbre d'insertion ne contient pas les variables insérée ni les relations 
+définies sur ces variables (i.e. on n'y trouve que ce qui suit le
+"WHERE").
+
+L'arbre de suppression ne contient pas les variables ou relations supprimées 
+(i.e. on n'y trouve que ce qui suit le "WHERE").
+
+L'arbre de màj ne contient pas les variables ou relations mises à jour
+(i.e. on n'y trouve que ce qui suit le "WHERE").
+
+::
+
+    Select         ((Relation|And|Or)?, Group?, Sort?)
+    Insert         (Relation|And|Or)?
+    Delete         (Relation|And|Or)?
+    Update         (Relation|And|Or)?
+
+    And            ((Relation|And|Or), (Relation|And|Or))
+    Or             ((Relation|And|Or), (Relation|And|Or))
+
+    Relation       ((VariableRef, Comparison))
+
+    Comparison     ((Function|MathExpression|Keyword|Constant|VariableRef)+)
+
+    Function       (())
+    MathExpression ((MathExpression|Keyword|Constant|VariableRef), (MathExpression|Keyword|Constant|VariableRef))
+
+    Group          (VariableRef+)
+    Sort           (SortTerm+)
+    SortTerm       (VariableRef+)
+
+    VariableRef ()
+    Variable    ()
+    Keyword     ()
+    Constant    ()
+
+
+Remarques
+---------
+
+- l'implémentation actuelle ne supporte pas de lier deux relations ayant comme
+  type de relation 'is' avec un OR. Je ne pense pas que la négation ne
+  soit supportée non plus sur ce type de relation (à confirmer).
+
+- les relations définissant les variables doivent être à gauche de celles les
+  utilisant. Par exemple ::
+
+    Point P where P abs X, P ord Y, P value X+Y
+
+  est valide, mais ::
+
+    Point P where P abs X, P value X+Y, P ord Y
+
+  ne l'est pas.
+
+
+
+Conclusion
+==========
+
+Limitations
+-----------
+
+Il manque pour l'instant:
+
+- COALESCE
+
+- restriction sur les groupes (HAVING)
+
+et certainement d'autres choses...
+
+Un inconvénient est que pour utiliser ce langage il faut bien connaitre le
+schema utilisé (avec les vrais noms de relations et d'entités, pas ceux affichés
+dans l'interface utilisateur). D'un autre coté, on peut pas vraiment contourner
+cela, et c'est le boulot d'une interface utilisateur de caché le RQL.
+
+
+A réfléchir
+-----------
+
+Il serait pratique de pouvoir exprimer dans le schema des correspondances de
+relations::
+
+    Document class Type <-> Document occurence_of Fiche class Type
+    Fiche class Type    <-> Fiche collection Collection class Type
+    
+Ainsi 1. devient::
+
+    Document X where 
+    X class C, C name 'Bande dessinée',
+    X owned_by U, U login 'syt',
+    X available true
+
+Je ne suis cependant pas sûr qu'il faille gérer ça au niveau de RQL...
+
+Il faudrait aussi une relation spéciale 'anonyme'.
+
+
+
+.. _Versa: http://uche.ogbuji.net/tech/rdf/versa/
+.. _RDFQL: http://www.w3.org/TandS/QL/QL98/pp/rdfquery.html

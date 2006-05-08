@@ -1,0 +1,486 @@
+ /* -*- mode:c++ -*- */
+
+
+OPTIONS
+{
+  DEBUG_SCANNER = false
+  DEBUG_PARSER = false
+  //  OWN_STRINGS = true; DEPRECATED !
+  // PROFILING_FILE = "profile.dat";
+}
+
+{
+#include "nodes.hh"
+#include <string>
+#include <assert.h>
+#include <iostream>
+#include <cctype>
+#define MYDEBUG 0
+
+
+}
+
+TOKEN RqlToken
+{
+ public:
+    operator int() { return atoi(image().c_str()); }
+    operator double() { return atof(image().c_str()); }
+    void toupper() {
+	std::string& s = image();
+	std::transform(s.begin(), s.end(), s.begin(), (int(*)(int)) std::toupper);
+    }
+    void tolower() {
+	std::string& s = image();
+	std::transform(s.begin(), s.end(), s.begin(), (int(*)(int)) std::tolower);
+    }
+}
+
+
+
+SCANNER RqlScanner
+{
+
+    {
+    public:
+	void skipTo( const std::string& tok )
+	    {
+		RqlToken* token = la();
+		while( !_eof && token->image()!=tok ) {
+		    consume();
+		}
+	    }
+	std::streampos getStreamPos()
+	    {
+		std::streampos pos;
+		if (!_eof) {
+		    pos = inputStream->tellg() - std::streampos(_eob-_ch);
+		    if (pos<0) 
+			return std::streampos(0);
+		    return pos;
+		} else {
+		    inputStream->clear();
+		    inputStream->seekg (0, std::ios::end);
+		    return inputStream->tellg() - std::streampos(_eob-_ch);
+		}
+	    }
+	bool is_next_vars_decl() {
+	    RqlToken* _la;
+	    _la = la();
+	    if ( is_e_type(_la->image()) ) {
+		_la = la(1);
+		if ( is_var( _la->image() ) ) {
+		    return true;
+		}
+	    }
+	    return false;
+	}
+    }
+	  
+<START> SKIP {
+    <ws: " " | "\t" | "\v" | "\f" | "\n" > 
+	
+}
+
+<START> MORE {
+	<LONG_COMMENT1: "/*" > { pushState(LONG_COMMENT); }
+}
+
+<LONG_COMMENT> MORE
+{
+  <LONG_COMMENT2: "\n"/* | "\r" | "\n\r" | "\r\n"*/ > { newLine(); }
+  <LONG_COMMENT3: ~['*','\n','\r']* > 
+  <LONG_COMMENT4: ['*']+~['/','\n'] > 
+  <LONG_COMMENT5: ['*']+"\n" > { newLine(); }
+}
+
+<LONG_COMMENT> SKIP
+{
+  <LONG_COMMENT: ['*']+"/" > { popState(); }
+}
+
+<START> KEYWORD
+{
+    <DELETE:      ['D','d'] ['E','e'] ['L','l'] ['E','e'] ['T','t'] ['E','e'] >
+    <SET:         ['S','s'] ['E','e'] ['T','t']>
+    <INSERT:      ['I','i'] ['N','n'] ['S','s'] ['E','e'] ['R','r'] ['T','t']>
+    <DISTINCT:    ['D','d'] ['I','i'] ['S','s'] ['T','t'] ['I','i'] ['N','n'] ['C','c'] ['T','t'] >
+    <WHERE:       ['W','w'] ['H','h'] ['E','e'] ['R','r'] ['E','e'] > /* where */
+    <OR:          ['O','o'] ['R','r']>  /* or */
+    <AND:         ['A','a'] ['N','n'] ['D','d']> /* and */
+    <NOT:         ['N','n'] ['O','o'] ['T','t']> /* not */
+    <GROUPBY:     ['G','g'] ['R','r'] ['O','o'] ['U','u'] ['P','p'] ['B','b'] ['Y','y']> /* groupby */
+    <ORDERBY:     ['O','o'] ['R','r'] ['D','d'] ['E','e'] ['R','r'] ['B','b'] ['Y','y']> /* orderby */
+    <SORT_ASC:    ['A','a']['S','s']['C','c']>
+    <SORT_DESC:   ['D','d']['E','e']['S','s']['C','c']>
+    <LIMIT:       ['L','l']['I','i']['M','m']['I','i']['T','t']>
+    <OFFSET:      "OFFSET" | "offset">
+    <DATE:        "TODAY" | "today" > { token->image() = "TODAY"; }
+    <DATETIME:    "NOW" | "now" > { token->image() = "NOW"; }
+    <RQLNULL:     "NULL" | "null" >
+    <SEMICOLON:   ";">
+    <COLON:       ":">
+    <COMA:        ",">
+    <LPAREN:      "(">
+    <RPAREN:      ")">
+}
+
+<START> TOKEN
+{
+    <#L: ['a'-'z', 'A'-'Z', '_']>
+    <CMP_OP:      "<=" | "<" | ">=" | ">" | "~=" | "=" | "LIKE" | "like">
+    <BOOLEAN:     ['T','t']['R','r']['U','u']['E','e']|['F','f']['A','a']['L','l']['S','s']['E','e'] >
+	{ token->tolower();  }
+/*    <FUNCTION:    "@" ['A'-'Z','a'-'z']+ [' ','\t','\n']* "(">*/
+    <SYMBOL: ['A'-'Z','a'-'z','_'] ['A'-'Z','a'-'z','0'-'9','_']*>
+/*    <R_TYPE:      ['a'-'z','_']+>
+    <E_TYPE:      ['A'-'Z'] ['a'-'z']+>
+    <VARIABLE:    ['A'-'Z'] ['A'-'Z','0'-'9','_']*> */
+    <FLOAT:       ['0'-'9']+ "." ['0'-'9']*>
+    <INT:         ['0'-'9']+>
+    <SUBSTITUTE:  "%(" ['A'-'Z','a'-'z','_','0'-'9']+ ")s">
+	{ token->image() = token->image().substr(2,token->image().size()-4 ); }
+    <STRING: ( "\"" ( ~['\"'] | "\\\"" )* "\"" ) | ( "\'" ( ~['\''] | "\\\'" )* "\'" ) >
+	{ token->image() = unquote(token->image()); }
+    <ADD_OP:      "+"|"-">
+    <MUL_OP:      "*"|"/">
+
+}
+	     /* mieux: ~['\'','\\'] | ... */
+
+}
+
+
+PARSER RqlParser
+{
+    (StmtNode*) Goal( TypeDict* types )
+	{
+	    { 
+		DeleteStmt *tmp1=0;
+		InsertStmt *tmp2=0;
+		UpdateStmt *tmp3=0;
+		SelectStmt *tmp4=0;
+		StmtNode   *tmp=0;
+		std::streampos startpos = scanner.getStreamPos();
+
+		
+	    } (
+	    ( <DELETE> { tmp1 = new DeleteStmt( types ); } Delete( tmp1 ) <SEMICOLON> { tmp = tmp1; } )
+		| ( { tmp2 = new InsertStmt( types ); } <INSERT> Insert( tmp2 ) <SEMICOLON> { tmp = tmp2; } ) 
+		| ( { tmp3 = new UpdateStmt( types ); } <SET> Update( tmp3 ) <SEMICOLON> { tmp = tmp3; } )
+		| ( { tmp4 = new SelectStmt( types ); } Select( tmp4 ) <SEMICOLON> { tmp = tmp4; } )
+	    )
+		{
+		    tmp->stmt_start = startpos;
+		    tmp->stmt_end = scanner.getStreamPos();
+		    return tmp;
+		}
+	}
+    
+    /* Deletion */
+    (RQLNode*) Delete( DeleteStmt* parent ) { 
+	( LOOKAHEAD({scanner.is_next_vars_decl()}) ( Vars_Decl(parent) Restr(parent)? )
+          | ( Rels_Decl(parent) Restr(parent)? )
+	 )
+	    { return parent; }
+    }
+
+    
+    /* Insertion */
+    (RQLNode*) Insert( InsertStmt* parent ) {
+	Vars_Decl(parent) Insert_Rels(parent)?
+	    { return parent; }
+    }
+
+    (RQLNode*) Insert_Rels( InsertStmt* parent ) {
+	<COLON> Rels_Decl(parent) Restr(parent)?
+	    { return parent; }
+    }
+
+
+    /* Update */
+    (RQLNode*) Update( UpdateStmt* parent ) {
+	Rels_Decl(parent) Restr(parent)?
+	    { return parent; }
+    }
+
+    /* Selection */
+    (RQLNode*) Select( SelectStmt* parent ) {
+	( <DISTINCT> { parent->distinct = true; } )? Select_Base(parent)
+	    { return parent; }
+    }
+
+    (RQLNode*) Select_Base( SelectStmt* parent ) {
+	{ std::string etype; }
+	(etype = E_Type()
+	 Selected_Terms( parent ) Restr( parent )?
+	 Group( parent )?
+	 Sort( parent )?
+	 ( Limit_Offset( parent ) )? )
+	    { parent->set_statement_type( etype ); return parent; }
+    }
+
+    (RQLNode*) Selected_Terms( SelectStmt* parent ) {
+	{ RQLNode* added_expr=0; }
+	added_expr = Added_Expr( parent ) { parent->append_selected( added_expr ); }
+	( <COMA> added_expr = Added_Expr( parent ) { parent->append_selected( added_expr ); } ) *
+	    { return parent; }
+    }
+    
+    /* Group and sorts */
+
+    (RQLNode*) Group( StmtNode* parent ) {
+	{
+	    GroupNode *group = new GroupNode();
+	    VarNode *v=0;
+	}
+	<GROUPBY> v = Var( parent ) { group->append( v ); } 
+	( <COMA> v = Var( parent ) { group->append( v ); } )*
+	    { parent->append( group ); return parent; }
+    }
+
+    (RQLNode*) Sort( StmtNode* parent ) {
+	{
+	    SortNode *sort = new SortNode();
+	    SortTermNode* term=0;
+	}
+	<ORDERBY> term = Sort_Term( parent ) { sort->append( term ); }
+	(<COMA> term = Sort_Term( parent ) { sort->append( term ); } ) *
+	    { parent->append( sort ); return parent; }
+    }
+
+    (SortTermNode*) Sort_Term( StmtNode* parent ) {
+	{ ExprNode* added_expr=0; bool ordering = true }
+	added_expr = Added_Expr( parent ) 
+	    ( <SORT_DESC> { ordering = false; } 
+	      | <SORT_ASC> { ordering = true; } ) ?
+	    { return new SortTermNode( added_expr, ordering ); }
+    }
+
+    /* Limit and Offset */
+
+    (RQLNode*) Limit_Offset( SelectStmt* parent ) {
+	( Limit( parent )? Offset( parent )?) { return parent; }
+    }
+
+    () Limit( SelectStmt* parent ) {
+	<LIMIT> <INT> { parent->set_limit( int(*token) ); }
+    }
+    () Offset( SelectStmt* parent ) {
+	<OFFSET> <INT> { parent->set_offset( int(*token) ); }
+    }
+    
+    /* Restriction Statements */
+
+    (RQLNode*) Restr( StmtNode* parent ) {
+	{ RelNode* rels=0; }
+	<WHERE> rels = Rels( parent ) { parent->append( rels ); return parent; }
+    }
+    
+    (RelNode*) Rels( StmtNode* parent ) {
+	{ RelNode *lrel=0, *rrel=0; }
+	lrel = Ored_Rels( parent )
+	    ( <COMA> rrel = Ored_Rels( parent )
+		{ lrel = new AndNode( lrel, rrel ); } )*
+	    { return lrel; }
+    }
+
+    (RelNode*) Ored_Rels( StmtNode* parent ) {
+	{ RelNode *lrel=0, *rrel=0; }
+	lrel = Anded_Rels( parent )
+	    ( <OR> rrel = Anded_Rels( parent )
+		{ lrel = new OrNode( lrel, rrel ); } )*
+	    { return lrel; }
+    }
+
+    (RelNode*) Anded_Rels( StmtNode* parent ) {
+	{ RelNode *lrel=0, *rrel=0; }
+	lrel = Rel( parent )
+	    ( <AND> rrel = Rel( parent )
+		{ lrel = new AndNode( lrel, rrel ); } )*
+	    { return lrel; }
+    }
+
+    (RelNode*) Rel( StmtNode* parent ) {
+	{
+	    bool negated = false;
+	    RelNode *rel=0;
+	}
+	(( ( <NOT> { negated = true; } )?
+	   rel = Base_Rel( parent ) { rel->_not = negated;} )
+	 | ( <LPAREN> rel = Rels(parent) <RPAREN>  ))
+	    { return rel; }
+    }
+
+    (RelationNode*) Base_Rel( StmtNode* parent ) {
+	{
+	    RelationNode *e=0;
+	    VarNode *var=0;
+	    std::string rtype;
+	    ExprNode *expr=0;
+	}
+	var = Var(parent)
+        rtype = R_Type()
+	expr = Expr(parent)
+	    {
+		e = new RelationNode( rtype );
+		e->append(var);
+		assert(expr);
+		e->append(expr);
+		return e;
+	    }
+    }
+
+
+    (std::string) R_Type() {
+	<SYMBOL> {
+	    if (is_r_type( token->image() ))
+		return token->image();
+	    else
+		throw ScanException( token->bPos, "Expected R_Type"); 
+	}
+    }
+    (std::string) E_Type() {
+	<SYMBOL> {
+	    if (is_e_type( token->image() ))
+		return token->image();
+	    else
+		throw ScanException( token->bPos, "Expected E_Type"); 
+	}
+    }
+
+    /* common statements */
+
+    (RQLNode*) Vars_Decl( StmtNode* parent ) {
+	{
+	    VarNode *v=0;
+	    std::string etype;
+	}
+	etype = E_Type()
+	v = Var(parent) {parent->add_main_variable( etype, v ); }
+	( <COMA> etype = E_Type()
+	  v = Var(parent) {
+	    parent->add_main_variable( etype, v );
+	} ) *
+	    { return parent; }
+    }
+
+    (RQLNode*) Rels_Decl( StmtNode* parent ) { 
+	{ RelationNode *rel=0; }
+	rel = Simple_Rel( parent ) { parent->add_main_relation( rel ); }
+	( <COMA> rel = Simple_Rel( parent ) { parent->add_main_relation( rel ); } )*
+	    { return parent; }
+    }
+
+    (RelationNode*) Simple_Rel( StmtNode* parent ) {
+	{
+	    RelationNode *e=0;
+	    VarNode *v=0;
+	    ExprNode *expr=0;
+	    std::string rtype;
+	}
+	v = Var(parent) rtype = R_Type()
+	    expr = Added_Expr(parent)
+	    {
+		e = new RelationNode(rtype);
+		e->append( v );
+		e->append( expr );
+		return e;
+	    }
+    }
+    
+    (ExprNode*) Expr( StmtNode* parent ) {
+	{
+	    ExprNode *expr=0, *added_expr=0;
+	    std::string cmp_op;
+	}
+	( ( (<CMP_OP> { cmp_op = token->image(); })
+	    added_expr = Added_Expr( parent ) { expr = new ComparisonNode( cmp_op, added_expr ); } )
+	  | ( added_expr = Added_Expr( parent ) { expr = new ComparisonNode( "=", added_expr ); } ))
+	    { return expr; }
+    }
+
+    (ExprNode*) Added_Expr( StmtNode* parent ) {
+	{
+	    ExprNode *lhs=0, *rhs=0;
+	    std::string add_op;
+	}
+	lhs = Muled_Expr( parent )
+	    ( <ADD_OP> { add_op = token->image(); }
+	      rhs = Muled_Expr( parent ) { lhs = new MathExpression( add_op, lhs, rhs ); } )*
+	    { return lhs; }
+    }
+
+    (ExprNode*) Muled_Expr( StmtNode* parent ) {
+	{
+	    ExprNode *lhs=0, *rhs=0;
+	    std::string mul_op;
+	}
+	lhs = Base_Expr( parent )
+	    ( <MUL_OP> { mul_op = token->image(); }
+	      rhs = Base_Expr( parent ) { lhs = new MathExpression( mul_op, lhs, rhs ); } )*
+	    { return lhs; }
+    }
+    
+
+    (ExprNode*) Base_Expr( StmtNode* parent ) {
+	{ ExprNode* expr=0; }
+	( expr = Const()
+	  | expr = Var_E_Type_or_Func(parent)
+	  | <LPAREN> expr = Added_Expr(parent) <RPAREN> )
+	    { assert(expr); return expr; }
+    }
+
+
+    (ExprNode*) Var_E_Type_or_Func( StmtNode* parent ) {
+	{
+	    std::string name;
+	    FuncNode *func=0;
+	    ExprNode *expr=0;
+	}
+	<SYMBOL> { name =  token->image(); }
+	( <LPAREN> { func = new FuncNode(name ); }
+	  expr = Added_Expr(parent) { func->append( expr ); }
+	  ( <COMA> expr = Added_Expr(parent) { func->append( expr ); } )*
+	  <RPAREN> { return func; }
+	)?
+	    {
+		if (is_var(name)) {
+		    return parent->get_variable( name );
+		}
+		expr = parent->get_type( name );
+		assert(expr);
+#if MYDEBUG
+		std::cout << "E_TYPE ";
+		expr->display( std::cout, 0 );
+		std::cout << std::endl;
+#endif
+		return expr;
+	    }
+    }
+
+    (VarNode*) Var( StmtNode* parent ) {
+	<SYMBOL> {
+	    VarNode* v=0;
+	    if (!is_var( token->image() )) {
+		throw ScanException( token->bPos, "Expected Variable" );
+	    }
+	    v = parent->get_variable( token->image() );
+	    assert(v);
+	    return v;
+	}
+    }
+    
+
+    (ExprNode*) Const() {
+	<RQLNULL>    { return new Constant( "NULL", token->image() ); }
+	| <DATE>     { return new Constant( "Date", token->image() ); }
+	| <DATETIME> { return new Constant( "Datetime", token->image() ); }
+	| <BOOLEAN>  { return new Constant( "Boolean", token->image() ); }
+	| <FLOAT>    { return new Constant( "Float", double(*token) ); }
+	| <INT>      { return new Constant( "Int", int(*token) ); }
+	| <STRING>   { return new Constant( "String", token->image() ); }
+	| <SUBSTITUTE> { return new Constant( "Substitute", token->image() ); }
+    }
+}
+
+
