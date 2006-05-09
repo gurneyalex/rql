@@ -8,7 +8,7 @@ rql packaging information
 __revision__ = "$Id: __pkginfo__.py,v 1.20 2006-03-28 10:11:17 syt Exp $"
 
 modname = "rql"
-numversion = [0, 4, 2]
+numversion = [0, 5, 0]
 version = '.'.join([str(num) for num in numversion])
 
 license = 'LCL'

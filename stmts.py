@@ -177,7 +177,12 @@ class Select(Statement):
         """
         descr = []
         for var in self.selected:
-            var = var.variable
+            try:
+                var = var.variable
+            except AttributeError:
+                # aggregat function
+                descr.append(nodes.FUNC_TYPES_MAP.get(var.name, 'Any'))
+                continue
             var_type = 'Any'
             for ref in var.references():
                 rel = ref.relation()

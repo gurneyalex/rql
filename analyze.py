@@ -321,12 +321,16 @@ class UnifyingETypeResolver:
             method the maybe used to get an entity's type given the value of
             its UID attribute
         """
-        self.schema = schema
         # mapping from relation to function taking rhs value as argument
         # and returning an entity type
         self.uid_func_mapping = {}
         if uid_func_mapping:
-            self.uid_func_mapping=uid_func_mappin
+            self.uid_func_mapping = uid_func_mapping
+        # default domain for a variable
+        self.set_schema(schema)
+
+    def set_schema(self, schema):
+        self.schema = schema
         # default domain for a variable
         self._base_domain = schema.entities()
         self._types = [e_schema.type

@@ -319,7 +319,11 @@ class NodesTest(unittest.TestCase):
         # test serializing
         self.assertEqual(tree.as_string(), 
                          "DELETE X friend Y WHERE X name 'toto'")
-
         
+    # non regression tests ####################################################
+    def test_get_description_aggregat(self):
+        tree = parse("Any COUNT(N) WHERE X name N GROUPBY N;", E_TYPES)
+        self.assertEqual(tree.get_description(), ['Int'])
+    
 if __name__ == '__main__':
     unittest.main()

@@ -25,6 +25,16 @@ Node.get_visit_name = get_visit_name
 BinaryNode.get_visit_name = get_visit_name
 ListNode.get_visit_name = get_visit_name
 
+
+FUNC_TYPES_MAP = {
+    'COUNT' : 'Int',
+    'MIN' : 'Int',
+    'MAX' : 'Int',
+    'SUM' : 'Int',
+    'LOWER' : 'String',
+    'UPPER' : 'String',
+    }
+
 # base objects ################################################################
 
 class HSMixin(object):
@@ -491,9 +501,7 @@ class Group(ListNode):
         return 1
 
     def __repr__(self):
-        for child in self.children:
-            s.append(repr(child))
-        return 'GROUPBY %s' % ', '.join(s)
+        return 'GROUPBY %s' % ', '.join([repr(child) for child in self.children])
     
 class Sort(ListNode):
     """a sort (ORDERBY) node
@@ -515,9 +523,7 @@ class Sort(ListNode):
         return 1
 
     def __repr__(self):
-        for child in self.children:
-            s.append(repr(child))
-        return 'ORDERBY %s' % ', '.join(s)
+        return 'ORDERBY %s' % ', '.join([repr(child) for child in self.children])
     
 
 class SortTerm(HSMixin, Node):
