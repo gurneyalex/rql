@@ -4,8 +4,7 @@
 
 __revision__ = "$Id: unittest_analyze.py,v 1.15 2006-05-01 13:01:56 syt Exp $"
 
-import unittest
-import sys
+from logilab.common.testlib import TestCase, unittest_main
 
 from rql import RQLHelper, TypeResolverException
 from rql.analyze import UnifyingETypeResolver, ETypeResolver
@@ -86,7 +85,7 @@ UNRESOLVABLE_QUERIES = (
 
 DEBUG = 0
 
-class AnalyzerClassTest(unittest.TestCase):
+class AnalyzerClassTest(TestCase):
     """check wrong queries arre correctly detected
     """
 
@@ -193,4 +192,4 @@ class UnifyierClassTest(AnalyzerClassTest):
 ##                 print "No sols"
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest_main()

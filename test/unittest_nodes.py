@@ -4,13 +4,13 @@
 
 __revision__ = "$Id: unittest_nodes.py,v 1.8 2006-02-20 02:06:09 ludal Exp $"
 
-import unittest
-import sys
+from logilab.common.testlib import TestCase, unittest_main
+
 from rql import nodes, stmts, parse
 
 E_TYPES = {"Person" : 'Person'}
 
-class NodesTest(unittest.TestCase):
+class NodesTest(TestCase):
         
     # selection tests #########################################################
     
@@ -326,4 +326,4 @@ class NodesTest(unittest.TestCase):
         self.assertEqual(tree.get_description(), ['Int'])
     
 if __name__ == '__main__':
-    unittest.main()
+    unittest_main()

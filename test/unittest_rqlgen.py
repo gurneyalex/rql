@@ -4,16 +4,14 @@
 
 __revision__ = "$Id: unittest_rqlgen.py,v 1.3 2005-02-22 09:37:30 syt Exp $"
 
-import unittest
-import sys
-from logilab.common import testlib
+from logilab.common.testlib import TestCase, DocTest, unittest_main
 
 from rql import rqlgen
 
-class RQLGenDocTest(testlib.DocTest):
+class RQLGenDocTest(DocTest):
     module = rqlgen
 
-class RQLGenTC(unittest.TestCase):
+class RQLGenTC(TestCase):
     """tests the rqlgen behaviour
     """
 
@@ -116,4 +114,4 @@ class RQLGenTC(unittest.TestCase):
                           'X lastname "Kent"')
         
 if __name__ == '__main__':
-    unittest.main()
+    unittest_main()

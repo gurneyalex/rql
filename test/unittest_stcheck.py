@@ -4,8 +4,7 @@
 
 __revision__ = "$Id: unittest_stcheck.py,v 1.9 2004-06-30 06:39:59 syt Exp $"
 
-import unittest
-import sys
+from logilab.common.testlib import TestCase, unittest_main
 
 from rql import RQLHelper, BadRQLQuery
 
@@ -43,7 +42,7 @@ BAD_QUERIES = (
     'Any Y WHERE X name "toto"',
     )
 
-class CheckClassTest(unittest.TestCase):
+class CheckClassTest(TestCase):
     """check wrong queries arre correctly detected
     """
     
@@ -57,4 +56,4 @@ class CheckClassTest(unittest.TestCase):
             self.assertRaises(BadRQLQuery, self.parse, rql)
         
 if __name__ == '__main__':
-    unittest.main()
+    unittest_main()

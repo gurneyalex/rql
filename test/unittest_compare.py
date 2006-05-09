@@ -4,8 +4,7 @@
 
 __revision__ = "$Id: unittest_compare.py,v 1.7 2006-02-20 02:06:09 ludal Exp $"
 
-import unittest
-import sys
+from logilab.common.testlib import TestCase, unittest_main
 
 from rql import RQLHelper
 from unittest_analyze import RelationSchema, EntitySchema, DummySchema as BaseSchema
@@ -27,7 +26,7 @@ class DummySchema(BaseSchema):
     _relations['nom'] = _relations['name']
     _relations['prenom'] = _relations['firstname']
     
-class RQLCompareClassTest(unittest.TestCase):
+class RQLCompareClassTest(TestCase):
     """ Compare RQL strings """
     
     def setUp(self):
@@ -171,4 +170,4 @@ class RQLCompareClassTest(unittest.TestCase):
         self._compareNotEquivalent(r1, r2)
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest_main()

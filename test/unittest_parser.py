@@ -5,8 +5,8 @@
 
 __revision__ = "$Id: unittest_parser.py,v 1.21 2006-02-20 02:06:09 ludal Exp $"
 
-import unittest
-import sys
+from logilab.common.testlib import TestCase, unittest_main
+
 from rql.parser import Hercule, HerculeScanner, SyntaxError, print_error
 from rql import BadRQLQuery, RQLSyntaxError, nodes, stmts, parse
 from rql import parse
@@ -62,7 +62,7 @@ E_TYPES = {"Person" : 'Person',
            "Project" : 'Project',
            "Story" : 'Story'}
 
-class ParserHercule(unittest.TestCase):
+class ParserHercule(TestCase):
     _syntaxerr = SyntaxError
 
     def parse(self, string, print_errors=False):
@@ -191,4 +191,4 @@ class ParserRQLHelper(ParserHercule):
 
      
 if __name__ == '__main__':
-    unittest.main()
+    unittest_main()

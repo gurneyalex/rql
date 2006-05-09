@@ -4,9 +4,7 @@
 
 __revision__ = "$Id: unittest_utils.py,v 1.5 2006-02-20 02:06:09 ludal Exp $"
 
-import unittest
-import sys
-
+from logilab.common.testlib import TestCase, unittest_main
 
 from rql import utils, nodes, parse
 
@@ -16,7 +14,7 @@ class Visitor(utils.RQLVisitorHandler):
         for c in node.children:
             self.visit(c)
 
-class GetNodesFunctionTest(unittest.TestCase):
+class GetNodesFunctionTest(TestCase):
     def test_known_values_1(self):
         tree = parse('Any X where X name "turlututu"', {})
         constants = utils.get_nodes(tree, nodes.Constant)
@@ -72,7 +70,7 @@ class GetNodesFunctionTest(unittest.TestCase):
     
 
 
-class RQLHandlerClassTest(unittest.TestCase):
+class RQLHandlerClassTest(TestCase):
     """tests that the default handler implements a method for each possible node
     """
     
@@ -96,4 +94,4 @@ class RQLHandlerClassTest(unittest.TestCase):
         self.visitor.visit(tree)
         
 if __name__ == '__main__':
-    unittest.main()
+    unittest_main()

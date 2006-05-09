@@ -1,17 +1,17 @@
 
+from logilab.common.testlib import TestCase, unittest_main
 
-import unittest
 from rql import parse
 from rql.editextensions import *
 
-class RQLBaseTestCase(unittest.TestCase):
+class RQLBaseTestCase(TestCase):
     def test_get_nodes(self):
         node = Sort()
         node.append(VariableRef(Variable('A')))
         node.append(VariableRef(Variable('B')))
         self.assertEquals(len(get_variable_refs(node)), 2)
         
-class RQLUndoTestCase(unittest.TestCase):
+class RQLUndoTestCase(TestCase):
     
     def test_selected(self):
         rqlst = parse('Person X')
@@ -64,4 +64,4 @@ class RQLUndoTestCase(unittest.TestCase):
         
         
 if __name__ == '__main__':
-    unittest.main()
+    unittest_main()
