@@ -7,6 +7,8 @@ Analyze of the RQL syntax tree to get possible types for rql variables
 
 __revision__ = "$Id: analyze.py,v 1.30 2006-05-01 13:01:56 syt Exp $"
 
+import warnings
+warnings.filterwarnings(action='ignore', module='logilab.constraint.propagation')
 
 from logilab.constraint import Repository, Solver, fd
 
