@@ -96,17 +96,21 @@ class ETypeResolver:
             print "CONSTRAINTS:"
             pprint(constraints)
             
-        return self.solve(node, domains, constraints)
+        return self.solve(node, domains, constraints, kwargs)
 
 
-    def solve(self, node, domains, constraints):
+    def solve(self, node, domains, constraints, kwargs=None):
         # solve the problem and check there is at least one solution
         r = Repository(domains.keys(), domains, constraints)
         solver = Solver()
         sols = solver.solve(r, verbose=0)
         if not sols:
+            if kwargs:
+                rql = str(node) % kwargs
+            else:
+                rql = str(node)
             raise TypeResolverException(
-                'Unable to resolve variables types in "%s"!!' % node)
+                'Unable to resolve variables types in "%s"!!' % (rql))
         return sols
 
         

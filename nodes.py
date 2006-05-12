@@ -349,6 +349,8 @@ class Constant(HSMixin,Node):
             return self.value.encode()
         if self.type == 'Boolean':
             return self.value
+        if self.type == 'Substitute':
+            return '%%(%s)s' % self.value
         if isinstance(self.value, unicode):
             if encoding is not None:
                 return quote(self.value.encode(encoding))
