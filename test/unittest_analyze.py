@@ -74,7 +74,7 @@ class DummySchema:
         
     def relation_schema(self, r_type):
         return self._relations[r_type]
-
+    rschema = relation_schema
         
         
 UNRESOLVABLE_QUERIES = (

@@ -42,9 +42,9 @@ class Statement(Node, object):
         self.defined_vars = {}
         
     def __str__(self):
-        return self.as_string(None)
+        return self.as_string(None, {})
 
-    def as_string(self, encoding=None):
+    def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         raise NotImplementedError()
     
@@ -220,7 +220,7 @@ class Select(Statement):
 
     # string representation ###################################################
     
-    def as_string(self, encoding=None):
+    def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         if self.distinct:
             base = 'DISTINCT Any'
@@ -229,7 +229,7 @@ class Select(Statement):
         s = ['%s %s' % (base, ','.join([str(v) for v in self.selected]))]
         r = self.get_restriction()
         if r is not None:
-            s.append('WHERE %s' % r.as_string(encoding))
+            s.append('WHERE %s' % r.as_string(encoding, kwargs))
         groups = self.get_groups()
         if groups is not None:
             s.append('GROUPBY %s' % ', '.join([str(group) for group in groups]))
@@ -325,7 +325,7 @@ class Delete(Statement):
         assert isinstance(relation.children[1], nodes.VariableRef)
         self.main_relations.append( relation )
 
-    def as_string(self, encoding=None):
+    def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         result = ['DELETE']
         if self.main_variables:
@@ -334,12 +334,12 @@ class Delete(Statement):
         if self.main_relations:
             if self.main_variables:
                 result.append(',')
-            result.append(', '.join([rel.as_string(encoding)
+            result.append(', '.join([rel.as_string(encoding, kwargs)
                                      for rel in self.main_relations]))
                 
         r = self.get_restriction()
         if r is not None:
-            result.append('WHERE %s' % r.as_string(encoding))
+            result.append('WHERE %s' % r.as_string(encoding, kwargs))
         return ' '.join(result)
 
 
@@ -393,18 +393,18 @@ insertion variable'
                 raise BadRQLQuery(msg % (var, var))
         self.main_relations.append( relation )
 
-    def as_string(self, encoding=None):
+    def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         result = ['INSERT']
         result.append(', '.join(['%s %s' % (e_type, var)
                                  for e_type, var in self.main_variables]))
         if self.main_relations:
             result.append(':')
-            result.append(', '.join([rel.as_string(encoding)
+            result.append(', '.join([rel.as_string(encoding, kwargs)
                                      for rel in self.main_relations]))
         restr = self.get_restriction()
         if restr is not None:
-            result.append('WHERE %s' % restr.as_string(encoding))
+            result.append('WHERE %s' % restr.as_string(encoding, kwargs))
         return ' '.join(result)
                               
     def __repr__(self):
@@ -449,14 +449,14 @@ class Update(Statement):
         """add a relation to the list of modified relations"""
         self.main_relations.append( relation )
 
-    def as_string(self, encoding=None):
+    def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         result = ['SET']
-        result.append(', '.join([rel.as_string(encoding)
+        result.append(', '.join([rel.as_string(encoding, kwargs)
                                  for rel in self.main_relations]))
         r = self.get_restriction()
         if r is not None:
-            result.append('WHERE %s' % r.as_string(encoding))
+            result.append('WHERE %s' % r.as_string(encoding, kwargs))
         return ' '.join(result)
 
 #from rql.editextensions import check_relations

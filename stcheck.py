@@ -1,4 +1,4 @@
-"""Copyright (c) 2000-2003 LOGILAB S.A. (Paris, FRANCE).
+"""Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).
  http://www.logilab.fr/ -- mailto:contact@logilab.fr
  
 RQL Syntax tree checker
@@ -122,7 +122,7 @@ variables'
             r2type = r2.r_type
         except AttributeError:
             return
-        if r1type == r2type and self.schema.relation_schema(r1type).symetric:
+        if r1type == r2type and self.schema.rschema(r1type).symetric:
             lhs1, rhs1 = r1.get_variable_parts()
             lhs2, rhs2 = r2.get_variable_parts()
             try:

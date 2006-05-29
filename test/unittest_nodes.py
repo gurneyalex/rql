@@ -1,3 +1,4 @@
+# -*- coding: iso-8859-1 -*-
 """ Copyright (c) 2000-2003 LOGILAB S.A. (Paris, FRANCE).
  http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
@@ -320,10 +321,34 @@ class NodesTest(TestCase):
         self.assertEqual(tree.as_string(), 
                          "DELETE X friend Y WHERE X name 'toto'")
         
+    # as_string tests ####################################################
+    def test_as_string(self):
+        tree = parse("SET X know Y WHERE X friend Y;", E_TYPES)
+        self.assertEquals(tree.as_string(),
+                          'SET X know Y WHERE X friend Y')
+        
+        tree = parse("Person X", E_TYPES)
+        self.assertEquals(tree.as_string(),
+                          'Any X WHERE X is Person')
+        
+        tree = parse(u"Any X WHERE X has_text 'héhé'")
+        self.assertEquals(tree.as_string('utf8'),
+                          u'Any X WHERE X has_text "héhé"'.encode('utf8'))
+        tree = parse(u"Any X WHERE X has_text %(text)s", E_TYPES)
+        self.assertEquals(tree.as_string('utf8', {'text': u'héhé'}),
+                          u'Any X WHERE X has_text "héhé"'.encode('utf8'))
+        tree = parse(u"Any X WHERE X has_text %(text)s", E_TYPES)
+        self.assertEquals(tree.as_string('utf8', {'text': u'hé"hé'}),
+                          u'Any X WHERE X has_text "hé\\"hé"'.encode('utf8'))
+        tree = parse(u"Any X WHERE X has_text %(text)s", E_TYPES)
+        self.assertEquals(tree.as_string('utf8', {'text': u'hé"\'hé'}),
+                          u'Any X WHERE X has_text "hé\\"\'hé"'.encode('utf8'))
+        
     # non regression tests ####################################################
     def test_get_description_aggregat(self):
         tree = parse("Any COUNT(N) WHERE X name N GROUPBY N;", E_TYPES)
         self.assertEqual(tree.get_description(), ['Int'])
+
     
 if __name__ == '__main__':
     unittest_main()

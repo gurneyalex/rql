@@ -56,7 +56,7 @@ class HSMixin(object):
         return 0
     
     def __str__(self):
-        return self.as_string(None)
+        return self.as_string(None, None)
 
 
 # add a new "copy" method to the Node base class
@@ -94,10 +94,10 @@ class AND(BinaryNode):
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_and( self, *args, **kwargs )
     
-    def as_string(self, encoding=None):
+    def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
-        return '%s, %s' % (self.children[0].as_string(encoding),
-                           self.children[1].as_string(encoding))
+        return '%s, %s' % (self.children[0].as_string(encoding, kwargs),
+                           self.children[1].as_string(encoding, kwargs))
     def __repr__(self):
         return '%s AND %s' % (repr(self.children[0]),
                              repr(self.children[1]))
@@ -114,10 +114,10 @@ class OR(BinaryNode):
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_or( self, *args, **kwargs )
     
-    def as_string(self, encoding=None):
+    def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
-        return '%s OR %s' % (self.children[0].as_string(encoding),
-                             self.children[1].as_string(encoding))
+        return '%s OR %s' % (self.children[0].as_string(encoding, kwargs),
+                             self.children[1].as_string(encoding, kwargs))
     def __repr__(self):
         return '%s OR %s' % (repr(self.children[0]),
                              repr(self.children[1]))
@@ -143,16 +143,16 @@ class Relation(Node):
         """return list of arguments to give to __init__ to clone this node"""
         return self.r_type, self._not
     
-    def as_string(self, encoding=None):
+    def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         try:
             if not self._not:
-                return '%s %s %s' % (self.children[0].as_string(encoding),
+                return '%s %s %s' % (self.children[0].as_string(encoding, kwargs),
                                      self.r_type,
-                                     self.children[1].as_string(encoding))
-            return 'not %s %s %s' % (self.children[0].as_string(encoding),
+                                     self.children[1].as_string(encoding, kwargs))
+            return 'NOT %s %s %s' % (self.children[0].as_string(encoding, kwargs),
                                      self.r_type,
-                                     self.children[1].as_string(encoding))
+                                     self.children[1].as_string(encoding, kwargs))
         except IndexError:
             return repr(self)
 
@@ -215,15 +215,15 @@ class Comparison(HSMixin, Node):
         """return list of arguments to give to __init__ to clone this node"""
         return (self.operator,)
     
-    def as_string(self, encoding=None):
+    def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         if len(self.children)==0:
             return self.operator
         if self.operator in ('=', 'IS'):
-            return self.children[0].as_string(encoding)
+            return self.children[0].as_string(encoding, kwargs)
         else:
             return '%s %s' % (self.operator.encode(),
-                              self.children[0].as_string(encoding))
+                              self.children[0].as_string(encoding, kwargs))
 
     def __repr__(self, indent=0):
         return '%s%s %s' % (' '*indent, self.operator,
@@ -250,11 +250,11 @@ class MathExpression(HSMixin, BinaryNode):
         """return list of arguments to give to __init__ to clone this node"""
         return (self.operator,)
                 
-    def as_string(self, encoding=None):
+    def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
-        return '(%s %s %s)' % (self.children[0].as_string(encoding),
+        return '(%s %s %s)' % (self.children[0].as_string(encoding, kwargs),
                                self.operator.encode(),
-                               self.children[1].as_string(encoding))
+                               self.children[1].as_string(encoding, kwargs))
 
     def __repr__(self, indent=0):
         return '(%r %s %r)' % (self.children[0], self.operator,
@@ -298,7 +298,7 @@ class Function(HSMixin, Node):
         
     def as_string(self, encoding=None):
         """return the tree as an encoded rql string"""
-        return '%s(%s)' % (self.name, ', '.join([c.as_string(encoding)
+        return '%s(%s)' % (self.name, ', '.join([c.as_string(encoding, kwargs)
                                                  for c in self.children]))
 
     def __repr__(self, indent=0):
@@ -339,7 +339,7 @@ class Constant(HSMixin,Node):
         """check if this node contains a reference to one ore more variables"""
         return 0
         
-    def as_string(self, encoding=None):
+    def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string (an unicode string is
         returned if encoding is None)
         """
@@ -350,7 +350,11 @@ class Constant(HSMixin,Node):
         if self.type == 'Boolean':
             return self.value
         if self.type == 'Substitute':
-            return '%%(%s)s' % self.value
+            if kwargs is not None:
+                value = kwargs[self.value]
+                if isinstance(value, unicode):
+                    value = quote(value.encode(encoding))
+                return value
         if isinstance(self.value, unicode):
             if encoding is not None:
                 return quote(self.value.encode(encoding))
@@ -400,7 +404,7 @@ class VariableRef(HSMixin, Node):
         """check if this node contains a reference to one ore more variables"""
         return 1
 
-    def as_string(self, encoding=None):
+    def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         return self.name
     
@@ -462,7 +466,7 @@ class Variable(object):
             if rel is not None:
                 return rel.get_parts()[0]
 
-    def as_string(self, encoding=None):
+    def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         return self.name
     
