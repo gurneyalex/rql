@@ -105,10 +105,7 @@ class ETypeResolver:
         solver = Solver()
         sols = solver.solve(r, verbose=0)
         if not sols:
-            if kwargs:
-                rql = str(node) % kwargs
-            else:
-                rql = str(node)
+            rql = node.as_string('utf8', kwargs)
             raise TypeResolverException(
                 'Unable to resolve variables types in "%s"!!' % (rql))
         return sols
