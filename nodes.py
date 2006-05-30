@@ -296,7 +296,7 @@ class Function(HSMixin, Node):
             # FIXME: e_type defined by the sql generator
             return self.children[0].e_type
         
-    def as_string(self, encoding=None):
+    def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         return '%s(%s)' % (self.name, ', '.join([c.as_string(encoding, kwargs)
                                                  for c in self.children]))

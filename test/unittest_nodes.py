@@ -322,6 +322,7 @@ class NodesTest(TestCase):
                          "DELETE X friend Y WHERE X name 'toto'")
         
     # as_string tests ####################################################
+    
     def test_as_string(self):
         tree = parse("SET X know Y WHERE X friend Y;", E_TYPES)
         self.assertEquals(tree.as_string(),
