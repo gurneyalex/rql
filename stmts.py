@@ -2,7 +2,7 @@
 This module defines only first level nodes (i.e. statements). Child nodes are
 defined in the nodes module
 
-Copyright (c) 2004-2005 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
@@ -22,12 +22,8 @@ def add_restriction(select, relation):
     
     this is intentionally not a method of Select !
     """
-    r = select.get_restriction()
-    if r is not None:
-        new_node = nodes.AND(relation, r)
-        select.replace(r, new_node)
-    else:
-        select.insert(0, relation)
+    # XXX this method is deprecated
+    select.add(relation)
 
 
 class Statement(Node, object):
@@ -109,6 +105,17 @@ class Statement(Node, object):
             var_name = '%s%s' % (base_name, count)
         return self.get_variable(var_name)
 
+    def add(self, relation):
+        """add a restriction relation (XXX should not collide with add_restriction
+        or add_relation optionaly plugged by the editextensions module
+        """
+        r = self.get_restriction()
+        if r is not None:
+            new_node = nodes.AND(r, relation)
+            self.replace(r, new_node)
+        else:
+            self.insert(0, relation)
+        
     def add_type_restriction(self, variable, e_type):
         """builds a restriction node to express : variable is e_type"""
         relation = nodes.Relation('is')
@@ -117,7 +124,7 @@ class Statement(Node, object):
         comp_entity = nodes.Comparison('=')
         comp_entity.append(nodes.Constant(e_type, 'etype'))
         relation.append(comp_entity)
-        add_restriction(self, relation)
+        self.add(relation)
 
                 
 class Select(Statement):

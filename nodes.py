@@ -351,7 +351,7 @@ class Constant(HSMixin,Node):
             return self.value
         if self.type == 'Substitute':
             if kwargs is not None:
-                value = kwargs[self.value]
+                value = kwargs.get(self.value, '???')
                 if isinstance(value, unicode):
                     value = quote(value.encode(encoding))
                 return value
