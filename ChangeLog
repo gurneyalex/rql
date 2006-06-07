@@ -1,6 +1,9 @@
 ChangeLog for RQL
 =================
 
+  -- 
+    * new add method on statement
+
   --
     * fixed syntax tree copy, just call stmt.copy() to have a
       full deep copy
