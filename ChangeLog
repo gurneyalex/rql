@@ -1,10 +1,10 @@
 ChangeLog for RQL
 =================
 
-  -- 
+2006-06-08  -- 0.6.0
     * new add method on statement
 
-  --
+2006-05-21  -- 0.5.2
     * fixed syntax tree copy, just call stmt.copy() to have a
       full deep copy
     * support for substitute on uid relation in the type analyzer
