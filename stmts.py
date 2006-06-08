@@ -16,6 +16,7 @@ from rql.utils import iget_nodes
 from rql._exceptions import BadRQLQuery
 from rql import nodes
 
+Node.get_nodes = iget_nodes
 
 def add_restriction(select, relation):
     """add a restriction to a select node
