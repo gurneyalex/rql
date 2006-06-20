@@ -1,3 +1,15 @@
+rql (0.6.0-3) unstable; urgency=low
+
+  * added conflicts with python2.3-rql
+
+ -- Adrien.DiMascio <Adrien.DiMascio@logilab.fr>  Fri,  9 Jun 2006 12:50:22 +0200
+
+rql (0.6.0-2) unstable; urgency=low
+
+  * removed python2.3-rql dependecy
+
+ -- Adrien.DiMascio <Adrien.DiMascio@logilab.fr>  Fri,  9 Jun 2006 11:23:21 +0200
+
 rql (0.6.0-1) unstable; urgency=low
 
   * new upstream release

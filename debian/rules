@@ -19,9 +19,7 @@ PYVERSIONS=2.3 2.4
 build: build-stamp
 build-stamp: 
 	dh_testdir
-	for v in $(PYVERSIONS) ; do \
-		python$$v setup.py -q build ; \
-	done
+	python setup.py -q build
 	touch build-stamp
 
 clean: 
@@ -38,14 +36,10 @@ install: build
 	dh_testroot
 	dh_clean -k
 	dh_installdirs
-	python2.3 setup.py -q install_lib --no-compile --install-dir=debian/python2.3-rql/usr/lib/python2.3/site-packages
-	python2.3 setup.py -q install_headers --install-dir=debian/python2.3-rql/usr/include/
+	python setup.py -q install_lib --no-compile --install-dir=debian/python-rql/usr/lib/site-python
+	python setup.py -q install_headers --install-dir=debian/python-rql/usr/include/
 	# remove test directory (installed in in the doc directory)
-	rm -rf debian/python2.3-rql/usr/lib/python2.3/site-packages/rql/test
-	python2.4 setup.py -q install_lib --no-compile --install-dir=debian/python2.4-rql/usr/lib/python2.4/site-packages
-	python2.4 setup.py -q install_headers --install-dir=debian/python2.4-rql/usr/include/
-	# remove test directory (installed in in the doc directory)
-	rm -rf debian/python2.4-rql/usr/lib/python2.4/site-packages/rql/test
+	rm -rf debian/python-rql/usr/lib/site-python/rql/test
 	# install tests
 	(cd test && find . -type f -not \( -path '*/CVS/*' -or -name '*.pyc' \) -exec install -D --mode=644 {} ../debian/python-rql-test/usr/share/doc/python-rql/test/{} \;)
 
@@ -69,18 +63,7 @@ binary-indep: build install
 	dh_builddeb -i
 
 # Build architecture-dependent files here.
-binary-arch: build install
-	dh_testdir 
-	dh_testroot 
-	dh_install -a
-	dh_strip -a
-	dh_link -a
-	dh_compress -a -X.py -X.ini -X.xml -Xtest
-	dh_fixperms -a
-	dh_installdeb -a
-	dh_gencontrol -a
-	dh_md5sums -a
-	dh_builddeb -a
+binary-arch:
 
 binary: binary-indep binary-arch
 .PHONY: build clean binary binary-indep binary-arch
