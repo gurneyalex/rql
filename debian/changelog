@@ -1,3 +1,9 @@
+rql (0.6.0-4) unstable; urgency=low
+
+  * new python policy
+
+ -- Adrien.DiMascio <Adrien.DiMascio@logilab.fr>  Tue, 18 Jul 2006 17:55:19 +0200
+
 rql (0.6.0-3) unstable; urgency=low
 
   * added conflicts with python2.3-rql

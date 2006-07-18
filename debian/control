@@ -2,13 +2,14 @@ Source: rql
 Section: python
 Priority: optional
 Maintainer: Sylvain Thenault <sylvain.thenault@logilab.fr> 
-Build-Depends: debhelper (>= 4.0.0), python-dev
-Standards-Version: 3.6.2
+Build-Depends: debhelper (>= 5.0.37.1), python-dev (>=2.3.5-7), python (>=2.3.5-7), python-central
+XS-Python-Version: all
+Standards-Version: 3.7.2
 
 Package: python-rql
 Architecture: all
-Depends: python, python-logilab-common, python-constraint (>= 0.3.0-2)
-Provides: python2.3-rql, python2.4-rql
+XB-Python-Version: ${python:Versions}
+Depends: ${python:Depends}, python-egenix-mxdatetime, python-logilab-common (>= 0.16.1-1), python-constraint (>= 0.3.0-5)
 Replaces: python2.3-rql, python2.4-rql
 Conflicts: python2.3-rql, python2.4-rql
 Description: relationship query language (RQL) utilities [dummy package]
