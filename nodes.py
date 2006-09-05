@@ -7,6 +7,7 @@ root nodes, defined in the stmts module.
 
 __revision__ = "$Id: nodes.py,v 1.33 2006-05-02 12:25:39 syt Exp $"
 
+
 from logilab.common import cached
 from logilab.common.tree import VNode as Node, BinaryNode, ListNode, \
      post_order_list
@@ -466,6 +467,15 @@ class Variable(object):
             if rel is not None:
                 return rel.get_parts()[0]
 
+    def relation_names(self):
+        """return an iterator on relations (as string) where this variable
+        appears.
+        """
+        for reference in self.references():
+            rel = reference.relation()
+            if rel is not None:
+                yield rel.r_type
+                
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         return self.name
