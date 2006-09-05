@@ -49,7 +49,7 @@ parser Hercule:
     token CMP_OP:      r'(?i)<=|<|>=|>|~=|=|LIKE'
     token ADD_OP:      r'\+|-'
     token MUL_OP:      r'\*|/'
-    token FUNCTION:    r'[A-Za-z]+\s*(?=\()'
+    token FUNCTION:    r'[A-Za-z_]+\s*(?=\()'
     token R_TYPE:      r'[a-z][a-z0-9_]+'
     token E_TYPE:      r'[A-Z][a-z]+[a-z0-9]*'
     token VARIABLE:    r'[A-Z][A-Z0-9_]*'

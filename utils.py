@@ -16,8 +16,8 @@ KEYWORDS = ['INSERT', 'SET', 'DELETE',
             'LIMIT', 'OFFSET']
 KEYWORDS_DICT = dict(zip(KEYWORDS, [1 for kw in KEYWORDS]))
 
-FUNCTIONS = ('COUNT', 'MIN', 'MAX', 'AVG', 'SUM',
-             'UPPER', 'LOWER', 'IN')
+FUNCTIONS = ['COUNT', 'MIN', 'MAX', 'AVG', 'SUM',
+             'UPPER', 'LOWER', 'IN']
 FUNCTIONS_DICT = dict(zip(FUNCTIONS, [1 for kw in FUNCTIONS]))
 # map function name to type of objects it returns (if known)
 F_TYPES = {
@@ -30,9 +30,15 @@ def is_keyword(word):
     """return true if the given word is a RQL keyword"""
     return KEYWORDS_DICT.has_key(word.upper())
 
+def register_function(funcname):
+    funcname = funcname.upper()
+    assert not funcname in FUNCTIONS
+    FUNCTIONS.append(funcname)
+    FUNCTIONS_DICT[funcname] = 1
+    
 def is_function(word):
     """return true if the given word is a RQL function"""
-    return FUNCTIONS_DICT.has_key(word.upper())
+    return word.upper() in FUNCTIONS_DICT
 
 def quote(value):
     """quote a string value"""

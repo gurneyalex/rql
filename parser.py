@@ -4,7 +4,7 @@ Copyright (c) 2002-2005 LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
-__revision__ = "$Id: parser.py,v 1.17 2006-03-27 18:10:12 syt Exp $"
+__revision__ = "$Id: parser.g,v 1.17 2006-03-27 18:10:12 syt Exp $"
 
 
 from rql.stmts import Select, Delete, Insert, Update
@@ -55,7 +55,7 @@ class HerculeScanner(Scanner):
         ('CMP_OP', re.compile('(?i)<=|<|>=|>|~=|=|LIKE')),
         ('ADD_OP', re.compile('\\+|-')),
         ('MUL_OP', re.compile('\\*|/')),
-        ('FUNCTION', re.compile('[A-Za-z]+\\s*(?=\\()')),
+        ('FUNCTION', re.compile('[A-Za-z_]+\\s*(?=\\()')),
         ('R_TYPE', re.compile('[a-z][a-z0-9_]+')),
         ('E_TYPE', re.compile('[A-Z][a-z]+[a-z0-9]*')),
         ('VARIABLE', re.compile('[A-Z][A-Z0-9_]*')),
@@ -411,7 +411,7 @@ if __name__=='old__main__':
  http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
-__revision__ = "$Id: parser.py,v 1.17 2006-03-27 18:10:12 syt Exp $"
+__revision__ = "$Id: parser_main.py,v 1.3 2005-06-09 00:02:37 ludal Exp $"
 
 
 if __name__ == '__main__':

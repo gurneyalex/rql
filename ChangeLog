@@ -1,6 +1,11 @@
 ChangeLog for RQL
 =================
 
+ --
+    * new method on variable to get the name of relations where it's used
+    * new function into utils to register known registered procedures
+	* fixed grammar to allow "_" into function name
+
 2006-06-08  -- 0.6.0
     * new add method on statement
 
