@@ -1,6 +1,9 @@
 ChangeLog for RQL
 =================
 
+ --
+    * fix as_string bugs
+
 2006-09-05  --  0.7.0
     * new method on variable to get the name of relations where it's used
     * new function into utils to register known registered procedures
