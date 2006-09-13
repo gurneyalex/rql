@@ -236,7 +236,8 @@ class Select(Statement):
             base = 'DISTINCT Any'
         else:
             base = 'Any'
-        s = ['%s %s' % (base, ','.join([str(v) for v in self.selected]))]
+        s = ['%s %s' % (base, ','.join([v.as_string(encoding, kwargs)
+                                        for v in self.selected]))]
         r = self.get_restriction()
         if r is not None:
             s.append('WHERE %s' % r.as_string(encoding, kwargs))
