@@ -40,6 +40,8 @@ BAD_QUERIES = (
     'Any X WHERE X name nofunction(Y)',
     
     'Any Y WHERE X name "toto"',
+    
+    'Any UPPER(Y) WHERE X name "toto"',
     )
 
 class CheckClassTest(TestCase):

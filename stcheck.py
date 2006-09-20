@@ -55,12 +55,13 @@ class RQLSTChecker:
 ##         vars = []
         selected = selection.selected
         restr = selection.get_restriction()
-        for var in selected:
-            if (restr is not None or len(selected) > 1) and isinstance(var, nodes.VariableRef) and \
+        for term in selected:
+            for var in term.get_nodes(nodes.VariableRef):
+                if (restr is not None or len(selected) > 1) and \
                    len(var.variable.references()) == 1:
-                msg = 'Selected variable %s is not referenced by any relation'
-                errors.append(msg % var.name)
-            var.accept(self, errors)
+                    msg = 'Selected variable %s is not referenced by any relation'
+                    errors.append(msg % var.name)
+                var.accept(self, errors)
 ##             if var.TYPE == 'function':
 ##                 tocheck = 1
 ##             else:

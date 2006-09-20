@@ -18,6 +18,7 @@ class RelationSchema:
             for e_type in dest_types:
                 d[e_type] = 1
         self.obj_types = d.keys()
+        self.symetric = False
         
     def association_types(self):
         return self.assoc_types
