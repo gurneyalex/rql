@@ -1,9 +1,9 @@
 ChangeLog for RQL
 =================
 
- --
+2006-09-22  --  0.7.1
     * fix as_string bugs
-    * fix a bug in stcheck to detect bad queries when aggregat/transform 
+    * fix a bug in stcheck to detect bad queries when aggregat/transform
       functions are used
 	
 2006-09-05  --  0.7.0
@@ -11,10 +11,10 @@ ChangeLog for RQL
     * new function into utils to register known registered procedures
     * fixed grammar to allow "_" into function name
 
-2006-06-08  -- 0.6.0
+2006-06-08  --  0.6.0
     * new add method on statement
 
-2006-05-21  -- 0.5.2
+2006-05-21  --  0.5.2
     * fixed syntax tree copy, just call stmt.copy() to have a
       full deep copy
     * support for substitute on uid relation in the type analyzer
