@@ -156,7 +156,9 @@ def set_distinct(self, value):
     
 Select.set_distinct = set_distinct
 
-# shortcus methods ############################################################
+
+# shortcuts methods ###########################################################
+
 def remove_sort_terms(self):
     """remove a sort term and the sort node if necessary"""
     sortterms = self.get_sortterms()

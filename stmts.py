@@ -8,10 +8,6 @@ http://www.logilab.fr/ -- mailto:contact@logilab.fr
 
 from __future__ import generators
 
-
-__revision__ = "$Id: stmts.py,v 1.36 2006-05-02 12:25:40 syt Exp $"
-
-
 from logilab.common.tree import VNode as Node
 
 from rql.utils import iget_nodes

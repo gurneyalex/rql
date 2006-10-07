@@ -1,11 +1,9 @@
 """
- Copyright (c) 2004-2005 LOGILAB S.A. (Paris, FRANCE).
+ Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE).
  http://www.logilab.fr/ -- mailto:contact@logilab.fr
 
 Analyze of the RQL syntax tree to get possible types for rql variables
 """
-
-__revision__ = "$Id: analyze.py,v 1.30 2006-05-01 13:01:56 syt Exp $"
 
 import warnings
 warnings.filterwarnings(action='ignore', module='logilab.constraint.propagation')
