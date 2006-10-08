@@ -6,7 +6,7 @@ rql packaging information
 """
 
 modname = "rql"
-numversion = [0, 7, 1]
+numversion = [0, 7, 2]
 version = '.'.join([str(num) for num in numversion])
 
 license = 'LCL'

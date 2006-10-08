@@ -5,8 +5,6 @@ This module defines all the nodes we can find in a RQL Syntax tree, except
 root nodes, defined in the stmts module.
 """
 
-__revision__ = "$Id: nodes.py,v 1.33 2006-05-02 12:25:39 syt Exp $"
-
 
 from logilab.common import cached
 from logilab.common.tree import VNode as Node, BinaryNode, ListNode, \
@@ -517,6 +515,10 @@ class Group(ListNode):
                     return 1
             return 0
         return 1
+    
+    def as_string(self, encoding=None, kwargs=None):
+        return 'GROUPBY %s' % ', '.join([child.as_string(encoding, kwargs)
+                                         for child in self.children])
 
     def __repr__(self):
         return 'GROUPBY %s' % ', '.join([repr(child) for child in self.children])
@@ -539,9 +541,10 @@ class Sort(ListNode):
                     return 1
             return 0
         return 1
-
-    def __repr__(self):
-        return 'ORDERBY %s' % ', '.join([repr(child) for child in self.children])
+    
+    def as_string(self, encoding=None, kwargs=None):
+        return 'ORDERBY %s' % ', '.join([child.as_string(encoding, kwargs)
+                                         for child in self.children])
     
 
 class SortTerm(HSMixin, Node):
@@ -573,10 +576,13 @@ class SortTerm(HSMixin, Node):
             return '%r' % self.var
         return '%r DESC' % self.var
 
-    def __str__(self):
+    def as_string(self, encoding=None, kwargs=None):
         if self.asc:
             return '%s' % self.var
         return '%s DESC' % self.var
+    
+    def __str__(self):
+        return self.as_string()
 
     def __cmp__(self, other):
         if isinstance(other, SortTerm):
