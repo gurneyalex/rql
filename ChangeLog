@@ -3,7 +3,9 @@ ChangeLog for RQL
 
 --
     * add missing as_string method on groups and sorts
-
+    * detect that queries like "Any C where C suivi_par P, P eid %(x)s ORDERBY N"
+      are incorrect (N isn't defined)
+	
 2006-09-22  --  0.7.1
     * fix as_string bugs
     * fix a bug in stcheck to detect bad queries when aggregat/transform

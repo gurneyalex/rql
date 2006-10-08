@@ -2,8 +2,6 @@
  http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
-__revision__ = "$Id: unittest_stcheck.py,v 1.9 2004-06-30 06:39:59 syt Exp $"
-
 from logilab.common.testlib import TestCase, unittest_main
 
 from rql import RQLHelper, BadRQLQuery
@@ -42,6 +40,10 @@ BAD_QUERIES = (
     'Any Y WHERE X name "toto"',
     
     'Any UPPER(Y) WHERE X name "toto"',
+
+    'Any C where C suivi_par P, P eid %(x)s ORDERBY N', #15066
+
+#    'Any COUNT(X),P WHERE X concerns P', #9726
     )
 
 class CheckClassTest(TestCase):
@@ -51,11 +53,20 @@ class CheckClassTest(TestCase):
     def setUp(self):
         self.parse = RQLHelper(DummySchema(), None).parse
         
-    
+    def _test(self, rql):
+        try:
+            self.parse(rql)
+        except Exception, ex:
+            print rql, ex
+        try:
+            self.assertRaises(BadRQLQuery, self.parse, rql)
+        except:
+            print rql
+            raise
+        
     def test_raise(self):
         for rql in BAD_QUERIES:
-            #print rql
-            self.assertRaises(BadRQLQuery, self.parse, rql)
+            yield self._test, rql
         
 if __name__ == '__main__':
     unittest_main()

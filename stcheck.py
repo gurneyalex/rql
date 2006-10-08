@@ -80,6 +80,7 @@ class RQLSTChecker:
         for var in group.root().selected:
             if isinstance(var, nodes.VariableRef) and not var in group:
                 errors.append('Variable %s should be grouped' % var)
+        self._check_selected(group, 'group', errors)
                 
     def visit_sort(self, sort, errors):
         """check that variables used in sort are selected on DISTINCT query
@@ -92,7 +93,7 @@ class RQLSTChecker:
                     name.append(var.name)
             return '_'.join(name)
         select = sort.root()
-        if select.distinct:
+        if select.distinct: # distinct, all variables used in sort must be selected
             selected = [_name(v) for v in select.selected]
             for sortterm in sort:
                 var = sortterm.var
@@ -100,7 +101,18 @@ class RQLSTChecker:
                     msg = 'Orderby expression "%s" should appear in the selected \
 variables'
                     errors.append(msg % var)
-
+        else: # check sort variables are defined be selected
+            self._check_selected(sort, 'sort', errors)
+                    
+    def _check_selected(self, term, termtype, errors):
+        for var in iget_nodes(term, nodes.VariableRef):
+            var = var.variable
+            rels = [v for v in var.references() if v.relation() is not None]
+            if not rels:
+                msg = 'Variable %s used in %s is not defined in the selection'
+                errors.append(msg % (var.name, termtype))
+    
+                    
     def visit_offset(self, offset, errors):
         assert len(offset.children) == 0, len(offset.children)
         #assert int(offset.offset.value)
