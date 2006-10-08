@@ -54,10 +54,10 @@ class CheckClassTest(TestCase):
         self.parse = RQLHelper(DummySchema(), None).parse
         
     def _test(self, rql):
-        try:
-            self.parse(rql)
-        except Exception, ex:
-            print rql, ex
+        #try:
+        #    self.parse(rql)
+        #except Exception, ex:
+        #    print rql, ex
         try:
             self.assertRaises(BadRQLQuery, self.parse, rql)
         except:
