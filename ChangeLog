@@ -1,6 +1,10 @@
 ChangeLog for RQL
 =================
 
+ --
+    * simplify generated subtree for IN(onechildren)
+    * fixes to follow yams api changes
+
 2006-10-08  --  0.7.2
     * add missing as_string method on groups and sorts
     * detect that queries like "Any C where C suivi_par P, P eid %(x)s ORDERBY N"
