@@ -44,7 +44,7 @@ class ETypeResolver:
     def set_schema(self, schema):
         self.schema = schema
         # default domain for a variable
-        self._base_domain = schema.entities()
+        self._base_domain = [str(etype) for etype in schema.entities()]
         
     def visit(self, node, uid_func_mapping=None, kwargs=None, debug=False):
         # FIXME: not thread safe
@@ -79,9 +79,8 @@ class ETypeResolver:
         elif node.TYPE == 'select':
             varnames = [v.name for v in node.get_selected_variables()]
             # add constraint on real relation types if no restriction
-            types = [e_schema.type
-                     for e_schema in self.schema.entities(schema=1)
-                     if not e_schema.is_final()]
+            types = [eschema.type for eschema in self.schema.entities()
+                     if not eschema.is_final()]
             constraints.append(fd.make_expression(varnames, '%s in %s ' % (
                 '=='.join(varnames), types)))
         
@@ -120,9 +119,9 @@ class ETypeResolver:
         
     def visit_relation(self, relation, constraints):
         """extract constraints for an relation according to it's  type"""
-        r_type = relation.r_type
+        rtype = relation.r_type
         lhs, rhs = relation.get_parts()
-        if r_type == 'is':
+        if rtype == 'is':
             types = [c.value for c in iget_nodes(rhs, nodes.Constant)]
             if relation._not:
                 not_types = [t for t in self._base_domain if not t in types]
@@ -130,7 +129,7 @@ class ETypeResolver:
             constraints.append(fd.make_expression(
                 (lhs.name,), '%s in %s ' % (lhs.name, types)))
             return
-        elif r_type in self.uid_func_mapping:
+        elif rtype in self.uid_func_mapping:
             eids = []
             for cst in iget_nodes(rhs, nodes.Constant):
                 # if there is one None (NULL) constant type,
@@ -146,25 +145,27 @@ class ETypeResolver:
                 if eids:
                     types = {}
                     for eid in eids:
-                        types[self.uid_func_mapping[r_type](eid)] = True
+                        types[self.uid_func_mapping[rtype](eid)] = True
                     constraints.append(fd.make_expression(
                         (lhs.name,), '%s in %s ' % (lhs.name, types.keys())))
                     return           
-        r_schema = self.schema.relation_schema(r_type)
-        lhs_var = lhs.name
-        rhs_vars = [v.name for v in iget_nodes(rhs, nodes.VariableRef)
-                    if not v.name == lhs_var]
-        if rhs_vars:
-            s2 = '=='.join(rhs_vars)
+        rschema = self.schema.relation_schema(rtype)
+        lhsvar = lhs.name
+        rhsvars = [v.name for v in iget_nodes(rhs, nodes.VariableRef)
+                   if not v.name == lhsvar]
+        if rhsvars:
+            s2 = '=='.join(rhsvars)
             res = []
-            for from_type, to_types in r_schema.association_types():
-                res.append('(%s==%r and %s in %r)' % (lhs_var, from_type, s2,
-                                                      to_types))
-            constraints.append(fd.make_expression(
-                [lhs_var] + rhs_vars, ' or '.join(res)))
+            for fromtype, totypes in rschema.associations():
+                cstr = '(%s=="%s" and %s in (%s,))' % (
+                    lhsvar, fromtype, s2, ','.join('"%s"' % t for t in totypes))
+                res.append(cstr)
+            cstr = ' or '.join(res)
+            constraints.append(fd.make_expression([lhsvar] + rhsvars, cstr))
         else:
-            constraints.append(fd.make_expression(
-                (lhs_var,), '%s in %r'  % (lhs_var, r_schema.subject_types())))
+            cstr = '%s in (%s,)' % (
+                lhsvar, ','.join('"%s"' % t for t in rschema.subjects()))
+            constraints.append(fd.make_expression((lhsvar,), cstr))
 
     def visit_and(self, et, constraints):
         pass
@@ -334,9 +335,8 @@ class UnifyingETypeResolver:
         self.schema = schema
         # default domain for a variable
         self._base_domain = schema.entities()
-        self._types = [e_schema.type
-                       for e_schema in self.schema.entities(schema=1)
-                       if not e_schema.is_final()]
+        self._types = [eschema.type for eschema in self.schema.entities()
+                       if not eschema.is_final()]
 
     def visit(self, node, uid_func_mapping=None, debug=False):
 #        print "QUERY", node
@@ -345,7 +345,7 @@ class UnifyingETypeResolver:
 
         sols = node.accept(self)
         # XXX: make sure sols are reported only once
-        sols = [ flatten_features(f) for f in sols ]
+        sols = [flatten_features(f) for f in sols]
         if not sols:
             raise TypeResolverException(
                 'Unable to resolve variables types in "%s"!!'%node)

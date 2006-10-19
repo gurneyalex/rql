@@ -4,8 +4,6 @@ Copyright (c) 2004-2005 LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
-__revision__ = "$Id: __init__.py,v 1.30 2006-05-01 13:01:56 syt Exp $"
-
 import sys
 import threading
 from cStringIO import StringIO
@@ -41,14 +39,16 @@ class RQLHelper:
         self.set_schema(schema)
         
     def set_schema(self, schema):
-        self.e_types = e_types = {}
-        for e_type in schema.entities():
-            if is_keyword(e_type) or e_type.capitalize() == 'Any':
-                raise UsesReservedWord(e_type)
-            e_types[e_type] = e_type
-        for r_type in schema.relations():
-            if is_keyword(r_type) or r_type.lower() == 'is':
-                raise UsesReservedWord(r_type)
+        self.e_types = etypes = {}
+        for etype in schema.entities():
+            etype = str(etype)
+            if is_keyword(etype) or etype.capitalize() == 'Any':
+                raise UsesReservedWord(etype)
+            etypes[etype] = etype
+        for rtype in schema.relations():
+            rtype = str(rtype)
+            if is_keyword(rtype) or rtype.lower() == 'is':
+                raise UsesReservedWord(rtype)
         self._rql_checker.schema = schema
         self._rql_analyser.set_schema(schema)
         
