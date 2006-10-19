@@ -4,8 +4,6 @@
 RQL Syntax tree checker
 """
 
-__revision__ = "$Id: stcheck.py,v 1.24 2006-04-27 10:25:03 syt Exp $"
-
 from rql import nodes
 from rql._exceptions import BadRQLQuery
 from rql.utils import is_function, iget_nodes
@@ -96,11 +94,17 @@ class RQLSTChecker:
         if select.distinct: # distinct, all variables used in sort must be selected
             selected = [_name(v) for v in select.selected]
             for sortterm in sort:
-                var = sortterm.var
-                if not _name(var) in selected:
-                    msg = 'Orderby expression "%s" should appear in the selected \
+                if not _name(sortterm.var) in selected:
+                    butvariable = False
+                    for var in sortterm.var.get_nodes(nodes.VariableRef):
+                        if not _name(var) in selected:
+                            break
+                    else:
+                        butvariable = True
+                    if not butvariable:
+                        msg = 'Orderby expression "%s" should appear in the selected \
 variables'
-                    errors.append(msg % var)
+                        errors.append(msg % var)
         else: # check sort variables are defined be selected
             self._check_selected(sort, 'sort', errors)
                     
@@ -191,9 +195,12 @@ variables'
         elif function.name in ('UPPER', 'LOWER'):
             assert len(function.children) == 1
         elif function.name == 'IN':
-            #assert not function in function.root().selected
-            assert len(function.children) >= 1
             assert function.parent.operator == '='
+            if len(function.children) == 1:
+                function.parent.append(function.children[0])
+                function.parent.remove(function)
+            else:
+                assert len(function.children) >= 1
 
     def visit_variableref(self, variableref, errors):
         assert len(variableref.children)==0

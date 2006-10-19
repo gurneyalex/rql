@@ -130,6 +130,13 @@ class ETypeResolver:
                 (lhs.name,), '%s in %s ' % (lhs.name, types)))
             return
         elif rtype in self.uid_func_mapping:
+            # ignore uid values if lhs is related to a NOT relation
+            if relation._not:
+                return
+            for varref in lhs.variable.references():
+                rel = varref.relation()
+                if rel is not None and rel._not:
+                    return
             eids = []
             for cst in iget_nodes(rhs, nodes.Constant):
                 # if there is one None (NULL) constant type,
