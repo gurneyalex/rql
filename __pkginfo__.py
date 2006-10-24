@@ -31,15 +31,3 @@ pyversions = ['2.3', '2.4']
 
 
 include_dirs = []
-
-## from distutils.core import Extension
-## ext_modules = [Extension('rql.rqlparse',
-##                          ['rqlmodule/rqlmodule.cc',
-##                           'rqlmodule/nodes.cc',
-##                           'rqlmodule/rql_parser.cc',
-##                           'rqlmodule/rql_scanner.cc',
-##                           'rqlmodule/rql_token.cc',
-##                           ],
-## #                         extra_compile_args = ["-O0"],
-##                          ),
-##                ]
