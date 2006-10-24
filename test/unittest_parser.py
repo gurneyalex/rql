@@ -1,13 +1,12 @@
 # -*- coding: ISO-8859-1 -*-
-""" Copyright (c) 2002-2004 LOGILAB S.A. (Paris, FRANCE).
+""" Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE).
  http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
-__revision__ = "$Id: unittest_parser.py,v 1.21 2006-02-20 02:06:09 ludal Exp $"
-
 from logilab.common.testlib import TestCase, unittest_main
 
-from rql.parser import Hercule, HerculeScanner, SyntaxError, print_error
+from yapps.runtime import print_error, SyntaxError
+from rql.parser import Hercule, HerculeScanner
 from rql import BadRQLQuery, RQLSyntaxError, nodes, stmts, parse
 from rql import parse
 
@@ -56,6 +55,11 @@ SPEC_QUERIES = (
     'INSERT Person X : X name "bidule", Y workfor X WHERE Y name "logilab";',
     'DISTINCT Any X,A,B,C,D WHERE P eid 41, X concerns P, P is Project, X is Story,X title A,X state B,X priority C,X cost D ORDERBY A ASC;',
     'Any X WHERE X has_text "2.12.0";',
+    'Any X,A,B,C,D WHERE X concerns 41,X title A,X state B,X priority C,X cost D ORDERBY A ASC;',
+
+    # optional relation support (left outer join)
+    'Any X,Y,A WHERE X concerns? Y, Y title A;',
+    
     )
 
 E_TYPES = {"Person" : 'Person',
@@ -69,11 +73,10 @@ class ParserHercule(TestCase):
         try:
             parser = Hercule(HerculeScanner(string))
             return parser.goal(E_TYPES)
-        except SyntaxError, s:
+        except SyntaxError, ex:
             if print_errors:
                 # try to get error message from yapps
-                input = parser._scanner.input
-                print_error(input, s, parser._scanner)
+                print_error(ex, parser._scanner)
                 print
             raise
 
@@ -158,36 +161,36 @@ class ParserHercule(TestCase):
         self.assertEquals(cste.type, 'Substitute')
         self.assertEquals(cste.value, 'firstname')
 
+    def test_optional_relation(self):
+        tree = self.parse(r'Any X WHERE X related Y;')
+        related = tree.children[0]
+        self.assertEquals(related.optional, False)
+        tree = self.parse(r'Any X WHERE X ?related Y;')
+        related = tree.children[0]
+        self.assertEquals(related.optional, True)
+
     def test_spec(self):
         """test all RQL string found in the specification and test they are well parsed"""
-#        print
         for rql in SPEC_QUERIES:
-            rqltree = self.parse(rql)
 #            print "Orig:", rql
 #            print "Resu:", rqltree
-            self.assert_(rqltree is not None)
+            yield self.assert_, self.parse(rql)
 
     def test_raise_badsyntax_error(self):
         for rql in BAD_SYNTAX_QUERIES:
-            try:
-                self.assertRaises(self._syntaxerr, self.parse, rql, print_errors=False)
-            except AssertionError:
-                self.fail('parsing %r should raises SyntaxError' % rql)
+            yield self.assertRaises, self._syntaxerr, self.parse, rql
 
-    def test_raise_syntax_error(self):
+    def test_raise_badrqlquery(self):
         BAD_QUERIES = ('Person Marcou;',)
         for rql in BAD_QUERIES:
-            try:
-                self.assertRaises(BadRQLQuery, self.parse, rql, print_errors=0)
-            except AssertionError:
-                self.fail('parsing %r should raises BadRQLQuery' % rql)
+            yield self.assertRaises, BadRQLQuery, self.parse, rql
 
 
 class ParserRQLHelper(ParserHercule):
     _syntaxerr = RQLSyntaxError
 
-    def parse(self, string, print_errors=True):
-        return parse( string, E_TYPES, print_errors )
+    def parse(self, string, print_errors=False):
+        return parse(string, E_TYPES, print_errors)
 
      
 if __name__ == '__main__':

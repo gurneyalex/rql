@@ -3,33 +3,18 @@
 """
 
 from logilab.common.testlib import TestCase, unittest_main
-
+from unittest_analyze import DummySchema
 from rql import RQLHelper, BadRQLQuery
-
-class DummySchema:
-    def has_entity(self, e_type):
-        if e_type == 'Missing':
-            return 0
-        return 1
-    def has_relation(self, r_type):
-        if r_type == 'nonexistant':
-            return 0
-        return 1
-    def entities(self):
-        return ['Person']
-    def relations(self):
-        return []
+    
     
 BAD_QUERIES = (
     'Any X, Y GROUPBY X',
     
-    'DISTINCT Any X WHERE X related Y ORDERBY Y',
+    'DISTINCT Any X WHERE X work_for Y ORDERBY Y',
     
     'Missing X',
     
     'Any X WHERE X is "Missing"',
-
-    'Any X WHERE X nonexistant Y',
     
     'Any X WHERE X name Person',
     
@@ -41,7 +26,7 @@ BAD_QUERIES = (
     
     'Any UPPER(Y) WHERE X name "toto"',
 
-    'Any C where C suivi_par P, P eid %(x)s ORDERBY N', #15066
+    'Any C where C located P, P eid %(x)s ORDERBY N', #15066
 
 #    'Any COUNT(X),P WHERE X concerns P', #9726
     )
@@ -51,13 +36,10 @@ class CheckClassTest(TestCase):
     """
     
     def setUp(self):
-        self.parse = RQLHelper(DummySchema(), None).parse
+        self.parse = RQLHelper(DummySchema(), None,
+                               {'eid': 'uid'}).parse
         
     def _test(self, rql):
-        #try:
-        #    self.parse(rql)
-        #except Exception, ex:
-        #    print rql, ex
         try:
             self.assertRaises(BadRQLQuery, self.parse, rql)
         except:
@@ -67,6 +49,40 @@ class CheckClassTest(TestCase):
     def test_raise(self):
         for rql in BAD_QUERIES:
             yield self._test, rql
+        
+    def _test_rewrite(self, rql, expected):
+        self.assertEquals(self.parse(rql).as_string(), expected)
+        
+    def test_rewrite(self):
+        for rql, expected in (
+            ('Person X',
+             'Any X WHERE X is Person'),
+            ("Any X WHERE X eid IN (12), X name 'toto'",
+             "Any X WHERE X eid 12, X name 'toto'"),
+            ('Any X WHERE X work_for Y, Y eid 12',
+             'Any X WHERE X work_for 12'),
+            ('Any X WHERE Y work_for X, Y eid 12',
+             'Any X WHERE 12 work_for X'),
+            ('Any X WHERE X work_for Y, Y eid IN (12)',
+             'Any X WHERE X work_for 12'),
+            ('Any X WHERE X eid 12',
+             'Any 12'),
+            ('Any X WHERE X is Person, X eid 12',
+             'Any 12'),
+            ('Any X,Y WHERE X eid 0, Y eid 1, X work_for Y', 'Any 0,1 WHERE 0 work_for 1'),
+            ('Any X,Y WHERE X work_for Y OR NOT X work_for Y', 'Any X,Y WHERE X ?work_for Y'),
+            ('Any X,Y WHERE NOT X work_for Y OR X work_for Y', 'Any X,Y WHERE X ?work_for Y'),
+            # test symetric OR rewrite
+            ("DISTINCT Any P WHERE P connait S OR S connait P, S nom 'chouette'",
+             "DISTINCT Any P WHERE P connait S, S nom 'chouette'"),
+            # queries that should not be rewritten
+            ('DELETE Person X WHERE X eid 12', 'DELETE Person X WHERE X eid 12'),
+            ('Any X WHERE X work_for Y, Y eid IN (12, 13)', 'Any X WHERE X work_for Y, Y eid IN(12, 13)'),
+            ('Any X WHERE X work_for Y, NOT Y eid 12', 'Any X WHERE X work_for Y, NOT Y eid 12'),
+            ('Any X WHERE NOT X eid 12', 'Any X WHERE NOT X eid 12'),
+            ('Any N WHERE X eid 12, X name N', 'Any N WHERE X eid 12, X name N'),
+            ):
+            yield self._test_rewrite, rql, expected
         
 if __name__ == '__main__':
     unittest_main()

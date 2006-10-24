@@ -1,6 +1,6 @@
 """RQL implementation independant library.
 
-Copyright (c) 2004-2005 LOGILAB S.A. (Paris, FRANCE).
+Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
@@ -8,12 +8,13 @@ import sys
 import threading
 from cStringIO import StringIO
 
+from yapps.runtime import print_error, SyntaxError, NoMoreTokens
+
 from rql._exceptions import *
 from rql.interfaces import *
-from rql.parser import Hercule, HerculeScanner, print_error, \
-     SyntaxError, NoMoreTokens
+from rql.parser import Hercule, HerculeScanner
 from rql.nodes import Constant
-from rql.stcheck import RQLSTChecker
+from rql.stcheck import RQLSTAnnotator
 from rql.analyze import ETypeResolver
 from rql.compare import compare_tree
 from rql.utils import is_keyword, get_nodes
@@ -28,14 +29,19 @@ class RQLHelper:
       - variables type resolving
       - comparison of two queries
     """
-    def __init__(self, schema, uid_func_mapping=None, Resolver=ETypeResolver):
+    def __init__(self, schema, uid_func_mapping=None, special_relations=None,
+                 Resolver=ETypeResolver):
         # chech schema
         #for e_type in REQUIRED_TYPES:
         #    if not schema.has_entity(e_type):
         #        raise MissingType(e_type)
         # create helpers
-        self._rql_checker = RQLSTChecker(schema)
-        self._rql_analyser = Resolver(schema, uid_func_mapping)
+        special_relations = special_relations or {}
+        if uid_func_mapping:
+            for key in uid_func_mapping:
+                special_relations[key] = 'uid'
+        self._annotator = RQLSTAnnotator(schema, special_relations)
+        self._analyser = Resolver(schema, uid_func_mapping)
         self.set_schema(schema)
         
     def set_schema(self, schema):
@@ -49,55 +55,55 @@ class RQLHelper:
             rtype = str(rtype)
             if is_keyword(rtype) or rtype.lower() == 'is':
                 raise UsesReservedWord(rtype)
-        self._rql_checker.schema = schema
-        self._rql_analyser.set_schema(schema)
-        
-    def parse(self, rql_string):
-        """return a syntax tree from an sql string"""
-        tree = parse(rql_string, self.e_types)
-        # check for errors not detectable at parsing time
-        self._rql_checker.visit(tree)
-        # ok, return the tree
-        return tree
+        self._annotator.schema = schema
+        self._analyser.set_schema(schema)
 
-    def get_solutions(self, rql_st, uid_func_mapping=None, kwargs=None, debug=False):
+    def parse(self, rqlstring):
+        """return a syntax tree from an sql string"""
+        tree = parse(rqlstring, self.e_types)
+        self._annotator.annotate(tree, checkselected=True)
+        return tree
+    
+    def annotate(self, rqlst, checkselected=False):
+        self._annotator.annotate(rqlst, checkselected=checkselected)
+
+    def get_solutions(self, rqlst, uid_func_mapping=None, kwargs=None, debug=False):
         """return a list of solutions for variables of the syntax tree
 
         each solution is a dictionary with variable's name as key and
         variable's type as value
         """
-        return self._rql_analyser.visit(rql_st, uid_func_mapping, kwargs, debug)
+        return self._analyser.visit(rqlst, uid_func_mapping, kwargs, debug)
 
-    def compare(self, rql_string1, rql_string2):
+    def compare(self, rqlstring1, rqlstring2):
         """compares 2 RQL requests
         
         returns true if both requests would return the same results
         returns false otherwise
         """
-        return compare_tree(self.parse(rql_string1),
-                            self.parse(rql_string2))
+        return compare_tree(self.parse(rqlstring1),
+                            self.parse(rqlstring2))
 
         
-def parse(rql_string, e_types=None, print_errors=True): 
+def parse(rqlstring, e_types=None, print_errors=True): 
     """return a syntax tree from an sql string"""   
     # make sure rql string ends with a semi-colon
-    rql_string = rql_string.strip()
-    if rql_string and not rql_string.endswith(';') :
-        rql_string += ';'
+    rqlstring = rqlstring.strip()
+    if rqlstring and not rqlstring.endswith(';') :
+        rqlstring += ';'
     # parse the RQL string
-    parser = Hercule(HerculeScanner(rql_string))
+    parser = Hercule(HerculeScanner(rqlstring))
     try:
         return parser.goal(e_types)
     except SyntaxError, ex:
         if not print_errors:
             raise RQLSyntaxError(ex.msg)
         # try to get error message from yapps
-        pinput = parser._scanner.input
         try:
             out = sys.stdout
             sys.stdout = stream = StringIO()
             try:
-                print_error(pinput, ex, parser._scanner)
+                print_error(ex, parser._scanner)
             finally:
                 sys.stdout = out
             raise RQLSyntaxError(stream.getvalue())
@@ -110,10 +116,3 @@ def parse(rql_string, e_types=None, print_errors=True):
         raise RQLSyntaxError(msg  % parser._scanner)
 
 pyparse = parse
-
-#try:
-#    from rql.crql import parse
-#except ImportError:
-#    pass
-#    #print "Falling back to python version of the RQL parser!"
-

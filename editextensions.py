@@ -4,7 +4,6 @@ Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
-__revision__ = "$Id: editextensions.py,v 1.12 2006-05-02 12:25:39 syt Exp $"
 
 from rql.stmts import Select
 from rql.nodes import Constant, Variable, VariableRef, Comparison, AND, \
@@ -60,14 +59,12 @@ def undefine_variable(self, var):
         if rel is not None:
             self.remove_node(rel)
             continue
-        if varref.parent is None: # selected variable
-            self.remove_selected(varref)
         elif varref.parent.TYPE == 'sortterm':
             self.remove_sort_term(varref.parent)
         elif varref.parent.TYPE == 'group':
             self.remove_group_variable(varref)
-        else:
-            self.remove_node(varref)
+        else: # selected variable
+            self.remove_selected(varref)
     # effective undefine operation
     if self.memorizing and not self.undoing:
         self.undo_manager.add_operation(UndefineVarOperation(var))
@@ -82,21 +79,26 @@ def remove_selected(self, var):
     index = var_index(self.selected, var)
     if self.memorizing and not self.undoing:
         self.undo_manager.add_operation(UnselectVarOperation(var, index))
-    var = self.selected.pop(index)
-    var.unregister_reference()
+    for var in self.selected.pop(index).get_nodes(VariableRef):
+        var.unregister_reference()
     check_relations(self)
 Select.remove_selected = remove_selected
 
-def add_selected(self, var, index=None):
+def add_selected(self, term, index=None):
     """override Select.add_selected to memoize modification when needed"""
-    var = variable_ref(var)
-    var.register_reference()
-    if index is not None:
-        self.selected.insert(index, var)
+    if isinstance(term, Variable):
+        term = VariableRef(term, noautoref=1)
+        term.register_reference()
     else:
-        self.selected.append(var)
+        for var in term.get_nodes(VariableRef):
+            var = variable_ref(var)
+            var.register_reference()
+    if index is not None:
+        self.selected.insert(index, term)
+    else:
+        self.selected.append(term)
     if self.memorizing and not self.undoing:
-        self.undo_manager.add_operation(SelectVarOperation(var))
+        self.undo_manager.add_operation(SelectVarOperation(term))
     check_relations(self)
 Select.add_selected = add_selected
 

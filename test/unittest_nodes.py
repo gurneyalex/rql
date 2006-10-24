@@ -197,15 +197,15 @@ class NodesTest(TestCase):
         repr(tree)
         
     def check_equal_but_not_same(self, tree1, tree2):
-        d1 = tree1.__dict__.copy()
+        #d1 = tree1.__dict__.copy()
         #del d1['parent']; del d1['children'] # parent and children are slots now
-        d2 = tree2.__dict__.copy()
+        #d2 = tree2.__dict__.copy()
         #del d2['parent']; del d2['children']
-        self.assertEquals(d1, d2)
         self.assertNotEquals(id(tree1), id(tree2))
-        self.assertEquals(len(tree1.children), len(tree2.children))
-        for i in range(len(tree1.children)):
-            self.check_equal_but_not_same(tree1.children[i], tree2.children[i])
+        self.assert_(tree1.is_equivalent(tree2))
+        #self.assertEquals(len(tree1.children), len(tree2.children))
+        #for i in range(len(tree1.children)):
+        #    self.check_equal_but_not_same(tree1.children[i], tree2.children[i])
             
     # insertion tests #########################################################
 

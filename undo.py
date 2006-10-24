@@ -123,7 +123,7 @@ class RemoveNodeOperation(NodeOperation):
     def __init__(self, node):
         NodeOperation.__init__(self, node)
         self.node_parent = node.parent
-        self.index = self.node_parent.children.index(node)
+        self.index = node.parent.children.index(node)
         # XXX FIXME : find a better way to do that
         # needed when removing a BinaryNode's child
         self.binary_remove = isinstance(self.node_parent, BinaryNode)

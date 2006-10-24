@@ -1,10 +1,8 @@
 """yapps input grammar for RQL.
 
-Copyright (c) 2002-2005 LOGILAB S.A. (Paris, FRANCE).
+Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
-
-__revision__ = "$Id: parser.g,v 1.17 2006-03-27 18:10:12 syt Exp $"
 
 
 from rql.stmts import Select, Delete, Insert, Update
@@ -53,6 +51,7 @@ parser Hercule:
     token R_TYPE:      r'[a-z][a-z0-9_]+'
     token E_TYPE:      r'[A-Z][a-z]+[a-z0-9]*'
     token VARIABLE:    r'[A-Z][A-Z0-9_]*'
+    token QMARK:       r'\?'
 
     token STRING:      r"'([^\'\\]|\\.)*'|\"([^\\\"\\]|\\.)*\""
     token FLOAT:       r'\d+\.\d*'
@@ -179,22 +178,24 @@ rule ored_rels<<V>>: anded_rels<<V>>  {{ lhs = anded_rels }}
                      )*                 {{ return lhs }}
 
 
-rule anded_rels<<V>>: rel<<V>>         {{ lhs = rel }}
-                         (  AND rel<<V>> {{ lhs = _AND(lhs,rel) }}
-                             )*         {{ return lhs }}
+rule anded_rels<<V>>: rel<<V>>        {{ lhs = rel }}
+                      (  AND rel<<V>> {{ lhs = _AND(lhs,rel) }}
+                      )*              {{ return lhs }}
 
 
-rule rel<<V>>: NOT base_rel<<V>>     {{ base_rel._not = 1; return base_rel }} 
+rule rel<<V>>: NOT base_rel<<V>>       {{ base_rel._not = 1; return base_rel }} 
 
                | base_rel<<V>>         {{ return base_rel }}
 
                | r"\(" rels<<V>> r"\)" {{ return rels }}
 
 
-rule base_rel<<V>>: var<<V>> R_TYPE {{ e = Relation(R_TYPE) ; e.append(var) }} 
-                    expr<<V>>       {{ e.append(expr) ; return e }}
+rule base_rel<<V>>: var<<V>> opt_rtype<<V>> {{ opt_rtype.append(var) }} 
+                    expr<<V>>               {{ opt_rtype.append(expr) ; return opt_rtype }}
 
-
+rule opt_rtype<<V>>: QMARK R_TYPE {{ return Relation(R_TYPE, optional=True) }}
+                     | R_TYPE     {{ return Relation(R_TYPE, optional=False) }}
+                    
 # common statements ###########################################################
 
 rule vars_decl<<V>>: E_TYPE var<<V>> (     {{ V.add_main_variable(E_TYPE, var) }}
@@ -214,21 +215,21 @@ rule expr<<V>>: CMP_OP added_expr<<V>> {{ return Comparison(CMP_OP.upper(), adde
                 | added_expr<<V>>      {{ return Comparison('=', added_expr) }}
 
 
-rule added_expr<<V>>: muled_expr<<V>>       {{ lhs = muled_expr }}
-                        ( ADD_OP muled_expr<<V>> {{ lhs = MathExpression( ADD_OP, lhs, muled_expr ) }}
-                        )*                       {{ return lhs }}
+rule added_expr<<V>>: muled_expr<<V>>          {{ lhs = muled_expr }}
+                      ( ADD_OP muled_expr<<V>> {{ lhs = MathExpression( ADD_OP, lhs, muled_expr ) }}
+                      )*                       {{ return lhs }}
 
 
-rule muled_expr<<V>>: base_expr<<V>>       {{ lhs = base_expr }}
-                       ( MUL_OP base_expr<<V>> {{ lhs = MathExpression( MUL_OP, lhs, base_expr) }}
-                        )*                      {{ return lhs }}
+rule muled_expr<<V>>: base_expr<<V>>          {{ lhs = base_expr }}
+                      ( MUL_OP base_expr<<V>> {{ lhs = MathExpression( MUL_OP, lhs, base_expr) }}
+                      )*                      {{ return lhs }}
 
 
 rule base_expr<<V>>: const                         {{ return const }}
 
-                     | var<<V>>                      {{ return var }} 
+                     | var<<V>>                    {{ return var }} 
 
-                     | e_type<<V>>                   {{ return e_type }} 
+                     | e_type<<V>>                 {{ return e_type }} 
 
                      | func<<V>>                   {{ return func }}
 
@@ -247,12 +248,12 @@ rule var<<V>>: VARIABLE {{ return VariableRef(V.get_variable(VARIABLE)) }}
 rule e_type<<V>>: E_TYPE {{ return V.get_type(E_TYPE) }} 
 
 
-rule const: NULL      {{ return Constant('NULL', None) }}
-          | DATE      {{ return Constant(DATE.upper(), 'Date') }}
-          | DATETIME  {{ return Constant(DATETIME.upper(), 'Datetime') }}
-          | BOOLEAN   {{ return Constant(BOOLEAN.lower(), 'Boolean') }}
-          | FLOAT     {{ return Constant(float(FLOAT), 'Float') }}
-          | INT       {{ return Constant(int(INT), 'Int') }}
-          | STRING    {{ return Constant(unquote(STRING), 'String') }}
+rule const: NULL       {{ return Constant('NULL', None) }}
+          | DATE       {{ return Constant(DATE.upper(), 'Date') }}
+          | DATETIME   {{ return Constant(DATETIME.upper(), 'Datetime') }}
+          | BOOLEAN    {{ return Constant(BOOLEAN.lower(), 'Boolean') }}
+          | FLOAT      {{ return Constant(float(FLOAT), 'Float') }}
+          | INT        {{ return Constant(int(INT), 'Int') }}
+          | STRING     {{ return Constant(unquote(STRING), 'String') }}
           | SUBSTITUTE {{ return Constant(SUBSTITUTE[2:-2], 'Substitute') }}
                        

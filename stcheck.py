@@ -1,65 +1,136 @@
-"""Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).
+"""Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE).
  http://www.logilab.fr/ -- mailto:contact@logilab.fr
  
-RQL Syntax tree checker
+RQL Syntax tree annotator
 """
 
 from rql import nodes
 from rql._exceptions import BadRQLQuery
-from rql.utils import is_function, iget_nodes
+from rql.utils import is_function
 
-class RQLSTChecker:
-    """ Check a RQL syntax tree for errors not detected on parsing
+class GoTo(Exception):
+    """exception used to control the visit of the tree"""
+    def __init__(self, node):
+        self.node = node
+        
+def is_left_outer_join(ornode):
+    """return True if the given OR node is actually a left outer join
+    (constructs like 'NOT X travaille S OR X travaille S')
+    """
+    if len(ornode.children) == 2:
+        rel1, rel2 = ornode.children
+        if (rel1.r_type == rel2.r_type and rel1._not == (not rel2._not) and
+            rel1.children[0].name == rel2.children[0].name and
+            rel1.children[1].children[0].name == rel2.children[1].children[0].name):
+            # this is a left outer join
+            return True
+    return False
+
+
+class RQLSTAnnotator:
+    """ check a RQL syntax tree for errors not detected on parsing and annotate
+    it on the way to ease further code generation from it. Some simple rewriting
+    of the tree may be done too
     
-    use assertions for internal error but specific exceptions for errors due to
-    a bad rql input
+    use assertions for internal error but specific `BadRQLQuery ` exception for
+    errors due to a bad rql input
     """
 
-    def __init__(self, schema):
+    def __init__(self, schema, special_relations=None):
         self.schema = schema
+        self.special_relations = special_relations or {}
 
-    def visit(self, node):
+    def annotate(self, node, checkselected=True):
+        self._checkselected = checkselected # XXX thread safety
         errors = []
+        for i, term in enumerate(node.selected_terms()):
+            for varref in term.get_nodes(nodes.VariableRef):
+                varref.variable.stinfo['selected'].add(i)
         self._visit(node, errors)
         if errors:
             raise BadRQLQuery('\n** %s'%'\n** '.join(errors))
-        
+        # rewrite "Any X WHERE X relation Y, Y uid 12" into
+        # "Any X WHERE X relation 12"
+        if node.TYPE in ('delete', 'insert', 'update'):
+            return
+        for var in node.defined_vars.values():
+            stinfo = var.stinfo
+            if stinfo['constnode'] and not stinfo['finalrels']:
+                assert len(stinfo['uidrels']) == 1, var
+                uidrel = stinfo['uidrels'].pop()
+                var = uidrel.children[0].variable
+                rhs = uidrel.children[1].children[0]
+                for varref in var.references():
+                    rel = varref.relation()
+                    assert varref.parent
+                    if rel and (rel is uidrel or rel.r_type == 'is'):
+                        # drop this relation
+                        rel.parent.remove(rel)
+                    else:
+                        rhs = rhs.copy(node)
+                        # substitute rhs
+                        if rel and uidrel._not:
+                            rel._not = rel._not or uidrel._not
+                        varref.parent.replace(varref, rhs)
+                del node.defined_vars[var.name]
+                
+        #if node.TYPE == 'select' and \
+        #       not node.defined_vars and not node.get_restriction():
+        #    result = []
+        #    for term in node.selected_terms():
+        #        result.append(term.eval(kwargs))
+            
     def _visit(self, node, errors):
-        func = getattr(self, 'visit_%s' % node.__class__.__name__.lower())
-        func(node, errors)
-        #node.accept(self, errors)
-        for c in node.children:
-            self._visit(c, errors)
+        skipfurther = False
+        try:
+            node.accept(self, errors)
+        except GoTo, ex:
+            skipfurther = True
+            self._visit(ex.node, errors)
+        except AttributeError:
+            pass
+        if not skipfurther:
+            for c in node.children:
+                self._visit(c, errors)
+            try:
+                node.leave(self, errors)
+            except AttributeError:
+                pass
+                    
+    def _check_selected(self, term, termtype, errors):
+        for var in term.get_nodes(nodes.VariableRef):
+            var = var.variable
+            rels = [v for v in var.references() if v.relation() is not None]
+            if not rels:
+                msg = 'variable %s used in %s is not defined in the selection'
+                errors.append(msg % (var.name, termtype))
 
-
+    # statement nodes #########################################################
+    
     def visit_insert(self, insert, errors):
         assert len(insert.children) <= 1
-        
-#        assert insert.insert_variables
 
     def visit_delete(self, delete, errors):
         assert len(delete.children) <= 1
-#        assert delete.delete_variables or delete.delete_relations
         
     def visit_update(self, update, errors):
-        assert len(update.children) <= 1
-#        assert update.update_relations
+        assert len(update.children) <= 1        
         
-
-    def visit_select(self, selection, errors):
+    def leave_select(self, selection, errors):
         assert len(selection.children) <= 3
-        # check aggregat function
-##         tocheck = 0
-##         vars = []
         selected = selection.selected
+        if not self._checkselected:
+            return
         restr = selection.get_restriction()
-        for term in selected:
-            for var in term.get_nodes(nodes.VariableRef):
-                if (restr is not None or len(selected) > 1) and \
-                   len(var.variable.references()) == 1:
-                    msg = 'Selected variable %s is not referenced by any relation'
-                    errors.append(msg % var.name)
-                var.accept(self, errors)
+        # check selected variable are used in restriction
+        if restr is not None or len(selected) > 1:
+            for term in selected:
+                for varref in term.get_nodes(nodes.VariableRef):
+                    if len(varref.variable.references()) == 1:
+                        msg = 'selected variable %s is not referenced by any relation'
+                        errors.append(msg % varref.name)
+                    varref.accept(self, errors)
+        # XXX check aggregat function
 ##             if var.TYPE == 'function':
 ##                 tocheck = 1
 ##             else:
@@ -72,13 +143,18 @@ class RQLSTChecker:
 ##                 if not var in groups:
 ##                     errors.append('Variable %s should be grouped' % var)
 
+
+    # tree nodes ##############################################################
         
     def visit_group(self, group, errors):
         """check that selected variables are used in groups """
         for var in group.root().selected:
             if isinstance(var, nodes.VariableRef) and not var in group:
-                errors.append('Variable %s should be grouped' % var)
+                errors.append('variable %s should be grouped' % var)
         self._check_selected(group, 'group', errors)
+        for term in group.children:
+            for varref in term.get_nodes(nodes.VariableRef):
+                varref.variable.stinfo['group'] = group
                 
     def visit_sort(self, sort, errors):
         """check that variables used in sort are selected on DISTINCT query
@@ -87,7 +163,7 @@ class RQLSTChecker:
             name = [term.name]
             if term.children:
                 # not a variable
-                for var in iget_nodes(term, nodes.VariableRef):
+                for var in term.get_nodes(nodes.VariableRef):
                     name.append(var.name)
             return '_'.join(name)
         select = sort.root()
@@ -102,19 +178,17 @@ class RQLSTChecker:
                     else:
                         butvariable = True
                     if not butvariable:
-                        msg = 'Orderby expression "%s" should appear in the selected \
+                        msg = 'orderby expression "%s" should appear in the selected \
 variables'
                         errors.append(msg % var)
-        else: # check sort variables are defined be selected
+                for varref in sortterm.var.get_nodes(nodes.VariableRef):
+                    varref.variable.stinfo['sort'] = sort
+                        
+        else: # check sort variables are selected
             self._check_selected(sort, 'sort', errors)
-                    
-    def _check_selected(self, term, termtype, errors):
-        for var in iget_nodes(term, nodes.VariableRef):
-            var = var.variable
-            rels = [v for v in var.references() if v.relation() is not None]
-            if not rels:
-                msg = 'Variable %s used in %s is not defined in the selection'
-                errors.append(msg % (var.name, termtype))
+    
+    def visit_sortterm(self, sortterm, errors):
+        pass
     
                     
     def visit_offset(self, offset, errors):
@@ -125,59 +199,74 @@ variables'
         assert len(limit.children) == 1, len(limit.children)
         assert int(limit.limit.value)
     
-    def visit_sortterm(self, sortterm, errors):
-        pass
-    
     def visit_and(self, et, errors):
         assert len(et.children) == 2, len(et.children)
         
     def visit_or(self, ou, errors):
         assert len(ou.children) == 2, len(ou.children)
         r1, r2 = ou.children[0], ou.children[1]
-        try:
-            r1type = r1.r_type
-            r2type = r2.r_type
-        except AttributeError:
-            return
+        r1type = r1.r_type
+        r2type = r2.r_type
+        # XXX remove variable refs
+        # simplify left outer join expression
+        if is_left_outer_join(ou):
+            r1.optional = True
+            r1._not = False
+            ou.parent.replace(ou, r1)
+            raise GoTo(r1)
+        # simplify Ored expression of a symetric relation
         if r1type == r2type and self.schema.rschema(r1type).symetric:
             lhs1, rhs1 = r1.get_variable_parts()
             lhs2, rhs2 = r2.get_variable_parts()
             try:
                 if (lhs1.variable is rhs2.variable and
                     rhs1.variable is lhs2.variable):
-                    pchildren = ou.parent.children
-                    pchildren[pchildren.index(ou)] = r1
+                    ou.parent.replace(ou, r1)
+                    raise GoTo(r1)
             except AttributeError:
-                pass # XXX
-                    
-    def visit_relation(self, relation, errors):
-        lhs, rhs = relation.get_parts()
-        assert isinstance(lhs, nodes.VariableRef), '%s: %s' % (lhs.__class__,
-                                                               relation)
-        assert isinstance(rhs, nodes.Comparison), rhs.__class__
+                pass
         
-        #assert (isinstance(lhs, nodes.VariableRef)
-        #        or isinstance(lhs, nodes.Function))
-        r_type = relation.r_type
-        if r_type == 'is':
+    def leave_relation(self, relation, errors):
+        lhs, rhs = relation.get_parts()
+        #assert isinstance(lhs, nodes.VariableRef), '%s: %s' % (lhs.__class__,
+        #                                                       relation)
+        assert isinstance(rhs, nodes.Comparison), rhs.__class__
+        assert not (relation._not and relation.optional)
+        lhs, rhs = relation.get_parts()
+        rtype = relation.r_type
+        lhsvar = lhs.variable
+        if rtype == 'is':
             assert rhs.operator == '='
-            for c in iget_nodes(rhs, nodes.Constant):
+            lhsvar.stinfo['typerels'].add(relation)
+            for c in rhs.get_nodes(nodes.Constant):
                 c.value = e_type = c.value.capitalize()
                 if not self.schema.has_entity(e_type):
-                    errors.append('Unkwnown entity\'s type "%s"'% e_type)
-        elif self.schema.has_relation(r_type):
-            lhs, rhs = relation.get_parts()
-            # expand attribute if necessary
-            if not lhs.is_variable() and not rhs.is_variable():
-                errors.append('No variable in relation : "%s"' % relation)
-##             else:
-##                 assert rhs.operator == '='
-##                 assert isinstance(rhs.children[0], nodes.VariableRef), \
-##                        rhs.children[0]
+                    errors.append('unkwnown entity\'s type "%s"'% e_type)
+            return
+        lhsvar.stinfo['relations'].add(relation)
+        lhsvar.stinfo['lhsrelations'].add(relation)
+        try:
+            rschema = self.schema.rschema(rtype)
+        except KeyError:
+            rschema = None # no schema for "has_text" relation for instance
+            
+        if rtype in self.special_relations:
+            key = '%srels' % self.special_relations[rtype]
+            lhsvar.stinfo.setdefault(key, set()).add(relation)
+            if key == 'uidrels':
+                constnode = relation.get_variable_parts()[1]
+                if not relation._not and isinstance(constnode, nodes.Constant):
+                    lhsvar.stinfo['constnode'] = constnode
         else:
-            errors.append('No relation named "%s"' % r_type)
-        
-        
+            if rschema.is_final() or rschema.physical_mode() == 'subjectinline':
+                lhsvar.stinfo['finalrels'].add(relation)
+        for varref in rhs.get_nodes(nodes.VariableRef):
+            varref.variable.stinfo['relations'].add(relation)
+            varref.variable.stinfo['rhsrelations'].add(relation)
+            if rschema and rschema.is_final():
+                varref.variable.stinfo['attrvar'] = lhsvar
+                #varref.variable.stinfo['finalrels'].add(relation)
+            
     def visit_comparison(self, comparison, errors):
         assert len(comparison.children) == 1, len(comparison.children)
     
@@ -186,7 +275,7 @@ variables'
         
     def visit_function(self, function, errors):
         if not is_function(function.name):
-            errors.append('Unknown function "%s"' % function.name)
+            errors.append('unknown function "%s"' % function.name)
         
         if function.name in ("COUNT", "MIN", "MAX", "AVG", "SUM"):
             assert len(function.children) == 1
@@ -208,7 +297,7 @@ variables'
     def visit_constant(self, constant, errors):
         assert len(constant.children)==0
         if constant.type == 'etype' and constant.relation().r_type != 'is':
-            msg ='Using an entity type in only allowed with "is" relation'
+            msg ='using an entity type in only allowed with "is" relation'
             errors.append(msg)
         
     def visit_variable(self, variableref, errors):

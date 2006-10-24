@@ -6,8 +6,6 @@ Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
-from __future__ import generators
-
 from logilab.common.tree import VNode as Node
 
 from rql.utils import iget_nodes
@@ -49,7 +47,11 @@ class Statement(Node, object):
             new.append(child.copy(new))
         return new
         
+        
     def get_selected_variables(self):
+        return self.selected_terms()
+    
+    def selected_terms(self):
         raise NotImplementedError
     
     # construction helper methods #############################################
@@ -163,8 +165,18 @@ class Select(Statement):
     def append_selected(self, stmt):
         if isinstance(stmt, nodes.Constant) and stmt.type == 'etype':
             raise BadRQLQuery('Entity type are not allowed in selection')
+        stmt.parent = self
         self.selected.append(stmt)
-        
+
+    def replace(self, oldnode, newnode):
+        try:
+            Statement.replace(self, oldnode, newnode)
+        except ValueError:
+            i = self.selected.index(oldnode)
+            self.selected.pop(i)
+            self.selected.insert(i, newnode)
+            newnode.parent = self
+            
     def set_statement_type(self, stmt_type):
         """set the statement type for this selection
         this method must be called last (i.e. once selected variables has been
@@ -285,10 +297,14 @@ class Select(Statement):
         """returns all selected variables, including those used in aggregate
         functions
         """
-        for select in self.selected:
-            for node in iget_nodes(select, nodes.VariableRef):
+        for term in self.selected_terms():
+            for node in iget_nodes(term, nodes.VariableRef):
                 yield node
 
+    def selected_terms(self):
+        """returns selected terms
+        """
+        return self.selected
     
 class Delete(Statement):
     """the Delete node is the root of the syntax tree for deletion statement
@@ -317,6 +333,9 @@ class Delete(Statement):
         return new
     
     def get_selected_variables(self):
+        return self.selected_terms()
+    
+    def selected_terms(self):
         return [vref for et, vref in self.main_variables]
     
         
@@ -378,10 +397,10 @@ class Insert(Statement):
         new.inserted_variables = self.inserted_variables 
         #assert check_relations(new)
         return new
-        
-    def get_selected_variables(self):
+
+    def selected_terms(self):
         return [vref for et, vref in self.main_variables]
-    
+        
     def add_main_variable(self, e_type, variable):
         """add a variable to the list of inserted variables"""
         if e_type == 'Any':
@@ -442,7 +461,7 @@ class Update(Statement):
         Statement.__init__(self, e_types)
         self.main_relations = []
 
-    def get_selected_variables(self):
+    def selected_terms(self):
         return []
 
     def copy(self):

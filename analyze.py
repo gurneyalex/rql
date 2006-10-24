@@ -39,8 +39,12 @@ class ETypeResolver:
         self.set_schema(schema)
         # mapping from relation to function taking rhs value as argument
         # and returning an entity type
-        self.uid_func_mapping = {}
-
+        self.uid_func_mapping = uid_func_mapping or {}
+        if uid_func_mapping:
+            self.uid_func = uid_func_mapping.values()[0]
+        else:
+            self.uid_func = None
+            
     def set_schema(self, schema):
         self.schema = schema
         # default domain for a variable
@@ -48,17 +52,20 @@ class ETypeResolver:
         
     def visit(self, node, uid_func_mapping=None, kwargs=None, debug=False):
         # FIXME: not thread safe
-        if uid_func_mapping is not None:
+        if uid_func_mapping:
+            assert len(uid_func_mapping) <= 1
             self.uid_func_mapping = uid_func_mapping
+            self.uid_func = uid_func_mapping.values()[0]
         self.kwargs = kwargs
         # init variables for a visit
         domains = {}
         constraints = []
-        
         # set domain for the all variables
         for var in node.defined_vars.values():
             domains[var.name] = fd.FiniteDomain(self._base_domain)
-
+        # no variable short cut
+        if not domains:
+            return [{}] 
         # add restriction specific to delete and insert 
         if node.TYPE in ('delete', 'insert'):
             for e_type, variable in node.main_variables:
@@ -78,11 +85,12 @@ class ETypeResolver:
             self._visit(restriction, constraints)
         elif node.TYPE == 'select':
             varnames = [v.name for v in node.get_selected_variables()]
-            # add constraint on real relation types if no restriction
-            types = [eschema.type for eschema in self.schema.entities()
-                     if not eschema.is_final()]
-            constraints.append(fd.make_expression(varnames, '%s in %s ' % (
-                '=='.join(varnames), types)))
+            if varnames:
+                # add constraint on real relation types if no restriction
+                types = [eschema.type for eschema in self.schema.entities()
+                         if not eschema.is_final()]
+                constraints.append(fd.make_expression(varnames, '%s in %s ' % (
+                    '=='.join(varnames), types)))
         
         # debug info
         if debug > 1:
@@ -116,7 +124,21 @@ class ETypeResolver:
         for c in node.children:
             self._visit(c, constraints)
 
-        
+
+    def _uid_constraint(self, valnode):
+        types = set()
+        for cst in iget_nodes(valnode, nodes.Constant):
+            # if there is one None (NULL) constant type,
+            # we can't use the uid function
+            if cst.type is None:
+                break
+            if cst.type == 'Substitute':
+                eid = self.kwargs[cst.value]
+            else:
+                eid = cst.value
+            types.add(self.uid_func(eid))
+        return types
+    
     def visit_relation(self, relation, constraints):
         """extract constraints for an relation according to it's  type"""
         rtype = relation.r_type
@@ -137,42 +159,57 @@ class ETypeResolver:
                 rel = varref.relation()
                 if rel is not None and rel._not:
                     return
-            eids = []
-            for cst in iget_nodes(rhs, nodes.Constant):
-                # if there is one None (NULL) constant type,
-                # we can't use the uid function
-                if cst.type is None:
-                    break
-                if cst.type == 'Substitute':
-                    eid = self.kwargs[cst.value]
-                else:
-                    eid = cst.value
-                eids.append(eid)
-            else:
-                if eids:
-                    types = {}
-                    for eid in eids:
-                        types[self.uid_func_mapping[rtype](eid)] = True
-                    constraints.append(fd.make_expression(
-                        (lhs.name,), '%s in %s ' % (lhs.name, types.keys())))
-                    return           
+            types = self._uid_constraint(rhs)
+            if types:
+                constraints.append(fd.make_expression(
+                    (lhs.name,), '%s in %s ' % (lhs.name, types)))
+                return
+        if isinstance(rhs, nodes.Comparison):
+            rhs = rhs.children[0]
         rschema = self.schema.relation_schema(rtype)
-        lhsvar = lhs.name
-        rhsvars = [v.name for v in iget_nodes(rhs, nodes.VariableRef)
-                   if not v.name == lhsvar]
-        if rhsvars:
-            s2 = '=='.join(rhsvars)
-            res = []
-            for fromtype, totypes in rschema.associations():
-                cstr = '(%s=="%s" and %s in (%s,))' % (
-                    lhsvar, fromtype, s2, ','.join('"%s"' % t for t in totypes))
-                res.append(cstr)
-            cstr = ' or '.join(res)
-            constraints.append(fd.make_expression([lhsvar] + rhsvars, cstr))
-        else:
+        if not rschema.is_final() and isinstance(lhs, nodes.Constant):
+            if not isinstance(rhs, nodes.VariableRef):
+                return
+            var = rhs.name
+            vars = [var]
+            if self.uid_func:
+                alltypes = set()
+                for etype in self._uid_constraint(lhs):
+                    for targettypes in rschema.objects(etype):
+                        alltypes.add(targettypes)
+            else:
+                alltypes = rschema.objects()
             cstr = '%s in (%s,)' % (
-                lhsvar, ','.join('"%s"' % t for t in rschema.subjects()))
-            constraints.append(fd.make_expression((lhsvar,), cstr))
+                    var, ','.join('"%s"' % t for t in alltypes))
+        elif not rschema.is_final() and isinstance(rhs, nodes.Constant):
+            var = lhs.name
+            vars = [var]
+            if self.uid_func:
+                alltypes = set()
+                for etype in self._uid_constraint(rhs):
+                    for targettypes in rschema.subjects(etype):
+                        alltypes.add(targettypes)
+            else:
+                alltypes = rschema.subjects()
+            cstr = '%s in (%s,)' % (
+                    var, ','.join('"%s"' % t for t in alltypes))
+        else:
+            lhsvar = lhs.name
+            rhsvars = [v.name for v in iget_nodes(rhs, nodes.VariableRef)
+                       if not v.name == lhsvar]
+            vars = [lhsvar] + rhsvars
+            if rhsvars:
+                s2 = '=='.join(rhsvars)
+                res = []
+                for fromtype, totypes in rschema.associations():
+                    cstr = '(%s=="%s" and %s in (%s,))' % (
+                        lhsvar, fromtype, s2, ','.join('"%s"' % t for t in totypes))
+                    res.append(cstr)
+                cstr = ' or '.join(res)
+            else:
+                cstr = '%s in (%s,)' % (
+                    lhsvar, ','.join('"%s"' % t for t in rschema.subjects()))
+        constraints.append(fd.make_expression(vars, cstr))
 
     def visit_and(self, et, constraints):
         pass
@@ -345,11 +382,10 @@ class UnifyingETypeResolver:
         self._types = [eschema.type for eschema in self.schema.entities()
                        if not eschema.is_final()]
 
-    def visit(self, node, uid_func_mapping=None, debug=False):
+    def visit(self, node, uid_func_mapping=None, kwargs=None, debug=False):
 #        print "QUERY", node
         if uid_func_mapping:
             self.uid_func_mapping=uid_func_mapping
-
         sols = node.accept(self)
         # XXX: make sure sols are reported only once
         sols = [flatten_features(f) for f in sols]

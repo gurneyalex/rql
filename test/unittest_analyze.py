@@ -2,15 +2,26 @@
  http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
-__revision__ = "$Id: unittest_analyze.py,v 1.15 2006-05-01 13:01:56 syt Exp $"
-
 from logilab.common.testlib import TestCase, unittest_main
 
 from rql import RQLHelper, TypeResolverException
 from rql.analyze import UnifyingETypeResolver, ETypeResolver
 
-class RelationSchema:
-    def __init__(self, assoc_types):
+class ERSchema:
+
+    def __cmp__(self, other):
+        other = getattr(other, 'type', other)
+        return cmp(self.type, other)
+            
+    def __hash__(self):
+        return hash(self.type)
+    
+    def __str__(self):
+        return self.type
+    
+
+class RelationSchema(ERSchema):
+    def __init__(self, assoc_types, symetric=False):
         self.assoc_types = assoc_types
         self.subj_types = [e_type[0] for e_type in assoc_types]
         d = {}
@@ -18,18 +29,24 @@ class RelationSchema:
             for e_type in dest_types:
                 d[e_type] = 1
         self.obj_types = d.keys()
-        self.symetric = False
-        
-    def association_types(self):
+        self.symetric = symetric
+
+    def associations(self):
         return self.assoc_types
     
-    def subject_types(self):
+    def subjects(self, etype=None):
         return self.subj_types
     
-    def _object_types(self):
+    def objects(self, etype=None):
         return self.obj_types
 
-class EntitySchema:
+    def is_final(self):
+        return self.obj_types[0] in ('String', 'Boolean', 'Int', 'Float', 'Date')
+
+    def physical_mode(self):
+        return None
+    
+class EntitySchema(ERSchema):
     def __init__(self, type):
         self.type = type
 
@@ -53,15 +70,15 @@ class DummySchema:
         'work_for' : RelationSchema( ( ('Person', ('Company',) ),
                                       )
                                     ),
+        'connait' : RelationSchema( (('Person', ('Person',) ),
+                                     ),
+                                    symetric=True),
         'located' : RelationSchema( ( ('Person', ('Address',) ),
                                      ('Company', ('Address',) ),
                                      )
                                    ),
         }
-    
-    def entities(self, schema=None):
-        if schema is None:
-            return self._types.keys()
+    def entities(self):
         return self._types.values()
         
     def relations(self):
@@ -89,9 +106,11 @@ DEBUG = 0
 class AnalyzerClassTest(TestCase):
     """check wrong queries arre correctly detected
     """
-
+    def _type_from_eid(self, eid):
+        return 'Person'
+    
     def setUp(self):
-        self.helper = RQLHelper(DummySchema(), None)
+        self.helper = RQLHelper(DummySchema(), {'eid': self._type_from_eid})
         
     def test_base_1(self):
         node = self.helper.parse('Any X')
@@ -100,6 +119,13 @@ class AnalyzerClassTest(TestCase):
         self.assertEqual(sols, [{'X': 'Address'},
                                 {'X': 'Company'},
                                 {'X': 'Person'}])
+        
+    def test_base_1(self):
+        # XXX
+        node = self.helper.parse('Any X WHERE X eid 1')
+        sols = self.helper.get_solutions(node, debug=DEBUG)
+        sols.sort()
+        self.assertEqual(sols, [{}])
     
     def test_base_2(self):
         node = self.helper.parse('Person X')
@@ -161,11 +187,24 @@ class AnalyzerClassTest(TestCase):
         self.assertEqual(sols, [{'E2': 'Person', 'E1': 'String'}])
 
     def test_insert_1(self):
-        node = self.helper.parse('Insert Person X : X name "toto", X work_for Y WHERE Y name "logilab"')
+        node = self.helper.parse('INSERT Person X : X name "toto", X work_for Y WHERE Y name "logilab"')
         sols = self.helper.get_solutions(node, debug=DEBUG)
         sols.sort()
         self.assertEqual(sols, [{'X': 'Person', 'Y': 'Company'}])
 
+    def test_relation_eid(self):
+        node = self.helper.parse('Any E2 WHERE E2 work_for E1, E1 eid 2')
+        sols = self.helper.get_solutions(node, debug=DEBUG)
+        self.assertEqual(sols, [{'E2': 'Person'}])
+        node = self.helper.parse('Any E1 WHERE E2 work_for E1, E2 eid 2')
+        sols = self.helper.get_solutions(node, debug=DEBUG)
+        self.assertEqual(sols, [{'E1': 'Company'}])
+
+    def test_not_symetric_relation_eid(self):
+        node = self.helper.parse('Any P WHERE X eid 0, NOT X connait P')
+        sols = self.helper.get_solutions(node, debug=DEBUG)
+        self.assertEqual(sols, [{'P': 'Person'}])
+    
     def test_raise(self):
         for rql in UNRESOLVABLE_QUERIES:
             if DEBUG:
@@ -180,6 +219,7 @@ class UnifyierClassTest(AnalyzerClassTest):
     """
 
     def setUp(self):
+        self.skip('need update')
         self.helper = RQLHelper(DummySchema(), None, UnifyingETypeResolver)
 
 ##     def test_raise(self):

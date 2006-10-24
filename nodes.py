@@ -79,6 +79,20 @@ def initargs(self, stmt):
     return ()
 Node.initargs = initargs
 
+def is_equivalent(self, other):
+    if other.TYPE != self.TYPE:
+        return False
+    for i, child in enumerate(self.children):
+        try:
+            if not child.is_equivalent(other.children[i]):
+                print 'grrrr', repr(child), '|', repr(other.children[i])
+                return False
+        except IndexError:
+            print 'grr', self
+            return False
+    return True
+Node.is_equivalent = is_equivalent
+
 # RQL base nodes ##############################################################
 
 
@@ -133,35 +147,53 @@ class Relation(Node):
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_relation( self, *args, **kwargs )
     
-    def __init__(self, r_type, _not=0):
+    def __init__(self, r_type, _not=0, optional=False):
         Node.__init__(self)
         self.r_type = r_type.encode()
         self._not = _not
+        self.optional = optional
 
+    def is_equivalent(self, other):
+        if not is_equivalent(self, other):
+            return False
+        if self.r_type != other.r_type:
+            return False
+        if self._not != other._not:
+            return False
+        return True
+    
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node"""
-        return self.r_type, self._not
+        return self.r_type, self._not, self.optional
     
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
+        if self.optional:
+            rtype = '?%s' % self.r_type
+        else:
+            rtype = self.r_type
         try:
             if not self._not:
                 return '%s %s %s' % (self.children[0].as_string(encoding, kwargs),
-                                     self.r_type,
+                                     rtype,
                                      self.children[1].as_string(encoding, kwargs))
             return 'NOT %s %s %s' % (self.children[0].as_string(encoding, kwargs),
-                                     self.r_type,
+                                     rtype,
                                      self.children[1].as_string(encoding, kwargs))
         except IndexError:
             return repr(self)
 
     def __repr__(self, indent=0):
+        if self.optional:
+            rtype = '?%s' % self.r_type
+        else:
+            rtype = self.r_type
         try:
             if not self._not:
                 return '%sRelation(%r %s %r)' % (' '*indent, self.children[0],
-                                                 self.r_type, self.children[1])
+                                                 rtype, self.children[1])
             return '%sRelation(not %r %s %r)' % (' '*indent, self.children[0],
-                                                 self.r_type, self.children[1])
+                                                 rtype, self.children[1])
         except IndexError:
             return '%sRelation(%s)' % (' '*indent, self.r_type)
             
@@ -183,7 +215,6 @@ class Relation(Node):
         lhs = self.children[0]
         rhs = self.children[1].children[0]
         return lhs, rhs
-
     
 class Comparison(HSMixin, Node):
     """handle comparisons:
@@ -236,10 +267,10 @@ class MathExpression(HSMixin, BinaryNode):
     TYPE = 'mathexpression'
 
     def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_mathexpression( self, *args, **kwargs )
+        return visitor.visit_mathexpression(self, *args, **kwargs)
     
     def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_mathexpression( self, *args, **kwargs )
+        return visitor.leave_mathexpression(self, *args, **kwargs)
 
     def __init__(self, operator, lhs=None, rhs=None):
         BinaryNode.__init__(self, lhs, rhs)
@@ -259,11 +290,10 @@ class MathExpression(HSMixin, BinaryNode):
         return '(%r %s %r)' % (self.children[0], self.operator,
                                self.children[1])
 
-    def __cmp__(self, other):
-        if isinstance(other, MathExpression):
-            if self.operator == other.operator:
-                return cmp(self.children, other.children)
-        return 1
+    def is_equivalent(self, other):
+        if not is_equivalent(self, other):
+            return False
+        return self.operator == other.operator
 
 
 class Function(HSMixin, Node):
@@ -274,10 +304,10 @@ class Function(HSMixin, Node):
     TYPE = 'function'
 
     def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_function( self, *args, **kwargs )
+        return visitor.visit_function(self, *args, **kwargs)
     
     def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_function( self, *args, **kwargs )
+        return visitor.leave_function(self, *args, **kwargs)
 
     def __init__(self, name):
         Node.__init__(self)
@@ -304,11 +334,10 @@ class Function(HSMixin, Node):
         return '%s%s(%s)' % (' '*indent, self.name,
                              ', '.join([repr(c) for c in self.children]))
 
-    def __cmp__(self, other):
-        if isinstance(other, Function):
-            if self.name == other.name:
-                return cmp(self.children, other.children)
-        return 1
+    def is_equivalent(self, other):
+        if not is_equivalent(self, other):
+            return False
+        return self.name == other.name
 
 
 
@@ -318,10 +347,10 @@ class Constant(HSMixin,Node):
     TYPE = 'constant'
 
     def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_constant( self, *args, **kwargs )
+        return visitor.visit_constant(self, *args, **kwargs)
     
     def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_constant( self, *args, **kwargs )
+        return visitor.leave_constant(self, *args, **kwargs)
     
     def __init__(self, value, c_type):
         assert c_type in (None, 'Date', 'Datetime', 'Boolean', 'Float', 'Int',
@@ -365,10 +394,10 @@ class Constant(HSMixin,Node):
     def __repr__(self, indent=0):
         return '%s%s' % (' '*indent, self.as_string(None))
 
-    def __cmp__(self, other):
-        if isinstance(other, Constant) and self.type == other.type:
-            return cmp(self.value, other.value)
-        return 1
+    def is_equivalent(self, other):
+        if not is_equivalent(self, other):
+            return False
+        return self.type == other.type and self.value == other.value
 
 
 class VariableRef(HSMixin, Node):
@@ -379,10 +408,10 @@ class VariableRef(HSMixin, Node):
     __slots__ = ('variable', 'name')
     
     def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_variableref( self, *args, **kwargs )
+        return visitor.visit_variableref(self, *args, **kwargs)
     
     def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_variableref( self, *args, **kwargs )
+        return visitor.leave_variableref(self, *args, **kwargs)
 
     def __init__(self, variable, noautoref=None):
         Node.__init__(self)
@@ -390,6 +419,15 @@ class VariableRef(HSMixin, Node):
         self.name = variable.name#.encode()
         if noautoref is None:
             self.register_reference()
+    
+    def __repr__(self, indent=0):
+        return '%sVarRef(%#X) to %r' % (' '*indent, id(self), self.variable)
+
+    def __cmp__(self, other):
+        return not(self.is_equivalent(other))
+
+    def is_equivalent(self, other):
+        return self.TYPE == other.TYPE and self.name == other.name
 
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node"""
@@ -409,92 +447,6 @@ class VariableRef(HSMixin, Node):
         """return the tree as an encoded rql string"""
         return self.name
     
-    def __repr__(self, indent=0):
-        return '%sVarRef(%#X) to %r' % (' '*indent, id(self), self.variable)
-
-    def __cmp__(self, other):
-        if isinstance(other, VariableRef):
-            return cmp(self.name, other.name)
-        return 1
-    
-    def __hash__(self):
-        return self.name.__hash__()
-
-
-class Variable(object):
-    """
-    a variable definition (should not be directly added to the syntax tree, use
-    VariableRef !)
-    """
-    TYPE = 'variable'
-    
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_variable( self, *args, **kwargs )
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_variable( self, *args, **kwargs )
-        
-    def __init__(self, name):
-        self.name = name.strip().encode()
-        # reference to the selection
-        self.root = None
-        # link to VariableReference objects in the syntax tree
-        self._references = []
-
-    def register_reference(self, varref):
-        """add a reference to this variable"""
-        assert not [v for v in self._references if v is varref]
-        self._references.append(varref)
-        
-    def unregister_reference(self, varref):
-        """remove a reference to this variable"""
-        for i in range(len(self._references)):
-            if self._references[i] is varref:
-                self._references.pop(i)
-                break
-        assert not [v for v in self._references if v is varref]
-
-    def references(self):
-        """return all references on this variable"""
-        return tuple(self._references)
-            
-    def linked_variable(self):
-        """return the lhs variable of the left most expression where this
-        variable appears.
-        """
-        for reference in self.references():
-            rel = reference.relation()
-            if rel is not None:
-                return rel.get_parts()[0]
-
-    def relation_names(self):
-        """return an iterator on relations (as string) where this variable
-        appears.
-        """
-        for reference in self.references():
-            rel = reference.relation()
-            if rel is not None:
-                yield rel.r_type
-                
-    def as_string(self, encoding=None, kwargs=None):
-        """return the tree as an encoded rql string"""
-        return self.name
-    
-    def __repr__(self, indent=0):
-        return '%s%s(%#X)' % (' '*indent, self.name, id(self))
-
-    def __str__(self):
-        return self.name
-
-    def __cmp__(self, other):
-        if isinstance(other, Variable):
-            return cmp(self.name, other.name)
-        return 1
-    
-    def __hash__(self):
-        return self.name.__hash__()
-
-    
 # group and sort nodes ########################################################
 
 class Group(ListNode): 
@@ -503,18 +455,10 @@ class Group(ListNode):
     TYPE = 'group'
 
     def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_group( self, *args, **kwargs )
+        return visitor.visit_group(self, *args, **kwargs)
     
     def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_group( self, *args, **kwargs )
-
-    def __cmp__(self, other):
-        if isinstance(other, Group) and len(self) == len(other):
-            for i in range(len(self)):
-                if cmp(self[i], other[i]):
-                    return 1
-            return 0
-        return 1
+        return visitor.leave_group(self, *args, **kwargs)
     
     def as_string(self, encoding=None, kwargs=None):
         return 'GROUPBY %s' % ', '.join([child.as_string(encoding, kwargs)
@@ -529,18 +473,10 @@ class Sort(ListNode):
     TYPE = 'sort'
     
     def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_sort( self, *args, **kwargs )
+        return visitor.visit_sort(self, *args, **kwargs)
     
     def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_sort( self, *args, **kwargs )
-
-    def __cmp__(self, other):
-        if isinstance(other, Sort) and len(self) == len(other):
-            for i in range(len(self)):
-                if cmp(self[i], other[i]):
-                    return 1
-            return 0
-        return 1
+        return visitor.leave_sort(self, *args, **kwargs)
     
     def as_string(self, encoding=None, kwargs=None):
         return 'ORDERBY %s' % ', '.join([child.as_string(encoding, kwargs)
@@ -555,10 +491,10 @@ class SortTerm(HSMixin, Node):
     TYPE = 'sortterm'
     
     def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_sortterm( self, *args, **kwargs )
+        return visitor.visit_sortterm(self, *args, **kwargs)
     
     def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_sortterm( self, *args, **kwargs )
+        return visitor.leave_sortterm(self, *args, **kwargs)
 
     def __init__(self, variable, asc=1, copy=None):
         Node.__init__(self)
@@ -584,8 +520,101 @@ class SortTerm(HSMixin, Node):
     def __str__(self):
         return self.as_string()
 
-    def __cmp__(self, other):
-        if isinstance(other, SortTerm):
-            if self.asc == other.asc:
-                return cmp(self.var, other.var)
-        return 1
+    def is_equivalent(self, other):
+        if not is_equivalent(self, other):
+            return False
+        return self.asc == other.asc
+
+
+
+###############################################################################
+    
+class Variable(object):
+    """
+    a variable definition, should not be directly added to the syntax tree (use
+    VariableRef instead)
+    
+    collects information about a variable use in a syntax tree
+    """
+    TYPE = 'variable'
+    
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit_variable(self, *args, **kwargs)
+    
+    def leave(self, visitor, *args, **kwargs):
+        return visitor.leave_variable(self, *args, **kwargs)
+        
+    def __init__(self, name):
+        self.name = name.strip().encode()
+        # reference to the selection
+        self.root = None
+        # used to collect some gloabl information about the syntax tree
+        self.stinfo = {
+            # link to VariableReference objects in the syntax tree
+            'references': set(),
+            # relations where this variable is used on the lhs/rhs
+            'relations': set(),
+            'lhsrelations': set(),
+            'rhsrelations': set(),
+            # final relations where this variable is used on the lhs
+            'finalrels': set(),
+            # type relations (e.g. "is") where this variable is used on the lhs
+            'typerels': set(),
+            # uid relations (e.g. "eid") where this variable is used on the lhs
+            'uidrels': set(),
+            # is this variable used in group and/or sort ?
+            'group': None,
+            'sort': None,
+            # selection indexes if any
+            'selected': set(),
+            # if this variable is an attribute variable (ie final entity),
+            # link to the attribute owner variable
+            'attrvar': None,
+            # constant node linked to an uid variable if any
+            'constnode': None,
+            }
+
+    def register_reference(self, varref):
+        """add a reference to this variable"""
+        assert not [v for v in self.stinfo['references'] if v is varref]
+        self.stinfo['references'].add(varref)
+        
+    def unregister_reference(self, varref):
+        """remove a reference to this variable"""
+        self.stinfo['references'].remove(varref)
+
+    def references(self):
+        """return all references on this variable"""
+        return tuple(self.stinfo['references'])
+
+    def valuable_references(self):
+        """return the number of "valuable" references :
+        references is in selection or in a non type (is) relations
+        """
+        stinfo = self.stinfo
+        return len(stinfo['selected']) + len(stinfo['relations'])
+    
+##     def linked_variable(self):
+##         """return the first relation where this variable
+##         appears on the rhs
+##         """
+##         return self.stinfo['attrvar']
+
+    def relation_names(self):
+        """return an iterator on relations (as string) where this variable
+        appears.
+        """
+        for reference in self.stinfo['references']:
+            rel = reference.relation()
+            if rel is not None:
+                yield rel.r_type
+                
+    def as_string(self, encoding=None, kwargs=None):
+        """return the tree as an encoded rql string"""
+        return self.name
+    
+    def __repr__(self, indent=0):
+        return '%s%s(%#X)' % (' '*indent, self.name, id(self))
+
+    def __str__(self):
+        return self.name

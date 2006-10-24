@@ -3,7 +3,12 @@ ChangeLog for RQL
 
  --
     * simplify generated subtree for IN(onechildren)
+    * stcheck is now doing full annotation and additional constant variable
+      rewriting
+    * do not include yapps anymore
+    * removed broken C parser
     * fixes to follow yams api changes
+    * editextensions fixes
 
 2006-10-08  --  0.7.2
     * add missing as_string method on groups and sorts

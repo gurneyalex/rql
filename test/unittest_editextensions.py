@@ -29,6 +29,23 @@ class RQLUndoTestCase(TestCase):
         self.assertEquals(rqlst.as_string(), orig)
         # check references after recovering
         check_relations(rqlst)
+    
+    def test_selected3(self):
+        rqlst = parse('Any lower(N) WHERE X is Person, X name N')
+        orig = rqlst.as_string()
+        rqlst.save_state()
+        var = rqlst.make_variable()
+        rqlst.remove_selected(rqlst.selected[0])
+        rqlst.add_selected(var)
+        # check operations
+        self.assertEquals(rqlst.as_string(), 'Any %s WHERE X is Person, X name N' % var.name)
+        # check references before recovering
+        check_relations(rqlst)
+        rqlst.recover()
+        # check equivalence after recovering
+        self.assertEquals(rqlst.as_string(), orig)
+        # check references after recovering
+        check_relations(rqlst)
         
     def test_undefine_1(self):
         rqlst = parse('Person X, Y WHERE X travaille_pour Y')
