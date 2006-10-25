@@ -51,7 +51,7 @@ class RQLSTAnnotator:
             raise BadRQLQuery('\n** %s'%'\n** '.join(errors))
         # rewrite "Any X WHERE X relation Y, Y uid 12" into
         # "Any X WHERE X relation 12"
-        if node.TYPE in ('delete', 'insert', 'update'):
+        if node.TYPE == 'delete':
             return
         for var in node.defined_vars.values():
             stinfo = var.stinfo
