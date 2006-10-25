@@ -149,6 +149,16 @@ class Select(Statement):
         self.limit = None
         self.offset = 0
 
+    def set_limit(self, limit):
+        if not instance(limit, (int, long)) or limit <= 0:
+            raise BadRQLQuery('bad limit %s' % limit)
+        self.limit = limit
+
+    def set_offset(self, offset):
+        if not instance(offset, (int, long)) or offset <= 0:
+            raise BadRQLQuery('bad offset %s' % offset)
+        self.offset = offset
+        
     def copy(self):
         new = Statement.copy(self)
         for child in self.selected:

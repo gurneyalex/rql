@@ -1,11 +1,9 @@
 """
- Copyright (c) 2000-2003 LOGILAB S.A. (Paris, FRANCE).
+ Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE).
  http://www.logilab.fr/ -- mailto:contact@logilab.fr
 
  defines exception used in the rql package
 """
-
-__revision__ = "$Id: _exceptions.py,v 1.2 2003-11-24 15:30:52 syt Exp $"
 
 class RQLException(Exception):
     """base exception for exceptions of the rql module"""

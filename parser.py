@@ -60,7 +60,7 @@ class HerculeScanner(runtime.Scanner):
         ('QMARK', re.compile('\\?')),
         ('STRING', re.compile('\'([^\\\'\\\\]|\\\\.)*\'|\\"([^\\\\\\"\\\\]|\\\\.)*\\"')),
         ('FLOAT', re.compile('\\d+\\.\\d*')),
-        ('INT', re.compile('\\d+')),
+        ('INT', re.compile('-?\\d+')),
         ('SUBSTITUTE', re.compile('%\\([A-Za-z_0-9]+\\)s')),
     ]
     def __init__(self, str,*args,**kw):

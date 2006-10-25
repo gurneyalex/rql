@@ -2,80 +2,12 @@
  http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
-__revision__ = "$Id: test_unify.py,v 1.1 2006-02-22 17:12:42 ludal Exp $"
-
 from logilab.common.testlib import TestCase, unittest_main
 
 from rql import RQLHelper, TypeResolverException
 from rql.analyze import UnifyingETypeResolver
 
-class RelationSchema:
-    def __init__(self, assoc_types):
-        self.assoc_types = assoc_types
-        self.subj_types = [e_type[0] for e_type in assoc_types]
-        d = {}
-        for e_type, dest_types in assoc_types:
-            for e_type in dest_types:
-                d[e_type] = 1
-        self.obj_types = d.keys()
-        
-    def association_types(self):
-        return self.assoc_types
-    
-    def subject_types(self):
-        return self.subj_types
-    
-    def _object_types(self):
-        return self.obj_types
-
-class EntitySchema:
-    def __init__(self, type):
-        self.type = type
-
-    def is_final(self):
-        return self.type in ('String', 'Boolean', 'Int', 'Float', 'Date')
-    
-class DummySchema:
-    _types = {}
-    for type in ['String', 'Boolean', 'Int', 'Float', 'Date',
-              'Person', 'Company', 'Address']:
-        _types[type] = EntitySchema(type)
-        
-    _relations = {
-        'name' : RelationSchema( ( ('Person', ('String',) ),
-                                  ('Company', ('String',) ),
-                                  )
-                                ),
-        'firstname' : RelationSchema( ( ('Person', ('String',) ),
-                                       )
-                                ),
-        'work_for' : RelationSchema( ( ('Person', ('Company',) ),
-                                      )
-                                    ),
-        'located' : RelationSchema( ( ('Person', ('Address',) ),
-                                     ('Company', ('Address',) ),
-                                     )
-                                   ),
-        }
-    
-    def entities(self, schema=None):
-        if schema is None:
-            return self._types.keys()
-        return self._types.values()
-        
-    def relations(self):
-        return self._relations.keys()
-
-    def has_entity(self, e_type):
-        return self._types.has_key(e_type)
-    
-    def has_relation(self, r_type):
-        return self._relations.has_key(r_type)
-        
-    def relation_schema(self, r_type):
-        return self._relations[r_type]
-
-        
+from unittest_analyze import DummySchema
         
 UNRESOLVABLE_QUERIES = (
     'Person X WHERE Y work_for X',

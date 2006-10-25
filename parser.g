@@ -55,7 +55,7 @@ parser Hercule:
 
     token STRING:      r"'([^\'\\]|\\.)*'|\"([^\\\"\\]|\\.)*\""
     token FLOAT:       r'\d+\.\d*'
-    token INT:         r'\d+'
+    token INT:         r'-?\d+'
     token SUBSTITUTE:  r'%\([A-Za-z_0-9]+\)s'
 
 
@@ -153,11 +153,11 @@ rule sort_meth: SORT_DESC {{ return 0 }}
 
 rule limit_offset<<V>> :  limit<<V>> offset<<V>>
 		  
-rule limit<<V>> : LIMIT INT {{ V.limit = int(INT) }} 
+rule limit<<V>> : LIMIT INT {{ V.set_limit(int(INT)) }} 
                 |
 
 
-rule offset<<V>> : OFFSET INT {{ V.offset = int(INT) }}
+rule offset<<V>> : OFFSET INT {{ V.set_offset(int(INT)) }}
   		         | 
 
 

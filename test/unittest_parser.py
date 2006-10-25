@@ -20,9 +20,7 @@ BAD_SYNTAX_QUERIES = (
 #    'Any X orderby X;',
     # FIXME: incorrect because X/Y are not bound, not a syntax error
 #    'SET X travaille Y;',
-    "Personne P WHERE OFFSET 200;"
-    'Any X LIMIT -1;',
-    'Any X OFFSET -1;',
+    "Personne P WHERE OFFSET 200;",
     )
 
 BAD_QUERIES = (
@@ -31,11 +29,14 @@ BAD_QUERIES = (
     'DELETE Any X;',
     'Person Marcou',
     'INSERT Person X : Y name "bidule" WHERE X work_for Y;',
+    'Any X LIMIT -1;',
+    'Any X OFFSET -1;',
     )
 
 # FIXME: this shoud be generated from the spec file
 SPEC_QUERIES = (
     'Any X WHERE X eid 53;',
+    'Any X WHERE X eid -53;',
     "Document X WHERE X occurence_of F, F class C, C name 'Bande dessinée', X owned_by U, U login 'syt', X available true;",
     "Personne P WHERE P travaille_pour S, S nom 'Eurocopter', P interesse_par T, T nom 'formation';",
     "Note N WHERE N ecrit_le D, D day > (today -10), N ecrit_par P, P nom 'jphc' or P nom 'ocy';",
@@ -58,7 +59,7 @@ SPEC_QUERIES = (
     'Any X,A,B,C,D WHERE X concerns 41,X title A,X state B,X priority C,X cost D ORDERBY A ASC;',
 
     # optional relation support (left outer join)
-    'Any X,Y,A WHERE X concerns? Y, Y title A;',
+    'Any X,Y,A WHERE X ?concerns Y, Y title A;',
     
     )
 
@@ -190,7 +191,10 @@ class ParserRQLHelper(ParserHercule):
     _syntaxerr = RQLSyntaxError
 
     def parse(self, string, print_errors=False):
-        return parse(string, E_TYPES, print_errors)
+        try:
+            return parse(string, E_TYPES, print_errors)
+        except:
+            raise
 
      
 if __name__ == '__main__':

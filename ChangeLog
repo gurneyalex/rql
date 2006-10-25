@@ -2,6 +2,7 @@ ChangeLog for RQL
 =================
 
  --
+    * fix grammar for negative integer :/
     * simplify generated subtree for IN(onechildren)
     * stcheck is now doing full annotation and additional constant variable
       rewriting
