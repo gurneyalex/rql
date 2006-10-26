@@ -33,7 +33,8 @@ class Statement(Node, object):
         self.e_types = e_types
         # dictionnary of defined variables in the original RQL syntax tree
         self.defined_vars = {}
-        
+        self.stinfo = {'rewritten': {}}
+
     def __str__(self):
         return self.as_string(None, {})
 
@@ -162,7 +163,7 @@ class Select(Statement):
     def copy(self):
         new = Statement.copy(self)
         for child in self.selected:
-            new.selected.append(child.copy(new))
+            new.append_selected(child.copy(new))
         new.distinct = self.distinct
         new.limit = self.limit
         new.offset = self.offset
@@ -204,27 +205,36 @@ class Select(Statement):
         selected variables
         """
         descr = []
-        for var in self.selected:
+        for term in self.selected:
             try:
-                var = var.variable
+                descr.append(getattr(self, '%s_description' % term.TYPE)(term))
             except AttributeError:
-                # aggregat function
-                descr.append(nodes.FUNC_TYPES_MAP.get(var.name, 'Any'))
-                continue
-            var_type = 'Any'
-            for ref in var.references():
-                rel = ref.relation()
-                if rel is None:
-                    continue
-                if rel.r_type == 'is' and var.name == rel.children[0].name:
-                    var_type = rel.children[1].children[0].value.encode()
-                    break
-                if rel.r_type != 'is' and var.name != rel.children[0].name:
-                    var_type = rel.r_type
-                    break
-            descr.append(var_type)
+                descr.append('Any')
         return descr
 
+    def variableref_description(self, term):
+        var =  term.variable
+        etype = 'Any'
+        for ref in var.references():
+            rel = ref.relation()
+            if rel is None:
+                continue
+            if rel.r_type == 'is' and var.name == rel.children[0].name:
+                etype = rel.children[1].children[0].value.encode()
+                break
+            if rel.r_type != 'is' and var.name != rel.children[0].name:
+                etype = rel.r_type
+                break
+        return etype
+    
+    def function_description(self, term):
+        return nodes.FUNC_TYPES_MAP.get(term.name, 'Any')
+        
+    def constant_description(self, term):
+        if term.uid:
+            return term.uidtype
+        return term.type
+        
     def get_indexed_description(self):
         """return the list of types or relations (if not found) associated to
         selected variables

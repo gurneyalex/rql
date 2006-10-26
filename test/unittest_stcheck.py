@@ -36,8 +36,9 @@ class CheckClassTest(TestCase):
     """
     
     def setUp(self):
-        self.parse = RQLHelper(DummySchema(), None,
-                               {'eid': 'uid'}).parse
+        helper = RQLHelper(DummySchema(), None, {'eid': 'uid'})
+        self.parse = helper.parse
+        self.simplify = helper.simplify
         
     def _test(self, rql):
         try:
@@ -51,7 +52,8 @@ class CheckClassTest(TestCase):
             yield self._test, rql
         
     def _test_rewrite(self, rql, expected):
-        self.assertEquals(self.parse(rql).as_string(), expected)
+        self.assertEquals(self.simplify(self.parse(rql)).as_string(),
+                          expected)
         
     def test_rewrite(self):
         for rql, expected in (
@@ -83,6 +85,13 @@ class CheckClassTest(TestCase):
             ('Any N WHERE X eid 12, X name N', 'Any N WHERE X eid 12, X name N'),
             ):
             yield self._test_rewrite, rql, expected
+
+##     def test_rewriten_as_string(self):
+##         rqlst = self.parse('Any X WHERE X eid 12')
+##         self.assertEquals(rqlst.as_string(), 'Any X WHERE X eid 12')
+##         rqlst = rqlst.copy()
+##         self.annotate(rqlst)
+##         self.assertEquals(rqlst.as_string(), 'Any X WHERE X eid 12')
         
 if __name__ == '__main__':
     unittest_main()

@@ -55,7 +55,7 @@ class HSMixin(object):
         return 0
     
     def __str__(self):
-        return self.as_string(None, None)
+        return self.as_string()
 
 
 # add a new "copy" method to the Node base class
@@ -113,7 +113,7 @@ class AND(BinaryNode):
                            self.children[1].as_string(encoding, kwargs))
     def __repr__(self):
         return '%s AND %s' % (repr(self.children[0]),
-                             repr(self.children[1]))
+                              repr(self.children[1]))
 
     
 class OR(BinaryNode):
@@ -352,21 +352,29 @@ class Constant(HSMixin,Node):
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_constant(self, *args, **kwargs)
     
-    def __init__(self, value, c_type):
+    def __init__(self, value, c_type, _uid=False, _uidtype=None):
         assert c_type in (None, 'Date', 'Datetime', 'Boolean', 'Float', 'Int',
                           'String', 'Substitute', 'etype'), "Error got c_type="+repr(c_type)
         Node.__init__(self)
         self.value = value
         self.type = c_type
-
+        # updated by the annotator/analyzer if necessary
+        self.uid = _uid
+        self.uidtype = _uidtype
+        
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node"""
-        return (self.value, self.type)
+        return (self.value, self.type, self.uid, self.uidtype)
 
     def is_variable(self):
         """check if this node contains a reference to one ore more variables"""
         return 0
-        
+
+    def eval(self, kwargs):
+        if self.type == 'Substitute':
+            return kwargs[self.value]
+        return self.value
+    
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string (an unicode string is
         returned if encoding is None)
@@ -392,7 +400,7 @@ class Constant(HSMixin,Node):
         return repr(self.value)
         
     def __repr__(self, indent=0):
-        return '%s%s' % (' '*indent, self.as_string(None))
+        return '%s%s' % (' '*indent, self.as_string())
 
     def is_equivalent(self, other):
         if not is_equivalent(self, other):

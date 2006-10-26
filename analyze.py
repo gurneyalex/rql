@@ -56,6 +56,12 @@ class ETypeResolver:
             assert len(uid_func_mapping) <= 1
             self.uid_func_mapping = uid_func_mapping
             self.uid_func = uid_func_mapping.values()[0]
+        if self.uid_func:
+            # check rewritten uid const
+            for consts in node.stinfo['rewritten'].values():
+                uidtype = self.uid_func(consts[0].eval(kwargs))
+                for const in consts:
+                    const.uidtype = uidtype
         self.kwargs = kwargs
         # init variables for a visit
         domains = {}
@@ -65,13 +71,14 @@ class ETypeResolver:
             domains[var.name] = fd.FiniteDomain(self._base_domain)
         # no variable short cut
         if not domains:
-            return [{}] 
+            return [{}]
         # add restriction specific to delete and insert 
         if node.TYPE in ('delete', 'insert'):
-            for e_type, variable in node.main_variables:
+            for etype, variable in node.main_variables:
                 var = variable.name
+                assert etype in self.schema
                 constraints.append(fd.make_expression(
-                    (var,), '%s == %r' % (var, e_type)))
+                    (var,), '%s == %r' % (var, etype)))
             for relation in node.main_relations:
                 self._visit(relation, constraints)
         # add restriction specific to update
@@ -125,18 +132,16 @@ class ETypeResolver:
             self._visit(c, constraints)
 
 
-    def _uid_constraint(self, valnode):
+    def _uid_node_types(self, valnode):
         types = set()
         for cst in iget_nodes(valnode, nodes.Constant):
-            # if there is one None (NULL) constant type,
-            # we can't use the uid function
-            if cst.type is None:
-                break
+            assert cst.type
             if cst.type == 'Substitute':
                 eid = self.kwargs[cst.value]
             else:
                 eid = cst.value
-            types.add(self.uid_func(eid))
+            cst.uidtype = self.uid_func(eid)
+            types.add(cst.uidtype)
         return types
     
     def visit_relation(self, relation, constraints):
@@ -159,7 +164,7 @@ class ETypeResolver:
                 rel = varref.relation()
                 if rel is not None and rel._not:
                     return
-            types = self._uid_constraint(rhs)
+            types = self._uid_node_types(rhs)
             if types:
                 constraints.append(fd.make_expression(
                     (lhs.name,), '%s in %s ' % (lhs.name, types)))
@@ -174,7 +179,7 @@ class ETypeResolver:
             vars = [var]
             if self.uid_func:
                 alltypes = set()
-                for etype in self._uid_constraint(lhs):
+                for etype in self._uid_node_types(lhs):
                     for targettypes in rschema.objects(etype):
                         alltypes.add(targettypes)
             else:
@@ -186,7 +191,7 @@ class ETypeResolver:
             vars = [var]
             if self.uid_func:
                 alltypes = set()
-                for etype in self._uid_constraint(rhs):
+                for etype in self._uid_node_types(rhs):
                     for targettypes in rschema.subjects(etype):
                         alltypes.add(targettypes)
             else:

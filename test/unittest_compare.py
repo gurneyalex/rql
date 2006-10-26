@@ -1,8 +1,6 @@
-""" Copyright (c) 2000-2003 LOGILAB S.A. (Paris, FRANCE).
+""" Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE).
  http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
-
-__revision__ = "$Id: unittest_compare.py,v 1.7 2006-02-20 02:06:09 ludal Exp $"
 
 from logilab.common.testlib import TestCase, unittest_main
 

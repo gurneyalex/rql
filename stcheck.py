@@ -48,32 +48,7 @@ class RQLSTAnnotator:
                 varref.variable.stinfo['selected'].add(i)
         self._visit(node, errors)
         if errors:
-            raise BadRQLQuery('\n** %s'%'\n** '.join(errors))
-        # rewrite "Any X WHERE X relation Y, Y uid 12" into
-        # "Any X WHERE X relation 12"
-        if node.TYPE == 'delete':
-            return
-        for var in node.defined_vars.values():
-            stinfo = var.stinfo
-            if stinfo['constnode'] and not stinfo['finalrels']:
-                assert len(stinfo['uidrels']) == 1, var
-                uidrel = stinfo['uidrels'].pop()
-                var = uidrel.children[0].variable
-                rhs = uidrel.children[1].children[0]
-                for varref in var.references():
-                    rel = varref.relation()
-                    assert varref.parent
-                    if rel and (rel is uidrel or rel.r_type == 'is'):
-                        # drop this relation
-                        rel.parent.remove(rel)
-                    else:
-                        rhs = rhs.copy(node)
-                        # substitute rhs
-                        if rel and uidrel._not:
-                            rel._not = rel._not or uidrel._not
-                        varref.parent.replace(varref, rhs)
-                del node.defined_vars[var.name]
-                
+            raise BadRQLQuery('\n** %s'%'\n** '.join(errors))                
         #if node.TYPE == 'select' and \
         #       not node.defined_vars and not node.get_restriction():
         #    result = []
@@ -249,7 +224,6 @@ variables'
             rschema = self.schema.rschema(rtype)
         except KeyError:
             rschema = None # no schema for "has_text" relation for instance
-            
         if rtype in self.special_relations:
             key = '%srels' % self.special_relations[rtype]
             lhsvar.stinfo.setdefault(key, set()).add(relation)

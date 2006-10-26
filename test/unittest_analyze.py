@@ -89,7 +89,10 @@ class DummySchema:
     
     def has_relation(self, r_type):
         return self._relations.has_key(r_type)
-        
+    
+    def __contains__(self, ertype):
+        return self.has_entity(ertype) or self.has_relation(ertype)
+    
     def relation_schema(self, r_type):
         return self._relations[r_type]
     rschema = relation_schema
@@ -119,19 +122,20 @@ class AnalyzerClassTest(TestCase):
         self.assertEqual(sols, [{'X': 'Address'},
                                 {'X': 'Company'},
                                 {'X': 'Person'}])
-        
-    def test_base_1(self):
-        # XXX
-        node = self.helper.parse('Any X WHERE X eid 1')
-        sols = self.helper.get_solutions(node, debug=DEBUG)
-        sols.sort()
-        self.assertEqual(sols, [{}])
     
     def test_base_2(self):
         node = self.helper.parse('Person X')
         sols = self.helper.get_solutions(node, debug=DEBUG)
         sols.sort()
         self.assertEqual(sols, [{'X': 'Person'}])
+        
+    def test_base_3(self):
+        node = self.helper.parse('Any X WHERE X eid 1')
+        sols = self.helper.get_solutions(node, debug=DEBUG)
+        self.assertEqual(sols, [{'X': 'Person'}])
+        node = self.helper.simplify(node)
+        sols = self.helper.get_solutions(node, debug=DEBUG)
+        self.assertEqual(sols, [{}])
     
     def test_base_guess_1(self):
         node = self.helper.parse('Person X WHERE X work_for Y')
@@ -193,15 +197,25 @@ class AnalyzerClassTest(TestCase):
         self.assertEqual(sols, [{'X': 'Person', 'Y': 'Company'}])
 
     def test_relation_eid(self):
-        node = self.helper.parse('Any E2 WHERE E2 work_for E1, E1 eid 2')
+        node = self.helper.parse('Any E2 WHERE E2 work_for E1, E2 eid 2')
         sols = self.helper.get_solutions(node, debug=DEBUG)
-        self.assertEqual(sols, [{'E2': 'Person'}])
-        node = self.helper.parse('Any E1 WHERE E2 work_for E1, E2 eid 2')
+        self.assertEqual(sols, [{'E1': 'Company', 'E2': 'Person'}])
+        node = self.helper.simplify(node)
         sols = self.helper.get_solutions(node, debug=DEBUG)
         self.assertEqual(sols, [{'E1': 'Company'}])
-
+        
+        node = self.helper.parse('Any E1 WHERE E2 work_for E1, E2 eid 2')
+        sols = self.helper.get_solutions(node, debug=DEBUG)
+        self.assertEqual(sols, [{'E1': 'Company', 'E2': 'Person'}])
+        node = self.helper.simplify(node)
+        sols = self.helper.get_solutions(node, debug=DEBUG)
+        self.assertEqual(sols, [{'E1': 'Company'}])
+        
     def test_not_symetric_relation_eid(self):
         node = self.helper.parse('Any P WHERE X eid 0, NOT X connait P')
+        sols = self.helper.get_solutions(node, debug=DEBUG)
+        self.assertEqual(sols, [{'P': 'Person', 'X': 'Person'}])
+        node = self.helper.simplify(node)
         sols = self.helper.get_solutions(node, debug=DEBUG)
         self.assertEqual(sols, [{'P': 'Person'}])
     

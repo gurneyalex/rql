@@ -75,6 +75,47 @@ class RQLHelper:
         """
         return self._analyser.visit(rqlst, uid_func_mapping, kwargs, debug)
 
+    def simplify(self, rqlst, needcopy=True):
+        if rqlst.TYPE == 'delete':
+            return rqlst
+        if needcopy:
+            rqlstcopy = None
+        else: 
+            rqlstcopy = rqlst
+        for var in rqlst.defined_vars.values():
+            stinfo = var.stinfo
+            if stinfo['constnode'] and not stinfo['finalrels']:
+                if rqlstcopy is None:
+                    rqlstcopy = rqlst.copy()
+                    self.annotate(rqlstcopy)
+                if needcopy:
+                    var = rqlstcopy.defined_vars[var.name]
+                    stinfo = var.stinfo
+                assert len(stinfo['uidrels']) == 1, var
+                uidrel = stinfo['uidrels'].pop()
+                var = uidrel.children[0].variable
+                rqlstcopy.stinfo['rewritten'][uidrel] = vconsts = []
+                rhs = uidrel.children[1].children[0]
+                assert isinstance(rhs, nodes.Constant), rhs
+                for varref in var.references():
+                    rel = varref.relation()
+                    assert varref.parent
+                    if rel and (rel is uidrel or rel.r_type == 'is'):
+                        # drop this relation
+                        rel.parent.remove(rel)
+                    else:
+                        rhs = rhs.copy(rqlstcopy)
+                        rhs.uid = True
+                        # should have been set by the analyzer
+                        #assert rhs.uidtype , (rqlst, rhs, id(rhs))
+                        vconsts.append(rhs)
+                        # substitute rhs
+                        if rel and uidrel._not:
+                            rel._not = rel._not or uidrel._not
+                        varref.parent.replace(varref, rhs)
+                del rqlstcopy.defined_vars[var.name]
+        return rqlstcopy or rqlst
+        
     def compare(self, rqlstring1, rqlstring2):
         """compares 2 RQL requests
         
