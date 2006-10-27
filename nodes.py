@@ -1,9 +1,11 @@
-"""Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE).
- http://www.logilab.fr/ -- mailto:contact@logilab.fr
- 
-This module defines all the nodes we can find in a RQL Syntax tree, except
+"""This module defines all the nodes we can find in a RQL Syntax tree, except
 root nodes, defined in the stmts module.
+
+:organization: Logilab
+:copyright: 2003-2006 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
+__docformat__ = "restructuredtext en"
 
 
 from logilab.common import cached

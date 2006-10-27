@@ -1,9 +1,10 @@
-"""
- Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE).
- http://www.logilab.fr/ -- mailto:contact@logilab.fr
+"""Analyze of the RQL syntax tree to get possible types for rql variables
 
-Analyze of the RQL syntax tree to get possible types for rql variables
+:organization: Logilab
+:copyright: 2004-2006 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
+__docformat__ = "restructuredtext en"
 
 import warnings
 warnings.filterwarnings(action='ignore', module='logilab.constraint.propagation')
@@ -59,6 +60,8 @@ class ETypeResolver:
         if self.uid_func:
             # check rewritten uid const
             for consts in node.stinfo['rewritten'].values():
+                if not consts:
+                    continue
                 uidtype = self.uid_func(consts[0].eval(kwargs))
                 for const in consts:
                     const.uidtype = uidtype

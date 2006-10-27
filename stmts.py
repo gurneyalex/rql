@@ -2,9 +2,11 @@
 This module defines only first level nodes (i.e. statements). Child nodes are
 defined in the nodes module
 
-Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
-http://www.logilab.fr/ -- mailto:contact@logilab.fr
+:organization: Logilab
+:copyright: 2003-2006 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
+__docformat__ = "restructuredtext en"
 
 from logilab.common.tree import VNode as Node
 

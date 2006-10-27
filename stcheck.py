@@ -1,8 +1,10 @@
-"""Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE).
- http://www.logilab.fr/ -- mailto:contact@logilab.fr
- 
-RQL Syntax tree annotator
+"""RQL Syntax tree annotator
+
+:organization: Logilab
+:copyright: 2003-2006 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
+__docformat__ = "restructuredtext en"
 
 from rql import nodes
 from rql._exceptions import BadRQLQuery
