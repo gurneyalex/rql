@@ -2,6 +2,7 @@ ChangeLog for RQL
 =================
 
  --
+    * fix SortTerm implementation
     * fix a NameError in set_offset/set_limit and regenerate parser to
       use those methods
     * stinfo['references'] is now a list since order is important

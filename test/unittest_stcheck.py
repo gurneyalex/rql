@@ -67,6 +67,8 @@ class CheckClassTest(TestCase):
              'Any X WHERE 12 work_for X'),
             ('Any X WHERE X work_for Y, Y eid IN (12)',
              'Any X WHERE X work_for 12'),
+            ('Any X WHERE X work_for Y, Y eid IN (12) ORDERBY Y',
+             'Any X WHERE X work_for 12 ORDERBY 12'),
             ('Any X WHERE X eid 12',
              'Any 12'),
             ('Any X WHERE X is Person, X eid 12',

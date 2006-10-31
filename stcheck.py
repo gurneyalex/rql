@@ -269,6 +269,7 @@ variables'
 
     def visit_variableref(self, variableref, errors):
         assert len(variableref.children)==0
+        assert not variableref.parent is variableref
         
     def visit_constant(self, constant, errors):
         assert len(constant.children)==0
