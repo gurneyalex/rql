@@ -561,6 +561,7 @@ class Variable(object):
         # used to collect some gloabl information about the syntax tree
         self.stinfo = {
             # link to VariableReference objects in the syntax tree
+            # it must be a list to keep order
             'references': [],
             # relations where this variable is used on the lhs/rhs
             'relations': set(),
@@ -591,7 +592,10 @@ class Variable(object):
         
     def unregister_reference(self, varref):
         """remove a reference to this variable"""
-        self.stinfo['references'].remove(varref)
+        for i, _varref in enumerate(self.stinfo['references']):
+            if varref is _varref:
+                del self.stinfo['references'][i]
+                break
 
     def references(self):
         """return all references on this variable"""

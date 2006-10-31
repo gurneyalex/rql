@@ -50,7 +50,7 @@ Select.make_variable = make_variable
 
 def undefine_variable(self, var):
     """undefine the given variable and remove all relations where it appears"""
-    check_relations(self)
+    assert check_relations(self)
     if hasattr(var, 'variable'):
         var = var.variable
     # remove relations where this variable is referenced
@@ -69,7 +69,7 @@ def undefine_variable(self, var):
     if self.memorizing and not self.undoing:
         self.undo_manager.add_operation(UndefineVarOperation(var))
     del self.defined_vars[var.name]
-    check_relations(self)
+    assert check_relations(self)
 Select.undefine_variable =  undefine_variable
 
 def remove_selected(self, var):
@@ -81,7 +81,7 @@ def remove_selected(self, var):
         self.undo_manager.add_operation(UnselectVarOperation(var, index))
     for var in self.selected.pop(index).get_nodes(VariableRef):
         var.unregister_reference()
-    check_relations(self)
+    assert check_relations(self)
 Select.remove_selected = remove_selected
 
 def add_selected(self, term, index=None):
@@ -99,7 +99,7 @@ def add_selected(self, term, index=None):
         self.selected.append(term)
     if self.memorizing and not self.undoing:
         self.undo_manager.add_operation(SelectVarOperation(term))
-    check_relations(self)
+    assert check_relations(self)
 Select.add_selected = add_selected
 
 # basic operations #############################################################
@@ -120,7 +120,7 @@ def add_restriction(self, relation):
     # register variable references in the added subtree
     for varref in get_nodes(relation, VariableRef):
         varref.register_reference()
-    check_relations(self)
+    assert check_relations(self)
 Select.add_restriction = add_restriction
 
 def remove_node(self, node):
@@ -128,10 +128,12 @@ def remove_node(self, node):
     # unregister variable references in the removed subtree
     for varref in get_nodes(node, VariableRef):
         varref.unregister_reference()
+        #if not varref.variable.references():
+        #    del node.root().defined_vars[varref.name]
     if self.memorizing and not self.undoing:
         self.undo_manager.add_operation(RemoveNodeOperation(node))
     node.parent.remove(node)
-    check_relations(self)
+    assert check_relations(self)
 Select.remove_node = remove_node
 
 def add_sortvar(self, var, asc=True):
