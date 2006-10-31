@@ -215,7 +215,7 @@ class Hercule(runtime.Parser):
         if _token == 'LIMIT':
             LIMIT = self._scan('LIMIT', context=_context)
             INT = self._scan('INT', context=_context)
-            V.limit = int(INT)
+            V.set_limit(int(INT))
         else: # in ['OFFSET', "';'"]
             pass
 
@@ -225,7 +225,7 @@ class Hercule(runtime.Parser):
         if _token == 'OFFSET':
             OFFSET = self._scan('OFFSET', context=_context)
             INT = self._scan('INT', context=_context)
-            V.offset = int(INT)
+            V.set_offset(int(INT))
         else: # == "';'"
             pass
 

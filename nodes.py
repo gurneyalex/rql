@@ -561,7 +561,7 @@ class Variable(object):
         # used to collect some gloabl information about the syntax tree
         self.stinfo = {
             # link to VariableReference objects in the syntax tree
-            'references': set(),
+            'references': [],
             # relations where this variable is used on the lhs/rhs
             'relations': set(),
             'lhsrelations': set(),
@@ -587,7 +587,7 @@ class Variable(object):
     def register_reference(self, varref):
         """add a reference to this variable"""
         assert not [v for v in self.stinfo['references'] if v is varref]
-        self.stinfo['references'].add(varref)
+        self.stinfo['references'].append(varref)
         
     def unregister_reference(self, varref):
         """remove a reference to this variable"""
