@@ -19,11 +19,3 @@ Description: relationship query language (RQL) utilities [dummy package]
  This package is an empty dummy package that always depends on a package built
  for Debian's default Python version.
 
-Package: python-rql-test
-Architecture: all
-Depends: python-rql (>= ${Source-Version}), python-logilab-common
-Description: python-rql's test files
- This package contains test files shared by the python-rql package. It
- isn't necessary to install this package unless you want to execute or
- look at the tests.
-
