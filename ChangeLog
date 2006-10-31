@@ -1,7 +1,7 @@
 ChangeLog for RQL
 =================
 
- --
+2006-10-31  --  0.8.1
     * fix SortTerm implementation
     * fix a NameError in set_offset/set_limit and regenerate parser to
       use those methods
