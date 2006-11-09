@@ -256,7 +256,7 @@ variables'
         if function.name in ("COUNT", "MIN", "MAX", "AVG", "SUM"):
             assert len(function.children) == 1
             #assert function in function.root().selected
-            assert function.parent is None
+            #assert function.parent is None
         elif function.name in ('UPPER', 'LOWER'):
             assert len(function.children) == 1
         elif function.name == 'IN':
