@@ -58,8 +58,10 @@ SPEC_QUERIES = (
     'Any X WHERE X has_text "2.12.0";',
     'Any X,A,B,C,D WHERE X concerns 41,X title A,X state B,X priority C,X cost D ORDERBY A ASC;',
 
-    # optional relation support (left outer join)
-    'Any X,Y,A WHERE X ?concerns Y, Y title A;',
+    # optional relation support (left|right outer join)
+    'Any X,Y,A WHERE X? concerns Y, Y title A;',
+    'Any X,Y,A WHERE X concerns Y?, Y title A;',
+    'Any X,Y,A WHERE X? concerns Y?, Y title A;',
     
     )
 
@@ -165,10 +167,16 @@ class ParserHercule(TestCase):
     def test_optional_relation(self):
         tree = self.parse(r'Any X WHERE X related Y;')
         related = tree.children[0]
-        self.assertEquals(related.optional, False)
-        tree = self.parse(r'Any X WHERE X ?related Y;')
+        self.assertEquals(related.optional, None)
+        tree = self.parse(r'Any X WHERE X? related Y;')
         related = tree.children[0]
-        self.assertEquals(related.optional, True)
+        self.assertEquals(related.optional, 'left')
+        tree = self.parse(r'Any X WHERE X related Y?;')
+        related = tree.children[0]
+        self.assertEquals(related.optional, 'right')
+        tree = self.parse(r'Any X WHERE X? related Y?;')
+        related = tree.children[0]
+        self.assertEquals(related.optional, 'both')
 
     def test_spec(self):
         """test all RQL string found in the specification and test they are well parsed"""

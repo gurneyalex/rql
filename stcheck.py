@@ -15,7 +15,7 @@ class GoTo(Exception):
     def __init__(self, node):
         self.node = node
         
-def is_left_outer_join(ornode):
+def is_outer_join(ornode):
     """return True if the given OR node is actually a left outer join
     (constructs like 'NOT X travaille S OR X travaille S')
     """
@@ -186,8 +186,8 @@ variables'
         r2type = r2.r_type
         # XXX remove variable refs
         # simplify left outer join expression
-        if is_left_outer_join(ou):
-            r1.optional = True
+        if is_outer_join(ou):
+            r1.optional = 'both'
             r1._not = False
             ou.parent.replace(ou, r1)
             raise GoTo(r1)

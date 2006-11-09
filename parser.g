@@ -190,11 +190,15 @@ rule rel<<V>>: NOT base_rel<<V>>       {{ base_rel._not = 1; return base_rel }}
                | r"\(" rels<<V>> r"\)" {{ return rels }}
 
 
-rule base_rel<<V>>: var<<V>> opt_rtype<<V>> {{ opt_rtype.append(var) }} 
-                    expr<<V>>               {{ opt_rtype.append(expr) ; return opt_rtype }}
+rule base_rel<<V>>: var<<V>> opt_left<<V>> rtype<<V>> {{ rtype.append(var) ; rtype.set_optional(opt_left) }} 
+                    expr<<V>> opt_right<<V>>          {{ rtype.append(expr) ; rtype.set_optional(opt_right) ; return rtype }}
 
-rule opt_rtype<<V>>: QMARK R_TYPE {{ return Relation(R_TYPE, optional=True) }}
-                     | R_TYPE     {{ return Relation(R_TYPE, optional=False) }}
+rule rtype<<V>>: R_TYPE {{ return Relation(R_TYPE) }}
+
+rule opt_left<<V>>: QMARK  {{ return 'left' }}
+                   | 
+rule opt_right<<V>>: QMARK  {{ return 'right' }}
+                   | 
                     
 # common statements ###########################################################
 

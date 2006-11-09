@@ -147,12 +147,21 @@ class Relation(Node):
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_relation( self, *args, **kwargs )
     
-    def __init__(self, r_type, _not=0, optional=False):
+    def __init__(self, r_type, _not=0, optional=None):
         Node.__init__(self)
         self.r_type = r_type.encode()
         self._not = _not
-        self.optional = optional
+        self.optional = None
+        self.set_optional(optional)
 
+    def set_optional(self, optional):
+        assert optional in (None, 'left', 'right')
+        if optional is not None:
+            if self.optional and self.optional != optional:
+                self.optional = 'both'
+            else:
+                self.optional = optional
+        
     def is_equivalent(self, other):
         if not is_equivalent(self, other):
             return False

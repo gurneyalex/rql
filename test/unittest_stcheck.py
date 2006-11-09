@@ -1,4 +1,4 @@
-""" Copyright (c) 2003-2004 LOGILAB S.A. (Paris, FRANCE).
+""" Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).
  http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
