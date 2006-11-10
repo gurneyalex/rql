@@ -3,7 +3,9 @@ ChangeLog for RQL
 
  -- 
     * proper full/right/left outer join support
+    * removed a buggy assertion in stcheck on aggregat function
 
+	
 2006-10-31  --  0.8.1
     * fix SortTerm implementation
     * fix a NameError in set_offset/set_limit and regenerate parser to
