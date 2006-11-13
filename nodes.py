@@ -177,20 +177,18 @@ class Relation(Node):
     
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
-        if self.optional:
-            rtype = '?%s' % self.r_type
-        else:
-            rtype = self.r_type
         try:
-            if not self._not:
-                return '%s %s %s' % (self.children[0].as_string(encoding, kwargs),
-                                     rtype,
-                                     self.children[1].as_string(encoding, kwargs))
-            return 'NOT %s %s %s' % (self.children[0].as_string(encoding, kwargs),
-                                     rtype,
-                                     self.children[1].as_string(encoding, kwargs))
+            lhs = self.children[0].as_string(encoding, kwargs)
+            if self.optional in ('left', 'both'):
+                lhs += '?'
+            rhs = self.children[1].as_string(encoding, kwargs)
+            if self.optional in ('right', 'both'):
+                rhs += '?'
         except IndexError:
-            return repr(self)
+            return repr(self) # not fully built relation
+        if self._not:
+            return 'NOT %s %s %s' % (lhs, self.r_type, rhs)
+        return '%s %s %s' % (lhs, self.r_type, rhs)
 
     def __repr__(self, indent=0):
         if self.optional:
