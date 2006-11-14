@@ -138,6 +138,11 @@ class NodesTest(TestCase):
         self.assertEqual(tree.as_string(),
                          "Any X WHERE X is Person, X name N ORDERBY N")
 
+    def test_selected_index(self):
+        tree = parse("Any X WHERE X is Person, X name N ORDERBY N DESC;", E_TYPES)
+        self.assertEquals(tree.defined_vars['X'].selected_index(), 0)
+        self.assertEquals(tree.defined_vars['N'].selected_index(), None)
+
     def test_select_ord_desc(self):
         tree = parse("Any X WHERE X is Person, X name N ORDERBY N DESC;", E_TYPES)
         # test the root node

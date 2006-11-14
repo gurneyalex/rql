@@ -636,7 +636,7 @@ class Variable(object):
         """return the index of this variable in the selection if it's selected,
         else None
         """
-        for i, term in enumerate(self.root().selected_terms()):
+        for i, term in enumerate(self.root.selected_terms()):
             for node in term.get_nodes(VariableRef):
                 if node.variable is self:
                     return i

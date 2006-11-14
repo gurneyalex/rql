@@ -1,6 +1,9 @@
 ChangeLog for RQL
 =================
 
+ --
+    * fix Variable.selected_index()
+
 2006-11-14  --  0.9.0
     * proper full/right/left outer join support
     * removed a buggy assertion in stcheck on aggregat function
