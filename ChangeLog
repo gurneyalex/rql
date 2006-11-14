@@ -1,10 +1,10 @@
 ChangeLog for RQL
 =================
 
- -- 
+2006-11-14  --  0.9.0
     * proper full/right/left outer join support
     * removed a buggy assertion in stcheck on aggregat function
-
+    * new .selected_index method on Variable
 	
 2006-10-31  --  0.8.1
     * fix SortTerm implementation

@@ -609,7 +609,7 @@ class Variable(object):
     def references(self):
         """return all references on this variable"""
         return tuple(self.stinfo['references'])
-
+    
     def valuable_references(self):
         """return the number of "valuable" references :
         references is in selection or in a non type (is) relations
@@ -631,7 +631,16 @@ class Variable(object):
             rel = reference.relation()
             if rel is not None:
                 yield rel.r_type
-                
+
+    def selected_index(self):
+        """return the index of this variable in the selection if it's selected,
+        else None
+        """
+        for i, term in enumerate(self.root().selected_terms()):
+            for node in term.get_nodes(VariableRef):
+                if node.variable is self:
+                    return i
+        
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         return self.name
