@@ -79,7 +79,7 @@ class ETypeResolver:
         if node.TYPE in ('delete', 'insert'):
             for etype, variable in node.main_variables:
                 var = variable.name
-                assert etype in self.schema
+                assert etype in self.schema, etype
                 constraints.append(fd.make_expression(
                     (var,), '%s == %r' % (var, etype)))
             for relation in node.main_relations:
