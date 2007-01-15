@@ -326,7 +326,7 @@ class Select(Statement):
     def selected_terms(self):
         """returns selected terms
         """
-        return self.selected
+        return self.selected[:]
     
 class Delete(Statement):
     """the Delete node is the root of the syntax tree for deletion statement
