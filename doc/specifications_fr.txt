@@ -32,7 +32,7 @@ SQL
 RQL s'inspire des fonctionnalités de SQL mais se veut à un plus haut niveau
 (l'implémentation actuelle de RQL génère du SQL). Pour cela il se limite au
 parcours de relations et introduit des variables. L'utilisateur n'a pas besoin
-de connaitre le modèle SQL sous-jacent, mais uniquement le schéma Ginco
+de connaitre le modèle SQL sous-jacent, mais uniquement le schéma Erudi
 définissant l'application.
 
 Versa
@@ -119,7 +119,7 @@ Recherche
   ::
 
        Any N, P WHERE
-       X is 'Personne', X nom N, X prenom P
+       X is Personne, X nom N, X prenom P
 
   On remarquera que la selection de plusieurs entités force généralement
   l'utilisation de "Any", car la spécification de type s'applique sinon
@@ -127,7 +127,7 @@ Recherche
   ::
 
        String N, P WHERE
-       X is 'Personne', X nom N, X prenom P
+       X is Personne, X nom N, X prenom P
 
 
 Insertion d'entités
@@ -146,7 +146,7 @@ Insertion d'entités
 - *insertion d'une nouvelle personne nommée 'bidule' et d'une relation 'ami' avec une personne existante nommée 'chouette'*
   ::
 
-       INSERT Person X: X nom 'bidule', X ami Y WHERE Y nom 'chouette'
+       INSERT Personne X: X nom 'bidule', X ami Y WHERE Y nom 'chouette'
 
 
 Mise à jour d'entités, création de relations
@@ -190,7 +190,7 @@ Les mots clés ne sont pas sensibles à la casse.
     DISTINCT, INSERT, SET, DELETE,
     WHERE, AND, OR, NOT
     IN, LIKE,
-    TRUE, FALSE, NULL, TODAY,
+    TRUE, FALSE, NULL, TODAY, NOW
     GROUPBY, ORDERBY, ASC, DESC
 
 
@@ -362,7 +362,7 @@ Tri et groupes
   variables sélectionnée doivent être groupées
 
 - pour les requête ordonnées (i.e. avec une clause ORDERBY), toutes les
-  variables ordonnéees doivent être sélectionnées
+  variables ordonnéees doivent être sélectionnées XXX plus vrai, non ?
 
 - pour grouper ou/et trier sur les attributs on peut faire : "X,L user U, U
   login L GROUPBY L,X ORDERBY L"

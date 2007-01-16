@@ -10,7 +10,7 @@ Apprenons RQL par la pratique...
 Schema
 ------
 Nous supposerons dans la suite de ce document que le schéma de
-l'application Ginco est le suivant. Les différentes entités
+l'application Erudi est le suivant. Les différentes entités
 disponibles sont :
 
 :Personne:
@@ -76,7 +76,7 @@ De plus si les métadonnées sont utilisées, vous disposez pour chaque
 type d'entité des relations "creation_date", "modification_date" dont
 l'objet est une entité de type Dates (il y a un "s" pour ne pas avoir
 de conflit avec le type de base "date"), ainsi que de la relation
-"owned_by" dont l'objet est une entité de type Ginco_user. Les schemas
+"owned_by" dont l'objet est une entité de type Euser. Les schemas
 standards de ces types d'entités sont les suivants :
 
 :Dates:
@@ -86,7 +86,7 @@ standards de ces types d'entités sont les suivants :
 	day date
 
 
-:Ginco_user:
+:Euser:
 
 ::
 
