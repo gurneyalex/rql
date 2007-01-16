@@ -28,11 +28,11 @@ def add_restriction(select, relation):
 class Statement(Node, object):
     """base class for statement nodes"""
     
-    def __init__(self, e_types):
+    def __init__(self, etypes):
         Node.__init__(self)
         # a dictionnary mapping known entity type names to the corresponding
         # type object
-        self.e_types = e_types
+        self.e_types = etypes
         # dictionnary of defined variables in the original RQL syntax tree
         self.defined_vars = {}
         self.stinfo = {'rewritten': {}}
@@ -96,11 +96,11 @@ class Statement(Node, object):
             break
         return None
 
-    def make_variable(self, e_type=None):
+    def make_variable(self, etype=None):
         """create a new variable with an unique name for this tree"""
         count = 0
-        if e_type:
-            base_name = e_type[0]
+        if etype:
+            base_name = etype[0]
         else:
             base_name = 'TMP'
         var_name = '%s' % base_name
@@ -120,13 +120,13 @@ class Statement(Node, object):
         else:
             self.insert(0, relation)
         
-    def add_type_restriction(self, variable, e_type):
-        """builds a restriction node to express : variable is e_type"""
+    def add_type_restriction(self, variable, etype):
+        """builds a restriction node to express : variable is etype"""
         relation = nodes.Relation('is')
         var_ref = nodes.VariableRef(variable)
         relation.append(var_ref)
         comp_entity = nodes.Comparison('=')
-        comp_entity.append(nodes.Constant(e_type, 'etype'))
+        comp_entity.append(nodes.Constant(etype, 'etype'))
         relation.append(comp_entity)
         self.add(relation)
 
@@ -142,8 +142,8 @@ class Select(Statement):
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_select( self, *args, **kwargs )
 
-    def __init__(self, e_types):
-        Statement.__init__(self, e_types)
+    def __init__(self, etypes):
+        Statement.__init__(self, etypes)
         # distinct ?
         self.distinct = False
         # list of selected relations (maybe variables or functions)
@@ -197,10 +197,10 @@ class Select(Statement):
         """
         assert self.selected
         # Person P  ->  Any P where P is 'Person'
-        e_type = stmt_type.capitalize()
-        if e_type != 'Any':
+        etype = stmt_type.capitalize()
+        if etype != 'Any':
             for var in self.get_selected_variables():
-                self.add_type_restriction(var.variable, e_type)
+                self.add_type_restriction(var.variable, etype)
 
     def get_description(self):
         """return the list of types or relations (if not found) associated to
@@ -211,8 +211,6 @@ class Select(Statement):
             try:
                 descr.append(term.get_type())
             except AttributeError:
-                import traceback
-                traceback.print_exc()
                 descr.append('Any')
         return descr
         
@@ -318,8 +316,8 @@ class Delete(Statement):
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_delete( self, *args, **kwargs )
     
-    def __init__(self, e_types):
-        Statement.__init__(self, e_types)
+    def __init__(self, etypes):
+        Statement.__init__(self, etypes)
         self.main_variables = []
         self.main_relations = []
 
@@ -340,11 +338,11 @@ class Delete(Statement):
         return [vref for et, vref in self.main_variables]
     
         
-    def add_main_variable(self, e_type, variable):
+    def add_main_variable(self, etype, variable):
         """add a variable to the list of deleted variables"""
-        if e_type == 'Any':
+        if etype == 'Any':
             raise BadRQLQuery('"Any" is not supported in DELETE statement')
-        self.main_variables.append( (e_type.encode(), variable) )
+        self.main_variables.append( (etype.encode(), variable) )
 
     def add_main_relation(self, relation):
         """add a relation to the list of deleted relations"""
@@ -356,8 +354,8 @@ class Delete(Statement):
         """return the tree as an encoded rql string"""
         result = ['DELETE']
         if self.main_variables:
-            result.append(', '.join(['%s %s' %(e_type, var)
-                                     for e_type, var in self.main_variables]))
+            result.append(', '.join(['%s %s' %(etype, var)
+                                     for etype, var in self.main_variables]))
         if self.main_relations:
             if self.main_variables:
                 result.append(',')
@@ -381,8 +379,8 @@ class Insert(Statement):
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_insert( self, *args, **kwargs )
     
-    def __init__(self, e_types):
-        Statement.__init__(self, e_types)
+    def __init__(self, etypes):
+        Statement.__init__(self, etypes)
         self.main_variables = []
         self.main_relations = []
         self.inserted_variables = {}
@@ -402,11 +400,11 @@ class Insert(Statement):
     def selected_terms(self):
         return [vref for et, vref in self.main_variables]
         
-    def add_main_variable(self, e_type, variable):
+    def add_main_variable(self, etype, variable):
         """add a variable to the list of inserted variables"""
-        if e_type == 'Any':
+        if etype == 'Any':
             raise BadRQLQuery('"Any" is not supported in INSERT statement')
-        self.main_variables.append( (e_type.encode(), variable) )
+        self.main_variables.append( (etype.encode(), variable) )
         self.inserted_variables[variable.variable] = 1
         
     def add_main_relation(self, relation):
@@ -423,8 +421,8 @@ insertion variable'
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         result = ['INSERT']
-        result.append(', '.join(['%s %s' % (e_type, var)
-                                 for e_type, var in self.main_variables]))
+        result.append(', '.join(['%s %s' % (etype, var)
+                                 for etype, var in self.main_variables]))
         if self.main_relations:
             result.append(':')
             result.append(', '.join([rel.as_string(encoding, kwargs)
@@ -436,8 +434,8 @@ insertion variable'
                               
     def __repr__(self):
         result = ['INSERT']
-        result.append(', '.join(['%r %r' % (e_type, var)
-                                 for e_type, var in self.main_variables]))
+        result.append(', '.join(['%r %r' % (etype, var)
+                                 for etype, var in self.main_variables]))
         if self.main_relations:
             result.append(':')
             result.append(', '.join([repr(rel) for rel in self.main_relations]))
@@ -458,8 +456,8 @@ class Update(Statement):
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_update( self, *args, **kwargs )
 
-    def __init__(self, e_types):
-        Statement.__init__(self, e_types)
+    def __init__(self, etypes):
+        Statement.__init__(self, etypes)
         self.main_relations = []
 
     def selected_terms(self):

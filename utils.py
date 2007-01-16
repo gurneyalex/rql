@@ -38,17 +38,16 @@ class FunctionDescr(object):
                nbargs < cls.maxargs:
             raise BadRQLQuery('too many arguments for function %s' % cls.name)
 
-class MAX(FunctionDescr):
+class AggrFunctionDescr(FunctionDescr):
     aggregat = True
-class MIN(FunctionDescr):
-    aggregat = True
-class SUM(FunctionDescr):
-    aggregat = True
-class COUNT(FunctionDescr):
-    aggregat = True
+    rtype = 'Int' # XXX if the orig type is a final type, returned type should be the same
+    
+class MAX(AggrFunctionDescr): pass
+class MIN(AggrFunctionDescr): pass
+class SUM(AggrFunctionDescr): pass
+class COUNT(AggrFunctionDescr): 
     rtype = 'Int'
-class AVG(FunctionDescr):
-    aggregat = True
+class AVG(AggrFunctionDescr):
     rtype = 'Float'
 
 class UPPER(FunctionDescr):

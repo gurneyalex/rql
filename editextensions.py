@@ -40,9 +40,9 @@ Select.recover = recover
 # variable manipulation methods ###############################################
 
 orig_make_variable = Select.make_variable
-def make_variable(self, e_type=None):
+def make_variable(self, etype=None):
     """override Select.make_variable to memorize variable creation"""
-    var = orig_make_variable(self, e_type)
+    var = orig_make_variable(self, etype)
     if self.memorizing and not self.undoing:
         self.undo_manager.add_operation(MakeVarOperation(var))
     return var

@@ -233,7 +233,7 @@ rule base_expr<<V>>: const                         {{ return const }}
 
                      | var<<V>>                    {{ return var }} 
 
-                     | e_type<<V>>                 {{ return e_type }} 
+                     | etype<<V>>                  {{ return etype }} 
 
                      | func<<V>>                   {{ return func }}
 
@@ -249,7 +249,7 @@ rule func<<V>>: FUNCTION r"\("              {{ F = Function(FUNCTION) }}
 
 rule var<<V>>: VARIABLE {{ return VariableRef(V.get_variable(VARIABLE)) }} 
 
-rule e_type<<V>>: E_TYPE {{ return V.get_type(E_TYPE) }} 
+rule etype<<V>>: E_TYPE {{ return V.get_type(E_TYPE) }} 
 
 
 rule const: NULL       {{ return Constant('NULL', None) }}

@@ -4,8 +4,6 @@ Copyright (c) 2003-2004 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
-__revision__ = "$Id: rqlgen.py,v 1.5 2005-02-25 21:34:14 nico Exp $"
-
 NOT = 1
 
 
@@ -15,7 +13,7 @@ class RQLGenerator(object):
     """
 
 
-    def select(self, e_type, nupplets=(), groups=(), sorts=()) :
+    def select(self, etype, nupplets=(), groups=(), sorts=()) :
         """
         return a RQL selection query
         
@@ -48,7 +46,7 @@ class RQLGenerator(object):
         ...          )
         'Person X\\nWHERE X work_for S , S name "Logilab" , X firstname F , X surname S\\nSORTBY F ASC, S DESC'
         """
-        result = [e_type + ' X']
+        result = [etype + ' X']
         if nupplets:
             result.append(self.where(nupplets))
         if groups:
@@ -128,10 +126,10 @@ class RQLGenerator(object):
         return 'SORTBY %s' % ', '.join(sorts)
 
 
-    def insert(self, e_type, attributes):
+    def insert(self, etype, attributes):
         """ returns an insert statement
 
-        * e_type is the entity type to insert
+        * etype is the entity type to insert
 
         * attributes is a list of tuples (attr_name, attr_value)
 
@@ -143,13 +141,13 @@ class RQLGenerator(object):
         """
         restrictions = ['X %s "%s"' % (attr_name, attr_value)
                         for attr_name, attr_value in attributes] # .items()]
-        return 'INSERT %s X: %s' % (e_type, ', '.join(restrictions))
+        return 'INSERT %s X: %s' % (etype, ', '.join(restrictions))
 
 
-    def delete(self, e_type, attributes):
+    def delete(self, etype, attributes):
         """ returns a delete statement
 
-        * e_type is the entity type to delete
+        * etype is the entity type to delete
 
         * attributes is a list of tuples (attr_name, attr_value)
 
@@ -161,13 +159,13 @@ class RQLGenerator(object):
         """
         restrictions = ['X %s "%s"' % (attr_name, attr_value)
                         for attr_name, attr_value in attributes] # .items()]
-        return 'DELETE %s X where %s' % (e_type, ', '.join(restrictions))
+        return 'DELETE %s X where %s' % (etype, ', '.join(restrictions))
 
 
-    def update(self, e_type, old_descr, new_descr):
+    def update(self, etype, old_descr, new_descr):
         """ returns a set statement
 
-        * e_type is the entity type to update
+        * etype is the entity type to update
 
         * old_descr is a list of tuples (attr_name, attr_value)
           that identifies the entity to update
@@ -182,7 +180,7 @@ class RQLGenerator(object):
         ...         (('job', "superhero"), ('nickname', "superman")))
         'SET X job "superhero", X nickname "superman" WHERE X is "Person", X firstname "Clark", X lastname "Kent"'
         """
-        old_restrictions = ['X is "%s"' % e_type]
+        old_restrictions = ['X is "%s"' % etype]
         old_restrictions += ['X %s "%s"' % (attr_name, attr_value)
                              for attr_name, attr_value in old_descr]
         new_restrictions = ['X %s "%s"' % (attr_name, attr_value)

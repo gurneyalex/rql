@@ -315,10 +315,17 @@ class Function(HSMixin, Node):
         """return list of arguments to give to __init__ to clone this node"""
         return (self.name,)
 
-    def get_type(self):
-        """return the type of object returned by this function if known"""
+    def get_type(self, solution=None):
+        """return the type of object returned by this function if known
+
+        solution is an optional variable/etype mapping
+        """
         # FIXME: e_type defined by erudi's sql generator
-        return self.descr().rtype or getattr(self.children[0], 'e_type', 'Any')
+        rtype = self.descr().rtype
+        if rtype is None:
+            # XXX support one variable ref child
+            rtype = solution and solution.get(self.children[0].name)
+        return rtype or 'Any'
 
     def descr(self):
         """return the type of object returned by this function if known"""

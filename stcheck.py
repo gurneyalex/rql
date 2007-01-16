@@ -221,9 +221,9 @@ variables'
             assert rhs.operator == '='
             lhsvar.stinfo['typerels'].add(relation)
             for c in rhs.get_nodes(nodes.Constant):
-                c.value = e_type = c.value.capitalize()
-                if not self.schema.has_entity(e_type):
-                    errors.append('unkwnown entity\'s type "%s"'% e_type)
+                c.value = etype = c.value.capitalize()
+                if not self.schema.has_entity(etype):
+                    errors.append('unkwnown entity\'s type "%s"' % etype)
             return
         lhsvar.stinfo['relations'].add(relation)
         lhsvar.stinfo['lhsrelations'].add(relation)

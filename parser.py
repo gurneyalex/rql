@@ -387,8 +387,8 @@ class Hercule(runtime.Parser):
             var = self.var(V, _context)
             return var
         elif _token == 'E_TYPE':
-            e_type = self.e_type(V, _context)
-            return e_type
+            etype = self.etype(V, _context)
+            return etype
         elif _token == 'FUNCTION':
             func = self.func(V, _context)
             return func
@@ -417,8 +417,8 @@ class Hercule(runtime.Parser):
         VARIABLE = self._scan('VARIABLE', context=_context)
         return VariableRef(V.get_variable(VARIABLE))
 
-    def e_type(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'e_type', [V])
+    def etype(self, V, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'etype', [V])
         E_TYPE = self._scan('E_TYPE', context=_context)
         return V.get_type(E_TYPE)
 
