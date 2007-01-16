@@ -8,12 +8,12 @@ root nodes, defined in the stmts module.
 __docformat__ = "restructuredtext en"
 
 
-from logilab.common import cached
+from logilab.common.decorators import cached
 from logilab.common.tree import VNode as Node, BinaryNode, ListNode, \
      post_order_list
 from logilab.common.visitor import VisitedMixIn
 
-from rql.utils import F_TYPES, quote, uquote
+from rql.utils import function_description, quote, uquote
 
 def get_visit_name(self):
     """
@@ -26,15 +26,6 @@ Node.get_visit_name = get_visit_name
 BinaryNode.get_visit_name = get_visit_name
 ListNode.get_visit_name = get_visit_name
 
-
-FUNC_TYPES_MAP = {
-    'COUNT' : 'Int',
-    'MIN' : 'Int',
-    'MAX' : 'Int',
-    'SUM' : 'Int',
-    'LOWER' : 'String',
-    'UPPER' : 'String',
-    }
 
 # base objects ################################################################
 
@@ -326,11 +317,13 @@ class Function(HSMixin, Node):
 
     def get_type(self):
         """return the type of object returned by this function if known"""
-        try:
-            return F_TYPES[self.name]
-        except KeyError:
-            # FIXME: e_type defined by the sql generator
-            return self.children[0].e_type
+        # FIXME: e_type defined by erudi's sql generator
+        return self.descr().rtype or getattr(self.children[0], 'e_type', 'Any')
+
+    def descr(self):
+        """return the type of object returned by this function if known"""
+        # FIXME: e_type defined by erudi's sql generator
+        return function_description(self.name)
         
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
@@ -381,7 +374,12 @@ class Constant(HSMixin,Node):
         if self.type == 'Substitute':
             return kwargs[self.value]
         return self.value
-    
+
+    def get_type(self):
+        if self.uid:
+            return self.uidtype
+        return self.type
+        
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string (an unicode string is
         returned if encoding is None)
@@ -461,7 +459,10 @@ class VariableRef(HSMixin, Node):
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         return self.name
-    
+
+    def get_type(self):
+        return self.variable.get_type()
+
 # group and sort nodes ########################################################
 
 class Group(ListNode): 
@@ -492,6 +493,9 @@ class Sort(ListNode):
     
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_sort(self, *args, **kwargs)
+
+    def selected_terms(self):
+        return self
     
     def as_string(self, encoding=None, kwargs=None):
         return 'ORDERBY %s' % ', '.join([child.as_string(encoding, kwargs)
@@ -640,6 +644,21 @@ class Variable(object):
             for node in term.get_nodes(VariableRef):
                 if node.variable is self:
                     return i
+    
+    @cached
+    def get_type(self):
+        etype = 'Any'
+        for ref in self.references():
+            rel = ref.relation()
+            if rel is None:
+                continue
+            if rel.r_type == 'is' and self.name == rel.children[0].name:
+                etype = rel.children[1].children[0].value.encode()
+                break
+            if rel.r_type != 'is' and self.name != rel.children[0].name:
+                etype = rel.r_type
+                break
+        return etype
         
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""

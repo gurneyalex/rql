@@ -29,6 +29,8 @@ BAD_QUERIES = (
     'Any C where C located P, P eid %(x)s ORDERBY N', #15066
 
 #    'Any COUNT(X),P WHERE X concerns P', #9726
+    'Any X, MAX(COUNT(B)) WHERE B concerns X GROUPBY X;',
+    
     )
 
 class CheckClassTest(TestCase):
@@ -74,8 +76,8 @@ class CheckClassTest(TestCase):
             ('Any X WHERE X is Person, X eid 12',
              'Any 12'),
             ('Any X,Y WHERE X eid 0, Y eid 1, X work_for Y', 'Any 0,1 WHERE 0 work_for 1'),
-            ('Any X,Y WHERE X work_for Y OR NOT X work_for Y', 'Any X,Y WHERE X ?work_for Y'),
-            ('Any X,Y WHERE NOT X work_for Y OR X work_for Y', 'Any X,Y WHERE X ?work_for Y'),
+            ('Any X,Y WHERE X work_for Y OR NOT X work_for Y', 'Any X,Y WHERE X? work_for Y?'),
+            ('Any X,Y WHERE NOT X work_for Y OR X work_for Y', 'Any X,Y WHERE X? work_for Y?'),
             # test symetric OR rewrite
             ("DISTINCT Any P WHERE P connait S OR S connait P, S nom 'chouette'",
              "DISTINCT Any P WHERE P connait S, S nom 'chouette'"),

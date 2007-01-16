@@ -1,44 +1,89 @@
 """Miscellaneous utilities for rql
 
-Copyright (c) 2003-2004 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
-from __future__ import generators
+from rql._exceptions import BadRQLQuery
 
-__revision__ = "$Id: utils.py,v 1.15 2006-02-20 02:06:08 ludal Exp $"
+KEYWORDS = set(('INSERT', 'SET', 'DELETE',
+                'WHERE', 'AND', 'OR', 'NOT'
+                'IN', 'LIKE',
+                'TRUE', 'FALSE', 'NULL', 'TODAY',
+                'GROUPBY', 'ORDERBY', 'ASC', 'DESC',
+                'LIMIT', 'OFFSET'))
+class metafunc(type):
+    def __new__(mcs, name, bases, dict):
+        dict['name'] = name
+        return type.__new__(mcs, name, bases, dict)
+    
 
-KEYWORDS = ['INSERT', 'SET', 'DELETE',
-            'WHERE', 'AND', 'OR', 'NOT'
-            'IN', 'LIKE',
-            'TRUE', 'FALSE', 'NULL', 'TODAY',
-            'GROUPBY', 'ORDERBY', 'ASC', 'DESC',
-            'LIMIT', 'OFFSET']
-KEYWORDS_DICT = dict(zip(KEYWORDS, [1 for kw in KEYWORDS]))
+class FunctionDescr(object):
+    __metaclass__ = metafunc
+    rtype = None
+    aggregat = False
+    minargs = 1
+    maxargs = 1
+    def __init__(self, name=None, rtype=rtype, aggregat=aggregat):
+        self.name = name
+        self.rtype = rtype
+        self.aggregat = aggregat
+        
+    @classmethod
+    def check_nbargs(cls, nbargs):
+        if cls.minargs is not None and \
+               nbargs < cls.minargs:
+            raise BadRQLQuery('not enough argument for function %s' % cls.name)
+        if cls.maxargs is not None and \
+               nbargs < cls.maxargs:
+            raise BadRQLQuery('too many arguments for function %s' % cls.name)
 
-FUNCTIONS = ['COUNT', 'MIN', 'MAX', 'AVG', 'SUM',
-             'UPPER', 'LOWER', 'IN']
-FUNCTIONS_DICT = dict(zip(FUNCTIONS, [1 for kw in FUNCTIONS]))
-# map function name to type of objects it returns (if known)
-F_TYPES = {
-    'COUNT': 'Int',
-    'UPPER': 'String',
-    'LOWER': 'String',
+class MAX(FunctionDescr):
+    aggregat = True
+class MIN(FunctionDescr):
+    aggregat = True
+class SUM(FunctionDescr):
+    aggregat = True
+class COUNT(FunctionDescr):
+    aggregat = True
+    rtype = 'Int'
+class AVG(FunctionDescr):
+    aggregat = True
+    rtype = 'Float'
+
+class UPPER(FunctionDescr):
+    rtype = 'String'
+class LOWER(FunctionDescr):
+    rtype = 'String'
+class IN(FunctionDescr):
+    """this is actually a 'keyword' function..."""
+    maxargs = None
+    
+FUNCTIONS = {
+    # aggregat functions
+    'MIN': MIN, 'MAX': MAX,
+    'SUM': SUM,
+    'COUNT':COUNT,
+    'AVG': AVG,
+    # transformation functions
+    'UPPER': UPPER, 'LOWER': LOWER,
+    # keyword function
+    'IN': IN
     }
 
 def is_keyword(word):
     """return true if the given word is a RQL keyword"""
-    return KEYWORDS_DICT.has_key(word.upper())
+    return word.upper() in KEYWORDS
 
-def register_function(funcname):
-    funcname = funcname.upper()
-    assert not funcname in FUNCTIONS
-    FUNCTIONS.append(funcname)
-    FUNCTIONS_DICT[funcname] = 1
+def register_function(funcdef):
+    if not (isinstance(funcdef, FunctionDescr) or issubclass(funcdef, FunctionDescr)):
+        funcdef = FunctionDescr(funcdef.upper())
+    assert not funcdef.name in FUNCTIONS, '%s is already registered' % funcname
+    FUNCTIONS[funcdef.name] = funcdef
     
-def is_function(word):
-    """return true if the given word is a RQL function"""
-    return word.upper() in FUNCTIONS_DICT
+def function_description(funcname):
+    """return the description (`FunctionDescription`) for a RQL function"""
+    return FUNCTIONS[funcname.upper()]
 
 def quote(value):
     """quote a string value"""

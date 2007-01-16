@@ -8,7 +8,7 @@ __docformat__ = "restructuredtext en"
 
 from rql import nodes
 from rql._exceptions import BadRQLQuery
-from rql.utils import is_function
+from rql.utils import function_description
 
 class GoTo(Exception):
     """exception used to control the visit of the tree"""
@@ -46,6 +46,10 @@ class RQLSTAnnotator:
         self._checkselected = checkselected # XXX thread safety
         errors = []
         for i, term in enumerate(node.selected_terms()):
+            # selected terms are not included by the default visit,
+            # accept manually each of them
+            term.accept(self, errors)
+            # register the selection column index
             for varref in term.get_nodes(nodes.VariableRef):
                 varref.variable.stinfo['selected'].add(i)
         self._visit(node, errors)
@@ -75,6 +79,7 @@ class RQLSTAnnotator:
                 pass
                     
     def _check_selected(self, term, termtype, errors):
+        """check that variables referenced in the given term are selected"""
         for var in term.get_nodes(nodes.VariableRef):
             var = var.variable
             rels = [v for v in var.references() if v.relation() is not None]
@@ -250,22 +255,26 @@ variables'
         assert len(mathexpr.children) == 2, len(mathexpr.children)
         
     def visit_function(self, function, errors):
-        if not is_function(function.name):
+        try:
+            funcdescr = function_description(function.name)
+        except KeyError:
             errors.append('unknown function "%s"' % function.name)
-        
-        if function.name in ("COUNT", "MIN", "MAX", "AVG", "SUM"):
-            assert len(function.children) == 1
-            #assert function in function.root().selected
-            #assert function.parent is None
-        elif function.name in ('UPPER', 'LOWER'):
-            assert len(function.children) == 1
-        elif function.name == 'IN':
-            assert function.parent.operator == '='
-            if len(function.children) == 1:
-                function.parent.append(function.children[0])
-                function.parent.remove(function)
-            else:
-                assert len(function.children) >= 1
+        else:
+            try:
+                funcdescr.check_nbargs(len(function.children))
+            except BadRQLQuery, ex:
+                errors.append(str(ex))
+            if funcdescr.aggregat:
+                if isinstance(function.children[0], nodes.Function) and \
+                       function.descr().aggregat:
+                    errors.append('can\'t nest aggregat functions')
+            if funcdescr.name == 'IN':
+                assert function.parent.operator == '='
+                if len(function.children) == 1:
+                    function.parent.append(function.children[0])
+                    function.parent.remove(function)
+                else:
+                    assert len(function.children) >= 1
 
     def visit_variableref(self, variableref, errors):
         assert len(variableref.children)==0

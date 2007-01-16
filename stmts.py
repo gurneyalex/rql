@@ -209,33 +209,12 @@ class Select(Statement):
         descr = []
         for term in self.selected:
             try:
-                descr.append(getattr(self, '%s_description' % term.TYPE)(term))
+                descr.append(term.get_type())
             except AttributeError:
+                import traceback
+                traceback.print_exc()
                 descr.append('Any')
         return descr
-
-    def variableref_description(self, term):
-        var =  term.variable
-        etype = 'Any'
-        for ref in var.references():
-            rel = ref.relation()
-            if rel is None:
-                continue
-            if rel.r_type == 'is' and var.name == rel.children[0].name:
-                etype = rel.children[1].children[0].value.encode()
-                break
-            if rel.r_type != 'is' and var.name != rel.children[0].name:
-                etype = rel.r_type
-                break
-        return etype
-    
-    def function_description(self, term):
-        return nodes.FUNC_TYPES_MAP.get(term.name, 'Any')
-        
-    def constant_description(self, term):
-        if term.uid:
-            return term.uidtype
-        return term.type
         
     def get_indexed_description(self):
         """return the list of types or relations (if not found) associated to
