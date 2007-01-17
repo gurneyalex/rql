@@ -100,7 +100,7 @@ class RQLHelper:
                 for varref in var.references():
                     rel = varref.relation()
                     assert varref.parent
-                    if rel and (rel is uidrel or rel.r_type == 'is'):
+                    if rel and (rel is uidrel or rel.is_types_restriction()):
                         # drop this relation
                         rel.parent.remove(rel)
                     else:

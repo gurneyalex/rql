@@ -145,6 +145,14 @@ class Relation(Node):
         self.optional = None
         self.set_optional(optional)
 
+    def is_types_restriction(self):
+        rhs = self.children[1]
+        if isinstance(rhs, Comparison):
+            rhs = rhs.children[0]
+        # else: relation used in SET OR DELETE selection
+        return self.r_type == 'is' and \
+               not isinstance(rhs, VariableRef)
+    
     def set_optional(self, optional):
         assert optional in (None, 'left', 'right')
         if optional is not None:
