@@ -53,7 +53,7 @@ class RQLHelper:
             etypes[etype] = etype
         for rtype in schema.relations():
             rtype = str(rtype)
-            if is_keyword(rtype) or rtype.lower() == 'is':
+            if is_keyword(rtype):# or rtype.lower() == 'is':
                 raise UsesReservedWord(rtype)
         self._annotator.schema = schema
         self._analyser.set_schema(schema)

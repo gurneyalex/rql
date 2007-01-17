@@ -75,9 +75,10 @@ def is_keyword(word):
     return word.upper() in KEYWORDS
 
 def register_function(funcdef):
-    if not (isinstance(funcdef, FunctionDescr) or issubclass(funcdef, FunctionDescr)):
+    if isinstance(funcdef, basestring) :
         funcdef = FunctionDescr(funcdef.upper())
-    assert not funcdef.name in FUNCTIONS, '%s is already registered' % funcname
+    assert not funcdef.name in FUNCTIONS, \
+           '%s is already registered' % funcdef.name
     FUNCTIONS[funcdef.name] = funcdef
     
 def function_description(funcname):

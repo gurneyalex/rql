@@ -151,7 +151,7 @@ class ETypeResolver:
         """extract constraints for an relation according to it's  type"""
         rtype = relation.r_type
         lhs, rhs = relation.get_parts()
-        if rtype == 'is':
+        if rtype == 'is' and not isinstance(rhs.children[0], nodes.VariableRef):
             types = [c.value for c in iget_nodes(rhs, nodes.Constant)]
             if relation._not:
                 not_types = [t for t in self._base_domain if not t in types]

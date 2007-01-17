@@ -56,7 +56,7 @@ class EntitySchema(ERSchema):
 class DummySchema:
     _types = {}
     for type in ['String', 'Boolean', 'Int', 'Float', 'Date',
-              'Person', 'Company', 'Address']:
+                 'Eetype', 'Person', 'Company', 'Address']:
         _types[type] = EntitySchema(type)
         
     _relations = {
@@ -70,6 +70,11 @@ class DummySchema:
         'work_for' : RelationSchema( ( ('Person', ('Company',) ),
                                       )
                                     ),
+        'is' : RelationSchema( ( ('Person', ('Eetype',) ),
+                                 ('Company', ('Eetype',) ),
+                                 ('Address', ('Eetype',) ),
+                                 )
+                               ),
         'connait' : RelationSchema( (('Person', ('Person',) ),
                                      ),
                                     symetric=True),
@@ -121,6 +126,7 @@ class AnalyzerClassTest(TestCase):
         sols.sort()
         self.assertEqual(sols, [{'X': 'Address'},
                                 {'X': 'Company'},
+                                {'X': 'Eetype'},
                                 {'X': 'Person'}])
     
     def test_base_2(self):
@@ -148,12 +154,21 @@ class AnalyzerClassTest(TestCase):
         sols = self.helper.get_solutions(node, debug=DEBUG)
         sols.sort()
         self.assertEqual(sols, [{'X': 'Company'}, {'X': 'Person'}])
+    
+    def test_is_query(self):
+        node = self.helper.parse('Any T WHERE X name "logilab", X is T')
+        sols = self.helper.get_solutions(node, debug=DEBUG)
+        sols.sort()
+        self.assertEqual(sols, [{'X': 'Company', 'T': 'Eetype'},
+                                {'X': 'Person', 'T': 'Eetype'}])
 
     def test_not(self):
         node = self.helper.parse('Any X WHERE not X is Person')
         sols = self.helper.get_solutions(node, debug=DEBUG)
         sols.sort()
-        self.assertEqual(sols, [{'X': 'Address'}, {'X': 'Boolean'}, {'X': 'Company'}, {'X': 'Date'}, {'X': 'Float'}, {'X': 'Int'}, {'X': 'String'}])
+        self.assertEqual(sols, [{'X': 'Address'}, {'X': 'Boolean'},
+                                {'X': 'Company'}, {'X': 'Date'}, {'X': 'Eetype'},
+                                {'X': 'Float'}, {'X': 'Int'}, {'X': 'String'}])
 
     def test_uid_func_mapping(self):
         h = self.helper
