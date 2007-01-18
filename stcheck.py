@@ -170,7 +170,10 @@ variables'
             self._check_selected(sort, 'sort', errors)
     
     def visit_sortterm(self, sortterm, errors):
-        pass
+        if isinstance(sortterm.var, nodes.Constant):
+            if len(sortterm.root().selected) < sortterm.var.value:
+                errors.append('order column out of bound %s' % sortterm.var.value)
+            
     
                     
     def visit_offset(self, offset, errors):
@@ -217,7 +220,7 @@ variables'
         lhs, rhs = relation.get_parts()
         rtype = relation.r_type
         lhsvar = lhs.variable
-        if rtype == 'is':
+        if relation.is_types_restriction():
             assert rhs.operator == '='
             lhsvar.stinfo['typerels'].add(relation)
             for c in rhs.get_nodes(nodes.Constant):
