@@ -152,17 +152,6 @@ class RQLSTAnnotator:
         if select.distinct: # distinct, all variables used in sort must be selected
             selected = [_name(v) for v in select.selected]
             for sortterm in sort:
-                if not _name(sortterm.var) in selected:
-                    butvariable = False
-                    for var in sortterm.var.get_nodes(nodes.VariableRef):
-                        if not _name(var) in selected:
-                            break
-                    else:
-                        butvariable = True
-                    if not butvariable:
-                        msg = 'orderby expression "%s" should appear in the selected \
-variables'
-                        errors.append(msg % var)
                 for varref in sortterm.var.get_nodes(nodes.VariableRef):
                     varref.variable.stinfo['sort'] = sort
                         
