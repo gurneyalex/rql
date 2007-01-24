@@ -175,11 +175,10 @@ class ETypeResolver:
         if isinstance(rhs, nodes.Comparison):
             rhs = rhs.children[0]
         rschema = self.schema.relation_schema(rtype)
-        if not rschema.is_final() and isinstance(lhs, nodes.Constant):
+        if isinstance(lhs, nodes.Constant): # lhs is a constant node (simplified tree)
             if not isinstance(rhs, nodes.VariableRef):
                 return
             var = rhs.name
-            vars = [var]
             if self.uid_func:
                 alltypes = set()
                 for etype in self._uid_node_types(lhs):
@@ -189,9 +188,11 @@ class ETypeResolver:
                 alltypes = rschema.objects()
             cstr = '%s in (%s,)' % (
                     var, ','.join('"%s"' % t for t in alltypes))
-        elif not rschema.is_final() and isinstance(rhs, nodes.Constant):
-            var = lhs.name
             vars = [var]
+        elif isinstance(rhs, nodes.Constant) and not rschema.is_final():
+            if not isinstance(lhs, nodes.VariableRef):
+                return
+            var = lhs.name
             if self.uid_func:
                 alltypes = set()
                 for etype in self._uid_node_types(rhs):
@@ -201,11 +202,14 @@ class ETypeResolver:
                 alltypes = rschema.subjects()
             cstr = '%s in (%s,)' % (
                     var, ','.join('"%s"' % t for t in alltypes))
+            vars = [var]
         else:
+            if not isinstance(lhs, nodes.VariableRef):
+                # XXX: check relation is valid
+                return
             lhsvar = lhs.name
             rhsvars = [v.name for v in iget_nodes(rhs, nodes.VariableRef)
                        if not v.name == lhsvar]
-            vars = [lhsvar] + rhsvars
             if rhsvars:
                 s2 = '=='.join(rhsvars)
                 res = []
@@ -217,6 +221,7 @@ class ETypeResolver:
             else:
                 cstr = '%s in (%s,)' % (
                     lhsvar, ','.join('"%s"' % t for t in rschema.subjects()))
+            vars = [lhsvar] + rhsvars
         constraints.append(fd.make_expression(vars, cstr))
 
     def visit_and(self, et, constraints):

@@ -10,7 +10,8 @@ from rql import RQLHelper, BadRQLQuery
 BAD_QUERIES = (
     'Any X, Y GROUPBY X',
     
-    'DISTINCT Any X WHERE X work_for Y ORDERBY Y',
+    # this is now a valid query
+    #'DISTINCT Any X WHERE X work_for Y ORDERBY Y',
     
     'Missing X',
     
