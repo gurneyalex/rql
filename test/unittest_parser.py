@@ -61,6 +61,9 @@ SPEC_QUERIES = (
     "Any X, COUNT(B) where B concerns X GROUPBY X ORDERBY 1;"
 
     'Any X, MAX(COUNT(B)) WHERE B concerns X GROUPBY X;', # syntaxically correct
+
+    'Any X WHERE X eid > 12;',
+    'DELETE Any X WHERE X eid > 12;',
     
     # optional relation support (left|right outer join)
     'Any X,Y,A WHERE X? concerns Y, Y title A;',

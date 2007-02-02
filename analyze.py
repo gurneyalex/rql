@@ -1,7 +1,7 @@
 """Analyze of the RQL syntax tree to get possible types for rql variables
 
 :organization: Logilab
-:copyright: 2004-2006 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:copyright: 2004-2007 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 __docformat__ = "restructuredtext en"
@@ -50,6 +50,7 @@ class ETypeResolver:
         self.schema = schema
         # default domain for a variable
         self._base_domain = [str(etype) for etype in schema.entities()]
+        self._nonfinal_domain = [str(etype) for etype in schema.entities() if not etype.is_final()]
         
     def visit(self, node, uid_func_mapping=None, kwargs=None, debug=False):
         # FIXME: not thread safe
@@ -78,8 +79,10 @@ class ETypeResolver:
         # add restriction specific to delete and insert 
         if node.TYPE in ('delete', 'insert'):
             for etype, variable in node.main_variables:
-                var = variable.name
+                if node.TYPE == 'delete' and etype == 'Any':
+                    continue
                 assert etype in self.schema, etype
+                var = variable.name
                 constraints.append(fd.make_expression(
                     (var,), '%s == %r' % (var, etype)))
             for relation in node.main_relations:
@@ -154,20 +157,23 @@ class ETypeResolver:
         if relation.is_types_restriction():
             types = [c.value for c in iget_nodes(rhs, nodes.Constant)]
             if relation._not:
-                not_types = [t for t in self._base_domain if not t in types]
+                not_types = [t for t in self._nonfinal_domain if not t in types]
                 types = not_types
             constraints.append(fd.make_expression(
                 (lhs.name,), '%s in %s ' % (lhs.name, types)))
             return
         elif rtype in self.uid_func_mapping:
-            # ignore uid values if lhs is related to a NOT relation
-            if relation._not:
-                return
-            for varref in lhs.variable.references():
-                rel = varref.relation()
-                if rel is not None and rel._not:
-                    return
-            types = self._uid_node_types(rhs)
+            if relation._not or rhs.operator != '=':
+                # non final entity types
+                types = self._nonfinal_domain
+            else:
+                # ignore uid values if lhs is related to a NOT relation
+                # XXX may i remember why ?
+                for varref in lhs.variable.references():
+                    rel = varref.relation()
+                    if rel is not None and rel._not:
+                        return
+                types = self._uid_node_types(rhs)
             if types:
                 constraints.append(fd.make_expression(
                     (lhs.name,), '%s in %s ' % (lhs.name, types)))

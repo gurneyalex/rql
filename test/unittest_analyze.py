@@ -110,6 +110,8 @@ UNRESOLVABLE_QUERIES = (
     )
 
 DEBUG = 0
+ALL_SOLS = [{'X': 'Address'}, {'X': 'Company'},
+            {'X': 'Eetype'}, {'X': 'Person'}]
 
 class AnalyzerClassTest(TestCase):
     """check wrong queries arre correctly detected
@@ -166,9 +168,9 @@ class AnalyzerClassTest(TestCase):
         node = self.helper.parse('Any X WHERE not X is Person')
         sols = self.helper.get_solutions(node, debug=DEBUG)
         sols.sort()
-        self.assertEqual(sols, [{'X': 'Address'}, {'X': 'Boolean'},
-                                {'X': 'Company'}, {'X': 'Date'}, {'X': 'Eetype'},
-                                {'X': 'Float'}, {'X': 'Int'}, {'X': 'String'}])
+        expected = ALL_SOLS[:]
+        expected.remove({'X': 'Person'})
+        self.assertEqual(sols, expected)
 
     def test_uid_func_mapping(self):
         h = self.helper
@@ -192,6 +194,25 @@ class AnalyzerClassTest(TestCase):
                                debug=DEBUG)
         self.assertEquals(sols, [{'X': 'Company'}])
 
+
+    def test_unusableuid_func_mapping(self):
+        h = self.helper
+        def type_from_uid(name):
+            self.assertEquals(name, "Logilab")
+            return 'Company'
+        uid_func_mapping = {'name': type_from_uid}
+        node = h.parse('Any X WHERE NOT X name %(company)s')
+        sols = h.get_solutions(node, uid_func_mapping, {'company': 'Logilab'},
+                               debug=DEBUG)
+        sols.sort()
+        self.assertEquals(sols, ALL_SOLS)
+        node = h.parse('Any X WHERE X name > %(company)s')
+        sols = h.get_solutions(node, uid_func_mapping, {'company': 'Logilab'},
+                               debug=DEBUG)
+        sols.sort()
+        self.assertEquals(sols, ALL_SOLS)
+        
+        
     def test_base_guess_3(self):
         node = self.helper.parse('Any Z WHERE X name Z GROUPBY Z')
         sols = self.helper.get_solutions(node, debug=DEBUG)
