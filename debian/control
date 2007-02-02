@@ -2,8 +2,8 @@ Source: rql
 Section: python
 Priority: optional
 Maintainer: Sylvain Thenault <sylvain.thenault@logilab.fr> 
-Build-Depends: debhelper (>= 5.0.37.1), python-dev (>=2.3.5-7), python (>=2.3.5-7), python-central
-XS-Python-Version: all
+Build-Depends: debhelper (>= 5.0.37.1), python-dev (>=2.4), python (>=2.4), python-central (>= 0.5)
+XS-Python-Version: >= 2.4
 Standards-Version: 3.7.2
 
 Package: python-rql
@@ -15,7 +15,4 @@ Conflicts: python2.3-rql, python2.4-rql
 Description: relationship query language (RQL) utilities [dummy package]
  A library providing the base utilities to handle RQL queries,
  such as a parser, a type inferencer.
- .
- This package is an empty dummy package that always depends on a package built
- for Debian's default Python version.
 
