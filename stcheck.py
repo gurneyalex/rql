@@ -1,7 +1,7 @@
 """RQL Syntax tree annotator
 
 :organization: Logilab
-:copyright: 2003-2006 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 __docformat__ = "restructuredtext en"
@@ -228,7 +228,8 @@ class RQLSTAnnotator:
             lhsvar.stinfo.setdefault(key, set()).add(relation)
             if key == 'uidrels':
                 constnode = relation.get_variable_parts()[1]
-                if not relation._not and isinstance(constnode, nodes.Constant):
+                if not (relation._not or rhs.operator != '=') \
+                       and isinstance(constnode, nodes.Constant):
                     lhsvar.stinfo['constnode'] = constnode
         else:
             if rschema.is_final() or rschema.physical_mode() == 'subjectinline':

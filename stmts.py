@@ -3,7 +3,7 @@ This module defines only first level nodes (i.e. statements). Child nodes are
 defined in the nodes module
 
 :organization: Logilab
-:copyright: 2003-2006 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 __docformat__ = "restructuredtext en"
@@ -340,8 +340,8 @@ class Delete(Statement):
         
     def add_main_variable(self, etype, variable):
         """add a variable to the list of deleted variables"""
-        if etype == 'Any':
-            raise BadRQLQuery('"Any" is not supported in DELETE statement')
+        #if etype == 'Any':
+        #    raise BadRQLQuery('"Any" is not supported in DELETE statement')
         self.main_variables.append( (etype.encode(), variable) )
 
     def add_main_relation(self, relation):

@@ -1,16 +1,16 @@
 # pylint: disable-msg=W0622
-# Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2007 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 rql packaging information
 """
 
 modname = "rql"
-numversion = (0, 9, 1)
+numversion = (0, 10, 0)
 version = '.'.join([str(num) for num in numversion])
 
 license = 'LCL'
-copyright = '''Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).
+copyright = '''Copyright (c) 2003-2007 LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr'''
 
 author = "Sylvain Thenault"
