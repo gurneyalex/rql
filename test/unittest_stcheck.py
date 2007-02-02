@@ -1,4 +1,4 @@
-""" Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).
+""" Copyright (c) 2003-2007 LOGILAB S.A. (Paris, FRANCE).
  http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
@@ -88,6 +88,9 @@ class CheckClassTest(TestCase):
             ('Any X WHERE X work_for Y, NOT Y eid 12', 'Any X WHERE X work_for Y, NOT Y eid 12'),
             ('Any X WHERE NOT X eid 12', 'Any X WHERE NOT X eid 12'),
             ('Any N WHERE X eid 12, X name N', 'Any N WHERE X eid 12, X name N'),
+
+            ('Any X WHERE X eid > 12', 'Any X WHERE X eid > 12'),
+            
             ):
             yield self._test_rewrite, rql, expected
 
