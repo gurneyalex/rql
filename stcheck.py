@@ -228,7 +228,7 @@ class RQLSTAnnotator:
             lhsvar.stinfo.setdefault(key, set()).add(relation)
             if key == 'uidrels':
                 constnode = relation.get_variable_parts()[1]
-                if not (relation._not or rhs.operator != '=') \
+                if not (relation._not or relation.operator() != '=') \
                        and isinstance(constnode, nodes.Constant):
                     lhsvar.stinfo['constnode'] = constnode
         else:

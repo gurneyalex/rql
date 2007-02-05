@@ -163,7 +163,7 @@ class ETypeResolver:
                 (lhs.name,), '%s in %s ' % (lhs.name, types)))
             return
         elif rtype in self.uid_func_mapping:
-            if relation._not or rhs.operator != '=':
+            if relation._not or relation.operator() != '=':
                 # non final entity types
                 types = self._nonfinal_domain
             else:
