@@ -113,6 +113,7 @@ DEBUG = 0
 ALL_SOLS = [{'X': 'Address'}, {'X': 'Company'},
             {'X': 'Eetype'}, {'X': 'Person'}]
 
+
 class AnalyzerClassTest(TestCase):
     """check wrong queries arre correctly detected
     """
@@ -263,14 +264,6 @@ class AnalyzerClassTest(TestCase):
             self.assertRaises(TypeResolverException,
                               self.helper.get_solutions, node, debug=DEBUG)
 
-
-class UnifyierClassTest(AnalyzerClassTest):
-    """check wrong queries arre correctly detected
-    """
-
-    def setUp(self):
-        self.skip('need update')
-        self.helper = RQLHelper(DummySchema(), None, UnifyingETypeResolver)
 
 ##     def test_raise(self):
 ##         for rql in UNRESOLVABLE_QUERIES:

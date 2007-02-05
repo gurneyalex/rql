@@ -152,6 +152,17 @@ class Relation(Node):
         # else: relation used in SET OR DELETE selection
         return self.r_type == 'is' and \
                not isinstance(rhs, VariableRef)
+
+    def operator(self):
+        """return the operator of the relation <, <=, =, >=, > and LIKE
+
+        (relations used in SET, INSERT and DELETE definitions don't have
+         an operator as rhs)
+        """
+        rhs = self.children[1]
+        if isinstance(rhs, Comparison):
+            return rhs.operator
+        return '='
     
     def set_optional(self, optional):
         assert optional in (None, 'left', 'right')
