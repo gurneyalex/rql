@@ -91,6 +91,11 @@ class CheckClassTest(TestCase):
 
             ('Any X WHERE X eid > 12', 'Any X WHERE X eid > 12'),
             
+            ('Any X WHERE X eid 12, X require_permission P?, X relation Y',
+             'Any X WHERE X eid 12, X require_permission P?, X relation Y'),
+            ('Any X WHERE X eid 12, P? connait X',
+             'Any X WHERE X eid 12, P? connait X')
+            
             ):
             yield self._test_rewrite, rql, expected
 

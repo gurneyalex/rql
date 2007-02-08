@@ -608,6 +608,8 @@ class Variable(object):
             'rhsrelations': set(),
             # final relations where this variable is used on the lhs
             'finalrels': set(),
+            # optional relations where this variable is used
+            'optrels': set(),
             # type relations (e.g. "is") where this variable is used on the lhs
             'typerels': set(),
             # uid relations (e.g. "eid") where this variable is used on the lhs

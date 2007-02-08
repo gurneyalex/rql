@@ -219,6 +219,12 @@ class RQLSTAnnotator:
             return
         lhsvar.stinfo['relations'].add(relation)
         lhsvar.stinfo['lhsrelations'].add(relation)
+        if relation.optional is not None:
+            if relation.optional in ('left', 'both'):
+                rhsvar = rhs.children[0].variable
+                rhsvar.stinfo['optrels'].add(relation)
+            if relation.optional in ('right', 'both'):
+                lhsvar.stinfo['optrels'].add(relation)
         try:
             rschema = self.schema.rschema(rtype)
         except KeyError:
