@@ -84,7 +84,8 @@ class RQLHelper:
             rqlstcopy = rqlst
         for var in rqlst.defined_vars.values():
             stinfo = var.stinfo
-            if stinfo['constnode'] and not stinfo['finalrels']:
+            if stinfo['constnode'] and not (
+                stinfo['finalrels'] or stinfo['optrels']):
                 if rqlstcopy is None:
                     rqlstcopy = rqlst.copy()
                     self.annotate(rqlstcopy)
