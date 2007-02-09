@@ -680,6 +680,7 @@ class Variable(object):
             rel = ref.relation()
             if rel is None:
                 continue
+            # XXX give priority to relation name ?
             if rel.r_type == 'is' and self.name == rel.children[0].name:
                 etype = rel.children[1].children[0].value.encode()
                 break
@@ -687,6 +688,19 @@ class Variable(object):
                 etype = rel.r_type
                 break
         return etype
+    
+    def main_relation(self):
+        """return the relation where this variable is used in the rhs
+        (useful for case where this is a final variable and we are
+         interested in the entity to which it belongs)
+        """
+        for ref in self.references():
+            rel = ref.relation()
+            if rel is None:
+                continue
+            if rel.r_type != 'is' and self.name != rel.children[0].name:
+                return rel
+        return None
         
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
