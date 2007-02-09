@@ -1,10 +1,11 @@
 ChangeLog for RQL
 =================
 
- -- 
+2007-02-09  --  0.10.1
     * fix rewriting bug: variable used in an optional relation can't be
       rewritten 
-	
+    * new 'main_relation' method on variable
+
 2007-02-02  --  0.10.0
     * allow variable as rhs of 'is' relation
     * can use Any as type specification in DELETE queries (eg DELETE Any X)
