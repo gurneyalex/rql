@@ -214,8 +214,13 @@ class ETypeResolver:
                 # XXX: check relation is valid
                 return
             lhsvar = lhs.name
-            rhsvars = [v.name for v in iget_nodes(rhs, nodes.VariableRef)
-                       if not v.name == lhsvar]
+            rhsvars = []
+            samevar = False
+            for v in iget_nodes(rhs, nodes.VariableRef):
+                if v.name == lhsvar:
+                    samevar = True
+                else:
+                    rhsvars.append(v.name)
             if rhsvars:
                 s2 = '=='.join(rhsvars)
                 res = []
@@ -228,6 +233,14 @@ class ETypeResolver:
                 cstr = '%s in (%s,)' % (
                     lhsvar, ','.join('"%s"' % t for t in rschema.subjects()))
             vars = [lhsvar] + rhsvars
+            if samevar:
+                res = []
+                for fromtype, totypes in rschema.associations():
+                    if not fromtype in totypes:
+                        continue
+                    res.append(fromtype)
+                cstr2 = '%s in (%s,)' % (lhsvar, ','.join('"%s"' % t for t in res))
+                constraints.append(fd.make_expression([lhsvar], cstr2))
         constraints.append(fd.make_expression(vars, cstr))
 
     def visit_and(self, et, constraints):
