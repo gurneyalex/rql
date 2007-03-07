@@ -82,6 +82,11 @@ class DummySchema:
                                      ('Company', ('Address',) ),
                                      )
                                    ),
+        'owned_by' : RelationSchema( ( ('Person', ('Person',) ),
+                                       ('Company', ('Person',) ),
+                                       ('Eetype', ('Person',) ),
+                                       )
+                                     ),
         }
     def entities(self):
         return self._types.values()
@@ -263,6 +268,12 @@ class AnalyzerClassTest(TestCase):
             node = self.helper.parse(rql)
             self.assertRaises(TypeResolverException,
                               self.helper.get_solutions, node, debug=DEBUG)
+
+        
+    def test_nongrer_not_u_ownedby_u(self):
+        node = self.helper.parse('Any U WHERE NOT U owned_by U')
+        sols = self.helper.get_solutions(node, debug=DEBUG)
+        self.assertEqual(sols, [{'U': 'Person'}])
 
 
 ##     def test_raise(self):
