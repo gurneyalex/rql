@@ -1,10 +1,6 @@
-""" Copyright (c) 2003-2007 LOGILAB S.A. (Paris, FRANCE).
- http://www.logilab.fr/ -- mailto:contact@logilab.fr
-"""
-
 from logilab.common.testlib import TestCase, unittest_main
 from unittest_analyze import DummySchema
-from rql import RQLHelper, BadRQLQuery
+from rql import RQLHelper, BadRQLQuery, stmts
     
     
 BAD_QUERIES = (
@@ -105,6 +101,29 @@ class CheckClassTest(TestCase):
 ##         rqlst = rqlst.copy()
 ##         self.annotate(rqlst)
 ##         self.assertEquals(rqlst.as_string(), 'Any X WHERE X eid 12')
-        
+
+class CopyTest(TestCase):
+    """check wrong queries arre correctly detected
+    """
+    
+    def setUp(self):
+        helper = RQLHelper(DummySchema(), None, {'eid': 'uid'})
+        self.parse = helper.parse
+        self.simplify = helper.simplify
+        self.annotate = helper.annotate
+
+    def test_copy_internals(self):
+        stmt = self.parse('Any X,U WHERE C owned_by U, NOT X owned_by U, X eid 1, C eid 2')
+        self.simplify(stmt, needcopy=False)
+        self.assertEquals(stmt.defined_vars['U'].valuable_references(), 3)
+        copy = stmts.Select(stmt.e_types)
+        copy.append_selected(stmt.selected[0].copy(copy))
+        copy.append_selected(stmt.selected[1].copy(copy))
+        copy.append(stmt.get_restriction().copy(copy))
+        self.annotate(copy)
+        self.simplify(copy, needcopy=False)
+        self.assertEquals(copy.as_string(), 'Any 1,U WHERE 2 owned_by U, NOT 1 owned_by U')
+        self.assertEquals(copy.defined_vars['U'].valuable_references(), 3)
+
 if __name__ == '__main__':
     unittest_main()

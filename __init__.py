@@ -1,7 +1,8 @@
 """RQL implementation independant library.
 
-Copyright (c) 2004-2007 LOGILAB S.A. (Paris, FRANCE).
-http://www.logilab.fr/ -- mailto:contact@logilab.fr
+:organization: Logilab
+:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
 import sys
