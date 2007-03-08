@@ -208,43 +208,51 @@ class RQLSTAnnotator:
         assert not (relation._not and relation.optional)
         lhs, rhs = relation.get_parts()
         rtype = relation.r_type
-        lhsvar = lhs.variable
+        try:
+            lhsvar = lhs.variable
+        except AttributeError:
+            # may be a constant once rqlst has been simplified
+            lhsvar = None
         if relation.is_types_restriction():
             assert rhs.operator == '='
-            lhsvar.stinfo['typerels'].add(relation)
+            if lhsvar is not None:
+                lhsvar.stinfo['typerels'].add(relation)
             for c in rhs.get_nodes(nodes.Constant):
                 c.value = etype = c.value.capitalize()
                 if not self.schema.has_entity(etype):
                     errors.append('unkwnown entity\'s type "%s"' % etype)
             return
-        lhsvar.stinfo['relations'].add(relation)
-        lhsvar.stinfo['lhsrelations'].add(relation)
+        if lhsvar is not None:
+            lhsvar.stinfo['relations'].add(relation)
+            lhsvar.stinfo['lhsrelations'].add(relation)
         if relation.optional is not None:
             if relation.optional in ('left', 'both'):
                 rhsvar = rhs.children[0].variable
                 rhsvar.stinfo['optrels'].add(relation)
-            if relation.optional in ('right', 'both'):
+            if lhsvar is not None and relation.optional in ('right', 'both'):
                 lhsvar.stinfo['optrels'].add(relation)
         try:
             rschema = self.schema.rschema(rtype)
         except KeyError:
             rschema = None # no schema for "has_text" relation for instance
-        if rtype in self.special_relations:
-            key = '%srels' % self.special_relations[rtype]
-            lhsvar.stinfo.setdefault(key, set()).add(relation)
-            if key == 'uidrels':
-                constnode = relation.get_variable_parts()[1]
-                if not (relation._not or relation.operator() != '=') \
-                       and isinstance(constnode, nodes.Constant):
-                    lhsvar.stinfo['constnode'] = constnode
-        else:
-            if rschema.is_final() or rschema.physical_mode() == 'subjectinline':
-                lhsvar.stinfo['finalrels'].add(relation)
+        if lhsvar is not None:
+            if rtype in self.special_relations:
+                key = '%srels' % self.special_relations[rtype]
+                lhsvar.stinfo.setdefault(key, set()).add(relation)
+                if key == 'uidrels':
+                    constnode = relation.get_variable_parts()[1]
+                    if not (relation._not or relation.operator() != '=') \
+                           and isinstance(constnode, nodes.Constant):
+                        lhsvar.stinfo['constnode'] = constnode
+            else:
+                if rschema.is_final() or rschema.physical_mode() == 'subjectinline':
+                    lhsvar.stinfo['finalrels'].add(relation)
         for varref in rhs.get_nodes(nodes.VariableRef):
-            varref.variable.stinfo['relations'].add(relation)
-            varref.variable.stinfo['rhsrelations'].add(relation)
+            var = varref.variable
+            var.stinfo['relations'].add(relation)
+            var.stinfo['rhsrelations'].add(relation)
             if rschema and rschema.is_final():
-                varref.variable.stinfo['attrvar'] = lhsvar
+                var.stinfo['attrvar'] = lhsvar
                 #varref.variable.stinfo['finalrels'].add(relation)
             
     def visit_comparison(self, comparison, errors):

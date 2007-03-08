@@ -1,7 +1,8 @@
 """some rql extensions for manipulating syntax trees
 
-Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
-http://www.logilab.fr/ -- mailto:contact@logilab.fr
+:organization: Logilab
+:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
 
