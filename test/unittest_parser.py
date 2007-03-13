@@ -205,6 +205,9 @@ class ParserHercule(TestCase):
         self.assertEqual(tree.as_string(),
                          "Any X WHERE X firstname 'lulu', "
                          "EXISTS(X owned_by U, U in_group G, (G name 'lulufanclub') OR (G name 'managers'))")
+        exists = tree.get_nodes(nodes.Exists)[0]
+        self.failUnless(exists.children[0].parent is exists)
+        self.failUnless(exists.parent)
 
 
 class ParserRQLHelper(ParserHercule):

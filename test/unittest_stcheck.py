@@ -1,6 +1,6 @@
 from logilab.common.testlib import TestCase, unittest_main
 from unittest_analyze import DummySchema
-from rql import RQLHelper, BadRQLQuery, stmts
+from rql import RQLHelper, BadRQLQuery, stmts, nodes
     
     
 BAD_QUERIES = (
@@ -116,6 +116,15 @@ class CopyTest(TestCase):
         self.simplify = helper.simplify
         self.annotate = helper.annotate
 
+    def test_copy_exists(self):
+        tree = self.parse("Any X WHERE X firstname 'lulu',"
+                          "EXISTS (X owned_by U, U in_group G, G name 'lulufanclub' OR G name 'managers');")
+        self.simplify(tree, needcopy=False)
+        copy = tree.copy()
+        exists = copy.get_nodes(nodes.Exists)[0]
+        self.failUnless(exists.children[0].parent is exists)
+        self.failUnless(exists.parent)
+        
     def test_copy_internals(self):
         stmt = self.parse('Any X,U WHERE C owned_by U, NOT X owned_by U, X eid 1, C eid 2')
         self.simplify(stmt, needcopy=False)
