@@ -1,7 +1,3 @@
-""" Copyright (c) 2003-2005 LOGILAB S.A. (Paris, FRANCE).
- http://www.logilab.fr/ -- mailto:contact@logilab.fr
-"""
-
 from logilab.common.testlib import TestCase, unittest_main
 
 from rql import RQLHelper, TypeResolverException
@@ -274,6 +270,13 @@ class AnalyzerClassTest(TestCase):
         node = self.helper.parse('Any U WHERE NOT U owned_by U')
         sols = self.helper.get_solutions(node, debug=DEBUG)
         self.assertEqual(sols, [{'U': 'Person'}])
+        
+    def test_exists(self):
+        node = self.helper.parse("Any X WHERE X firstname 'lulu',"
+                                 "EXISTS (X owned_by U, U name 'lulufanclub' OR U name 'managers');")
+        sols = self.helper.get_solutions(node, debug=DEBUG)
+        self.assertEqual(sols, [{'X': 'Person',
+                                 'U': 'Person'}])
 
 
 ##     def test_raise(self):

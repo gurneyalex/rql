@@ -120,8 +120,8 @@ class OR(BinaryNode):
     
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
-        return '%s OR %s' % (self.children[0].as_string(encoding, kwargs),
-                             self.children[1].as_string(encoding, kwargs))
+        return '(%s) OR (%s)' % (self.children[0].as_string(encoding, kwargs),
+                                 self.children[1].as_string(encoding, kwargs))
     def __repr__(self):
         return '%s OR %s' % (repr(self.children[0]),
                              repr(self.children[1]))
@@ -313,6 +313,36 @@ class MathExpression(HSMixin, BinaryNode):
         return self.operator == other.operator
 
 
+class Exists(HSMixin, Node):
+    """EXISTS sub query"""
+    TYPE = 'exists'
+
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit_exists(self, *args, **kwargs)
+    
+    def leave(self, visitor, *args, **kwargs):
+        return visitor.leave_exists(self, *args, **kwargs)
+
+    def __init__(self, restriction=None):
+        Node.__init__(self)
+        if restriction is not None:
+            self.children.append(restriction)
+
+    def initargs(self, stmt):
+        """return list of arguments to give to __init__ to clone this node"""
+        return ()
+                
+    def as_string(self, encoding=None, kwargs=None):
+        """return the tree as an encoded rql string"""
+        return 'EXISTS(%s)' % self.children[0].as_string(encoding, kwargs)
+
+    def __repr__(self, indent=0):
+        return 'EXISTS(%r)' % (self.children[0])
+
+    def is_equivalent(self, other):
+        raise NotImplementedError
+
+
 class Function(HSMixin, Node):
     """Class used to deal with aggregat functions (sum, min, max, count, avg)
     and latter upper(), lower() and other RQL transformations functions
@@ -424,6 +454,7 @@ class Constant(HSMixin,Node):
                 elif not isinstance(value, str):
                     return repr(value)
                 return value
+            return '%%(%s)s' % self.value
         if isinstance(self.value, unicode):
             if encoding is not None:
                 return quote(self.value.encode(encoding))

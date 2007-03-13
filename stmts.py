@@ -122,11 +122,19 @@ class Statement(Node, object):
         
     def add_type_restriction(self, variable, etype):
         """builds a restriction node to express : variable is etype"""
-        relation = nodes.Relation('is')
+        self.add_constant_restriction(variable, 'is', etype, 'etype')
+        
+    def add_constant_restriction(self, variable, rtype, value, ctype,
+                                 operator='='):
+        """builds a restriction node to express a constant restriction:
+
+        variable rtype = value
+        """
+        relation = nodes.Relation(rtype)
         var_ref = nodes.VariableRef(variable)
         relation.append(var_ref)
-        comp_entity = nodes.Comparison('=')
-        comp_entity.append(nodes.Constant(etype, 'etype'))
+        comp_entity = nodes.Comparison(operator)
+        comp_entity.append(nodes.Constant(value, ctype))
         relation.append(comp_entity)
         self.add(relation)
 

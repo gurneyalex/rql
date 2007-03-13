@@ -1,7 +1,4 @@
 # -*- coding: ISO-8859-1 -*-
-""" Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE).
- http://www.logilab.fr/ -- mailto:contact@logilab.fr
-"""
 
 from logilab.common.testlib import TestCase, unittest_main
 
@@ -96,6 +93,7 @@ class ParserHercule(TestCase):
         self.assertEqual(isinstance(base, nodes.OR), 1)
         self.assertEqual(isinstance(base.children[0], nodes.AND), 1)
         self.assertEqual(isinstance(base.children[1], nodes.Relation), 1)
+        self.assertEqual(str(tree), "Any X WHERE (X firstname 'lulu', X name 'toto') OR (X name 'tutu')")
 
     def test_precedence_2(self):
         tree = self.parse("Any X WHERE X firstname 'lulu', X name 'toto' OR X name 'tutu';")
@@ -103,7 +101,7 @@ class ParserHercule(TestCase):
         self.assertEqual(isinstance(base, nodes.AND), 1)
         self.assertEqual(isinstance(base.children[0], nodes.Relation), 1)
         self.assertEqual(isinstance(base.children[1], nodes.OR), 1)
-        self.assertEqual(str(tree), "Any X WHERE X firstname 'lulu', X name 'toto' OR X name 'tutu'")
+        self.assertEqual(str(tree), "Any X WHERE X firstname 'lulu', (X name 'toto') OR (X name 'tutu')")
 
     def test_precedence_3(self):
         tree = self.parse("Any X WHERE X firstname 'lulu' AND (X name 'toto' or X name 'tutu');")
@@ -111,7 +109,7 @@ class ParserHercule(TestCase):
         self.assertEqual(isinstance(base, nodes.AND), 1)
         self.assertEqual(isinstance(base.children[0], nodes.Relation), 1)
         self.assertEqual(isinstance(base.children[1], nodes.OR), 1)
-        self.assertEqual(str(tree), "Any X WHERE X firstname 'lulu', X name 'toto' OR X name 'tutu'")
+        self.assertEqual(str(tree), "Any X WHERE X firstname 'lulu', (X name 'toto') OR (X name 'tutu')")
 
     def test_precedence_4(self):
         tree = self.parse("Any X WHERE X firstname 'lulu' OR X name 'toto' AND X name 'tutu';")
@@ -200,6 +198,13 @@ class ParserHercule(TestCase):
         BAD_QUERIES = ('Person Marcou;',)
         for rql in BAD_QUERIES:
             yield self.assertRaises, BadRQLQuery, self.parse, rql
+
+    def test_exists(self):
+        tree = self.parse("Any X WHERE X firstname 'lulu',"
+                          "EXISTS (X owned_by U, U in_group G, G name 'lulufanclub' OR G name 'managers');")
+        self.assertEqual(tree.as_string(),
+                         "Any X WHERE X firstname 'lulu', "
+                         "EXISTS(X owned_by U, U in_group G, (G name 'lulufanclub') OR (G name 'managers'))")
 
 
 class ParserRQLHelper(ParserHercule):
