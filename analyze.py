@@ -259,6 +259,8 @@ class ETypeResolver:
         pass
     def visit_keyword(self, keyword, constraints):
         pass
+    def visit_exists(self, exists, constraints):
+        pass
 
 
 # ==========================================================

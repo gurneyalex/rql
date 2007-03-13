@@ -90,8 +90,12 @@ class CheckClassTest(TestCase):
             ('Any X WHERE X eid 12, X require_permission P?, X relation Y',
              'Any X WHERE X eid 12, X require_permission P?, X relation Y'),
             ('Any X WHERE X eid 12, P? connait X',
-             'Any X WHERE X eid 12, P? connait X')
-            
+             'Any X WHERE X eid 12, P? connait X'),
+
+            ("Any X WHERE X firstname 'lulu',"
+             "EXISTS (X owned_by U, U name 'lulufanclub' OR U name 'managers');",
+             "Any X WHERE X firstname 'lulu', "
+             "EXISTS(X owned_by U, (U name 'lulufanclub') OR (U name 'managers'))"),
             ):
             yield self._test_rewrite, rql, expected
 

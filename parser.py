@@ -1,6 +1,6 @@
 """yapps input grammar for RQL.
 
-Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE).
+Copyright (c) 2004-2007 LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
@@ -50,6 +50,7 @@ class HerculeScanner(runtime.Scanner):
         ('DATE', re.compile('(?i)TODAY')),
         ('DATETIME', re.compile('(?i)NOW')),
         ('NULL', re.compile('(?i)NULL')),
+        ('EXISTS', re.compile('(?i)EXISTS')),
         ('CMP_OP', re.compile('(?i)<=|<|>=|>|~=|=|LIKE')),
         ('ADD_OP', re.compile('\\+|-')),
         ('MUL_OP', re.compile('\\*|/')),
@@ -271,12 +272,12 @@ class Hercule(runtime.Parser):
 
     def rel(self, V, _parent=None):
         _context = self.Context(_parent, self._scanner, 'rel', [V])
-        _token = self._peek('NOT', 'r"\\("', 'VARIABLE', context=_context)
+        _token = self._peek('NOT', 'r"\\("', 'EXISTS', 'VARIABLE', context=_context)
         if _token == 'NOT':
             NOT = self._scan('NOT', context=_context)
             base_rel = self.base_rel(V, _context)
             base_rel._not = 1; return base_rel
-        elif _token == 'VARIABLE':
+        elif _token != 'r"\\("':
             base_rel = self.base_rel(V, _context)
             return base_rel
         else: # == 'r"\\("'
@@ -287,13 +288,21 @@ class Hercule(runtime.Parser):
 
     def base_rel(self, V, _parent=None):
         _context = self.Context(_parent, self._scanner, 'base_rel', [V])
-        var = self.var(V, _context)
-        opt_left = self.opt_left(V, _context)
-        rtype = self.rtype(V, _context)
-        rtype.append(var) ; rtype.set_optional(opt_left)
-        expr = self.expr(V, _context)
-        opt_right = self.opt_right(V, _context)
-        rtype.append(expr) ; rtype.set_optional(opt_right) ; return rtype
+        _token = self._peek('EXISTS', 'VARIABLE', context=_context)
+        if _token == 'VARIABLE':
+            var = self.var(V, _context)
+            opt_left = self.opt_left(V, _context)
+            rtype = self.rtype(V, _context)
+            rtype.append(var) ; rtype.set_optional(opt_left)
+            expr = self.expr(V, _context)
+            opt_right = self.opt_right(V, _context)
+            rtype.append(expr) ; rtype.set_optional(opt_right) ; return rtype
+        else: # == 'EXISTS'
+            EXISTS = self._scan('EXISTS', context=_context)
+            self._scan('r"\\("', context=_context)
+            rels = self.rels(V, _context)
+            self._scan('r"\\)"', context=_context)
+            return Exists(rels)
 
     def rtype(self, V, _parent=None):
         _context = self.Context(_parent, self._scanner, 'rtype', [V])
