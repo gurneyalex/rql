@@ -155,7 +155,8 @@ class ETypeResolver:
         rtype = relation.r_type
         lhs, rhs = relation.get_parts()
         if relation.is_types_restriction():
-            types = [c.value for c in iget_nodes(rhs, nodes.Constant)]
+            types = [c.value for c in iget_nodes(rhs, nodes.Constant)
+                     if c.type == 'etype']
             if relation._not:
                 not_types = [t for t in self._nonfinal_domain if not t in types]
                 types = not_types
