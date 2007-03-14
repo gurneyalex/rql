@@ -166,7 +166,7 @@ def get_nodes(node, klass):
             stack += node.children
     return result
 
-def get_nodes_filtered(node, klass, filter_func ):
+def get_nodes_filtered(node, klass, filter_func):
     """get the list of nodes of a given class in a subtree
     :type node: syntax tree node
     :param node: the node to search in

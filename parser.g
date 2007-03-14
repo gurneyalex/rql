@@ -1,6 +1,6 @@
 """yapps input grammar for RQL.
 
-Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE).
+Copyright (c) 2004-2007 LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
@@ -44,6 +44,7 @@ parser Hercule:
     token DATE:        r'(?i)TODAY'
     token DATETIME:    r'(?i)NOW'
     token NULL:        r'(?i)NULL'
+    token EXISTS:      r'(?i)EXISTS'
     token CMP_OP:      r'(?i)<=|<|>=|>|~=|=|LIKE'
     token ADD_OP:      r'\+|-'
     token MUL_OP:      r'\*|/'
@@ -167,10 +168,9 @@ rule restr<<V>>: WHERE rels<<V>> {{ V.append(rels) }}
 
                | 
 
-
-rule rels<<V>>: ored_rels<<V>>    {{ lhs = ored_rels }}
+rule rels<<V>>: ored_rels<<V>>       {{ lhs = ored_rels }}
                 ( ',' ored_rels<<V>> {{ lhs = AND(lhs, ored_rels) }}
-                )*                 {{ return lhs }}
+                )*                   {{ return lhs }}
 
 
 rule ored_rels<<V>>: anded_rels<<V>>  {{ lhs = anded_rels }}
@@ -192,7 +192,9 @@ rule rel<<V>>: NOT base_rel<<V>>       {{ base_rel._not = 1; return base_rel }}
 
 rule base_rel<<V>>: var<<V>> opt_left<<V>> rtype<<V>> {{ rtype.append(var) ; rtype.set_optional(opt_left) }} 
                     expr<<V>> opt_right<<V>>          {{ rtype.append(expr) ; rtype.set_optional(opt_right) ; return rtype }}
-
+                   | EXISTS r"\(" rels<<V>> r"\)"     {{ return Exists(rels) }}
+               
+                  
 rule rtype<<V>>: R_TYPE {{ return Relation(R_TYPE) }}
 
 rule opt_left<<V>>: QMARK  {{ return 'left' }}
