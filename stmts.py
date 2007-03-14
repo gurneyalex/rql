@@ -61,6 +61,9 @@ class Statement(Node, object):
     def exists_root(self):
         return None
     
+    def ored_rel(self):
+        return False
+    
     # construction helper methods #############################################
 
     def get_type(self, name):
@@ -119,8 +122,7 @@ class Statement(Node, object):
         """
         r = self.get_restriction()
         if r is not None:
-            new_node = nodes.AND(r, relation)
-            self.replace(r, new_node)
+            self.replace(r, nodes.AND(r, relation))
         else:
             self.insert(0, relation)
         
