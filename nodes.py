@@ -190,7 +190,7 @@ class Relation(Node):
             rhs = rhs.children[0]
         # else: relation used in SET OR DELETE selection
         return self.r_type == 'is' and \
-               not isinstance(rhs, VariableRef)
+               isinstance(rhs, Constant) and rhs.type == 'etype'
 
     def operator(self):
         """return the operator of the relation <, <=, =, >=, > and LIKE
