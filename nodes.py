@@ -108,6 +108,9 @@ class AND(BinaryNode):
     
     def exists_root(self):
         return self.parent.exists_root()
+    
+    def ored_rel(self):
+        return self.parent.ored_rel()
 
     
 class OR(BinaryNode):
@@ -131,6 +134,9 @@ class OR(BinaryNode):
     
     def exists_root(self):
         return self.parent.exists_root()
+    
+    def ored_rel(self):
+        return True
 
 
 class Exists(HSMixin, Node):
@@ -143,20 +149,25 @@ class Exists(HSMixin, Node):
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_exists(self, *args, **kwargs)
 
-    def __init__(self, restriction=None):
+    def __init__(self, restriction=None, _not=0):
         Node.__init__(self)
+        self._not = _not
         if restriction is not None:
             self.append(restriction)
 
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node"""
-        return ()
+        return (None, self._not)
                 
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
+        if self._not:
+            return 'NOT EXISTS(%s)' % self.children[0].as_string(encoding, kwargs)
         return 'EXISTS(%s)' % self.children[0].as_string(encoding, kwargs)
 
     def __repr__(self, indent=0):
+        if self._not:
+            return 'NOT EXISTS(%r)' % (self.children[0])
         return 'EXISTS(%r)' % (self.children[0])
 
     def is_equivalent(self, other):
@@ -164,6 +175,9 @@ class Exists(HSMixin, Node):
 
     def exists_root(self):
         return self
+    
+    def ored_rel(self):
+        return self.parent.ored_rel()
 
     
 class Relation(Node):
@@ -274,6 +288,9 @@ class Relation(Node):
     
     def exists_root(self):
         return self.parent.exists_root()
+    
+    def ored_rel(self):
+        return self.parent.ored_rel()
 
     
 class Comparison(HSMixin, Node):
@@ -664,7 +681,7 @@ class Variable(object):
             # selection indexes if any
             'selected': set(),
             # if this variable is an attribute variable (ie final entity),
-            # link to the attribute owner variable
+            # link to the (prefered) attribute owner variable
             'attrvar': None,
             # constant node linked to an uid variable if any
             'constnode': None,

@@ -251,8 +251,10 @@ class RQLSTAnnotator:
             var = varref.variable
             var.stinfo['relations'].add(relation)
             var.stinfo['rhsrelations'].add(relation)
-            if rschema and rschema.is_final():
-                var.stinfo['attrvar'] = lhsvar
+            if varref is rhs.children[0] and rschema.is_final():
+                # give priority to variable which is not in an EXISTS 
+                if var.stinfo['attrvar'] is None or not relation.exists_root():
+                    var.stinfo['attrvar'] = lhsvar
                 #varref.variable.stinfo['finalrels'].add(relation)
             
     def visit_comparison(self, comparison, errors):
