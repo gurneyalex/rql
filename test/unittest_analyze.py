@@ -1,7 +1,3 @@
-""" Copyright (c) 2003-2005 LOGILAB S.A. (Paris, FRANCE).
- http://www.logilab.fr/ -- mailto:contact@logilab.fr
-"""
-
 from logilab.common.testlib import TestCase, unittest_main
 
 from rql import RQLHelper, TypeResolverException
@@ -122,8 +118,9 @@ ALL_SOLS = [{'X': 'Address'}, {'X': 'Company'},
 class AnalyzerClassTest(TestCase):
     """check wrong queries arre correctly detected
     """
+    eids = {10: 'Eetype'}
     def _type_from_eid(self, eid):
-        return 'Person'
+        return self.eids.get(eid, 'Person')
     
     def setUp(self):
         self.helper = RQLHelper(DummySchema(), {'eid': self._type_from_eid})
@@ -168,6 +165,14 @@ class AnalyzerClassTest(TestCase):
         sols = self.helper.get_solutions(node, debug=DEBUG)
         sols.sort()
         self.assertEqual(sols, [{'X': 'Company', 'T': 'Eetype'},
+                                {'X': 'Person', 'T': 'Eetype'}])
+
+    def test_is_query_const(self):
+        node = self.helper.parse('Any X WHERE X is T, T eid 10')
+        sols = self.helper.get_solutions(node, debug=DEBUG)
+        sols.sort()
+        self.assertEqual(sols, [{'X': 'Address', 'T': 'Eetype'},
+                                {'X': 'Company', 'T': 'Eetype'},
                                 {'X': 'Person', 'T': 'Eetype'}])
 
     def test_not(self):
@@ -274,6 +279,13 @@ class AnalyzerClassTest(TestCase):
         node = self.helper.parse('Any U WHERE NOT U owned_by U')
         sols = self.helper.get_solutions(node, debug=DEBUG)
         self.assertEqual(sols, [{'U': 'Person'}])
+        
+    def test_exists(self):
+        node = self.helper.parse("Any X WHERE X firstname 'lulu',"
+                                 "EXISTS (X owned_by U, U name 'lulufanclub' OR U name 'managers');")
+        sols = self.helper.get_solutions(node, debug=DEBUG)
+        self.assertEqual(sols, [{'X': 'Person',
+                                 'U': 'Person'}])
 
 
 ##     def test_raise(self):

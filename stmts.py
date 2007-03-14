@@ -10,11 +10,12 @@ __docformat__ = "restructuredtext en"
 
 from logilab.common.tree import VNode as Node
 
-from rql.utils import iget_nodes
+from rql.utils import get_nodes, get_nodes_filtered
 from rql._exceptions import BadRQLQuery
 from rql import nodes
 
-Node.get_nodes = iget_nodes
+Node.get_nodes = get_nodes
+Node.get_nodes_filtered = get_nodes_filtered
 
 def add_restriction(select, relation):
     """add a restriction to a select node
@@ -56,6 +57,9 @@ class Statement(Node, object):
     
     def selected_terms(self):
         raise NotImplementedError
+    
+    def exists_root(self):
+        return None
     
     # construction helper methods #############################################
 
@@ -122,11 +126,19 @@ class Statement(Node, object):
         
     def add_type_restriction(self, variable, etype):
         """builds a restriction node to express : variable is etype"""
-        relation = nodes.Relation('is')
+        self.add_constant_restriction(variable, 'is', etype, 'etype')
+        
+    def add_constant_restriction(self, variable, rtype, value, ctype,
+                                 operator='='):
+        """builds a restriction node to express a constant restriction:
+
+        variable rtype = value
+        """
+        relation = nodes.Relation(rtype)
         var_ref = nodes.VariableRef(variable)
         relation.append(var_ref)
-        comp_entity = nodes.Comparison('=')
-        comp_entity.append(nodes.Constant(etype, 'etype'))
+        comp_entity = nodes.Comparison(operator)
+        comp_entity.append(nodes.Constant(value, ctype))
         relation.append(comp_entity)
         self.add(relation)
 
@@ -297,7 +309,7 @@ class Select(Statement):
         functions
         """
         for term in self.selected_terms():
-            for node in iget_nodes(term, nodes.VariableRef):
+            for node in term.get_nodes(nodes.VariableRef):
                 yield node
 
     def selected_terms(self):
