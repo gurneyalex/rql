@@ -118,8 +118,9 @@ ALL_SOLS = [{'X': 'Address'}, {'X': 'Company'},
 class AnalyzerClassTest(TestCase):
     """check wrong queries arre correctly detected
     """
+    eids = {10: 'Eetype'}
     def _type_from_eid(self, eid):
-        return 'Person'
+        return self.eids.get(eid, 'Person')
     
     def setUp(self):
         self.helper = RQLHelper(DummySchema(), {'eid': self._type_from_eid})
@@ -164,6 +165,14 @@ class AnalyzerClassTest(TestCase):
         sols = self.helper.get_solutions(node, debug=DEBUG)
         sols.sort()
         self.assertEqual(sols, [{'X': 'Company', 'T': 'Eetype'},
+                                {'X': 'Person', 'T': 'Eetype'}])
+
+    def test_is_query_const(self):
+        node = self.helper.parse('Any X WHERE X is T, T eid 10')
+        sols = self.helper.get_solutions(node, debug=DEBUG)
+        sols.sort()
+        self.assertEqual(sols, [{'X': 'Address', 'T': 'Eetype'},
+                                {'X': 'Company', 'T': 'Eetype'},
                                 {'X': 'Person', 'T': 'Eetype'}])
 
     def test_not(self):
