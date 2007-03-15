@@ -217,10 +217,6 @@ class RQLSTAnnotator:
             assert rhs.operator == '='
             if lhsvar is not None:
                 lhsvar.stinfo['typerels'].add(relation)
-            for c in rhs.get_nodes(nodes.Constant):
-                c.value = etype = c.value.capitalize()
-                if not self.schema.has_entity(etype):
-                    errors.append('unkwnown entity\'s type "%s"' % etype)
             return
         if lhsvar is not None:
             lhsvar.stinfo['relations'].add(relation)
