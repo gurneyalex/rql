@@ -9,10 +9,6 @@ BAD_QUERIES = (
     # this is now a valid query
     #'DISTINCT Any X WHERE X work_for Y ORDERBY Y',
     
-    'Missing X',
-    
-    'Any X WHERE X is "Missing"',
-    
     'Any X WHERE X name Person',
     
     'Any X WHERE X name nofunction(Y)',
