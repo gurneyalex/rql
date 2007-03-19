@@ -6,6 +6,8 @@
 """
 __docformat__ = "restructuredtext en"
 
+from logilab.common.compat import any
+
 from rql import nodes
 from rql._exceptions import BadRQLQuery
 from rql.utils import function_description
@@ -73,10 +75,7 @@ class RQLSTAnnotator:
         if not skipfurther:
             for c in node.children:
                 self._visit(c, errors)
-            try:
-                node.leave(self, errors)
-            except AttributeError:
-                pass
+            node.leave(self, errors)
                     
     def _check_selected(self, term, termtype, errors):
         """check that variables referenced in the given term are selected"""
@@ -199,7 +198,57 @@ class RQLSTAnnotator:
                     raise GoTo(r1)
             except AttributeError:
                 pass
-        
+
+    def rewrite_shared_optional(self, exists, var, errors):
+        """if variable is shared across multiple scopes, need some tree
+        rewriting
+        """
+        if (var.stinfo['selected'] or
+            any(rel for rel in var.stinfo['relations']
+                if rel.exists_root() is None)):
+            # allocate a new variable
+            newvar = exists.root().make_variable()
+            for vref in var.references():
+                if vref.exists_root() is exists:
+                    rel = vref.relation()
+                    vref.unregister_reference()
+                    newvref = nodes.VariableRef(newvar)
+                    rel.replace(vref, newvref)
+            exists.add_relation(var, 'identity', newvar)
+            # we have to force visit of the introduced relation
+            self._visit(exists, errors)
+            return newvar
+        return None
+    
+    def visit_relation(self, relation, errors):
+        if relation.optional is not None:
+            lhs, rhs = relation.get_parts()
+            try:
+                lhsvar = lhs.variable
+            except AttributeError:
+                # may be a constant once rqlst has been simplified
+                lhsvar = None
+            try:
+                rhsvar = rhs.children[0].variable
+            except AttributeError:
+                # same here
+                rhsvar = None
+            exists = relation.exists_root()
+            if lhsvar is not None:
+                if exists is not None:
+                    newvar = self.rewrite_shared_optional(exists, lhsvar, errors)
+                    if newvar is not None:
+                        lhsvar = newvar
+                if relation.optional in ('right', 'both'):
+                    lhsvar.stinfo['optrels'].add(relation)
+            if rhsvar is not None:
+                if exists is not None:
+                    newvar = self.rewrite_shared_optional(exists, rhsvar, errors)
+                    if newvar is not None:
+                        rhsvar = newvar
+                if relation.optional in ('left', 'both'):
+                    rhsvar.stinfo['optrels'].add(relation)
+
     def leave_relation(self, relation, errors):
         lhs, rhs = relation.get_parts()
         #assert isinstance(lhs, nodes.VariableRef), '%s: %s' % (lhs.__class__,
@@ -221,12 +270,6 @@ class RQLSTAnnotator:
         if lhsvar is not None:
             lhsvar.stinfo['relations'].add(relation)
             lhsvar.stinfo['lhsrelations'].add(relation)
-        if relation.optional is not None:
-            if relation.optional in ('left', 'both'):
-                rhsvar = rhs.children[0].variable
-                rhsvar.stinfo['optrels'].add(relation)
-            if lhsvar is not None and relation.optional in ('right', 'both'):
-                lhsvar.stinfo['optrels'].add(relation)
         try:
             rschema = self.schema.rschema(rtype)
         except KeyError:
@@ -240,14 +283,14 @@ class RQLSTAnnotator:
                     if not (relation._not or relation.operator() != '=') \
                            and isinstance(constnode, nodes.Constant):
                         lhsvar.stinfo['constnode'] = constnode
-            else:
+            elif rschema is not None:
                 if rschema.is_final() or rschema.physical_mode() == 'subjectinline':
                     lhsvar.stinfo['finalrels'].add(relation)
         for varref in rhs.get_nodes(nodes.VariableRef):
             var = varref.variable
             var.stinfo['relations'].add(relation)
             var.stinfo['rhsrelations'].add(relation)
-            if varref is rhs.children[0] and rschema.is_final():
+            if varref is rhs.children[0] and rschema is not None and rschema.is_final():
                 # give priority to variable which is not in an EXISTS 
                 if var.stinfo['attrvar'] is None or not relation.exists_root():
                     var.stinfo['attrvar'] = lhsvar
@@ -293,3 +336,32 @@ class RQLSTAnnotator:
         
     def visit_variable(self, variableref, errors):
         pass
+
+    def leave_constant(self, node, errors):
+        pass 
+    def leave_variableref(self, node, errors):
+        pass
+    def leave_comparison(self, node, errors):
+        pass
+    def leave_or(self, node, errors):
+        pass
+    def leave_and(self, node, errors):
+        pass
+    def leave_exists(self, node, errors):
+        pass
+    def leave_group(self, node, errors):
+        pass
+    def leave_sort(self, node, errors):
+        pass
+    def leave_sortterm(self, node, errors):
+        pass
+    def leave_function(self, node, errors):
+        pass
+    def leave_delete(self, node, errors):
+        pass
+    def leave_insert(self, node, errors):
+        pass
+    def leave_update(self, node, errors):
+        pass
+
+   

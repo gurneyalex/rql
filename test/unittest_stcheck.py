@@ -2,7 +2,6 @@ from logilab.common.testlib import TestCase, unittest_main
 from unittest_analyze import DummySchema
 from rql import RQLHelper, BadRQLQuery, stmts, nodes
     
-    
 BAD_QUERIES = (
     'Any X, Y GROUPBY X',
     
@@ -92,6 +91,10 @@ class CheckClassTest(TestCase):
              "EXISTS (X owned_by U, U name 'lulufanclub' OR U name 'managers');",
              "Any X WHERE X firstname 'lulu', "
              "EXISTS(X owned_by U, (U name 'lulufanclub') OR (U name 'managers'))"),
+
+            ('Any X WHERE X eid 12, EXISTS(X truc "hop" OR X relation Y?)',
+             "Any 12 WHERE EXISTS((A truc 'hop') OR (A relation Y?), 12 identity A)"),
+            
             ):
             yield self._test_rewrite, rql, expected
 

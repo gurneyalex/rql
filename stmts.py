@@ -10,7 +10,7 @@ __docformat__ = "restructuredtext en"
 
 from logilab.common.tree import VNode as Node
 
-from rql.utils import get_nodes, get_nodes_filtered
+from rql.utils import get_nodes, get_nodes_filtered, rqlvar_maker
 from rql._exceptions import BadRQLQuery
 from rql import nodes
 
@@ -36,8 +36,9 @@ class Statement(Node, object):
         self.e_types = etypes
         # dictionnary of defined variables in the original RQL syntax tree
         self.defined_vars = {}
+        self._varmaker = rqlvar_maker(defined=self.defined_vars)
         self.stinfo = {'rewritten': {}}
-
+    
     def __str__(self):
         return self.as_string(None, {})
 
@@ -51,6 +52,7 @@ class Statement(Node, object):
             new.append(child.copy(new))
         return new
         
+    # navigation helper methods #############################################
         
     def get_selected_variables(self):
         return self.selected_terms()
@@ -65,6 +67,14 @@ class Statement(Node, object):
         return False
     
     # construction helper methods #############################################
+
+    def allocate_varname(self):
+        """return an yet undefined variable name"""
+        return self._varmaker.next()
+
+    def make_variable(self, etype=None):
+        """create a new variable with an unique name for this tree"""
+        return self.get_variable(self.allocate_varname())
 
     def get_type(self, name):
         """return the type object for the given entity's type name
@@ -102,29 +112,6 @@ class Statement(Node, object):
                 return c
             break
         return None
-
-    def make_variable(self, etype=None):
-        """create a new variable with an unique name for this tree"""
-        count = 0
-        if etype:
-            base_name = etype[0]
-        else:
-            base_name = 'TMP'
-        var_name = '%s' % base_name
-        while var_name in self.defined_vars.keys():
-            count += 1
-            var_name = '%s%s' % (base_name, count)
-        return self.get_variable(var_name)
-
-    def add(self, relation):
-        """add a restriction relation (XXX should not collide with add_restriction
-        or add_relation optionaly plugged by the editextensions module
-        """
-        r = self.get_restriction()
-        if r is not None:
-            self.replace(r, nodes.AND(r, relation))
-        else:
-            self.insert(0, relation)
         
     def add_type_restriction(self, variable, etype):
         """builds a restriction node to express : variable is etype"""
@@ -145,7 +132,7 @@ class Statement(Node, object):
         self.add(relation)
 
                 
-class Select(Statement):
+class Select(nodes.EditableMixIn, Statement):
     """the select node is the root of the syntax tree for selection statement
     """
     TYPE = 'select'
