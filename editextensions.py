@@ -8,7 +8,7 @@
 
 from rql.stmts import Select
 from rql.nodes import Constant, Variable, VariableRef, Comparison, AND, \
-     Sort, SortTerm, Relation
+     Sort, SortTerm, Relation, make_relation
 from rql.utils import get_nodes
 from rql.undo import *
 
@@ -119,8 +119,10 @@ def add_restriction(self, relation):
         if self.memorizing and not self.undoing:
             self.undo_manager.add_operation(AddNodeOperation(relation))
     # register variable references in the added subtree
-    for varref in get_nodes(relation, VariableRef):
-        varref.register_reference()
+    # XXX see change make_relation:
+    # exp.append(VariableRef(var, 1)) -> exp.append(VariableRef(var))
+    #for varref in get_nodes(relation, VariableRef):
+    #    varref.register_reference()
     assert check_relations(self)
 Select.add_restriction = add_restriction
 
@@ -207,25 +209,8 @@ def add_constant_restriction(self, var, r_type, value, v_type=None):
     self.add_restriction(make_relation(var, r_type, (value, v_type), Constant))
 Select.add_constant_restriction = add_constant_restriction
 
-def add_relation(self, lhs_var, r_type, rhs_var): 
-    """builds a restriction node to express '<var> eid <eid>'"""
-    self.add_restriction(make_relation(lhs_var, r_type, (rhs_var, 1),
-                                       VariableRef))
-Select.add_relation = add_relation
-
 
 # utilities functions #########################################################
-
-def make_relation(var, rel, rhs_args, rhs_class):
-    """build an relation equivalent to '<var> rel = <cst>'"""
-    comp_cst = Comparison("=")
-    comp_cst.append(rhs_class(*rhs_args))
-    exp = Relation(rel)
-    if hasattr(var, 'variable'):
-        var = var.variable
-    exp.append(VariableRef(var, noautoref=1))
-    exp.append(comp_cst)
-    return exp
 
 def switch_selection(rqlst, new_var, old_var):
     """the select variable switch from old_var (VariableRef instance) to

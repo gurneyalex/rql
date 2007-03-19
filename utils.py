@@ -1,10 +1,34 @@
 """Miscellaneous utilities for rql
 
-Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+Copyright (c) 2003-2007 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
 from rql._exceptions import BadRQLQuery
+
+
+UPPERCASE = u'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+def decompose_b26(index, table=UPPERCASE):
+    """return a letter (base-26) decomposition of index"""
+    div, mod = divmod(index, 26)
+    if div == 0:
+        return table[mod]
+    return decompose_b26(div-1) + table[mod]
+
+def rqlvar_maker(stop=None, index=0, defined=None):
+    """yields consistent RQL variable names
+    
+    :param stop: optional argument to stop iteration after the Nth variable
+                 default is None which means 'never stop'
+    :param defined: optional dict of already defined vars
+    """
+    index = index
+    while stop is None or index < stop:
+        var = decompose_b26(index)
+        index += 1
+        if defined is not None and var in defined:
+            continue
+        yield var
 
 KEYWORDS = set(('INSERT', 'SET', 'DELETE',
                 'WHERE', 'AND', 'OR', 'NOT'
@@ -232,3 +256,5 @@ def iget_nodes_filtered(node, klass, filter_func ):
             stack += node.children
 
 iget_nodes = get_nodes
+
+

@@ -26,8 +26,42 @@ Node.get_visit_name = get_visit_name
 BinaryNode.get_visit_name = get_visit_name
 ListNode.get_visit_name = get_visit_name
 
+# rql st edition utilities
+
+def make_relation(var, rel, rhs_args, rhs_class):
+    """build an relation equivalent to '<var> rel = <cst>'"""
+    comp_cst = Comparison("=")
+    comp_cst.append(rhs_class(*rhs_args))
+    exp = Relation(rel)
+    if hasattr(var, 'variable'):
+        var = var.variable
+    exp.append(VariableRef(var))
+    exp.append(comp_cst)
+    return exp
+
 
 # base objects ################################################################
+
+class EditableMixIn(object):
+
+    def add(self, relation):
+        """add a restriction relation (XXX should not collide with add_restriction
+        or add_relation optionaly plugged by the editextensions module
+        """
+        r = self.get_restriction()
+        if r is not None:
+            self.replace(r, AND(r, relation))
+        else:
+            self.insert(0, relation)
+            
+    def add_restriction(self, relation):
+        self.add(relation)
+        
+    def add_relation(self, lhs_var, r_type, rhs_var): 
+        """builds a restriction node to express '<var> eid <eid>'"""
+        self.add_restriction(make_relation(lhs_var, r_type, (rhs_var,),
+                                           VariableRef))
+
 
 class HSMixin(object):
     """mixin class for classes which may be the lhs or rhs of an expression
@@ -84,6 +118,10 @@ def is_equivalent(self, other):
     return True
 Node.is_equivalent = is_equivalent
 
+def exists_root(self):
+    return self.parent.exists_root()
+Node.exists_root = exists_root
+
 # RQL base nodes ##############################################################
 
 
@@ -105,9 +143,6 @@ class AND(BinaryNode):
     def __repr__(self):
         return '%s AND %s' % (repr(self.children[0]),
                               repr(self.children[1]))
-    
-    def exists_root(self):
-        return self.parent.exists_root()
     
     def ored_rel(self):
         return self.parent.ored_rel()
@@ -132,14 +167,11 @@ class OR(BinaryNode):
         return '%s OR %s' % (repr(self.children[0]),
                              repr(self.children[1]))
     
-    def exists_root(self):
-        return self.parent.exists_root()
-    
     def ored_rel(self):
         return True
 
 
-class Exists(HSMixin, Node):
+class Exists(HSMixin, EditableMixIn, Node):
     """EXISTS sub query"""
     TYPE = 'exists'
 
@@ -170,6 +202,9 @@ class Exists(HSMixin, Node):
             return 'NOT EXISTS(%r)' % (self.children[0])
         return 'EXISTS(%r)' % (self.children[0])
 
+    def get_restriction(self):
+        return self.children[0]
+    
     def is_equivalent(self, other):
         raise NotImplementedError
 
@@ -285,9 +320,6 @@ class Relation(Node):
         lhs = self.children[0]
         rhs = self.children[1].children[0]
         return lhs, rhs
-    
-    def exists_root(self):
-        return self.parent.exists_root()
     
     def ored_rel(self):
         return self.parent.ored_rel()
@@ -480,7 +512,7 @@ class Constant(HSMixin,Node):
             if kwargs is not None:
                 value = kwargs.get(self.value, '???')
                 if isinstance(value, unicode):
-                    value = quote(value.encode(encoding))
+                    value = quote(value.encode(encoding or 'ascii'))
                 elif not isinstance(value, str):
                     return repr(value)
                 return value
@@ -570,6 +602,10 @@ class Group(ListNode):
     def __repr__(self):
         return 'GROUPBY %s' % ', '.join([repr(child) for child in self.children])
     
+    def exists_root(self):
+        return False
+    
+    
 class Sort(ListNode):
     """a sort (ORDERBY) node
     """
@@ -587,6 +623,9 @@ class Sort(ListNode):
     def as_string(self, encoding=None, kwargs=None):
         return 'ORDERBY %s' % ', '.join([child.as_string(encoding, kwargs)
                                          for child in self.children])
+    
+    def exists_root(self):
+        return False
     
 
 class SortTerm(HSMixin, Node):
@@ -634,6 +673,9 @@ class SortTerm(HSMixin, Node):
         if not is_equivalent(self, other):
             return False
         return self.asc == other.asc
+
+    def exists_root(self):
+        return False
 
 
 
@@ -772,3 +814,5 @@ class Variable(object):
 
     def __str__(self):
         return self.name
+
+

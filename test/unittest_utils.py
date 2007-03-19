@@ -1,8 +1,3 @@
-""" Copyright (c) 2000-2003 LOGILAB S.A. (Paris, FRANCE).
- http://www.logilab.fr/ -- mailto:contact@logilab.fr
-"""
-
-__revision__ = "$Id: unittest_utils.py,v 1.5 2006-02-20 02:06:09 ludal Exp $"
 
 from logilab.common.testlib import TestCase, unittest_main
 
@@ -92,6 +87,26 @@ class RQLHandlerClassTest(TestCase):
     def test_methods_4(self):
         tree = parse('Delete Person X', {})
         self.visitor.visit(tree)
+
+
+class RQLVarMakerTC(TestCase):
+
+    def test_rqlvar_maker(self):
+        varlist = list(utils.rqlvar_maker(27))
+        self.assertEquals(varlist, list('ABCDEFGHIJKLMNOPQRSTUVWXYZ') + ['AA'])
+        varlist = list(utils.rqlvar_maker(27*26+1))
+        self.assertEquals(varlist[-2], 'ZZ')
+        self.assertEquals(varlist[-1], 'AAA')
+
+    def test_rqlvar_maker_dontstop(self):
+        varlist = utils.rqlvar_maker()
+        self.assertEquals(varlist.next(), 'A')
+        self.assertEquals(varlist.next(), 'B')
+        for i in range(24):
+            varlist.next()
+        self.assertEquals(varlist.next(), 'AA')
+        self.assertEquals(varlist.next(), 'AB')
+
         
 if __name__ == '__main__':
     unittest_main()
