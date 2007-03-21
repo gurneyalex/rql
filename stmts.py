@@ -117,19 +117,6 @@ class Statement(Node, object):
         """builds a restriction node to express : variable is etype"""
         self.add_constant_restriction(variable, 'is', etype, 'etype')
         
-    def add_constant_restriction(self, variable, rtype, value, ctype,
-                                 operator='='):
-        """builds a restriction node to express a constant restriction:
-
-        variable rtype = value
-        """
-        relation = nodes.Relation(rtype)
-        var_ref = nodes.VariableRef(variable)
-        relation.append(var_ref)
-        comp_entity = nodes.Comparison(operator)
-        comp_entity.append(nodes.Constant(value, ctype))
-        relation.append(comp_entity)
-        self.add(relation)
 
                 
 class Select(nodes.EditableMixIn, Statement):
@@ -326,9 +313,9 @@ class Delete(Statement):
         new = Statement.copy(self)
         for etype, var in self.main_variables:
             vref = nodes.VariableRef(new.get_variable(var.name))
-            new.main_variables.append( (etype, vref) )
+            new.add_main_variable(etype, vref)
         for child in self.main_relations:
-            new.main_relations.append(child.copy(new))
+            new.add_main_relation(child.copy(new))
         #assert check_relations(new)
         return new
     
@@ -339,16 +326,18 @@ class Delete(Statement):
         return [vref for et, vref in self.main_variables]
     
         
-    def add_main_variable(self, etype, variable):
+    def add_main_variable(self, etype, vref):
         """add a variable to the list of deleted variables"""
         #if etype == 'Any':
         #    raise BadRQLQuery('"Any" is not supported in DELETE statement')
-        self.main_variables.append( (etype.encode(), variable) )
+        vref.parent = self
+        self.main_variables.append( (etype.encode(), vref) )
 
     def add_main_relation(self, relation):
         """add a relation to the list of deleted relations"""
         assert isinstance(relation.children[0], nodes.VariableRef)
         assert isinstance(relation.children[1], nodes.VariableRef)
+        relation.parent = self
         self.main_relations.append( relation )
 
     def as_string(self, encoding=None, kwargs=None):
@@ -361,11 +350,24 @@ class Delete(Statement):
             if self.main_variables:
                 result.append(',')
             result.append(', '.join([rel.as_string(encoding, kwargs)
-                                     for rel in self.main_relations]))
-                
+                                     for rel in self.main_relations]))                
         r = self.get_restriction()
         if r is not None:
             result.append('WHERE %s' % r.as_string(encoding, kwargs))
+        return ' '.join(result)
+    
+    def __repr__(self):
+        result = ['DELETE']
+        if self.main_variables:
+            result.append(', '.join(['%r %r' %(etype, var)
+                                     for etype, var in self.main_variables]))
+        if self.main_relations:
+            if self.main_variables:
+                result.append(',')
+            result.append(', '.join([repr(rel) for rel in self.main_relations]))
+        r = self.get_restriction()
+        if r is not None:
+            result.append('WHERE %r' % r)
         return ' '.join(result)
 
 
@@ -390,23 +392,22 @@ class Insert(Statement):
         new = Statement.copy(self)
         for etype, var in self.main_variables:
             vref = nodes.VariableRef(new.get_variable(var.name))
-            new.main_variables.append( (etype, vref) )
+            new.add_main_variable(etype, vref)
         for child in self.main_relations:
-            new.main_relations.append(child.copy(new))
-        # this shouldn't ever change, don't have to copy  it
-        new.inserted_variables = self.inserted_variables 
+            new.add_main_relation(child.copy(new))
         #assert check_relations(new)
         return new
 
     def selected_terms(self):
         return [vref for et, vref in self.main_variables]
         
-    def add_main_variable(self, etype, variable):
+    def add_main_variable(self, etype, vref):
         """add a variable to the list of inserted variables"""
         if etype == 'Any':
             raise BadRQLQuery('"Any" is not supported in INSERT statement')
-        self.main_variables.append( (etype.encode(), variable) )
-        self.inserted_variables[variable.variable] = 1
+        self.main_variables.append( (etype.encode(), vref) )
+        vref.parent = self
+        self.inserted_variables[vref.variable] = 1
         
     def add_main_relation(self, relation):
         """add a relation to the list of inserted relations"""
@@ -417,6 +418,7 @@ class Insert(Statement):
                 msg = 'Using variable %s in declaration but %s is not an \
 insertion variable'
                 raise BadRQLQuery(msg % (var, var))
+        relation.parent = self
         self.main_relations.append( relation )
 
     def as_string(self, encoding=None, kwargs=None):
@@ -467,12 +469,13 @@ class Update(Statement):
     def copy(self):
         new = Statement.copy(self)
         for child in self.main_relations:
-            new.main_relations.append(child.copy(new))
+            new.add_main_relation(child.copy(new))
         #assert check_relations(new)
         return new
         
     def add_main_relation(self, relation):
         """add a relation to the list of modified relations"""
+        relation.parent = self
         self.main_relations.append( relation )
 
     def as_string(self, encoding=None, kwargs=None):

@@ -57,6 +57,20 @@ class EditableMixIn(object):
     def add_restriction(self, relation):
         self.add(relation)
         
+    def add_constant_restriction(self, variable, rtype, value, ctype,
+                                 operator='='):
+        """builds a restriction node to express a constant restriction:
+
+        variable rtype = value
+        """
+        relation = Relation(rtype)
+        var_ref = VariableRef(variable)
+        relation.append(var_ref)
+        comp_entity = Comparison(operator)
+        comp_entity.append(Constant(value, ctype))
+        relation.append(comp_entity)
+        self.add(relation)
+        
     def add_relation(self, lhs_var, r_type, rhs_var): 
         """builds a restriction node to express '<var> eid <eid>'"""
         self.add_restriction(make_relation(lhs_var, r_type, (rhs_var,),
@@ -556,7 +570,7 @@ class VariableRef(HSMixin, Node):
         return '%sVarRef(%#X) to %r' % (' '*indent, id(self), self.variable)
 
     def __cmp__(self, other):
-        return not(self.is_equivalent(other))
+        return not self.is_equivalent(other)
 
     def is_equivalent(self, other):
         return self.TYPE == other.TYPE and self.name == other.name
