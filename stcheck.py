@@ -327,6 +327,11 @@ class RQLSTAnnotator:
     def visit_variableref(self, variableref, errors):
         assert len(variableref.children)==0
         assert not variableref.parent is variableref
+##         try:
+##             assert variableref.variable in variableref.root().defined_vars.values(), \
+##                    (variableref.root(), variableref.variable, variableref.root().defined_vars)
+##         except AttributeError:
+##             raise Exception((variableref.root(), variableref.variable))
         
     def visit_constant(self, constant, errors):
         assert len(constant.children)==0
@@ -334,7 +339,7 @@ class RQLSTAnnotator:
             msg ='using an entity type in only allowed with "is" relation'
             errors.append(msg)
         
-    def visit_variable(self, variableref, errors):
+    def visit_variable(self, node, errors):
         pass
 
     def leave_constant(self, node, errors):
@@ -342,6 +347,8 @@ class RQLSTAnnotator:
     def leave_variableref(self, node, errors):
         pass
     def leave_comparison(self, node, errors):
+        pass
+    def leave_mathexpression(self, node, errors):
         pass
     def leave_or(self, node, errors):
         pass
