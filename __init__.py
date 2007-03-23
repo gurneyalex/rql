@@ -77,7 +77,7 @@ class RQLHelper:
         return self._analyser.visit(rqlst, uid_func_mapping, kwargs, debug)
 
     def simplify(self, rqlst, needcopy=True):
-        if rqlst.TYPE == 'delete':
+        if rqlst.TYPE != 'select':
             return rqlst
         if needcopy:
             rqlstcopy = None
