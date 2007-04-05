@@ -39,8 +39,15 @@ SPEC_QUERIES = (
     "Note N WHERE N ecrit_le D, D day > (today -10), N ecrit_par P, P nom 'jphc' or P nom 'ocy';",
     "Personne P WHERE (P interesse_par T, T nom 'formation') or (P ville 'Paris');",
     "Any X where X is Person, X firstname 'Anne', X surname S ORDERBY S DESC;",
+    # limit / offset
     "Personne P WHERE P nom N LIMIT 100;",
     "Personne P WHERE P nom N LIMIT 100 OFFSET 200;",
+    'Any X WHERE X is Person OFFSET 6;',
+    # optional relation support (left|right outer join)
+    'Any X,Y,A WHERE X? concerns Y, Y title A;',
+    'Any X,Y,A WHERE X concerns Y?, Y title A;',
+    'Any X,Y,A WHERE X? concerns Y?, Y title A;',
+    # data modification query
     "INSERT Personne X: X nom 'bidule';",
     "INSERT Personne X, Personne Y: X nom 'bidule', Y nom 'chouette', X ami Y;",
     "INSERT Person X: X nom 'bidule', X ami Y WHERE Y nom 'chouette';",
@@ -61,11 +68,6 @@ SPEC_QUERIES = (
 
     'Any X WHERE X eid > 12;',
     'DELETE Any X WHERE X eid > 12;',
-    
-    # optional relation support (left|right outer join)
-    'Any X,Y,A WHERE X? concerns Y, Y title A;',
-    'Any X,Y,A WHERE X concerns Y?, Y title A;',
-    'Any X,Y,A WHERE X? concerns Y?, Y title A;',
     
     )
 
