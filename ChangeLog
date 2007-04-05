@@ -1,14 +1,16 @@
 ChangeLog for RQL
 =================
 
- --
+2007-04-05  --  0.11.0
     * EXISTS support
     * proper get_type/get_description api, try to coerce math expression
       in get_type
-	
+    * some edition api cleanup
+
+
 2007-03-08  --  0.10.2
     * fix #17887: analyzis error on "Any U WHERE NOT U owned_by U"
-    * fix #17907: annotation foire potentiellement sur arbre simplifié	
+    * fix #17907: annotation foire potentiellement sur arbre simplifié
 
 2007-02-09  --  0.10.1
     * fix rewriting bug: variable used in an optional relation can't be
