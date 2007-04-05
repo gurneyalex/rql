@@ -251,7 +251,7 @@ rule func<<V>>: FUNCTION r"\("              {{ F = Function(FUNCTION) }}
 
 rule var<<V>>: VARIABLE {{ return VariableRef(V.get_variable(VARIABLE)) }} 
 
-rule etype<<V>>: E_TYPE {{ return V.get_type(E_TYPE) }} 
+rule etype<<V>>: E_TYPE {{ return V.get_etype(E_TYPE) }} 
 
 
 rule const: NULL       {{ return Constant('NULL', None) }}
