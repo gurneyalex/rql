@@ -29,13 +29,12 @@ class ETypeResolver:
     
     def __init__(self, schema, uid_func_mapping=None):
         """
-        * schema :
-            schema for entities and relations
-        * uid_attr :
-            string designing the attribute used as Unique IDentifiant 
-        * get_type_from_uid :
-            method the maybe used to get an entity's type given the value of
-            its UID attribute
+        * `schema` is an instance implemeting ISchema to describe entities and
+          relations
+        * `uid_func_mapping` is a dictionary with as key a string designing an
+          attribute used as Unique IDentifiant and with associated value a
+          method that maybe used to get an entity's type given the value of
+          the attribute
         """
         self.set_schema(schema)
         # mapping from relation to function taking rhs value as argument
@@ -393,15 +392,6 @@ class UnifyingETypeResolver:
     """
     
     def __init__(self, schema, uid_func_mapping=None):
-        """
-        * schema :
-            schema for entities and relations
-        * uid_attr :
-            string designing the attribute used as Unique IDentifiant 
-        * get_type_from_uid :
-            method the maybe used to get an entity's type given the value of
-            its UID attribute
-        """
         # mapping from relation to function taking rhs value as argument
         # and returning an entity type
         self.uid_func_mapping = {}

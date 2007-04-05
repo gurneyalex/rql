@@ -63,6 +63,7 @@ class RQLHelper:
         """return a syntax tree from an sql string"""
         tree = parse(rqlstring, self.e_types, False)
         self._annotator.annotate(tree, checkselected=True)
+        tree.schema = self._annotator.schema
         return tree
     
     def annotate(self, rqlst, checkselected=False):

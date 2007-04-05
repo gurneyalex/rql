@@ -13,6 +13,7 @@ from logilab.common.tree import VNode as Node, BinaryNode, ListNode, \
      post_order_list
 from logilab.common.visitor import VisitedMixIn
 
+from rql import CoercionError
 from rql.utils import function_description, quote, uquote
 
 def get_visit_name(self):
@@ -94,6 +95,9 @@ class HSMixin(object):
             if isinstance(c, VariableRef):
                 return 1
         return 0
+        
+    def get_description(self):
+        return self.get_type()
     
     def __str__(self):
         return self.as_string()
@@ -402,7 +406,43 @@ class MathExpression(HSMixin, BinaryNode):
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node"""
         return (self.operator,)
-                
+    
+    def get_type(self, solution=None):
+        """return the type of object returned by this function if known
+
+        solution is an optional variable/etype mapping
+        """
+        lhstype = self.children[0].get_type(solution)
+        rhstype = self.children[1].get_type(solution)
+        key = (self.operator, lhstype, rhstype)
+        try:
+            return {('-', 'Date', 'Datetime'):     'Time',
+                    ('-', 'Datetime', 'Datetime'): 'Time',
+                    ('-', 'Date', 'Date'):         'Time',
+                    ('-', 'Date', 'Time'):     'Datetime',
+                    ('+', 'Date', 'Time'):     'Datetime',
+                    ('-', 'Datetime', 'Time'): 'Datetime',
+                    ('+', 'Datetime', 'Time'): 'Datetime',
+                    }[key]
+        except KeyError:
+            if lhstype == rhstype:
+                return rhstype
+            if sorted((lhstype, rhstype)) == ['Float', 'Int']:
+                return 'Float'
+            raise CoercionError(key)
+        
+    def get_description(self):
+        """if there is a variable in the math expr used as rhs of a relation,
+        return the name of this relation, else return the type of the math
+        expression
+        """
+        schema = self.root().schema
+        for vref in self.get_nodes(VariableRef):
+            rtype = vref.get_description()
+            if schema.has_relation(rtype):
+                return rtype
+        return self.get_type()
+        
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         return '(%s %s %s)' % (self.children[0].as_string(encoding, kwargs),
@@ -507,7 +547,7 @@ class Constant(HSMixin,Node):
             return kwargs[self.value]
         return self.value
 
-    def get_type(self):
+    def get_type(self, solution=None):
         if self.uid:
             return self.uidtype
         return self.type
@@ -593,8 +633,11 @@ class VariableRef(HSMixin, Node):
         """return the tree as an encoded rql string"""
         return self.name
 
-    def get_type(self):
-        return self.variable.get_type()
+    def get_type(self, solution=None):
+        return self.variable.get_type(solution)
+
+    def get_description(self):
+        return self.variable.get_description()
 
 # group and sort nodes ########################################################
 
@@ -790,8 +833,35 @@ class Variable(object):
                 if node.variable is self:
                     return i
     
-    @cached
-    def get_type(self):
+    def get_type(self, solution=None):
+        """return entity type of this object, 'Any' if not found"""
+        if solution:
+            return solution[self.name]
+        etype = 'Any'
+        schema = self.root.schema
+        for ref in self.references():
+            rel = ref.relation()
+            if rel is None:
+                continue
+            if rel.r_type == 'is' and self.name == rel.children[0].name:
+                etype = rel.children[1].children[0].value.encode()
+                break
+            if rel.r_type != 'is' and self.name != rel.children[0].name:
+                if schema is not None:
+                    try:
+                        lhstype = rel.children[0].get_type(solution)
+                        etype = schema.eschema(lhstype).destination(rel.r_type)
+                        break
+                    except: # CoertionError, AssertionError :(
+                        pass
+        return etype
+    
+    def get_description(self):
+        """return
+        * the entity type of this object if specified by a 'is' relation,
+        * the name of a relation where this variable is used as lhs,
+        * 'Any' if no such relation
+        """
         etype = 'Any'
         for ref in self.references():
             rel = ref.relation()
