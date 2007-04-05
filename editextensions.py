@@ -12,42 +12,8 @@ from rql.nodes import Constant, Variable, VariableRef, Comparison, AND, \
 from rql.utils import get_nodes
 from rql.undo import *
 
-orig_init = Select.__init__
-def __init__(self, *args, **kwargs):
-    """override Select.__init__ to add an undo manager and others necessary
-    variables
-    """
-    orig_init(self, *args, **kwargs)
-    self.undo_manager = SelectionManager(self)
-    self.memorizing = 0
-    # used to prevent from memorizing when undoing !
-    self.undoing = False
-Select.__init__ = __init__
-
-def save_state(self):
-    """save the current tree"""
-    self.undo_manager.push_state()
-    self.memorizing += 1
-Select.save_state = save_state
-
-def recover(self):
-    """reverts the tree as it was when save_state() was last called"""
-    self.memorizing -= 1
-    assert self.memorizing >= 0
-    self.undo_manager.recover()    
-Select.recover = recover
-
             
 # variable manipulation methods ###############################################
-
-orig_make_variable = Select.make_variable
-def make_variable(self, etype=None):
-    """override Select.make_variable to memorize variable creation"""
-    var = orig_make_variable(self, etype)
-    if self.memorizing and not self.undoing:
-        self.undo_manager.add_operation(MakeVarOperation(var))
-    return var
-Select.make_variable = make_variable
 
 def undefine_variable(self, var):
     """undefine the given variable and remove all relations where it appears"""
@@ -105,27 +71,6 @@ Select.add_selected = add_selected
 
 # basic operations #############################################################
 
-def add_restriction(self, relation):
-    """override Select.add_restriction to memorize modification when needed"""
-    assert isinstance(relation, Relation)
-    r = self.get_restriction()
-    if r is not None:
-        new_node = AND(relation, r)
-        self.replace(r, new_node)
-        if self.memorizing and not self.undoing:
-            self.undo_manager.add_operation(ReplaceNodeOperation(r, new_node))
-    else:
-        self.insert(0, relation)
-        if self.memorizing and not self.undoing:
-            self.undo_manager.add_operation(AddNodeOperation(relation))
-    # register variable references in the added subtree
-    # XXX see change make_relation:
-    # exp.append(VariableRef(var, 1)) -> exp.append(VariableRef(var))
-    #for varref in get_nodes(relation, VariableRef):
-    #    varref.register_reference()
-    assert check_relations(self)
-Select.add_restriction = add_restriction
-
 def remove_node(self, node):
     """remove the given node from the tree"""
     # unregister variable references in the removed subtree
@@ -154,14 +99,6 @@ def add_sortvar(self, var, asc=True):
         self.append(sort_terms)
     sort_terms.append(term)
 Select.add_sortvar = add_sortvar
-
-def set_distinct(self, value):
-    """mark DISTINCT query"""
-    if self.memorizing and not self.undoing:
-        self.undo_manager.add_operation(SetDistinctOperation(self.distinct))
-    self.distinct = value
-    
-Select.set_distinct = set_distinct
 
 
 # shortcuts methods ###########################################################
@@ -192,23 +129,6 @@ def remove_group_variable(self, var):
     else:
         self.remove_node(var)
 Select.remove_group_variable = remove_group_variable
-
-def add_eid_restriction(self, var, eid): 
-    """builds a restriction node to express '<var> eid <eid>'"""
-    self.add_restriction(make_relation(var, 'eid', (eid, 'Int'), Constant))
-Select.add_eid_restriction = add_eid_restriction
-
-def add_constant_restriction(self, var, r_type, value, v_type=None): 
-    """builds a restriction node to express '<var> <r_type><constant value>'"""
-    if v_type is None:
-        if isinstance(value, int):
-            v_type = 'Int'
-        # FIXME : other cases
-        else:
-            v_type = 'String'
-    self.add_restriction(make_relation(var, r_type, (value, v_type), Constant))
-Select.add_constant_restriction = add_constant_restriction
-
 
 # utilities functions #########################################################
 
@@ -247,21 +167,13 @@ def remove_has_text_relation(node):
             node.remove_node(rel)
             return
         
-def get_variable_refs(node):
-    """get the list of variable references in the subtree """
-    return get_nodes(node, VariableRef)
-
-def get_relations(node):
-    """returns a list of the Relation nodes of the subtree"""
-    return get_nodes(node, Relation)
-
 def get_vars_relations(node):
     """returns a dict with 'var_names' as keys, and the list of relations which
     concern them
     """
     exp_concerns = {}
-    for exp in get_relations(node):
-        for vref in get_variable_refs(exp):
+    for exp in node.get_nodes(Relation):
+        for vref in exp.get_nodes(VariableRef):
             exp_concerns.setdefault(vref.name, []).append(exp)
     return exp_concerns
 

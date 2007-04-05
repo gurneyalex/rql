@@ -8,7 +8,6 @@ root nodes, defined in the stmts module.
 __docformat__ = "restructuredtext en"
 
 
-from logilab.common.decorators import cached
 from logilab.common.tree import VNode as Node, BinaryNode, ListNode, \
      post_order_list
 from logilab.common.visitor import VisitedMixIn
@@ -29,22 +28,29 @@ ListNode.get_visit_name = get_visit_name
 
 # rql st edition utilities
 
-def make_relation(var, rel, rhs_args, rhs_class):
+def make_relation(var, rel, rhsargs, rhsclass, operator='='):
     """build an relation equivalent to '<var> rel = <cst>'"""
-    comp_cst = Comparison("=")
-    comp_cst.append(rhs_class(*rhs_args))
-    exp = Relation(rel)
+    cmpop = Comparison(operator)
+    cmpop.append(rhsclass(*rhsargs))
+    relation = Relation(rel)
     if hasattr(var, 'variable'):
         var = var.variable
-    exp.append(VariableRef(var))
-    exp.append(comp_cst)
-    return exp
+    relation.append(VariableRef(var))
+    relation.append(cmpop)
+    return relation
 
 
 # base objects ################################################################
 
 class EditableMixIn(object):
+    @property
+    def undo_manager(self):
+        return self.root().undo_manager
 
+    def should_register_op(self):
+        root = self.root()
+        return root.memorizing and not root.undoing
+    
     def add(self, relation):
         """add a restriction relation (XXX should not collide with add_restriction
         or add_relation optionaly plugged by the editextensions module
@@ -56,7 +62,19 @@ class EditableMixIn(object):
             self.insert(0, relation)
             
     def add_restriction(self, relation):
-        self.add(relation)
+        r = self.get_restriction()
+        if r is not None:
+            newnode = AND(r, relation)
+            self.replace(r, newnode)
+            if self.should_register_op:
+                from rql.undo import ReplaceNodeOperation
+                self.undo_manager.add_operation(ReplaceNodeOperation(r, newnode))
+        else:
+            self.insert(0, relation)
+            if self.should_register_op:
+                from rql.undo import AddNodeOperation
+                self.undo_manager.add_operation(AddNodeOperation(relation))
+        #assert check_relations(self)
         
     def add_constant_restriction(self, variable, rtype, value, ctype,
                                  operator='='):
@@ -64,18 +82,23 @@ class EditableMixIn(object):
 
         variable rtype = value
         """
-        relation = Relation(rtype)
-        var_ref = VariableRef(variable)
-        relation.append(var_ref)
-        comp_entity = Comparison(operator)
-        comp_entity.append(Constant(value, ctype))
-        relation.append(comp_entity)
-        self.add(relation)
+        if ctype is None:
+            if isinstance(value, int):
+                ctype = 'Int'
+                # FIXME : other cases
+            else:
+                ctype = 'String'
+        self.add_restriction(make_relation(variable, rtype, (value, ctype),
+                                           Constant, operator))
         
-    def add_relation(self, lhs_var, r_type, rhs_var): 
+    def add_relation(self, lhsvar, rtype, rhsvar): 
         """builds a restriction node to express '<var> eid <eid>'"""
-        self.add_restriction(make_relation(lhs_var, r_type, (rhs_var,),
+        self.add_restriction(make_relation(lhsvar, rtype, (rhsvar,),
                                            VariableRef))
+
+    def add_eid_restriction(self, var, eid): 
+        """builds a restriction node to express '<var> eid <eid>'"""
+        self.add_restriction(make_relation(var, 'eid', (eid, 'Int'), Constant))
 
 
 class HSMixin(object):
@@ -87,7 +110,6 @@ class HSMixin(object):
         while parent is not None and not parent.TYPE == 'relation':
             parent = parent.parent
         return parent
-    #relation = cached(relation)
     
     def is_variable(self):
         """check if this node contains a reference to one ore more variables"""
@@ -363,7 +385,7 @@ class Comparison(HSMixin, Node):
         elif operator == '=' and isinstance(value, Constant) and \
                  value.type is None:
             operator = 'IS'            
-        assert operator in ('<', '<=', '=', '>=', '>', 'LIKE', 'IS')
+        assert operator in ('<', '<=', '=', '>=', '>', 'LIKE', 'IS'), operator
         self.operator = operator
         if value is not None:
             self.append(value)

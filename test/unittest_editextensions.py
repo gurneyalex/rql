@@ -4,13 +4,6 @@ from logilab.common.testlib import TestCase, unittest_main
 from rql import parse
 from rql.editextensions import *
 
-class RQLBaseTestCase(TestCase):
-    def test_get_nodes(self):
-        node = Sort()
-        node.append(VariableRef(Variable('A')))
-        node.append(VariableRef(Variable('B')))
-        self.assertEquals(len(get_variable_refs(node)), 2)
-        
 class RQLUndoTestCase(TestCase):
     
     def test_selected(self):
