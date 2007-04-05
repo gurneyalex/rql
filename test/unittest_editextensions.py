@@ -70,7 +70,7 @@ class RQLUndoTestCase(TestCase):
         var = rqlst.make_variable()
         rqlst.add_selected(var)
         # check operations
-        self.assertEquals(rqlst.as_string(), 'Any TMP')
+        self.assertEquals(rqlst.as_string(), 'Any A')
         # check references before recovering
         check_relations(rqlst)
         rqlst.recover()
