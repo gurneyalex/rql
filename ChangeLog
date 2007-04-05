@@ -3,7 +3,9 @@ ChangeLog for RQL
 
  --
     * EXISTS support
-
+    * proper get_type/get_description api, try to coerce math expression
+      in get_type
+	
 2007-03-08  --  0.10.2
     * fix #17887: analyzis error on "Any U WHERE NOT U owned_by U"
     * fix #17907: annotation foire potentiellement sur arbre simplifié	
