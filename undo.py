@@ -4,8 +4,6 @@ Copyright (c) 2003-2004 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
-__revision__ = "$Id: undo.py,v 1.2 2006-02-08 16:25:34 syt Exp $"
-
 from rql.nodes import VariableRef, BinaryNode
 from rql.utils import get_nodes
 

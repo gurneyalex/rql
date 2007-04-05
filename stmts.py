@@ -9,6 +9,7 @@ defined in the nodes module
 __docformat__ = "restructuredtext en"
 
 from logilab.common.tree import VNode as Node
+from logilab.common.decorators import cached
 
 from rql.utils import get_nodes, get_nodes_filtered, rqlvar_maker
 from rql import BadRQLQuery, CoercionError, nodes
@@ -16,16 +17,7 @@ from rql import BadRQLQuery, CoercionError, nodes
 Node.get_nodes = get_nodes
 Node.get_nodes_filtered = get_nodes_filtered
 
-def add_restriction(select, relation):
-    """add a restriction to a select node
-    
-    this is intentionally not a method of Select !
-    """
-    # XXX this method is deprecated
-    select.add(relation)
-
-
-class Statement(Node, object):
+class Statement(nodes.EditableMixIn, Node, object):
     """base class for statement nodes"""
     
     def __init__(self, etypes):
@@ -35,9 +27,16 @@ class Statement(Node, object):
         self.e_types = etypes
         # dictionnary of defined variables in the original RQL syntax tree
         self.defined_vars = {}
+        # variable names generator
         self._varmaker = rqlvar_maker(defined=self.defined_vars)
+        # syntax tree meta-information
         self.stinfo = {'rewritten': {}}
+        # ISchema
         self.schema = None
+        # recoverable modification attributes
+        self.memorizing = 0
+        # used to prevent from memorizing when undoing !
+        self.undoing = False
         
     def __str__(self):
         return self.as_string(None, {})
@@ -57,6 +56,18 @@ class Statement(Node, object):
         
     def get_selected_variables(self):
         return self.selected_terms()
+        
+    def get_restriction(self):
+        """return all the subtree with restriction clauses. That maybe a Or,
+        And, or Relation instance.
+        return None if there is no restriction clauses.
+        """
+        # XXX : le commentaire correspond pas!!!
+        for c in self.children:
+            if not isinstance(c, nodes.Group) and not isinstance(c, nodes.Sort):
+                return c
+            break
+        return None
     
     def selected_terms(self):
         raise NotImplementedError
@@ -72,10 +83,6 @@ class Statement(Node, object):
     def allocate_varname(self):
         """return an yet undefined variable name"""
         return self._varmaker.next()
-
-    def make_variable(self, etype=None):
-        """create a new variable with an unique name for this tree"""
-        return self.get_variable(self.allocate_varname())
 
     def get_etype(self, name):
         """return the type object for the given entity's type name
@@ -102,25 +109,39 @@ class Statement(Node, object):
             var.root = self
             return var
         
-    def get_restriction(self):
-        """return all the subtree with restriction clauses. That maybe a Or,
-        And, or Relation instance.
-        return None if there is no restriction clauses.
-        """
-        # XXX : le commentaire correspond pas!!!
-        for c in self.children:
-            if not isinstance(c, nodes.Group) and not isinstance(c, nodes.Sort):
-                return c
-            break
-        return None
-        
     def add_type_restriction(self, variable, etype):
         """builds a restriction node to express : variable is etype"""
         self.add_constant_restriction(variable, 'is', etype, 'etype')
-        
+
+    # recoverable modification methods ########################################
+    
+    @property
+    @cached
+    def undo_manager(self):
+        from rql.undo import SelectionManager
+        return SelectionManager(self)
+
+    def save_state(self):
+        """save the current tree"""
+        self.undo_manager.push_state()
+        self.memorizing += 1
+
+    def recover(self):
+        """reverts the tree as it was when save_state() was last called"""
+        self.memorizing -= 1
+        assert self.memorizing >= 0
+        self.undo_manager.recover()    
+
+    def make_variable(self, etype=None):
+        """create a new variable with an unique name for this tree"""
+        var = self.get_variable(self.allocate_varname())
+        if self.memorizing and not self.undoing:
+            from rql.undo import MakeVarOperation
+            self.undo_manager.add_operation(MakeVarOperation(var))
+        return var
 
                 
-class Select(nodes.EditableMixIn, Statement):
+class Select(Statement):
     """the select node is the root of the syntax tree for selection statement
     """
     TYPE = 'select'
@@ -202,6 +223,12 @@ class Select(nodes.EditableMixIn, Statement):
             except CoercionError:
                 descr.append('Any')
         return descr
+
+    def set_distinct(self, value):
+        """mark DISTINCT query"""
+        if self.should_register_op:
+            self.undo_manager.add_operation(SetDistinctOperation(self.distinct))
+        self.distinct = value
         
     # string representation ###################################################
     
