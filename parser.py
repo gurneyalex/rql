@@ -429,7 +429,7 @@ class Hercule(runtime.Parser):
     def etype(self, V, _parent=None):
         _context = self.Context(_parent, self._scanner, 'etype', [V])
         E_TYPE = self._scan('E_TYPE', context=_context)
-        return V.get_type(E_TYPE)
+        return V.get_etype(E_TYPE)
 
     def const(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'const', [])

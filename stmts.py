@@ -11,8 +11,7 @@ __docformat__ = "restructuredtext en"
 from logilab.common.tree import VNode as Node
 
 from rql.utils import get_nodes, get_nodes_filtered, rqlvar_maker
-from rql._exceptions import BadRQLQuery
-from rql import nodes
+from rql import BadRQLQuery, CoercionError, nodes
 
 Node.get_nodes = get_nodes
 Node.get_nodes_filtered = get_nodes_filtered
@@ -38,7 +37,8 @@ class Statement(Node, object):
         self.defined_vars = {}
         self._varmaker = rqlvar_maker(defined=self.defined_vars)
         self.stinfo = {'rewritten': {}}
-    
+        self.schema = None
+        
     def __str__(self):
         return self.as_string(None, {})
 
@@ -48,6 +48,7 @@ class Statement(Node, object):
     
     def copy(self):
         new = self.__class__(self.e_types)
+        new.schema = self.schema
         for child in self.children:
             new.append(child.copy(new))
         return new
@@ -76,7 +77,7 @@ class Statement(Node, object):
         """create a new variable with an unique name for this tree"""
         return self.get_variable(self.allocate_varname())
 
-    def get_type(self, name):
+    def get_etype(self, name):
         """return the type object for the given entity's type name
         
         raise BadRQLQuery on unknown type
@@ -197,32 +198,11 @@ class Select(nodes.EditableMixIn, Statement):
         descr = []
         for term in self.selected:
             try:
-                descr.append(term.get_type())
-            except AttributeError:
+                descr.append(term.get_description())
+            except CoercionError:
                 descr.append('Any')
         return descr
         
-    def get_indexed_description(self):
-        """return the list of types or relations (if not found) associated to
-        selected variables
-        """
-        descr = []
-        for index, var in enumerate(self.selected):
-            var = var.variable
-            var_type = 'Any'
-            for ref in var.references():
-                rel = ref.relation()
-                if rel is None:
-                    continue
-                if rel.r_type == 'is' and var.name == rel.children[0].name:
-                    var_type = rel.children[1].children[0].value.encode()
-                    break
-                if rel.r_type != 'is' and var.name != rel.children[0].name:
-                    var_type = rel.r_type
-                    break
-            descr.append((index, var_type))
-        return descr
-
     # string representation ###################################################
     
     def as_string(self, encoding=None, kwargs=None):
