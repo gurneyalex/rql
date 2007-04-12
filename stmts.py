@@ -227,6 +227,7 @@ class Select(Statement):
     def set_distinct(self, value):
         """mark DISTINCT query"""
         if self.should_register_op:
+            from rql.undo import SetDistinctOperation
             self.undo_manager.add_operation(SetDistinctOperation(self.distinct))
         self.distinct = value
         
