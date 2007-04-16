@@ -139,6 +139,20 @@ class Statement(nodes.EditableMixIn, Node, object):
             from rql.undo import MakeVarOperation
             self.undo_manager.add_operation(MakeVarOperation(var))
         return var
+    
+    def remove_node(self, node):
+        """remove the given node from the tree"""
+        # unregister variable references in the removed subtree
+        for varref in get_nodes(node, nodes.VariableRef):
+            varref.unregister_reference()
+            #if not varref.variable.references():
+            #    del node.root().defined_vars[varref.name]
+        if self.memorizing and not self.undoing:
+            from rql.undo import RemoveNodeOperation
+            self.undo_manager.add_operation(RemoveNodeOperation(node))
+        node.parent.remove(node)
+        #assert check_relations(self)
+
 
                 
 class Select(Statement):
