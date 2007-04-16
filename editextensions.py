@@ -71,19 +71,6 @@ Select.add_selected = add_selected
 
 # basic operations #############################################################
 
-def remove_node(self, node):
-    """remove the given node from the tree"""
-    # unregister variable references in the removed subtree
-    for varref in get_nodes(node, VariableRef):
-        varref.unregister_reference()
-        #if not varref.variable.references():
-        #    del node.root().defined_vars[varref.name]
-    if self.memorizing and not self.undoing:
-        self.undo_manager.add_operation(RemoveNodeOperation(node))
-    node.parent.remove(node)
-    assert check_relations(self)
-Select.remove_node = remove_node
-
 def add_sortvar(self, var, asc=True):
     """add var in 'orderby' constraints
     asc is a boolean indicating the sort order (ascendent or descendent)
