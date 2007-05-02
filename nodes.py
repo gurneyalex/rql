@@ -723,27 +723,30 @@ class SortTerm(HSMixin, Node):
     def __init__(self, variable, asc=1, copy=None):
         Node.__init__(self)
         self.asc = asc
-        #self.var = variable
         if copy is None:
             self.append(variable)
             
     @property
-    def var(self):
+    def var(self): # XXX deprecated, use .term
+        return self.children[0]
+            
+    @property
+    def term(self): 
         return self.children[0]
     
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node"""
-        return (self.var.copy(stmt), self.asc)
+        return (self.term.copy(stmt), self.asc)
     
     def __repr__(self, indent=0):
         if self.asc:
-            return '%r ASC' % self.var
-        return '%r DESC' % self.var
+            return '%r ASC' % self.term
+        return '%r DESC' % self.term
 
     def as_string(self, encoding=None, kwargs=None):
         if self.asc:
-            return '%s' % self.var
-        return '%s DESC' % self.var
+            return '%s' % self.term
+        return '%s DESC' % self.term
     
     def __str__(self):
         return self.as_string()
