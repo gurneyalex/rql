@@ -1,6 +1,11 @@
 ChangeLog for RQL
 =================
 
+ --
+    * Sortterm.var -> Sortterm.term
+    * fix function name normalization
+    * make remove_node available without having to import editextensions
+
 2007-04-05  --  0.11.0
     * EXISTS support
     * proper get_type/get_description api, try to coerce math expression
