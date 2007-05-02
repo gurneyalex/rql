@@ -49,6 +49,8 @@ class FunctionDescr(object):
     minargs = 1
     maxargs = 1
     def __init__(self, name=None, rtype=rtype, aggregat=aggregat):
+        if name is not None:
+            name = name.upper()
         self.name = name
         self.rtype = rtype
         self.aggregat = aggregat
@@ -186,7 +188,7 @@ def get_nodes(node, klass):
         node = stack.pop(-1)
         if isinstance(node, klass):
             result.append(node)
-        if hasattr(node, 'children'):
+        elif hasattr(node, 'children'):
             stack += node.children
     return result
 
@@ -229,7 +231,7 @@ def iget_nodes(node, klass, filter_func = bool):
         node = stack.pop(-1)
         if isinstance(node, klass):
             yield node
-        if hasattr(node, 'children'):
+        elif hasattr(node, 'children'):
             stack += node.children
 
 
