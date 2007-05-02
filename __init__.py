@@ -97,7 +97,7 @@ class RQLHelper:
                 assert len(stinfo['uidrels']) == 1, var
                 uidrel = stinfo['uidrels'].pop()
                 var = uidrel.children[0].variable
-                rqlstcopy.stinfo['rewritten'][uidrel] = vconsts = []
+                rqlstcopy.stinfo['rewritten'][var.name] = vconsts = []
                 rhs = uidrel.children[1].children[0]
                 assert isinstance(rhs, nodes.Constant), rhs
                 for varref in var.references():
@@ -141,7 +141,7 @@ def parse(rqlstring, e_types=None, print_errors=True):
         return parser.goal(e_types)
     except SyntaxError, ex:
         if not print_errors:
-            raise RQLSyntaxError(ex.msg)
+            raise RQLSyntaxError('%s\n%s' % (rqlstring, ex.msg))
         # try to get error message from yapps
         try:
             out = sys.stdout
