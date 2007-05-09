@@ -439,9 +439,9 @@ class MathExpression(HSMixin, BinaryNode):
         rhstype = self.children[1].get_type(solution)
         key = (self.operator, lhstype, rhstype)
         try:
-            return {('-', 'Date', 'Datetime'):     'Time',
-                    ('-', 'Datetime', 'Datetime'): 'Time',
-                    ('-', 'Date', 'Date'):         'Time',
+            return {('-', 'Date', 'Datetime'):     'Interval',
+                    ('-', 'Datetime', 'Datetime'): 'Interval',
+                    ('-', 'Date', 'Date'):         'Interval',
                     ('-', 'Date', 'Time'):     'Datetime',
                     ('+', 'Date', 'Time'):     'Datetime',
                     ('-', 'Datetime', 'Time'): 'Datetime',
