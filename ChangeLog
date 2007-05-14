@@ -1,7 +1,7 @@
 ChangeLog for RQL
 =================
 
- --
+2007-05-14  -- 0.11.1
     * Sortterm.var -> Sortterm.term
     * fix function name normalization
     * make remove_node available without having to import editextensions
