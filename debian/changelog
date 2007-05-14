@@ -1,8 +1,14 @@
+rql (0.11.1-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Adrien.DiMascio <Adrien.DiMascio@logilab.fr>  Mon, 14 May 2007 12:50:15 +0200
+
 rql (0.11.0-0) unstable; urgency=low
 
   * new upstream release
 
- -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Thu,  5 Apr 2007 20:54:08 +0200
+ -- Adrien.DiMascio <Adrien.DiMascio@logilab.fr>  Fri, 13 Apr 2007 17:21:16 +0200
 
 rql (0.10.2-1) unstable; urgency=low
 
