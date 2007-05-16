@@ -583,7 +583,7 @@ class Constant(HSMixin,Node):
             return self.value
         if self.type == 'etype':
             return self.value.encode()
-        if self.type == 'Boolean':
+        if self.type in ('Datetime', 'Date', 'Boolean'):
             return self.value
         if self.type == 'Substitute':
             if kwargs is not None:
