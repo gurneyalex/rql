@@ -1,6 +1,9 @@
 ChangeLog for RQL
 =================
 
+ --
+    * fix as_string bug for NOW/TODAY constants
+
 2007-05-14  -- 0.11.1
     * Sortterm.var -> Sortterm.term
     * fix function name normalization
