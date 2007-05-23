@@ -2,7 +2,9 @@ ChangeLog for RQL
 =================
 
  --
-    * fix as_string bug for NOW/TODAY constants
+    * fix as_string bug for NOW/TODAY constants which may cause coercion bugs
+    * as_string with now encoding specified will (hum, probably) return an
+      unicode string
 
 2007-05-14  -- 0.11.1
     * Sortterm.var -> Sortterm.term
