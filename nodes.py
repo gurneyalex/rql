@@ -589,7 +589,10 @@ class Constant(HSMixin,Node):
             if kwargs is not None:
                 value = kwargs.get(self.value, '???')
                 if isinstance(value, unicode):
-                    value = quote(value.encode(encoding or 'ascii'))
+                    if encoding:
+                        value = quote(value.encode(encoding))
+                    else:
+                        value = uquote(value)
                 elif not isinstance(value, str):
                     return repr(value)
                 return value
