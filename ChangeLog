@@ -1,5 +1,7 @@
 ChangeLog for RQL
 =================
+ --
+    * as_string w/ kwargs fix
 
 2007-05-23  --  0.11.2
     * fix as_string bug for NOW/TODAY constants which may cause coercion bugs
