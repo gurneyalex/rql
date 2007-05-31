@@ -579,13 +579,12 @@ class Constant(HSMixin,Node):
         """return the tree as an encoded rql string (an unicode string is
         returned if encoding is None)
         """
-        if self.type is None or self.type == 'Date':
-            return self.value
-        if self.type == 'etype':
-            return self.value.encode()
-        if self.type in ('Datetime', 'Date', 'Boolean'):
-            return self.value
+        if self.type is None or self.type in ('etype', 'Datetime', 'Date',
+                                              'Boolean', 'Int', 'Float'):
+            return str(self.value)
         if self.type == 'Substitute':
+            # XXX could get some type information from self.root().schema()
+            #     and linked relation
             if kwargs is not None:
                 value = kwargs.get(self.value, '???')
                 if isinstance(value, unicode):
@@ -593,8 +592,10 @@ class Constant(HSMixin,Node):
                         value = quote(value.encode(encoding))
                     else:
                         value = uquote(value)
-                elif not isinstance(value, str):
-                    return repr(value)
+                elif isinstance(value, str):
+                    value = quote(value)
+                else:
+                    value = repr(value)
                 return value
             return '%%(%s)s' % self.value
         if isinstance(self.value, unicode):
