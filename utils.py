@@ -67,7 +67,7 @@ class FunctionDescr(object):
         
     @classmethod
     def st_description(cls, funcnode):
-        return '%s(%s)' % (self.name,
+        return '%s(%s)' % (cls.name,
                            ', '.join(child.get_description()
                                      for child in iter_funcnode_variables(funcnode)))
 
