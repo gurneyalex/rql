@@ -508,13 +508,18 @@ class Function(HSMixin, Node):
 
         solution is an optional variable/etype mapping
         """
-        # FIXME: e_type defined by erudi's sql generator
         rtype = self.descr().rtype
         if rtype is None:
             # XXX support one variable ref child
-            rtype = solution and solution.get(self.children[0].name)
+            try:
+                rtype = solution and solution.get(self.children[0].name)
+            except AttributeError:
+                pass
         return rtype or 'Any'
 
+    def get_description(self):
+        return self.descr().st_description(self)
+        
     def descr(self):
         """return the type of object returned by this function if known"""
         # FIXME: e_type defined by erudi's sql generator
@@ -887,24 +892,37 @@ class Variable(object):
         return etype
     
     def get_description(self):
-        """return
-        * the entity type of this object if specified by a 'is' relation,
+        """return :
         * the name of a relation where this variable is used as lhs,
-        * 'Any' if no such relation
+        * the entity type of this object if specified by a 'is' relation,
+        * 'Any' if nothing nicer has been found...
+
+        give priority to relation name
         """
         etype = 'Any'
+        result = None
+        schema = self.root.schema
         for ref in self.references():
             rel = ref.relation()
             if rel is None:
                 continue
-            # XXX give priority to relation name ?
-            if rel.r_type == 'is' and self.name == rel.children[0].name:
-                etype = rel.children[1].children[0].value.encode()
+            if rel.r_type == 'is':
+                if self.name == rel.children[0].name:
+                    etype = str(rel.children[1].children[0].value)
+                else:
+                    etype = 'Eetype' # XXX ginco specific
+                continue
+            rschema = schema.rschema(rel.r_type)
+            if rschema.is_final():
+                if self.name == rel.children[0].name:
+                    continue # ignore
+                result = rel.r_type
                 break
-            if rel.r_type != 'is' and self.name != rel.children[0].name:
-                etype = rel.r_type
+            result = rel.r_type
+            if self.name != rel.children[0].name:
+                # priority to relation where variable is on the rhs
                 break
-        return etype
+        return result or etype
     
     def main_relation(self):
         """return the relation where this variable is used in the rhs
