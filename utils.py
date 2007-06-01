@@ -63,7 +63,21 @@ class FunctionDescr(object):
         if cls.maxargs is not None and \
                nbargs < cls.maxargs:
             raise BadRQLQuery('too many arguments for function %s' % cls.name)
+        
+        
+    @classmethod
+    def st_description(cls, funcnode):
+        return '%s(%s)' % (self.name,
+                           ', '.join(child.get_description()
+                                     for child in iter_funcnode_variables(funcnode)))
 
+def iter_funcnode_variables(funcnode):
+    for term in funcnode.children:
+        try:
+            yield term.variable.stinfo['attrvar'] or term
+        except AttributeError, ex:
+            yield term
+    
 class AggrFunctionDescr(FunctionDescr):
     aggregat = True
     rtype = 'Int' # XXX if the orig type is a final type, returned type should be the same
