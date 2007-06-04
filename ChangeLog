@@ -1,5 +1,19 @@
 ChangeLog for RQL
 =================
+ --
+    * as_string w/ kwargs fix
+    * get_description fix on Variable, enhancement on Function by delegating
+      to the function's description
+
+2007-05-23  --  0.11.2
+    * fix as_string bug for NOW/TODAY constants which may cause coercion bugs
+    * as_string with now encoding specified will (hum, probably) return an
+      unicode string
+
+2007-05-14  --  0.11.1
+    * Sortterm.var -> Sortterm.term
+    * fix function name normalization
+    * make remove_node available without having to import editextensions
 
 2007-04-05  --  0.11.0
     * EXISTS support

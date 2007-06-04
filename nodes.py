@@ -279,7 +279,8 @@ class Relation(Node):
             rhs = rhs.children[0]
         # else: relation used in SET OR DELETE selection
         return self.r_type == 'is' and \
-               isinstance(rhs, Constant) and rhs.type == 'etype'
+               ((isinstance(rhs, Constant) and rhs.type == 'etype')
+                or (isinstance(rhs, Function) and rhs.name == 'IN'))
 
     def operator(self):
         """return the operator of the relation <, <=, =, >=, > and LIKE
@@ -438,9 +439,9 @@ class MathExpression(HSMixin, BinaryNode):
         rhstype = self.children[1].get_type(solution)
         key = (self.operator, lhstype, rhstype)
         try:
-            return {('-', 'Date', 'Datetime'):     'Time',
-                    ('-', 'Datetime', 'Datetime'): 'Time',
-                    ('-', 'Date', 'Date'):         'Time',
+            return {('-', 'Date', 'Datetime'):     'Interval',
+                    ('-', 'Datetime', 'Datetime'): 'Interval',
+                    ('-', 'Date', 'Date'):         'Interval',
                     ('-', 'Date', 'Time'):     'Datetime',
                     ('+', 'Date', 'Time'):     'Datetime',
                     ('-', 'Datetime', 'Time'): 'Datetime',
@@ -507,13 +508,18 @@ class Function(HSMixin, Node):
 
         solution is an optional variable/etype mapping
         """
-        # FIXME: e_type defined by erudi's sql generator
         rtype = self.descr().rtype
         if rtype is None:
             # XXX support one variable ref child
-            rtype = solution and solution.get(self.children[0].name)
+            try:
+                rtype = solution and solution.get(self.children[0].name)
+            except AttributeError:
+                pass
         return rtype or 'Any'
 
+    def get_description(self):
+        return self.descr().st_description(self)
+        
     def descr(self):
         """return the type of object returned by this function if known"""
         # FIXME: e_type defined by erudi's sql generator
@@ -578,19 +584,23 @@ class Constant(HSMixin,Node):
         """return the tree as an encoded rql string (an unicode string is
         returned if encoding is None)
         """
-        if self.type is None or self.type == 'Date':
-            return self.value
-        if self.type == 'etype':
-            return self.value.encode()
-        if self.type == 'Boolean':
-            return self.value
+        if self.type is None or self.type in ('etype', 'Datetime', 'Date',
+                                              'Boolean', 'Int', 'Float'):
+            return str(self.value)
         if self.type == 'Substitute':
+            # XXX could get some type information from self.root().schema()
+            #     and linked relation
             if kwargs is not None:
                 value = kwargs.get(self.value, '???')
                 if isinstance(value, unicode):
-                    value = quote(value.encode(encoding or 'ascii'))
-                elif not isinstance(value, str):
-                    return repr(value)
+                    if encoding:
+                        value = quote(value.encode(encoding))
+                    else:
+                        value = uquote(value)
+                elif isinstance(value, str):
+                    value = quote(value)
+                else:
+                    value = repr(value)
                 return value
             return '%%(%s)s' % self.value
         if isinstance(self.value, unicode):
@@ -723,27 +733,30 @@ class SortTerm(HSMixin, Node):
     def __init__(self, variable, asc=1, copy=None):
         Node.__init__(self)
         self.asc = asc
-        #self.var = variable
         if copy is None:
             self.append(variable)
             
     @property
-    def var(self):
+    def var(self): # XXX deprecated, use .term
+        return self.children[0]
+            
+    @property
+    def term(self): 
         return self.children[0]
     
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node"""
-        return (self.var.copy(stmt), self.asc)
+        return (self.term.copy(stmt), self.asc)
     
     def __repr__(self, indent=0):
         if self.asc:
-            return '%r ASC' % self.var
-        return '%r DESC' % self.var
+            return '%r ASC' % self.term
+        return '%r DESC' % self.term
 
     def as_string(self, encoding=None, kwargs=None):
         if self.asc:
-            return '%s' % self.var
-        return '%s DESC' % self.var
+            return '%s' % self.term
+        return '%s DESC' % self.term
     
     def __str__(self):
         return self.as_string()
@@ -879,24 +892,38 @@ class Variable(object):
         return etype
     
     def get_description(self):
-        """return
-        * the entity type of this object if specified by a 'is' relation,
+        """return :
         * the name of a relation where this variable is used as lhs,
-        * 'Any' if no such relation
+        * the entity type of this object if specified by a 'is' relation,
+        * 'Any' if nothing nicer has been found...
+
+        give priority to relation name
         """
         etype = 'Any'
+        result = None
+        schema = self.root.schema
         for ref in self.references():
             rel = ref.relation()
             if rel is None:
                 continue
-            # XXX give priority to relation name ?
-            if rel.r_type == 'is' and self.name == rel.children[0].name:
-                etype = rel.children[1].children[0].value.encode()
+            if rel.r_type == 'is':
+                if self.name == rel.children[0].name:
+                    etype = str(rel.children[1].children[0].value)
+                else:
+                    etype = 'Eetype' # XXX ginco specific
+                continue
+            if schema is not None:
+                rschema = schema.rschema(rel.r_type)
+                if rschema.is_final():
+                    if self.name == rel.children[0].name:
+                        continue # ignore
+                    result = rel.r_type
+                    break
+            result = rel.r_type
+            if self.name != rel.children[0].name:
+                # priority to relation where variable is on the rhs
                 break
-            if rel.r_type != 'is' and self.name != rel.children[0].name:
-                etype = rel.r_type
-                break
-        return etype
+        return result or etype
     
     def main_relation(self):
         """return the relation where this variable is used in the rhs
