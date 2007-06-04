@@ -49,6 +49,8 @@ class FunctionDescr(object):
     minargs = 1
     maxargs = 1
     def __init__(self, name=None, rtype=rtype, aggregat=aggregat):
+        if name is not None:
+            name = name.upper()
         self.name = name
         self.rtype = rtype
         self.aggregat = aggregat
@@ -61,7 +63,21 @@ class FunctionDescr(object):
         if cls.maxargs is not None and \
                nbargs < cls.maxargs:
             raise BadRQLQuery('too many arguments for function %s' % cls.name)
+        
+        
+    @classmethod
+    def st_description(cls, funcnode):
+        return '%s(%s)' % (cls.name,
+                           ', '.join(child.get_description()
+                                     for child in iter_funcnode_variables(funcnode)))
 
+def iter_funcnode_variables(funcnode):
+    for term in funcnode.children:
+        try:
+            yield term.variable.stinfo['attrvar'] or term
+        except AttributeError, ex:
+            yield term
+    
 class AggrFunctionDescr(FunctionDescr):
     aggregat = True
     rtype = 'Int' # XXX if the orig type is a final type, returned type should be the same
@@ -189,7 +205,7 @@ def get_nodes(node, klass):
         node = stack.pop(-1)
         if isinstance(node, klass):
             result.append(node)
-        if hasattr(node, 'children'):
+        elif hasattr(node, 'children'):
             stack += node.children
     return result
 
@@ -232,7 +248,7 @@ def iget_nodes(node, klass, filter_func = bool):
         node = stack.pop(-1)
         if isinstance(node, klass):
             yield node
-        if hasattr(node, 'children'):
+        elif hasattr(node, 'children'):
             stack += node.children
 
 

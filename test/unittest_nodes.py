@@ -325,8 +325,7 @@ class NodesTest(TestCase):
     
     def test_as_string(self):
         tree = parse("SET X know Y WHERE X friend Y;", E_TYPES)
-        self.assertEquals(tree.as_string(),
-                          'SET X know Y WHERE X friend Y')
+        self.assertEquals(tree.as_string(), 'SET X know Y WHERE X friend Y')
         
         tree = parse("Person X", E_TYPES)
         self.assertEquals(tree.as_string(),
@@ -344,11 +343,29 @@ class NodesTest(TestCase):
         tree = parse(u"Any X WHERE X has_text %(text)s", E_TYPES)
         self.assertEquals(tree.as_string('utf8', {'text': u'hé"\'hé'}),
                           u'Any X WHERE X has_text "hé\\"\'hé"'.encode('utf8'))
+
+    def test_as_string_no_encoding(self):
+        tree = parse(u"Any X WHERE X has_text 'héhé'", E_TYPES)
+        self.assertEquals(tree.as_string(),
+                          u'Any X WHERE X has_text "héhé"')
+        tree = parse(u"Any X WHERE X has_text %(text)s", E_TYPES)
+        self.assertEquals(tree.as_string(kwargs={'text': u'héhé'}),
+                          u'Any X WHERE X has_text "héhé"')
+
+    def test_as_string_now_today_null(self):
+        tree = parse(u"Any X WHERE X name NULL", E_TYPES)
+        self.assertEquals(tree.as_string(), 'Any X WHERE X name NULL')
+        tree = parse(u"Any X WHERE X creation_date NOW", E_TYPES)
+        self.assertEquals(tree.as_string(), 'Any X WHERE X creation_date NOW')
+        tree = parse(u"Any X WHERE X creation_date TODAY", E_TYPES)
+        self.assertEquals(tree.as_string(), 'Any X WHERE X creation_date TODAY')
         
     # non regression tests ####################################################
+    
     def test_get_description_aggregat(self):
         tree = parse("Any COUNT(N) WHERE X name N GROUPBY N;", E_TYPES)
-        self.assertEqual(tree.get_description(), ['Int'])
+        self.assertEqual(tree.get_description(), ['COUNT(name)'])
+        self.assertEqual(tree.selected[0].get_type(), 'Int')
 
     
 if __name__ == '__main__':

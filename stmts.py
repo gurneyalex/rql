@@ -141,7 +141,11 @@ class Statement(nodes.EditableMixIn, Node, object):
         return var
     
     def remove_node(self, node):
-        """remove the given node from the tree"""
+        """remove the given node from the tree
+
+        USE THIS METHOD INSTEAD OF .remove to get correct variable references
+        handling
+        """
         # unregister variable references in the removed subtree
         for varref in get_nodes(node, nodes.VariableRef):
             varref.unregister_reference()
