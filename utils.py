@@ -81,6 +81,8 @@ class LOWER(FunctionDescr):
 class IN(FunctionDescr):
     """this is actually a 'keyword' function..."""
     maxargs = None
+class LENGTH(FunctionDescr):
+    rtype = 'Int'
     
 FUNCTIONS = {
     # aggregat functions
@@ -90,6 +92,7 @@ FUNCTIONS = {
     'AVG': AVG,
     # transformation functions
     'UPPER': UPPER, 'LOWER': LOWER,
+    'LENGTH': LENGTH,
     # keyword function
     'IN': IN
     }
