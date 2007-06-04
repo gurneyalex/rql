@@ -26,7 +26,7 @@ BAD_QUERIES = (
     )
 
 class CheckClassTest(TestCase):
-    """check wrong queries arre correctly detected
+    """check wrong queries are correctly detected
     """
     
     def setUp(self):
@@ -106,7 +106,7 @@ class CheckClassTest(TestCase):
 ##         self.assertEquals(rqlst.as_string(), 'Any X WHERE X eid 12')
 
 class CopyTest(TestCase):
-    """check wrong queries arre correctly detected
+    """check wrong queries are correctly detected
     """
     
     def setUp(self):
