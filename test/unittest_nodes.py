@@ -361,9 +361,11 @@ class NodesTest(TestCase):
         self.assertEquals(tree.as_string(), 'Any X WHERE X creation_date TODAY')
         
     # non regression tests ####################################################
+    
     def test_get_description_aggregat(self):
         tree = parse("Any COUNT(N) WHERE X name N GROUPBY N;", E_TYPES)
-        self.assertEqual(tree.get_description(), ['Int'])
+        self.assertEqual(tree.get_description(), ['COUNT(name)'])
+        self.assertEqual(tree.selected[0].get_type(), 'Int')
 
     
 if __name__ == '__main__':

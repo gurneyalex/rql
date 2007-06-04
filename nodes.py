@@ -912,12 +912,13 @@ class Variable(object):
                 else:
                     etype = 'Eetype' # XXX ginco specific
                 continue
-            rschema = schema.rschema(rel.r_type)
-            if rschema.is_final():
-                if self.name == rel.children[0].name:
-                    continue # ignore
-                result = rel.r_type
-                break
+            if schema is not None:
+                rschema = schema.rschema(rel.r_type)
+                if rschema.is_final():
+                    if self.name == rel.children[0].name:
+                        continue # ignore
+                    result = rel.r_type
+                    break
             result = rel.r_type
             if self.name != rel.children[0].name:
                 # priority to relation where variable is on the rhs
