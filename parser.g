@@ -45,7 +45,7 @@ parser Hercule:
     token DATETIME:    r'(?i)NOW'
     token NULL:        r'(?i)NULL'
     token EXISTS:      r'(?i)EXISTS'
-    token CMP_OP:      r'(?i)<=|<|>=|>|~=|=|LIKE'
+    token CMP_OP:      r'(?i)<=|<|>=|>|~=|=|LIKE|ILIKE'
     token ADD_OP:      r'\+|-'
     token MUL_OP:      r'\*|/'
     token FUNCTION:    r'[A-Za-z_]+\s*(?=\()'

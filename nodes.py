@@ -369,7 +369,7 @@ class Relation(Node):
 class Comparison(HSMixin, Node):
     """handle comparisons:
 
-     <, <=, =, >=, > and LIKE operator have a unique children.    
+     <, <=, =, >=, > LIKE and ILIKE operators have a unique children.    
     """
     TYPE = 'comparison'
     
@@ -382,11 +382,11 @@ class Comparison(HSMixin, Node):
     def __init__(self, operator, value=None):
         Node.__init__(self)
         if operator == '~=':
-            operator = 'LIKE'
+            operator = 'ILIKE'
         elif operator == '=' and isinstance(value, Constant) and \
                  value.type is None:
             operator = 'IS'            
-        assert operator in ('<', '<=', '=', '>=', '>', 'LIKE', 'IS'), operator
+        assert operator in ('<', '<=', '=', '>=', '>', 'ILIKE', 'LIKE', 'IS'), operator
         self.operator = operator
         if value is not None:
             self.append(value)
