@@ -794,6 +794,7 @@ class Variable(object):
         self.root = None
         # used to collect some gloabl information about the syntax tree
         self.stinfo = {
+            'scope': None,
             # link to VariableReference objects in the syntax tree
             # it must be a list to keep order
             'references': [],
@@ -820,6 +821,14 @@ class Variable(object):
             # constant node linked to an uid variable if any
             'constnode': None,
             }
+    
+    
+    def set_scope(self, scopenode):
+        if scopenode is self.root or self.stinfo['scope'] is None:
+            self.stinfo['scope'] = scopenode
+    def get_scope(self):
+        return self.stinfo['scope']
+    scope = property(get_scope, set_scope)
 
     def register_reference(self, varref):
         """add a reference to this variable"""

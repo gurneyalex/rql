@@ -3,7 +3,8 @@ ChangeLog for RQL
  --
     * add ILIKE comparison operator, '~=' operator is now aliased to ILIKE
       instead of LIKE
-
+    * variable scope handling
+	
 2007-06-04  --  0.11.3
     * as_string w/ kwargs fix
     * get_description fix on Variable, enhancement on Function by delegating

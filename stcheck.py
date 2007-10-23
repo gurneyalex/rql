@@ -47,6 +47,7 @@ class RQLSTAnnotator:
     def annotate(self, node, checkselected=True):
         self._checkselected = checkselected # XXX thread safety
         errors = []
+        self.scopes = [node]
         for i, term in enumerate(node.selected_terms()):
             # selected terms are not included by the default visit,
             # accept manually each of them
@@ -327,6 +328,7 @@ class RQLSTAnnotator:
     def visit_variableref(self, variableref, errors):
         assert len(variableref.children)==0
         assert not variableref.parent is variableref
+        variableref.variable.set_scope(self.scopes[-1])
 ##         try:
 ##             assert variableref.variable in variableref.root().defined_vars.values(), \
 ##                    (variableref.root(), variableref.variable, variableref.root().defined_vars)
@@ -354,8 +356,12 @@ class RQLSTAnnotator:
         pass
     def leave_and(self, node, errors):
         pass
+    
+    def visit_exists(self, node, errors):
+        self.scopes.append(node)
     def leave_exists(self, node, errors):
-        pass
+        self.scopes.pop(0)
+
     def leave_group(self, node, errors):
         pass
     def leave_sort(self, node, errors):
