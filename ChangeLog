@@ -1,6 +1,7 @@
 ChangeLog for RQL
 =================
- --
+
+2007-10-23  --  0.12.0
     * add ILIKE comparison operator, '~=' operator is now aliased to ILIKE
       instead of LIKE
     * variable scope handling
