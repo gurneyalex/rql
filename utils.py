@@ -36,22 +36,18 @@ KEYWORDS = set(('INSERT', 'SET', 'DELETE',
                 'TRUE', 'FALSE', 'NULL', 'TODAY',
                 'GROUPBY', 'ORDERBY', 'ASC', 'DESC',
                 'LIMIT', 'OFFSET'))
-
-class metafunc(type):
-    def __new__(mcs, name, bases, dict):
-        dict['name'] = name
-        return type.__new__(mcs, name, bases, dict)
     
 
-from logilab.common import adbh
+from logilab.common.adbh import _GenericAdvFuncHelper, FunctionDescr, \
+    register_function as db_register_function
 
 def st_description(cls, funcnode):
     return '%s(%s)' % (cls.name,
                        ', '.join(child.get_description()
                                  for child in iter_funcnode_variables(funcnode)))
 
-adbh.FunctionDescr.st_description = classmethod(st_description)
-adbh.FunctionDescr.supported_backends = ()
+FunctionDescr.st_description = classmethod(st_description)
+FunctionDescr.supported_backends = ()
 
 def iter_funcnode_variables(funcnode):
     for term in funcnode.children:
@@ -65,16 +61,16 @@ def is_keyword(word):
     """return true if the given word is a RQL keyword"""
     return word.upper() in KEYWORDS
 
-FUNCTIONS = adbh._GenericAdvFuncHelper.FUNCTIONS.copy()
+FUNCTIONS = _GenericAdvFuncHelper.FUNCTIONS.copy()
 
 def register_function(funcdef):
     if isinstance(funcdef, basestring) :
-        funcdef = adbh.FunctionDescr(funcdef.upper())
+        funcdef = FunctionDescr(funcdef.upper())
     assert not funcdef.name in FUNCTIONS, \
            '%s is already registered' % funcdef.name
     FUNCTIONS[funcdef.name] = funcdef
     for driver in  funcdef.supported_backends:
-        adbh.register_function(driver, funcdef)
+        db_register_function(driver, funcdef)
     
 def function_description(funcname):
     """return the description (`FunctionDescription`) for a RQL function"""
