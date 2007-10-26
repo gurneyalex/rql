@@ -36,86 +36,32 @@ KEYWORDS = set(('INSERT', 'SET', 'DELETE',
                 'TRUE', 'FALSE', 'NULL', 'TODAY',
                 'GROUPBY', 'ORDERBY', 'ASC', 'DESC',
                 'LIMIT', 'OFFSET'))
-class metafunc(type):
-    def __new__(mcs, name, bases, dict):
-        dict['name'] = name
-        return type.__new__(mcs, name, bases, dict)
     
 
-class FunctionDescr(object):
-    __metaclass__ = metafunc
-    rtype = None
-    aggregat = False
-    minargs = 1
-    maxargs = 1
-    def __init__(self, name=None, rtype=rtype, aggregat=aggregat):
-        if name is not None:
-            name = name.upper()
-        self.name = name
-        self.rtype = rtype
-        self.aggregat = aggregat
-        
-    @classmethod
-    def check_nbargs(cls, nbargs):
-        if cls.minargs is not None and \
-               nbargs < cls.minargs:
-            raise BadRQLQuery('not enough argument for function %s' % cls.name)
-        if cls.maxargs is not None and \
-               nbargs < cls.maxargs:
-            raise BadRQLQuery('too many arguments for function %s' % cls.name)
-        
-        
-    @classmethod
-    def st_description(cls, funcnode):
-        return '%s(%s)' % (cls.name,
-                           ', '.join(child.get_description()
-                                     for child in iter_funcnode_variables(funcnode)))
+from logilab.common.adbh import _GenericAdvFuncHelper, FunctionDescr, \
+    register_function as db_register_function
+
+def st_description(cls, funcnode):
+    return '%s(%s)' % (cls.name,
+                       ', '.join(child.get_description()
+                                 for child in iter_funcnode_variables(funcnode)))
+
+FunctionDescr.st_description = classmethod(st_description)
+FunctionDescr.supported_backends = ()
 
 def iter_funcnode_variables(funcnode):
     for term in funcnode.children:
         try:
             yield term.variable.stinfo['attrvar'] or term
         except AttributeError, ex:
-            yield term
-    
-class AggrFunctionDescr(FunctionDescr):
-    aggregat = True
-    rtype = 'Int' # XXX if the orig type is a final type, returned type should be the same
-    
-class MAX(AggrFunctionDescr): pass
-class MIN(AggrFunctionDescr): pass
-class SUM(AggrFunctionDescr): pass
-class COUNT(AggrFunctionDescr): 
-    rtype = 'Int'
-class AVG(AggrFunctionDescr):
-    rtype = 'Float'
+            yield term    
 
-class UPPER(FunctionDescr):
-    rtype = 'String'
-class LOWER(FunctionDescr):
-    rtype = 'String'
-class IN(FunctionDescr):
-    """this is actually a 'keyword' function..."""
-    maxargs = None
-class LENGTH(FunctionDescr):
-    rtype = 'Int'
-    
-FUNCTIONS = {
-    # aggregat functions
-    'MIN': MIN, 'MAX': MAX,
-    'SUM': SUM,
-    'COUNT':COUNT,
-    'AVG': AVG,
-    # transformation functions
-    'UPPER': UPPER, 'LOWER': LOWER,
-    'LENGTH': LENGTH,
-    # keyword function
-    'IN': IN
-    }
 
 def is_keyword(word):
     """return true if the given word is a RQL keyword"""
     return word.upper() in KEYWORDS
+
+FUNCTIONS = _GenericAdvFuncHelper.FUNCTIONS.copy()
 
 def register_function(funcdef):
     if isinstance(funcdef, basestring) :
@@ -123,6 +69,8 @@ def register_function(funcdef):
     assert not funcdef.name in FUNCTIONS, \
            '%s is already registered' % funcdef.name
     FUNCTIONS[funcdef.name] = funcdef
+    for driver in  funcdef.supported_backends:
+        db_register_function(driver, funcdef)
     
 def function_description(funcname):
     """return the description (`FunctionDescription`) for a RQL function"""
