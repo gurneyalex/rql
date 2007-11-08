@@ -233,14 +233,16 @@ class Exists(HSMixin, EditableMixIn, Node):
                 
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
+        content = self.children and self.children[0].as_string(encoding, kwargs)
         if self._not:
-            return 'NOT EXISTS(%s)' % self.children[0].as_string(encoding, kwargs)
-        return 'EXISTS(%s)' % self.children[0].as_string(encoding, kwargs)
+            return 'NOT EXISTS(%s)' % content
+        return 'EXISTS(%s)' % content
 
     def __repr__(self, indent=0):
+        content = self.children and repr(self.children[0])
         if self._not:
-            return 'NOT EXISTS(%r)' % (self.children[0])
-        return 'EXISTS(%r)' % (self.children[0])
+            return 'NOT EXISTS(%s)' % content
+        return 'EXISTS(%s)' % content
 
     def get_restriction(self):
         return self.children[0]
@@ -430,13 +432,13 @@ class MathExpression(HSMixin, BinaryNode):
         """return list of arguments to give to __init__ to clone this node"""
         return (self.operator,)
     
-    def get_type(self, solution=None):
+    def get_type(self, solution=None, kwargs=None):
         """return the type of object returned by this function if known
 
         solution is an optional variable/etype mapping
         """
-        lhstype = self.children[0].get_type(solution)
-        rhstype = self.children[1].get_type(solution)
+        lhstype = self.children[0].get_type(solution, kwargs)
+        rhstype = self.children[1].get_type(solution, kwargs)
         key = (self.operator, lhstype, rhstype)
         try:
             return {('-', 'Date', 'Datetime'):     'Interval',
@@ -503,7 +505,7 @@ class Function(HSMixin, Node):
         """return list of arguments to give to __init__ to clone this node"""
         return (self.name,)
 
-    def get_type(self, solution=None):
+    def get_type(self, solution=None, kwargs=None):
         """return the type of object returned by this function if known
 
         solution is an optional variable/etype mapping
@@ -522,7 +524,6 @@ class Function(HSMixin, Node):
         
     def descr(self):
         """return the type of object returned by this function if known"""
-        # FIXME: e_type defined by erudi's sql generator
         return function_description(self.name)
         
     def as_string(self, encoding=None, kwargs=None):
@@ -539,6 +540,23 @@ class Function(HSMixin, Node):
             return False
         return self.name == other.name
 
+try:
+    from mx.DateTime import DateTimeType
+except:
+    from datetime import datetime as DateTimeType
+
+def etype_from_pyobj(value):
+    # try to guess type from value
+    if isinstance(value, bool):
+        return 'Boolean'
+    if isinstance(value, (int, long)):
+        return 'Int'
+    if isinstance(value, DateTimeType):
+        return 'Datetime'
+    elif isinstance(value, float):
+        return 'Float'
+    # XXX Bytes
+    return 'String'
 
 
 class Constant(HSMixin,Node):
@@ -575,11 +593,15 @@ class Constant(HSMixin,Node):
             return kwargs[self.value]
         return self.value
 
-    def get_type(self, solution=None):
+    def get_type(self, solution=None, kwargs=None):
         if self.uid:
             return self.uidtype
+        if self.type == 'Substitute':
+            if kwargs is not None:
+                return etype_from_pyobj(self.eval(kwargs))
+            return 'String'
         return self.type
-        
+    
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string (an unicode string is
         returned if encoding is None)
@@ -665,8 +687,8 @@ class VariableRef(HSMixin, Node):
         """return the tree as an encoded rql string"""
         return self.name
 
-    def get_type(self, solution=None):
-        return self.variable.get_type(solution)
+    def get_type(self, solution=None, kwargs=None):
+        return self.variable.get_type(solution, kwargs)
 
     def get_description(self):
         return self.variable.get_description()
@@ -818,6 +840,9 @@ class Variable(object):
             # if this variable is an attribute variable (ie final entity),
             # link to the (prefered) attribute owner variable
             'attrvar': None,
+            # set of couple (lhs variable name, relation name) where this
+            # attribute variable is used
+            'attrvars': set(),
             # constant node linked to an uid variable if any
             'constnode': None,
             }
@@ -852,12 +877,6 @@ class Variable(object):
         """
         stinfo = self.stinfo
         return len(stinfo['selected']) + len(stinfo['relations'])
-    
-##     def linked_variable(self):
-##         """return the first relation where this variable
-##         appears on the rhs
-##         """
-##         return self.stinfo['attrvar']
 
     def relation_names(self):
         """return an iterator on relations (as string) where this variable
@@ -877,7 +896,7 @@ class Variable(object):
                 if node.variable is self:
                     return i
     
-    def get_type(self, solution=None):
+    def get_type(self, solution=None, kwargs=None):
         """return entity type of this object, 'Any' if not found"""
         if solution:
             return solution[self.name]
@@ -893,7 +912,7 @@ class Variable(object):
             if rel.r_type != 'is' and self.name != rel.children[0].name:
                 if schema is not None:
                     try:
-                        lhstype = rel.children[0].get_type(solution)
+                        lhstype = rel.children[0].get_type(solution, kwargs)
                         etype = schema.eschema(lhstype).destination(rel.r_type)
                         break
                     except: # CoertionError, AssertionError :(

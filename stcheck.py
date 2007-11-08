@@ -51,7 +51,7 @@ class RQLSTAnnotator:
         for i, term in enumerate(node.selected_terms()):
             # selected terms are not included by the default visit,
             # accept manually each of them
-            term.accept(self, errors)
+            self._visit(term, errors)
             # register the selection column index
             for varref in term.get_nodes(nodes.VariableRef):
                 varref.variable.stinfo['selected'].add(i)
@@ -292,7 +292,9 @@ class RQLSTAnnotator:
             var.stinfo['relations'].add(relation)
             var.stinfo['rhsrelations'].add(relation)
             if varref is rhs.children[0] and rschema is not None and rschema.is_final():
-                # give priority to variable which is not in an EXISTS 
+                var.stinfo['attrvars'].add( (lhsvar.name, relation.r_type) )
+                # give priority to variable which is not in an EXISTS as
+                # "main" attribute varialbe
                 if var.stinfo['attrvar'] is None or not relation.exists_root():
                     var.stinfo['attrvar'] = lhsvar
                 #varref.variable.stinfo['finalrels'].add(relation)
