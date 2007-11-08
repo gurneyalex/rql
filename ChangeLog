@@ -1,5 +1,9 @@
 ChangeLog for RQL
 =================
+ --
+    * Node.get_type take kwargs as second argument to better guess the type of
+      constants
+    * new attrvars stinfo
 
 2007-10-29  --  0.13.0
     * use lgc.adbh module
