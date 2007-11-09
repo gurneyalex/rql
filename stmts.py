@@ -75,7 +75,7 @@ class Statement(nodes.EditableMixIn, Node, object):
     def exists_root(self):
         return None
     
-    def ored_rel(self):
+    def ored_rel(self, _fromnode=None):
         return False
     
     # construction helper methods #############################################
