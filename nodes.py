@@ -184,8 +184,8 @@ class AND(BinaryNode):
         return '%s AND %s' % (repr(self.children[0]),
                               repr(self.children[1]))
     
-    def ored_rel(self):
-        return self.parent.ored_rel()
+    def ored_rel(self, _fromnode=None):
+        return self.parent.ored_rel(_fromnode or self)
 
     
 class OR(BinaryNode):
@@ -207,7 +207,7 @@ class OR(BinaryNode):
         return '%s OR %s' % (repr(self.children[0]),
                              repr(self.children[1]))
     
-    def ored_rel(self):
+    def ored_rel(self, _fromnode=None):
         return True
 
 
@@ -253,8 +253,10 @@ class Exists(HSMixin, EditableMixIn, Node):
     def exists_root(self):
         return self
     
-    def ored_rel(self):
-        return self.parent.ored_rel()
+    def ored_rel(self, _fromnode=None):
+        if _fromnode: # stop here
+            return False
+        return self.parent.ored_rel(_fromnode or self)
 
     
 class Relation(Node):
@@ -364,8 +366,8 @@ class Relation(Node):
         rhs = self.children[1].children[0]
         return lhs, rhs
     
-    def ored_rel(self):
-        return self.parent.ored_rel()
+    def ored_rel(self, _fromnode=None):
+        return self.parent.ored_rel(_fromnode or self)
 
     
 class Comparison(HSMixin, Node):
