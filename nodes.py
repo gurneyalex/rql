@@ -278,12 +278,13 @@ class Relation(Node):
         self.set_optional(optional)
 
     def is_types_restriction(self):
+        if self.r_type != 'is':
+            return False
         rhs = self.children[1]
         if isinstance(rhs, Comparison):
             rhs = rhs.children[0]
         # else: relation used in SET OR DELETE selection
-        return self.r_type == 'is' and \
-               ((isinstance(rhs, Constant) and rhs.type == 'etype')
+        return ((isinstance(rhs, Constant) and rhs.type == 'etype')
                 or (isinstance(rhs, Function) and rhs.name == 'IN'))
 
     def operator(self):
@@ -530,8 +531,8 @@ class Function(HSMixin, Node):
         
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
-        return '%s(%s)' % (self.name, ', '.join([c.as_string(encoding, kwargs)
-                                                 for c in self.children]))
+        return '%s(%s)' % (self.name, ', '.join(c.as_string(encoding, kwargs)
+                                                for c in self.children))
 
     def __repr__(self, indent=0):
         return '%s%s(%s)' % (' '*indent, self.name,
