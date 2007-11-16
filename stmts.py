@@ -257,17 +257,17 @@ class Select(Statement):
             base = 'DISTINCT Any'
         else:
             base = 'Any'
-        s = ['%s %s' % (base, ','.join([v.as_string(encoding, kwargs)
-                                        for v in self.selected]))]
+        s = ['%s %s' % (base, ','.join(v.as_string(encoding, kwargs)
+                                       for v in self.selected))]
         r = self.get_restriction()
         if r is not None:
             s.append('WHERE %s' % r.as_string(encoding, kwargs))
         groups = self.get_groups()
         if groups is not None:
-            s.append('GROUPBY %s' % ', '.join([str(group) for group in groups]))
+            s.append('GROUPBY %s' % ', '.join(str(group) for group in groups))
         sorts = self.get_sortterms()
         if sorts is not None:
-            s.append('ORDERBY %s' % ', '.join([str(sort) for sort in sorts]))
+            s.append('ORDERBY %s' % ', '.join(str(sort) for sort in sorts))
         if self.limit is not None:
             s.append('LIMIT %s' % self.limit)
         if self.offset:
