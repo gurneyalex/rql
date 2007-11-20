@@ -167,12 +167,6 @@ class ETypeResolver:
                 # non final entity types
                 types = self._nonfinal_domain
             else:
-                # ignore uid values if lhs is related to a NOT relation
-                # XXX may i remember why ?
-                for varref in lhs.variable.references():
-                    rel = varref.relation()
-                    if rel is not None and rel._not:
-                        return
                 types = self._uid_node_types(rhs)
             if types:
                 constraints.append(fd.make_expression(
