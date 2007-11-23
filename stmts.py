@@ -71,6 +71,10 @@ class Statement(nodes.EditableMixIn, Node, object):
     
     def selected_terms(self):
         raise NotImplementedError
+
+    @property
+    def scope(self):
+        return self
     
     def exists_root(self):
         return None
