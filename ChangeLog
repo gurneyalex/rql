@@ -4,7 +4,9 @@ ChangeLog for RQL
     * Node.get_type take kwargs as second argument to better guess the type of
       constants
     * new attrvars stinfo
-
+    * new scope attribute on other nodes than Variable
+    * thread safety for the RQLHleper
+	
 2007-10-29  --  0.13.0
     * use lgc.adbh module
 
