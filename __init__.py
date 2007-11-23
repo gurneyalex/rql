@@ -41,10 +41,12 @@ class RQLHelper:
         if uid_func_mapping:
             for key in uid_func_mapping:
                 special_relations[key] = 'uid'
+        self._annotator_lock = threading.Lock()
         self._annotator = RQLSTAnnotator(schema, special_relations)
+        self._analyser_lock = threading.Lock()
         self._analyser = Resolver(schema, uid_func_mapping)
         self.set_schema(schema)
-        
+
     def set_schema(self, schema):
         self.e_types = etypes = {}
         for etype in schema.entities():
@@ -67,7 +69,11 @@ class RQLHelper:
         return tree
     
     def annotate(self, rqlst, checkselected=False):
-        self._annotator.annotate(rqlst, checkselected=checkselected)
+        self._annotator_lock.acquire()
+        try:
+            self._annotator.annotate(rqlst, checkselected=checkselected)
+        finally:
+            self._annotator_lock.release()
 
     def get_solutions(self, rqlst, uid_func_mapping=None, kwargs=None, debug=False):
         """return a list of solutions for variables of the syntax tree
@@ -75,7 +81,11 @@ class RQLHelper:
         each solution is a dictionary with variable's name as key and
         variable's type as value
         """
-        return self._analyser.visit(rqlst, uid_func_mapping, kwargs, debug)
+        self._analyser_lock.acquire()
+        try:
+            return self._analyser.visit(rqlst, uid_func_mapping, kwargs, debug)
+        finally:
+            self._analyser_lock.release()
 
     def simplify(self, rqlst, needcopy=True):
         if rqlst.TYPE != 'select':
