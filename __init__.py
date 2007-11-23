@@ -125,8 +125,7 @@ class RQLHelper:
         returns true if both requests would return the same results
         returns false otherwise
         """
-        return compare_tree(self.parse(rqlstring1),
-                            self.parse(rqlstring2))
+        return compare_tree(self.parse(rqlstring1), self.parse(rqlstring2))
 
         
 def parse(rqlstring, e_types=None, print_errors=True): 

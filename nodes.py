@@ -106,10 +106,10 @@ class HSMixin(object):
     """    
     def relation(self):
         """return the parent relation where self occurs or None"""
-        parent = self.parent
-        while parent is not None and not parent.TYPE == 'relation':
-            parent = parent.parent
-        return parent
+        try:
+            return self.parent.relation()
+        except AttributeError:
+            return None
     
     def is_variable(self):
         """check if this node contains a reference to one ore more variables"""
@@ -161,6 +161,10 @@ Node.is_equivalent = is_equivalent
 def exists_root(self):
     return self.parent.exists_root()
 Node.exists_root = exists_root
+
+def scope(self):
+    return self.parent.scope
+Node.scope = property(scope)
 
 # RQL base nodes ##############################################################
 
@@ -251,6 +255,10 @@ class Exists(HSMixin, EditableMixIn, Node):
         raise NotImplementedError
 
     def exists_root(self):
+        return self
+    
+    @property
+    def scope(self):
         return self
     
     def ored_rel(self, _fromnode=None):
@@ -351,6 +359,9 @@ class Relation(Node):
     def __str__(self):
         return self.as_string('ascii')
             
+    def relation(self):
+        """return the parent relation where self occurs or None"""
+        return self
        
     def get_parts(self):
         """return the left hand side and the right hand side of this relation
