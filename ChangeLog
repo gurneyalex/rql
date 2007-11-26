@@ -1,6 +1,7 @@
 ChangeLog for RQL
 =================
- --
+
+2007-11-26  --  0.14.0
     * Node.get_type take kwargs as second argument to better guess the type of
       constants
     * new attrvars stinfo
