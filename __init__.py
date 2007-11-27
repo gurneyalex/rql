@@ -64,12 +64,13 @@ class RQLHelper:
     def parse(self, rqlstring):
         """return a syntax tree from an sql string"""
         tree = parse(rqlstring, self.e_types, False)
-        self._annotator.annotate(tree, checkselected=True)
+        self.annotate(tree, checkselected=True)
         tree.schema = self._annotator.schema
         return tree
     
     def annotate(self, rqlst, checkselected=False):
         self._annotator_lock.acquire()
+        #print 'annotate', rqlst.as_string(encoding='UTF8')
         try:
             self._annotator.annotate(rqlst, checkselected=checkselected)
         finally:
@@ -88,6 +89,7 @@ class RQLHelper:
             self._analyser_lock.release()
 
     def simplify(self, rqlst, needcopy=True):
+        #print 'simplify', rqlst.as_string(encoding='UTF8')
         if rqlst.TYPE != 'select':
             return rqlst
         if needcopy:
@@ -96,8 +98,7 @@ class RQLHelper:
             rqlstcopy = rqlst
         for var in rqlst.defined_vars.values():
             stinfo = var.stinfo
-            if stinfo['constnode'] and not (
-                stinfo['finalrels'] or stinfo['optrels']):
+            if stinfo['constnode'] and stinfo['maybesimplified']:
                 if rqlstcopy is None:
                     rqlstcopy = rqlst.copy()
                     self.annotate(rqlstcopy)

@@ -26,7 +26,8 @@ class RelationSchema(ERSchema):
                 d[e_type] = 1
         self.obj_types = d.keys()
         self.symetric = symetric
-
+        self.inlined = False
+        
     def associations(self):
         return self.assoc_types
     
@@ -39,9 +40,6 @@ class RelationSchema(ERSchema):
     def is_final(self):
         return self.obj_types[0] in ('String', 'Boolean', 'Int', 'Float', 'Date')
 
-    def physical_mode(self):
-        return None
-    
 class EntitySchema(ERSchema):
     def __init__(self, type):
         self.type = type

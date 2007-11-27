@@ -68,8 +68,9 @@ class CheckClassTest(TestCase):
             ('Any X WHERE X is Person, X eid 12',
              'Any 12'),
             ('Any X,Y WHERE X eid 0, Y eid 1, X work_for Y', 'Any 0,1 WHERE 0 work_for 1'),
-            ('Any X,Y WHERE X work_for Y OR NOT X work_for Y', 'Any X,Y WHERE X? work_for Y?'),
-            ('Any X,Y WHERE NOT X work_for Y OR X work_for Y', 'Any X,Y WHERE X? work_for Y?'),
+# no more supported, use outerjoin explicitly
+#            ('Any X,Y WHERE X work_for Y OR NOT X work_for Y', 'Any X,Y WHERE X? work_for Y?'),
+#            ('Any X,Y WHERE NOT X work_for Y OR X work_for Y', 'Any X,Y WHERE X? work_for Y?'),
             # test symetric OR rewrite
             ("DISTINCT Any P WHERE P connait S OR S connait P, S nom 'chouette'",
              "DISTINCT Any P WHERE P connait S, S nom 'chouette'"),
@@ -106,8 +107,6 @@ class CheckClassTest(TestCase):
 ##         self.assertEquals(rqlst.as_string(), 'Any X WHERE X eid 12')
 
 class CopyTest(TestCase):
-    """check wrong queries are correctly detected
-    """
     
     def setUp(self):
         helper = RQLHelper(DummySchema(), None, {'eid': 'uid'})
@@ -137,5 +136,33 @@ class CopyTest(TestCase):
         self.assertEquals(copy.as_string(), 'Any 1,U WHERE 2 owned_by U, NOT 1 owned_by U')
         self.assertEquals(copy.defined_vars['U'].valuable_references(), 3)
 
+
+class AnnotateTest(TestCase):
+    
+    def setUp(self):
+        helper = RQLHelper(DummySchema(), None, {'eid': 'uid'})
+        self.parse = helper.parse
+        self.simplify = helper.simplify
+        self.annotate = helper.annotate
+
+#     def test_simplified(self):
+#         rqlst = self.parse('Any L WHERE 5 name L')
+#         self.annotate(rqlst)
+#         self.failUnless(rqlst.defined_vars['L'].stinfo['attrvar'])
+
+    def test_is_rel_no_scope(self):
+        """is relation used as type restriction should not affect variable's scope,
+        and should not be included in stinfo['relations']"""
+        rqlst = self.parse('Any X WHERE C is Company, EXISTS(X work_for C)')
+        self.annotate(rqlst)
+        C = rqlst.defined_vars['C']
+        self.failIf(C.scope is rqlst)
+        self.assertEquals(len(C.stinfo['relations']), 1)
+        rqlst = self.parse('Any X, ET WHERE C is ET, EXISTS(X work_for C)')
+        self.annotate(rqlst)
+        C = rqlst.defined_vars['C']
+        self.failUnless(C.scope is rqlst)
+        self.assertEquals(len(C.stinfo['relations']), 2)
+        
 if __name__ == '__main__':
     unittest_main()

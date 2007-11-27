@@ -75,7 +75,8 @@ class EditableMixIn(object):
                 from rql.undo import AddNodeOperation
                 self.undo_manager.add_operation(AddNodeOperation(relation))
         #assert check_relations(self)
-        
+        return relation
+    
     def add_constant_restriction(self, variable, rtype, value, ctype,
                                  operator='='):
         """builds a restriction node to express a constant restriction:
@@ -88,18 +89,18 @@ class EditableMixIn(object):
                 # FIXME : other cases
             else:
                 ctype = 'String'
-        self.add_restriction(make_relation(variable, rtype, (value, ctype),
-                                           Constant, operator))
+        return self.add_restriction(make_relation(variable, rtype, (value, ctype),
+                                                  Constant, operator))
         
     def add_relation(self, lhsvar, rtype, rhsvar): 
         """builds a restriction node to express '<var> eid <eid>'"""
-        self.add_restriction(make_relation(lhsvar, rtype, (rhsvar,),
-                                           VariableRef))
+        return self.add_restriction(make_relation(lhsvar, rtype, (rhsvar,),
+                                                  VariableRef))
 
     def add_eid_restriction(self, var, eid): 
         """builds a restriction node to express '<var> eid <eid>'"""
-        self.add_restriction(make_relation(var, 'eid', (eid, 'Int'), Constant))
-
+        return self.add_restriction(make_relation(var, 'eid', (eid, 'Int'), Constant))
+    
 
 class HSMixin(object):
     """mixin class for classes which may be the lhs or rhs of an expression
@@ -828,7 +829,8 @@ class Variable(object):
         self.name = name.strip().encode()
         # reference to the selection
         self.root = None
-        # used to collect some gloabl information about the syntax tree
+        # used to collect some global information about the syntax tree
+        # most of them will be filled by the annotator
         self.stinfo = {
             'scope': None,
             # link to VariableReference objects in the syntax tree
@@ -836,19 +838,15 @@ class Variable(object):
             'references': [],
             # relations where this variable is used on the lhs/rhs
             'relations': set(),
-            'lhsrelations': set(),
             'rhsrelations': set(),
-            # final relations where this variable is used on the lhs
-            'finalrels': set(),
-            # optional relations where this variable is used
-            'optrels': set(),
+            # True if this variable may be simplified (eg not used in optional
+            # relations and no final relations where this variable is used on
+            # the lhs)
+            'maybesimplified': True,
             # type relations (e.g. "is") where this variable is used on the lhs
             'typerels': set(),
             # uid relations (e.g. "eid") where this variable is used on the lhs
             'uidrels': set(),
-            # is this variable used in group and/or sort ?
-            'group': None,
-            'sort': None,
             # selection indexes if any
             'selected': set(),
             # if this variable is an attribute variable (ie final entity),
@@ -860,7 +858,6 @@ class Variable(object):
             # constant node linked to an uid variable if any
             'constnode': None,
             }
-    
     
     def set_scope(self, scopenode):
         if scopenode is self.root or self.stinfo['scope'] is None:
