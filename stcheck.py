@@ -17,19 +17,6 @@ class GoTo(Exception):
     def __init__(self, node):
         self.node = node
         
-def is_outer_join(ornode):
-    """return True if the given OR node is actually a left outer join
-    (constructs like 'NOT X travaille S OR X travaille S')
-    """
-    if len(ornode.children) == 2:
-        rel1, rel2 = ornode.children
-        if (rel1.r_type == rel2.r_type and rel1._not == (not rel2._not) and
-            rel1.children[0].name == rel2.children[0].name and
-            rel1.children[1].children[0].name == rel2.children[1].children[0].name):
-            # this is a left outer join
-            return True
-    return False
-
 
 class RQLSTAnnotator:
     """ check a RQL syntax tree for errors not detected on parsing and annotate
@@ -45,9 +32,10 @@ class RQLSTAnnotator:
         self.special_relations = special_relations or {}
 
     def annotate(self, node, checkselected=True):
-        self._checkselected = checkselected # XXX thread safety
+        self._checkselected = checkselected
         errors = []
         self.scopes = [node]
+        self.set_scope = True
         for i, term in enumerate(node.selected_terms()):
             # selected terms are not included by the default visit,
             # accept manually each of them
@@ -80,11 +68,12 @@ class RQLSTAnnotator:
                     
     def _check_selected(self, term, termtype, errors):
         """check that variables referenced in the given term are selected"""
+        if not self._checkselected:
+            return
         for var in term.get_nodes(nodes.VariableRef):
-            var = var.variable
-            rels = [v for v in var.references() if v.relation() is not None]
-            if not rels:
-                msg = 'variable %s used in %s is not defined in the selection'
+            stinfo = var.variable.stinfo
+            if not (stinfo['relations'] or stinfo['typerels']):
+                msg = 'variable %s used in %s is not referenced by any relation'
                 errors.append(msg % (var.name, termtype))
 
     # statement nodes #########################################################
@@ -101,17 +90,11 @@ class RQLSTAnnotator:
     def leave_select(self, selection, errors):
         assert len(selection.children) <= 3
         selected = selection.selected
-        if not self._checkselected:
-            return
         restr = selection.get_restriction()
         # check selected variable are used in restriction
         if restr is not None or len(selected) > 1:
             for term in selected:
-                for varref in term.get_nodes(nodes.VariableRef):
-                    if len(varref.variable.references()) == 1:
-                        msg = 'selected variable %s is not referenced by any relation'
-                        errors.append(msg % varref.name)
-                    varref.accept(self, errors)
+                self._check_selected(term, 'selection', errors)
         # XXX check aggregat function
 ##             if var.TYPE == 'function':
 ##                 tocheck = 1
@@ -134,44 +117,16 @@ class RQLSTAnnotator:
             if isinstance(var, nodes.VariableRef) and not var in group:
                 errors.append('variable %s should be grouped' % var)
         self._check_selected(group, 'group', errors)
-        for term in group.children:
-            for varref in term.get_nodes(nodes.VariableRef):
-                varref.variable.stinfo['group'] = group
                 
     def visit_sort(self, sort, errors):
         """check that variables used in sort are selected on DISTINCT query
         """
-        def _name(term):
-            name = [term.name]
-            if term.children:
-                # not a variable
-                for var in term.get_nodes(nodes.VariableRef):
-                    name.append(var.name)
-            return '_'.join(name)
-        select = sort.root()
-        if select.distinct: # distinct, all variables used in sort must be selected
-            selected = [_name(v) for v in select.selected]
-            for sortterm in sort:
-                for varref in sortterm.var.get_nodes(nodes.VariableRef):
-                    varref.variable.stinfo['sort'] = sort
-                        
-        else: # check sort variables are selected
-            self._check_selected(sort, 'sort', errors)
+        self._check_selected(sort, 'sort', errors)
     
     def visit_sortterm(self, sortterm, errors):
         if isinstance(sortterm.var, nodes.Constant):
             if len(sortterm.root().selected) < sortterm.var.value:
                 errors.append('order column out of bound %s' % sortterm.var.value)
-            
-    
-                    
-    def visit_offset(self, offset, errors):
-        assert len(offset.children) == 0, len(offset.children)
-        #assert int(offset.offset.value)
-    
-    def visit_limit(self, limit, errors):
-        assert len(limit.children) == 1, len(limit.children)
-        assert int(limit.limit.value)
     
     def visit_and(self, et, errors):
         assert len(et.children) == 2, len(et.children)
@@ -182,12 +137,6 @@ class RQLSTAnnotator:
         r1type = r1.r_type
         r2type = r2.r_type
         # XXX remove variable refs
-        # simplify left outer join expression
-        if is_outer_join(ou):
-            r1.optional = 'both'
-            r1._not = False
-            ou.parent.replace(ou, r1)
-            raise GoTo(r1)
         # simplify Ored expression of a symetric relation
         if r1type == r2type and self.schema.rschema(r1type).symetric:
             lhs1, rhs1 = r1.get_variable_parts()
@@ -204,24 +153,24 @@ class RQLSTAnnotator:
         """if variable is shared across multiple scopes, need some tree
         rewriting
         """
-        if (var.stinfo['selected'] or
-            any(rel for rel in var.stinfo['relations']
-                if rel.exists_root() is None)):
+        if var.scope is var.root:
             # allocate a new variable
-            newvar = exists.root().make_variable()
+            newvar = var.root.make_variable()
             for vref in var.references():
                 if vref.exists_root() is exists:
                     rel = vref.relation()
                     vref.unregister_reference()
                     newvref = nodes.VariableRef(newvar)
                     rel.replace(vref, newvref)
-            exists.add_relation(var, 'identity', newvar)
+            rel = exists.add_relation(var, 'identity', newvar)
             # we have to force visit of the introduced relation
-            self._visit(exists, errors)
+            self._visit(rel, errors)
             return newvar
         return None
     
     def visit_relation(self, relation, errors):
+        if relation.is_types_restriction():
+            self.set_scope = False
         if relation.optional is not None:
             lhs, rhs = relation.get_parts()
             try:
@@ -241,16 +190,17 @@ class RQLSTAnnotator:
                     if newvar is not None:
                         lhsvar = newvar
                 if relation.optional in ('right', 'both'):
-                    lhsvar.stinfo['optrels'].add(relation)
+                    lhsvar.stinfo['maybesimplified'] = False
             if rhsvar is not None:
                 if exists is not None:
                     newvar = self.rewrite_shared_optional(exists, rhsvar, errors)
                     if newvar is not None:
                         rhsvar = newvar
                 if relation.optional in ('left', 'both'):
-                    rhsvar.stinfo['optrels'].add(relation)
+                    rhsvar.stinfo['maybesimplified'] = False
 
     def leave_relation(self, relation, errors):
+        self.set_scope = True
         lhs, rhs = relation.get_parts()
         #assert isinstance(lhs, nodes.VariableRef), '%s: %s' % (lhs.__class__,
         #                                                       relation)
@@ -270,7 +220,6 @@ class RQLSTAnnotator:
             return
         if lhsvar is not None:
             lhsvar.stinfo['relations'].add(relation)
-            lhsvar.stinfo['lhsrelations'].add(relation)
         try:
             rschema = self.schema.rschema(rtype)
         except KeyError:
@@ -285,19 +234,18 @@ class RQLSTAnnotator:
                            and isinstance(constnode, nodes.Constant):
                         lhsvar.stinfo['constnode'] = constnode
             elif rschema is not None:
-                if rschema.is_final() or rschema.physical_mode() == 'subjectinline':
-                    lhsvar.stinfo['finalrels'].add(relation)
+                if rschema.is_final() or rschema.inlined:
+                    lhsvar.stinfo['maybesimplified'] = False
         for varref in rhs.get_nodes(nodes.VariableRef):
             var = varref.variable
             var.stinfo['relations'].add(relation)
             var.stinfo['rhsrelations'].add(relation)
             if varref is rhs.children[0] and rschema is not None and rschema.is_final():
-                var.stinfo['attrvars'].add( (lhsvar.name, relation.r_type) )
+                var.stinfo['attrvars'].add( (getattr(lhsvar, 'name', None), relation.r_type) )
                 # give priority to variable which is not in an EXISTS as
-                # "main" attribute varialbe
+                # "main" attribute variable
                 if var.stinfo['attrvar'] is None or not relation.exists_root():
-                    var.stinfo['attrvar'] = lhsvar
-                #varref.variable.stinfo['finalrels'].add(relation)
+                    var.stinfo['attrvar'] = lhsvar or lhs
             
     def visit_comparison(self, comparison, errors):
         assert len(comparison.children) == 1, len(comparison.children)
@@ -330,7 +278,8 @@ class RQLSTAnnotator:
     def visit_variableref(self, variableref, errors):
         assert len(variableref.children)==0
         assert not variableref.parent is variableref
-        variableref.variable.set_scope(self.scopes[-1])
+        if self.set_scope:
+            variableref.variable.set_scope(self.scopes[-1])
 ##         try:
 ##             assert variableref.variable in variableref.root().defined_vars.values(), \
 ##                    (variableref.root(), variableref.variable, variableref.root().defined_vars)

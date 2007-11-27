@@ -207,13 +207,14 @@ class Select(Statement):
         
     # construction helper methods #############################################
 
-    def append_selected(self, stmt):
-        if isinstance(stmt, nodes.Constant) and stmt.type == 'etype':
+    def append_selected(self, term):
+        if isinstance(term, nodes.Constant) and term.type == 'etype':
             raise BadRQLQuery('Entity type are not allowed in selection')
-        stmt.parent = self
-        self.selected.append(stmt)
-
+        term.parent = self
+        self.selected.append(term)
+            
     def replace(self, oldnode, newnode):
+        # XXX no vref handling ?
         try:
             Statement.replace(self, oldnode, newnode)
         except ValueError:
