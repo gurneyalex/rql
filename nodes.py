@@ -588,7 +588,7 @@ class Constant(HSMixin,Node):
     def __init__(self, value, c_type, _uid=False, _uidtype=None):
         assert c_type in (None, 'Date', 'Datetime', 'Boolean', 'Float', 'Int',
                           'String', 'Substitute', 'etype'), "Error got c_type="+repr(c_type)
-        Node.__init__(self)
+        Node.__init__(self) # don't care about Node attributes
         self.value = value
         self.type = c_type
         # updated by the annotator/analyzer if necessary
@@ -669,7 +669,7 @@ class VariableRef(HSMixin, Node):
         return visitor.leave_variableref(self, *args, **kwargs)
 
     def __init__(self, variable, noautoref=None):
-        Node.__init__(self)
+        Node.__init__(self) # don't care about Node attributes
         self.variable = variable
         self.name = variable.name#.encode()
         if noautoref is None:
@@ -988,3 +988,11 @@ class Variable(object):
         return self.name
 
 
+def leafcopy(self, stmt):
+    """create and return a copy of this node and its descendant
+
+    stmt is the root node, which should be use to get new variables
+    """
+    return self.__class__(*self.initargs(stmt))
+VariableRef.copy = leafcopy
+Constant.copy = leafcopy
