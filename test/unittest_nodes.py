@@ -4,7 +4,9 @@ from logilab.common.testlib import TestCase, unittest_main
 
 from rql import nodes, stmts, parse
 
-E_TYPES = {"Person" : 'Person'}
+E_TYPES = {'Person' : 'Person'}
+from rql.stcheck import RQLSTAnnotator
+annotator = RQLSTAnnotator(None, {})
 
 class NodesTest(TestCase):
         
@@ -109,8 +111,8 @@ class NodesTest(TestCase):
         self.assertEqual(len(tree.children), 2)
         self.assert_(isinstance(tree.children[0], nodes.AND))
         self.assert_(isinstance(tree.children[1], nodes.Group))
-        self.assert_(isinstance(tree.children[1][0], nodes.VariableRef))
-        self.assertEqual(tree.children[1][0].name, 'N')
+        self.assert_(isinstance(tree.children[1].children[0], nodes.VariableRef))
+        self.assertEqual(tree.children[1].children[0].name, 'N')
         # test specific attributes
         self.assertEqual(tree.distinct, False)
         # test serializing
@@ -124,9 +126,9 @@ class NodesTest(TestCase):
         self.assertEqual(len(tree.children), 2)
         self.assert_(isinstance(tree.children[0], nodes.AND))
         self.assert_(isinstance(tree.children[1], nodes.Sort))
-        self.assert_(isinstance(tree.children[1][0], nodes.SortTerm))
-        self.assertEqual(tree.children[1][0].var.name, 'N')
-        self.assertEqual(tree.children[1][0].asc, 1)
+        self.assert_(isinstance(tree.children[1].children[0], nodes.SortTerm))
+        self.assertEqual(tree.children[1].children[0].term.name, 'N')
+        self.assertEqual(tree.children[1].children[0].asc, 1)
         # test specific attributes
         self.assertEqual(tree.distinct, False)
         # test serializing
@@ -146,9 +148,9 @@ class NodesTest(TestCase):
         self.assertEqual(len(tree.children), 2)
         self.assert_(isinstance(tree.children[0], nodes.AND))
         self.assert_(isinstance(tree.children[1], nodes.Sort))
-        self.assert_(isinstance(tree.children[1][0], nodes.SortTerm))
-        self.assertEqual(tree.children[1][0].var.name, 'N')
-        self.assertEqual(tree.children[1][0].asc, 0)
+        self.assert_(isinstance(tree.children[1].children[0], nodes.SortTerm))
+        self.assertEqual(tree.children[1].children[0].term.name, 'N')
+        self.assertEqual(tree.children[1].children[0].asc, 0)
         # test specific attributes
         self.assertEqual(tree.distinct, False)
         # test serializing
@@ -163,12 +165,12 @@ class NodesTest(TestCase):
         self.assertEqual(len(tree.children), 3)
         self.assert_(isinstance(tree.children[0], nodes.AND))
         self.assert_(isinstance(tree.children[1], nodes.Group))
-        self.assert_(isinstance(tree.children[1][0], nodes.VariableRef))
-        self.assertEqual(tree.children[1][0].name, 'N')
+        self.assert_(isinstance(tree.children[1].children[0], nodes.VariableRef))
+        self.assertEqual(tree.children[1].children[0].name, 'N')
         self.assert_(isinstance(tree.children[2], nodes.Sort))
-        self.assert_(isinstance(tree.children[2][0], nodes.SortTerm))
-        self.assertEqual(tree.children[2][0].var.name, 'N')
-        self.assertEqual(tree.children[2][0].asc, 1)
+        self.assert_(isinstance(tree.children[2].children[0], nodes.SortTerm))
+        self.assertEqual(tree.children[2].children[0].term.name, 'N')
+        self.assertEqual(tree.children[2].children[0].asc, 1)
         # test specific attributes
         self.assertEqual(tree.distinct, False)
         # test serializing
@@ -364,9 +366,51 @@ class NodesTest(TestCase):
     
     def test_get_description_aggregat(self):
         tree = parse("Any COUNT(N) WHERE X name N GROUPBY N;", E_TYPES)
+        annotator.annotate(tree)
         self.assertEqual(tree.get_description(), ['COUNT(name)'])
         self.assertEqual(tree.selected[0].get_type(), 'Int')
 
+
+class GetNodesFunctionTest(TestCase):
+    def test_known_values_1(self):
+        tree = parse('Any X where X name "turlututu"', {})
+        constants = tree.get_nodes(nodes.Constant)
+        self.assertEquals(len(constants), 1)
+        self.assertEquals(isinstance(constants[0], nodes.Constant), 1)
+        self.assertEquals(constants[0].value, 'turlututu')
+    
+    def test_known_values_2(self):
+        tree = parse('Any X where X name "turlututu", Y know X, Y name "chapo pointu"', {})
+        varrefs = tree.get_nodes(nodes.VariableRef)
+        self.assertEquals(len(varrefs), 4)
+        for varref in varrefs:
+            self.assertEquals(isinstance(varref, nodes.VariableRef), 1)
+        names = [ x.name for x in varrefs ]
+        names.sort()
+        self.assertEquals(names[0], 'X')
+        self.assertEquals(names[1], 'X')
+        self.assertEquals(names[2], 'Y')
+        self.assertEquals(names[3], 'Y')
+
+    def test_iknown_values_1(self):
+        tree = parse('Any X where X name "turlututu"', {})
+        constants = list(tree.iget_nodes(nodes.Constant))
+        self.assertEquals(len(constants), 1)
+        self.assertEquals(isinstance(constants[0], nodes.Constant), 1)
+        self.assertEquals(constants[0].value, 'turlututu')
+    
+    def test_iknown_values_2(self):
+        tree = parse('Any X where X name "turlututu", Y know X, Y name "chapo pointu"', {})
+        varrefs = list(tree.iget_nodes(nodes.VariableRef))
+        self.assertEquals(len(varrefs), 4)
+        for varref in varrefs:
+            self.assertEquals(isinstance(varref, nodes.VariableRef), 1)
+        names = [ x.name for x in varrefs ]
+        names.sort()
+        self.assertEquals(names[0], 'X')
+        self.assertEquals(names[1], 'X')
+        self.assertEquals(names[2], 'Y')
+        self.assertEquals(names[3], 'Y')    
     
 if __name__ == '__main__':
     unittest_main()

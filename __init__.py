@@ -15,10 +15,9 @@ from rql._exceptions import *
 from rql.interfaces import *
 from rql.parser import Hercule, HerculeScanner
 from rql.nodes import Constant
-from rql.stcheck import RQLSTAnnotator
+from rql.stcheck import RQLSTChecker, RQLSTAnnotator
 from rql.analyze import ETypeResolver
-from rql.compare import compare_tree
-from rql.utils import is_keyword, get_nodes
+from rql.utils import is_keyword
 
 REQUIRED_TYPES = ['String', 'Float', 'Int', 'Boolean', 'Date']
 
@@ -41,7 +40,7 @@ class RQLHelper:
         if uid_func_mapping:
             for key in uid_func_mapping:
                 special_relations[key] = 'uid'
-        self._annotator_lock = threading.Lock()
+        self._checker = RQLSTChecker(schema)
         self._annotator = RQLSTAnnotator(schema, special_relations)
         self._analyser_lock = threading.Lock()
         self._analyser = Resolver(schema, uid_func_mapping)
@@ -63,18 +62,14 @@ class RQLHelper:
 
     def parse(self, rqlstring):
         """return a syntax tree from an sql string"""
-        tree = parse(rqlstring, self.e_types, False)
-        self.annotate(tree, checkselected=True)
-        tree.schema = self._annotator.schema
-        return tree
+        rqlst = parse(rqlstring, self.e_types, False)
+        self._checker.check(rqlst)
+        self.annotate(rqlst)
+        rqlst.schema = self._annotator.schema
+        return rqlst
     
-    def annotate(self, rqlst, checkselected=False):
-        self._annotator_lock.acquire()
-        #print 'annotate', rqlst.as_string(encoding='UTF8')
-        try:
-            self._annotator.annotate(rqlst, checkselected=checkselected)
-        finally:
-            self._annotator_lock.release()
+    def annotate(self, rqlst):
+        self._annotator.annotate(rqlst)
 
     def get_solutions(self, rqlst, uid_func_mapping=None, kwargs=None, debug=False):
         """return a list of solutions for variables of the syntax tree
@@ -136,6 +131,7 @@ class RQLHelper:
         returns true if both requests would return the same results
         returns false otherwise
         """
+        from rql.compare import compare_tree
         return compare_tree(self.parse(rqlstring1), self.parse(rqlstring2))
 
         

@@ -11,9 +11,7 @@ warnings.filterwarnings(action='ignore', module='logilab.constraint.propagation'
 
 from logilab.constraint import Repository, Solver, fd
 
-from rql import TypeResolverException
-from rql import nodes 
-from rql.utils import iget_nodes
+from rql import TypeResolverException, nodes
 from pprint import pprint
 
 
@@ -139,7 +137,7 @@ class ETypeResolver:
 
     def _uid_node_types(self, valnode):
         types = set()
-        for cst in iget_nodes(valnode, nodes.Constant):
+        for cst in valnode.iget_nodes(nodes.Constant):
             assert cst.type
             if cst.type == 'Substitute':
                 eid = self.kwargs[cst.value]
@@ -154,7 +152,7 @@ class ETypeResolver:
         rtype = relation.r_type
         lhs, rhs = relation.get_parts()
         if relation.is_types_restriction():
-            types = [c.value for c in iget_nodes(rhs, nodes.Constant)
+            types = [c.value for c in rhs.iget_nodes(nodes.Constant)
                      if c.type == 'etype']
             if relation._not:
                 not_types = [t for t in self._nonfinal_domain if not t in types]
@@ -210,7 +208,7 @@ class ETypeResolver:
             lhsvar = lhs.name
             rhsvars = []
             samevar = False
-            for v in iget_nodes(rhs, nodes.VariableRef):
+            for v in rhs.iget_nodes(nodes.VariableRef):
                 if v.name == lhsvar:
                     samevar = True
                 else:

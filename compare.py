@@ -3,7 +3,6 @@
 """
 
 from rql.nodes import VariableRef, Variable, Function, Relation, Comparison
-from rql.utils import get_nodes
 
 def compare_tree(request1, request2):
     """compares 2 RQL requests
@@ -74,7 +73,7 @@ class RQLCanonizer:
                 l.append(allvars[node][0])
             else:  # Function
                 l.append(node)
-                for var in get_nodes(node, VariableRef):
+                for var in node.iget_nodes(VariableRef):
                     var.parent.replace(var, allvars[var.variable][0])
                     
     def visit_group(self, group, canon):
@@ -92,7 +91,7 @@ class RQLCanonizer:
     def visit_or(self, ou, canon):
         canon_dict = {}
         keys = []
-        for expr in get_nodes(ou, Relation):
+        for expr in ou.get_nodes(Relation):
             key = '%s%s' % (expr.r_type, expr._not)
             canon_dict.setdefault(key, []).append(expr)
             keys.append(key)
@@ -139,10 +138,10 @@ class RQLCanonizer:
         # make a string which represents this relation (we'll use it later
         # to build variables' name)
         expr_reminder = relation.r_type
-        lhs_vars = get_nodes(lhs, VariableRef)
+        lhs_vars = lhs.get_nodes(VariableRef)
         if not lhs_vars:
             expr_reminder = "%s_%s" % (lhs, expr_reminder)
-        rhs_vars = get_nodes(rhs, VariableRef)
+        rhs_vars = rhs.get_nodes(VariableRef)
         if not rhs_vars:
             expr_reminder = "%s_%s" % (expr_reminder, rhs)
             

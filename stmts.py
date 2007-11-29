@@ -8,16 +8,13 @@ defined in the nodes module
 """
 __docformat__ = "restructuredtext en"
 
-from logilab.common.tree import VNode as Node
 from logilab.common.decorators import cached
 
-from rql.utils import get_nodes, get_nodes_filtered, rqlvar_maker
 from rql import BadRQLQuery, CoercionError, nodes
+from rql.base import Node
+from rql.utils import rqlvar_maker
 
-Node.get_nodes = get_nodes
-Node.get_nodes_filtered = get_nodes_filtered
-
-class Statement(nodes.EditableMixIn, Node, object):
+class Statement(nodes.EditableMixIn, Node):
     """base class for statement nodes"""
     
     def __init__(self, etypes):
@@ -53,6 +50,10 @@ class Statement(nodes.EditableMixIn, Node, object):
         return new
         
     # navigation helper methods #############################################
+    
+    def root(self):
+        """return the root node of the tree"""
+        return self
         
     def get_selected_variables(self):
         return self.selected_terms()
@@ -151,7 +152,7 @@ class Statement(nodes.EditableMixIn, Node, object):
         handling
         """
         # unregister variable references in the removed subtree
-        for varref in get_nodes(node, nodes.VariableRef):
+        for varref in node.iget_nodes(nodes.VariableRef):
             varref.unregister_reference()
             #if not varref.variable.references():
             #    del node.root().defined_vars[varref.name]
@@ -269,10 +270,10 @@ class Select(Statement):
             s.append('WHERE %s' % r.as_string(encoding, kwargs))
         groups = self.get_groups()
         if groups is not None:
-            s.append('GROUPBY %s' % ', '.join(str(group) for group in groups))
+            s.append(groups.as_string(encoding, kwargs))
         sorts = self.get_sortterms()
         if sorts is not None:
-            s.append('ORDERBY %s' % ', '.join(str(sort) for sort in sorts))
+            s.append(sorts.as_string(encoding, kwargs))
         if self.limit is not None:
             s.append('LIMIT %s' % self.limit)
         if self.offset:
@@ -316,13 +317,13 @@ class Select(Statement):
         functions
         """
         for term in self.selected_terms():
-            for node in term.get_nodes(nodes.VariableRef):
+            for node in term.iget_nodes(nodes.VariableRef):
                 yield node
 
     def selected_terms(self):
-        """returns selected terms
-        """
+        """returns selected terms"""
         return self.selected[:]
+
     
 class Delete(Statement):
     """the Delete node is the root of the syntax tree for deletion statement
