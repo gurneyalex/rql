@@ -5,7 +5,6 @@ http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
 from rql.nodes import VariableRef, BinaryNode
-from rql.utils import get_nodes
 
 class SelectionManager:
     """manage the operation stacks"""
@@ -105,10 +104,10 @@ class ReplaceNodeOperation:
     def undo(self, selection):
         """undo the operation on the selection"""
         # unregister reference from the inserted node
-        for varref in get_nodes(self.new_node, VariableRef):
+        for varref in self.new_node.iget_nodes(VariableRef):
             varref.unregister_reference()
         # register reference from the removed node
-        for varref in get_nodes(self.old_node, VariableRef):
+        for varref in self.old_node.iget_nodes(VariableRef):
             varref.register_reference()
         self.new_node.parent.replace(self.new_node, self.old_node)
 
@@ -144,7 +143,7 @@ class RemoveNodeOperation(NodeOperation):
         else:
             self.node_parent.insert(self.index, self.node)
         # register reference from the removed node
-        for varref in get_nodes(self.node, VariableRef):
+        for varref in self.node.iget_nodes(VariableRef):
             varref.register_reference()
     
 class AddSortOperation(NodeOperation):

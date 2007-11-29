@@ -1,8 +1,9 @@
-# -*- coding: ISO-8859-1 -*-
+# -*- coding: iso-8859-1 -*-
 
 from logilab.common.testlib import TestCase, unittest_main
 
 from yapps.runtime import print_error, SyntaxError
+
 from rql.parser import Hercule, HerculeScanner
 from rql import BadRQLQuery, RQLSyntaxError, nodes, stmts, parse
 from rql import parse
@@ -69,6 +70,7 @@ SPEC_QUERIES = (
     'Any X WHERE X eid > 12;',
     'DELETE Any X WHERE X eid > 12;',
     
+    'Any X WHERE 5 in_state X;',
     )
 
 E_TYPES = {"Person" : 'Person',

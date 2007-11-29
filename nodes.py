@@ -1,5 +1,6 @@
 """This module defines all the nodes we can find in a RQL Syntax tree, except
-root nodes, defined in the stmts module.
+root nodes, defined in the `stmts` module.
+
 
 :organization: Logilab
 :copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
@@ -7,26 +8,51 @@ root nodes, defined in the stmts module.
 """
 __docformat__ = "restructuredtext en"
 
+from itertools import chain
 
-from logilab.common.tree import VNode as Node, BinaryNode, ListNode, \
-     post_order_list
-from logilab.common.visitor import VisitedMixIn
+try:
+    from mx.DateTime import DateTimeType
+except:
+    from datetime import datetime as DateTimeType
 
 from rql import CoercionError
+from rql.base import Node, BinaryNode, LeafNode
 from rql.utils import function_description, quote, uquote
 
-def get_visit_name(self):
-    """
-    return the visit name for the mixed class. When calling 'accept', the
-    method <'visit_' + name returned by this method> will be called on the
-    visitor
-    """
-    return self.__class__.__name__.lower()
-Node.get_visit_name = get_visit_name
-BinaryNode.get_visit_name = get_visit_name
-ListNode.get_visit_name = get_visit_name
+CONSTANT_TYPES = frozenset((None, 'Date', 'Datetime', 'Boolean', 'Float', 'Int',
+                            'String', 'Substitute', 'etype'))
 
-# rql st edition utilities
+def etype_from_pyobj(value):
+    # try to guess type from value
+    if isinstance(value, bool):
+        return 'Boolean'
+    if isinstance(value, (int, long)):
+        return 'Int'
+    if isinstance(value, DateTimeType):
+        return 'Datetime'
+    elif isinstance(value, float):
+        return 'Float'
+    # XXX Bytes
+    return 'String'
+
+
+class HSMixin(object):
+    """mixin class for classes which may be the lhs or rhs of an expression
+    """
+    __slots__ = ()
+    
+    def relation(self):
+        """return the parent relation where self occurs or None"""
+        try:
+            return self.parent.relation()
+        except AttributeError:
+            return None
+        
+    def get_description(self):
+        return self.get_type()
+
+
+# rql st edition utilities ####################################################
 
 def make_relation(var, rel, rhsargs, rhsclass, operator='='):
     """build an relation equivalent to '<var> rel = <cst>'"""
@@ -40,9 +66,12 @@ def make_relation(var, rel, rhsargs, rhsclass, operator='='):
     return relation
 
 
-# base objects ################################################################
-
 class EditableMixIn(object):
+    """mixin class to add edition functionalities to some nodes, eg root nodes
+    (statement) and Exists nodes
+    """ 
+    __slots__ = ()
+   
     @property
     def undo_manager(self):
         return self.root().undo_manager
@@ -102,129 +131,54 @@ class EditableMixIn(object):
         return self.add_restriction(make_relation(var, 'eid', (eid, 'Int'), Constant))
     
 
-class HSMixin(object):
-    """mixin class for classes which may be the lhs or rhs of an expression
-    """    
-    def relation(self):
-        """return the parent relation where self occurs or None"""
-        try:
-            return self.parent.relation()
-        except AttributeError:
-            return None
-    
-    def is_variable(self):
-        """check if this node contains a reference to one ore more variables"""
-        for c in post_order_list(self):
-            if isinstance(c, VariableRef):
-                return 1
-        return 0
-        
-    def get_description(self):
-        return self.get_type()
-    
-    def __str__(self):
-        return self.as_string()
-
-
-# add a new "copy" method to the Node base class
-def deepcopy(self, stmt):
-    """create and return a copy of this node and its descendant
-
-    stmt is the root node, which should be use to get new variables
-    """
-    new = self.__class__(*self.initargs(stmt))
-    for child in self.children:
-        new.append(child.copy(stmt))
-    return new
-Node.copy = deepcopy
-
-def initargs(self, stmt):
-    """return list of arguments to give to __init__ to clone this node
-    
-    I don't use __getinitargs__ because I'm not sure it should interfer with
-    copy/pickle
-    """
-    return ()
-Node.initargs = initargs
-
-def is_equivalent(self, other):
-    if other.TYPE != self.TYPE:
-        return False
-    for i, child in enumerate(self.children):
-        try:
-            if not child.is_equivalent(other.children[i]):
-                return False
-        except IndexError:
-            return False
-    return True
-Node.is_equivalent = is_equivalent
-
-def exists_root(self):
-    return self.parent.exists_root()
-Node.exists_root = exists_root
-
-def scope(self):
-    return self.parent.scope
-Node.scope = property(scope)
-
-# RQL base nodes ##############################################################
-
+# base RQL nodes ##############################################################
 
 class AND(BinaryNode):
-    """a logical AND node (binary)
-    """
-    TYPE = 'and'
+    """a logical AND node (binary)"""
+    __slots__ = ()
     
     def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_and( self, *args, **kwargs )
+        return visitor.visit_and(self, *args, **kwargs)
     
     def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_and( self, *args, **kwargs )
+        return visitor.leave_and(self, *args, **kwargs)
     
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         return '%s, %s' % (self.children[0].as_string(encoding, kwargs),
                            self.children[1].as_string(encoding, kwargs))
     def __repr__(self):
-        return '%s AND %s' % (repr(self.children[0]),
-                              repr(self.children[1]))
+        return '%s AND %s' % (repr(self.children[0]), repr(self.children[1]))
     
     def ored_rel(self, _fromnode=None):
         return self.parent.ored_rel(_fromnode or self)
 
     
 class OR(BinaryNode):
-    """a logical OR node (binary)
-    """
-    TYPE = 'or'
+    """a logical OR node (binary)"""
+    __slots__ = ()
     
     def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_or( self, *args, **kwargs )
+        return visitor.visit_or(self, *args, **kwargs)
     
     def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_or( self, *args, **kwargs )
+        return visitor.leave_or(self, *args, **kwargs)
     
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         return '(%s) OR (%s)' % (self.children[0].as_string(encoding, kwargs),
                                  self.children[1].as_string(encoding, kwargs))
+    
     def __repr__(self):
-        return '%s OR %s' % (repr(self.children[0]),
-                             repr(self.children[1]))
+        return '%s OR %s' % (repr(self.children[0]), repr(self.children[1]))
     
     def ored_rel(self, _fromnode=None):
-        return True
+        return self
 
 
-class Exists(HSMixin, EditableMixIn, Node):
+class Exists(EditableMixIn, Node):
     """EXISTS sub query"""
-    TYPE = 'exists'
-
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_exists(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_exists(self, *args, **kwargs)
+    __slots__ = ('_not',)
 
     def __init__(self, restriction=None, _not=0):
         Node.__init__(self)
@@ -235,6 +189,15 @@ class Exists(HSMixin, EditableMixIn, Node):
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node"""
         return (None, self._not)
+    
+    def is_equivalent(self, other):
+        raise NotImplementedError
+    
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit_exists(self, *args, **kwargs)
+    
+    def leave(self, visitor, *args, **kwargs):
+        return visitor.leave_exists(self, *args, **kwargs)
                 
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
@@ -243,7 +206,7 @@ class Exists(HSMixin, EditableMixIn, Node):
             return 'NOT EXISTS(%s)' % content
         return 'EXISTS(%s)' % content
 
-    def __repr__(self, indent=0):
+    def __repr__(self):
         content = self.children and repr(self.children[0])
         if self._not:
             return 'NOT EXISTS(%s)' % content
@@ -251,9 +214,6 @@ class Exists(HSMixin, EditableMixIn, Node):
 
     def get_restriction(self):
         return self.children[0]
-    
-    def is_equivalent(self, other):
-        raise NotImplementedError
 
     def exists_root(self):
         return self
@@ -269,15 +229,8 @@ class Exists(HSMixin, EditableMixIn, Node):
 
     
 class Relation(Node):
-    """a single RQL relation
-    """
-    TYPE = 'relation'
-    
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_relation( self, *args, **kwargs )
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_relation( self, *args, **kwargs )
+    """a RQL relation"""
+    __slots__ = ('r_type', '_not', 'optional', '_querier_data')
     
     def __init__(self, r_type, _not=0, optional=None):
         Node.__init__(self)
@@ -285,6 +238,69 @@ class Relation(Node):
         self._not = _not
         self.optional = None
         self.set_optional(optional)
+    
+    def initargs(self, stmt):
+        """return list of arguments to give to __init__ to clone this node"""
+        return self.r_type, self._not, self.optional
+        
+    def is_equivalent(self, other):
+        if not Node.is_equivalent(self, other):
+            return False
+        if self.r_type != other.r_type:
+            return False
+        if self._not != other._not:
+            return False
+        return True
+    
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit_relation( self, *args, **kwargs )
+    
+    def leave(self, visitor, *args, **kwargs):
+        return visitor.leave_relation( self, *args, **kwargs )
+    
+    def as_string(self, encoding=None, kwargs=None):
+        """return the tree as an encoded rql string"""
+        try:
+            lhs = self.children[0].as_string(encoding, kwargs)
+            if self.optional in ('left', 'both'):
+                lhs += '?'
+            rhs = self.children[1].as_string(encoding, kwargs)
+            if self.optional in ('right', 'both'):
+                rhs += '?'
+        except IndexError:
+            return repr(self) # not fully built relation
+        if self._not:
+            return 'NOT %s %s %s' % (lhs, self.r_type, rhs)
+        return '%s %s %s' % (lhs, self.r_type, rhs)
+
+    def __repr__(self):
+        if self.optional:
+            rtype = '%s[%s]' % self.r_type
+        else:
+            rtype = self.r_type
+        try:
+            if self._not:
+                return 'Relation(not %r %s %r)' % (self.children[0], rtype,
+                                                   self.children[1])
+            return 'Relation(%r %s %r)' % (self.children[0], rtype,
+                                           self.children[1])
+        except IndexError:
+            return 'Relation(%s)' % self.r_type
+    
+    def set_optional(self, optional):
+        assert optional in (None, 'left', 'right')
+        if optional is not None:
+            if self.optional and self.optional != optional:
+                self.optional = 'both'
+            else:
+                self.optional = optional
+            
+    def relation(self):
+        """return the parent relation where self occurs or None"""
+        return self
+    
+    def ored_rel(self, _fromnode=None):
+        return self.parent.ored_rel(_fromnode or self)
 
     def is_types_restriction(self):
         if self.r_type != 'is':
@@ -306,63 +322,6 @@ class Relation(Node):
         if isinstance(rhs, Comparison):
             return rhs.operator
         return '='
-    
-    def set_optional(self, optional):
-        assert optional in (None, 'left', 'right')
-        if optional is not None:
-            if self.optional and self.optional != optional:
-                self.optional = 'both'
-            else:
-                self.optional = optional
-        
-    def is_equivalent(self, other):
-        if not is_equivalent(self, other):
-            return False
-        if self.r_type != other.r_type:
-            return False
-        if self._not != other._not:
-            return False
-        return True
-    
-    def initargs(self, stmt):
-        """return list of arguments to give to __init__ to clone this node"""
-        return self.r_type, self._not, self.optional
-    
-    def as_string(self, encoding=None, kwargs=None):
-        """return the tree as an encoded rql string"""
-        try:
-            lhs = self.children[0].as_string(encoding, kwargs)
-            if self.optional in ('left', 'both'):
-                lhs += '?'
-            rhs = self.children[1].as_string(encoding, kwargs)
-            if self.optional in ('right', 'both'):
-                rhs += '?'
-        except IndexError:
-            return repr(self) # not fully built relation
-        if self._not:
-            return 'NOT %s %s %s' % (lhs, self.r_type, rhs)
-        return '%s %s %s' % (lhs, self.r_type, rhs)
-
-    def __repr__(self, indent=0):
-        if self.optional:
-            rtype = '?%s' % self.r_type
-        else:
-            rtype = self.r_type
-        try:
-            if not self._not:
-                return '%sRelation(%r %s %r)' % (' '*indent, self.children[0],
-                                                 rtype, self.children[1])
-            return '%sRelation(not %r %s %r)' % (' '*indent, self.children[0],
-                                                 rtype, self.children[1])
-        except IndexError:
-            return '%sRelation(%s)' % (' '*indent, self.r_type)
-            
-    def __str__(self):
-        return self.as_string('ascii')
-            
-    def relation(self):
-        """return the parent relation where self occurs or None"""
-        return self
        
     def get_parts(self):
         """return the left hand side and the right hand side of this relation
@@ -378,9 +337,6 @@ class Relation(Node):
         lhs = self.children[0]
         rhs = self.children[1].children[0]
         return lhs, rhs
-    
-    def ored_rel(self, _fromnode=None):
-        return self.parent.ored_rel(_fromnode or self)
 
     
 class Comparison(HSMixin, Node):
@@ -388,14 +344,8 @@ class Comparison(HSMixin, Node):
 
      <, <=, =, >=, > LIKE and ILIKE operators have a unique children.    
     """
-    TYPE = 'comparison'
+    __slots__ = ('operator',)
     
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_comparison( self, *args, **kwargs )
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_comparison( self, *args, **kwargs )
-
     def __init__(self, operator, value=None):
         Node.__init__(self)
         if operator == '~=':
@@ -411,6 +361,17 @@ class Comparison(HSMixin, Node):
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node"""
         return (self.operator,)
+
+    def is_equivalent(self, other):
+        if not Node.is_equivalent(self, other):
+            return False
+        return self.operator == other.operator
+    
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit_comparison( self, *args, **kwargs )
+    
+    def leave(self, visitor, *args, **kwargs):
+        return visitor.leave_comparison( self, *args, **kwargs )
     
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
@@ -418,26 +379,16 @@ class Comparison(HSMixin, Node):
             return self.operator
         if self.operator in ('=', 'IS'):
             return self.children[0].as_string(encoding, kwargs)
-        else:
-            return '%s %s' % (self.operator.encode(),
-                              self.children[0].as_string(encoding, kwargs))
+        return '%s %s' % (self.operator.encode(),
+                          self.children[0].as_string(encoding, kwargs))
 
-    def __repr__(self, indent=0):
-        return '%s%s %s' % (' '*indent, self.operator,
-                            ', '.join([repr(c) for c in self.children]))
-
+    def __repr__(self):
+        return '%s %s' % (self.operator, ', '.join(repr(c) for c in self.children))
     
 
 class MathExpression(HSMixin, BinaryNode):
-    """+, -, *, /
-    """
-    TYPE = 'mathexpression'
-
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_mathexpression(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_mathexpression(self, *args, **kwargs)
+    """+, -, *, /"""
+    __slots__ = ('operator',)
 
     def __init__(self, operator, lhs=None, rhs=None):
         BinaryNode.__init__(self, lhs, rhs)
@@ -446,6 +397,27 @@ class MathExpression(HSMixin, BinaryNode):
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node"""
         return (self.operator,)
+
+    def is_equivalent(self, other):
+        if not Node.is_equivalent(self, other):
+            return False
+        return self.operator == other.operator
+
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit_mathexpression(self, *args, **kwargs)
+    
+    def leave(self, visitor, *args, **kwargs):
+        return visitor.leave_mathexpression(self, *args, **kwargs)
+        
+    def as_string(self, encoding=None, kwargs=None):
+        """return the tree as an encoded rql string"""
+        return '(%s %s %s)' % (self.children[0].as_string(encoding, kwargs),
+                               self.operator.encode(),
+                               self.children[1].as_string(encoding, kwargs))
+
+    def __repr__(self):
+        return '(%r %s %r)' % (self.children[0], self.operator,
+                               self.children[1])
     
     def get_type(self, solution=None, kwargs=None):
         """return the type of object returned by this function if known
@@ -477,40 +449,18 @@ class MathExpression(HSMixin, BinaryNode):
         expression
         """
         schema = self.root().schema
-        for vref in self.get_nodes(VariableRef):
+        for vref in self.iget_nodes(VariableRef):
             rtype = vref.get_description()
             if schema.has_relation(rtype):
                 return rtype
         return self.get_type()
-        
-    def as_string(self, encoding=None, kwargs=None):
-        """return the tree as an encoded rql string"""
-        return '(%s %s %s)' % (self.children[0].as_string(encoding, kwargs),
-                               self.operator.encode(),
-                               self.children[1].as_string(encoding, kwargs))
-
-    def __repr__(self, indent=0):
-        return '(%r %s %r)' % (self.children[0], self.operator,
-                               self.children[1])
-
-    def is_equivalent(self, other):
-        if not is_equivalent(self, other):
-            return False
-        return self.operator == other.operator
 
     
 class Function(HSMixin, Node):
     """Class used to deal with aggregat functions (sum, min, max, count, avg)
     and latter upper(), lower() and other RQL transformations functions
     """
-    
-    TYPE = 'function'
-
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_function(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_function(self, *args, **kwargs)
+    __slots__ = ('name',)
 
     def __init__(self, name):
         Node.__init__(self)
@@ -519,6 +469,25 @@ class Function(HSMixin, Node):
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node"""
         return (self.name,)
+
+    def is_equivalent(self, other):
+        if not Node.is_equivalent(self, other):
+            return False
+        return self.name == other.name
+
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit_function(self, *args, **kwargs)
+    
+    def leave(self, visitor, *args, **kwargs):
+        return visitor.leave_function(self, *args, **kwargs)
+        
+    def as_string(self, encoding=None, kwargs=None):
+        """return the tree as an encoded rql string"""
+        return '%s(%s)' % (self.name, ', '.join(c.as_string(encoding, kwargs)
+                                                for c in self.children))
+
+    def __repr__(self):
+        return '%s(%s)' % (self.name, ', '.join(repr(c) for c in self.children))
 
     def get_type(self, solution=None, kwargs=None):
         """return the type of object returned by this function if known
@@ -540,55 +509,15 @@ class Function(HSMixin, Node):
     def descr(self):
         """return the type of object returned by this function if known"""
         return function_description(self.name)
-        
-    def as_string(self, encoding=None, kwargs=None):
-        """return the tree as an encoded rql string"""
-        return '%s(%s)' % (self.name, ', '.join(c.as_string(encoding, kwargs)
-                                                for c in self.children))
-
-    def __repr__(self, indent=0):
-        return '%s%s(%s)' % (' '*indent, self.name,
-                             ', '.join([repr(c) for c in self.children]))
-
-    def is_equivalent(self, other):
-        if not is_equivalent(self, other):
-            return False
-        return self.name == other.name
-
-try:
-    from mx.DateTime import DateTimeType
-except:
-    from datetime import datetime as DateTimeType
-
-def etype_from_pyobj(value):
-    # try to guess type from value
-    if isinstance(value, bool):
-        return 'Boolean'
-    if isinstance(value, (int, long)):
-        return 'Int'
-    if isinstance(value, DateTimeType):
-        return 'Datetime'
-    elif isinstance(value, float):
-        return 'Float'
-    # XXX Bytes
-    return 'String'
 
 
-class Constant(HSMixin,Node):
-    """see String, Int, TRUE, FALSE, TODAY, NULL
-    """
-    TYPE = 'constant'
-
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_constant(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_constant(self, *args, **kwargs)
+class Constant(HSMixin, LeafNode):
+    """String, Int, TRUE, FALSE, TODAY, NULL..."""
+    __slots__ = ('value', 'type', 'uid', 'uidtype')
     
     def __init__(self, value, c_type, _uid=False, _uidtype=None):
-        assert c_type in (None, 'Date', 'Datetime', 'Boolean', 'Float', 'Int',
-                          'String', 'Substitute', 'etype'), "Error got c_type="+repr(c_type)
-        Node.__init__(self) # don't care about Node attributes
+        assert c_type in CONSTANT_TYPES, "Error got c_type="+repr(c_type)
+        LeafNode.__init__(self) # don't care about Node attributes
         self.value = value
         self.type = c_type
         # updated by the annotator/analyzer if necessary
@@ -599,23 +528,16 @@ class Constant(HSMixin,Node):
         """return list of arguments to give to __init__ to clone this node"""
         return (self.value, self.type, self.uid, self.uidtype)
 
-    def is_variable(self):
-        """check if this node contains a reference to one ore more variables"""
-        return 0
-
-    def eval(self, kwargs):
-        if self.type == 'Substitute':
-            return kwargs[self.value]
-        return self.value
-
-    def get_type(self, solution=None, kwargs=None):
-        if self.uid:
-            return self.uidtype
-        if self.type == 'Substitute':
-            if kwargs is not None:
-                return etype_from_pyobj(self.eval(kwargs))
-            return 'String'
-        return self.type
+    def is_equivalent(self, other):
+        if not LeafNode.is_equivalent(self, other):
+            return False
+        return self.type == other.type and self.value == other.value
+    
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit_constant(self, *args, **kwargs)
+    
+    def leave(self, visitor, *args, **kwargs):
+        return visitor.leave_constant(self, *args, **kwargs)
     
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string (an unicode string is
@@ -646,21 +568,43 @@ class Constant(HSMixin,Node):
             return uquote(self.value)
         return repr(self.value)
         
-    def __repr__(self, indent=0):
-        return '%s%s' % (' '*indent, self.as_string())
+    def __repr__(self):
+        return self.as_string()
+
+    def eval(self, kwargs):
+        if self.type == 'Substitute':
+            return kwargs[self.value]
+        return self.value
+
+    def get_type(self, solution=None, kwargs=None):
+        if self.uid:
+            return self.uidtype
+        if self.type == 'Substitute':
+            if kwargs is not None:
+                return etype_from_pyobj(self.eval(kwargs))
+            return 'String'
+        return self.type
+
+
+class VariableRef(HSMixin, LeafNode):
+    """a reference to a variable in the syntax tree"""
+    __slots__ = ('variable', 'name')
+
+    def __init__(self, variable, noautoref=None):
+        LeafNode.__init__(self) # don't care about Node attributes
+        self.variable = variable
+        self.name = variable.name
+        if noautoref is None:
+            self.register_reference()
+
+    def initargs(self, stmt):
+        """return list of arguments to give to __init__ to clone this node"""
+        return (stmt.get_variable(self.name),)
 
     def is_equivalent(self, other):
-        if not is_equivalent(self, other):
+        if not LeafNode.is_equivalent(self, other):
             return False
-        return self.type == other.type and self.value == other.value
-
-
-class VariableRef(HSMixin, Node):
-    """a reference to a variable in the syntax tree
-    """
-    TYPE = 'variableref'
-
-    __slots__ = ('variable', 'name')
+        return self.name == other.name
     
     def accept(self, visitor, *args, **kwargs):
         return visitor.visit_variableref(self, *args, **kwargs)
@@ -668,25 +612,15 @@ class VariableRef(HSMixin, Node):
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_variableref(self, *args, **kwargs)
 
-    def __init__(self, variable, noautoref=None):
-        Node.__init__(self) # don't care about Node attributes
-        self.variable = variable
-        self.name = variable.name#.encode()
-        if noautoref is None:
-            self.register_reference()
+    def as_string(self, encoding=None, kwargs=None):
+        """return the tree as an encoded rql string"""
+        return self.name
     
-    def __repr__(self, indent=0):
-        return '%sVarRef(%#X) to %r' % (' '*indent, id(self), self.variable)
+    def __repr__(self):
+        return 'VarRef(%#X) to %r' % (id(self), self.variable)
 
     def __cmp__(self, other):
         return not self.is_equivalent(other)
-
-    def is_equivalent(self, other):
-        return self.TYPE == other.TYPE and self.name == other.name
-
-    def initargs(self, stmt):
-        """return list of arguments to give to __init__ to clone this node"""
-        return (stmt.get_variable(self.name),)
         
     def register_reference(self):
         self.variable.register_reference(self)
@@ -694,27 +628,17 @@ class VariableRef(HSMixin, Node):
     def unregister_reference(self):
         self.variable.unregister_reference(self)
 
-    def is_variable(self):
-        """check if this node contains a reference to one ore more variables"""
-        return 1
-
-    def as_string(self, encoding=None, kwargs=None):
-        """return the tree as an encoded rql string"""
-        return self.name
-
     def get_type(self, solution=None, kwargs=None):
         return self.variable.get_type(solution, kwargs)
 
     def get_description(self):
         return self.variable.get_description()
 
-# group and sort nodes ########################################################
 
-class Group(ListNode): 
-    """a group (GROUPBY) node
-    """
-    TYPE = 'group'
-
+class Group(Node): 
+    """a group (GROUPBY) node"""
+    __slots__ = ()
+    
     def accept(self, visitor, *args, **kwargs):
         return visitor.visit_group(self, *args, **kwargs)
     
@@ -722,20 +646,19 @@ class Group(ListNode):
         return visitor.leave_group(self, *args, **kwargs)
     
     def as_string(self, encoding=None, kwargs=None):
-        return 'GROUPBY %s' % ', '.join([child.as_string(encoding, kwargs)
-                                         for child in self.children])
+        return 'GROUPBY %s' % ', '.join(child.as_string(encoding, kwargs)
+                                        for child in self.children)
 
     def __repr__(self):
-        return 'GROUPBY %s' % ', '.join([repr(child) for child in self.children])
+        return 'GROUPBY %s' % ', '.join(repr(child) for child in self.children)
     
     def exists_root(self):
         return False
     
     
-class Sort(ListNode):
-    """a sort (ORDERBY) node
-    """
-    TYPE = 'sort'
+class Sort(Node):
+    """a sort (ORDERBY) node"""
+    __slots__ = ()
     
     def accept(self, visitor, *args, **kwargs):
         return visitor.visit_sort(self, *args, **kwargs)
@@ -747,19 +670,44 @@ class Sort(ListNode):
         return self
     
     def as_string(self, encoding=None, kwargs=None):
-        return 'ORDERBY %s' % ', '.join([child.as_string(encoding, kwargs)
-                                         for child in self.children])
+        return 'ORDERBY %s' % ', '.join(child.as_string(encoding, kwargs)
+                                        for child in self.children)
     
     def exists_root(self):
         return False
     
 
-class SortTerm(HSMixin, Node):
+class SortTerm(Node):
     """a sort term bind a variable to the boolean <asc>
     if <asc> ascendant sort
     else descendant sort
     """
-    TYPE = 'sortterm'
+    __slots__ = ('asc',)
+
+    def __init__(self, variable, asc=1, copy=None):
+        Node.__init__(self)
+        self.asc = asc
+        if copy is None:
+            self.append(variable)
+    
+    def initargs(self, stmt):
+        """return list of arguments to give to __init__ to clone this node"""
+        return (self.term.copy(stmt), self.asc)
+
+    def is_equivalent(self, other):
+        if not Node.is_equivalent(self, other):
+            return False
+        return self.asc == other.asc
+
+    def as_string(self, encoding=None, kwargs=None):
+        if self.asc:
+            return '%s' % self.term
+        return '%s DESC' % self.term
+    
+    def __repr__(self):
+        if self.asc:
+            return '%r ASC' % self.term
+        return '%r DESC' % self.term
     
     def accept(self, visitor, *args, **kwargs):
         return visitor.visit_sortterm(self, *args, **kwargs)
@@ -767,44 +715,16 @@ class SortTerm(HSMixin, Node):
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_sortterm(self, *args, **kwargs)
 
-    def __init__(self, variable, asc=1, copy=None):
-        Node.__init__(self)
-        self.asc = asc
-        if copy is None:
-            self.append(variable)
+    def exists_root(self):
+        return False
             
-    @property
-    def var(self): # XXX deprecated, use .term
-        return self.children[0]
+#     @property
+#     def var(self): # XXX deprecated, use .term
+#         return self.children[0]
             
     @property
     def term(self): 
         return self.children[0]
-    
-    def initargs(self, stmt):
-        """return list of arguments to give to __init__ to clone this node"""
-        return (self.term.copy(stmt), self.asc)
-    
-    def __repr__(self, indent=0):
-        if self.asc:
-            return '%r ASC' % self.term
-        return '%r DESC' % self.term
-
-    def as_string(self, encoding=None, kwargs=None):
-        if self.asc:
-            return '%s' % self.term
-        return '%s DESC' % self.term
-    
-    def __str__(self):
-        return self.as_string()
-
-    def is_equivalent(self, other):
-        if not is_equivalent(self, other):
-            return False
-        return self.asc == other.asc
-
-    def exists_root(self):
-        return False
 
 
 
@@ -817,13 +737,7 @@ class Variable(object):
     
     collects information about a variable use in a syntax tree
     """
-    TYPE = 'variable'
-    
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_variable(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_variable(self, *args, **kwargs)
+    __slots__ = ('name', 'root', 'stinfo', '_querier_data')
         
     def __init__(self, name):
         self.name = name.strip().encode()
@@ -859,6 +773,19 @@ class Variable(object):
             'constnode': None,
             }
     
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit_variable(self, *args, **kwargs)
+    
+    def leave(self, visitor, *args, **kwargs):
+        return visitor.leave_variable(self, *args, **kwargs)
+        
+    def as_string(self, encoding=None, kwargs=None):
+        """return the tree as an encoded rql string"""
+        return self.name
+    
+    def __repr__(self):
+        return '%s(%#X)' % (self.name, id(self))
+    
     def set_scope(self, scopenode):
         if scopenode is self.root or self.stinfo['scope'] is None:
             self.stinfo['scope'] = scopenode
@@ -889,21 +816,12 @@ class Variable(object):
         stinfo = self.stinfo
         return len(stinfo['selected']) + len(stinfo['relations'])
 
-    def relation_names(self):
-        """return an iterator on relations (as string) where this variable
-        appears.
-        """
-        for reference in self.stinfo['references']:
-            rel = reference.relation()
-            if rel is not None:
-                yield rel.r_type
-
     def selected_index(self):
         """return the index of this variable in the selection if it's selected,
         else None
         """
         for i, term in enumerate(self.root.selected_terms()):
-            for node in term.get_nodes(VariableRef):
+            for node in term.iget_nodes(VariableRef):
                 if node.variable is self:
                     return i
     
@@ -911,24 +829,17 @@ class Variable(object):
         """return entity type of this object, 'Any' if not found"""
         if solution:
             return solution[self.name]
-        etype = 'Any'
+        for rel in self.stinfo['typerels']:
+            return str(rel.children[1].children[0].value)
         schema = self.root.schema
-        for ref in self.references():
-            rel = ref.relation()
-            if rel is None:
-                continue
-            if rel.r_type == 'is' and self.name == rel.children[0].name:
-                etype = rel.children[1].children[0].value.encode()
-                break
-            if rel.r_type != 'is' and self.name != rel.children[0].name:
-                if schema is not None:
-                    try:
-                        lhstype = rel.children[0].get_type(solution, kwargs)
-                        etype = schema.eschema(lhstype).destination(rel.r_type)
-                        break
-                    except: # CoertionError, AssertionError :(
-                        pass
-        return etype
+        if schema is not None:
+            for rel in self.stinfo['rhsrelations']:
+                try:
+                    lhstype = rel.children[0].get_type(solution, kwargs)
+                    return schema.eschema(lhstype).destination(rel.r_type)
+                except: # CoertionError, AssertionError :(
+                    pass
+        return 'Any'
     
     def get_description(self):
         """return :
@@ -941,10 +852,8 @@ class Variable(object):
         etype = 'Any'
         result = None
         schema = self.root.schema
-        for ref in self.references():
-            rel = ref.relation()
-            if rel is None:
-                continue
+        for rel in chain(self.stinfo['typerels'], self.stinfo['relations']):
+            print rel
             if rel.r_type == 'is':
                 if self.name == rel.children[0].name:
                     etype = str(rel.children[1].children[0].value)
@@ -976,23 +885,4 @@ class Variable(object):
             if rel.r_type != 'is' and self.name != rel.children[0].name:
                 return rel
         return None
-        
-    def as_string(self, encoding=None, kwargs=None):
-        """return the tree as an encoded rql string"""
-        return self.name
-    
-    def __repr__(self, indent=0):
-        return '%s%s(%#X)' % (' '*indent, self.name, id(self))
 
-    def __str__(self):
-        return self.name
-
-
-def leafcopy(self, stmt):
-    """create and return a copy of this node and its descendant
-
-    stmt is the root node, which should be use to get new variables
-    """
-    return self.__class__(*self.initargs(stmt))
-VariableRef.copy = leafcopy
-Constant.copy = leafcopy

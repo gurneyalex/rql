@@ -7,9 +7,8 @@
 
 
 from rql.stmts import Select
-from rql.nodes import Constant, Variable, VariableRef, Comparison, AND, \
-     Sort, SortTerm, Relation, make_relation
-from rql.utils import get_nodes
+from rql.nodes import (Constant, Variable, VariableRef, Comparison, AND, 
+                       Group, Sort, SortTerm, Relation, make_relation)
 from rql.undo import *
 
             
@@ -26,9 +25,9 @@ def undefine_variable(self, var):
         if rel is not None:
             self.remove_node(rel)
             continue
-        elif varref.parent.TYPE == 'sortterm':
+        elif isinstance(varref.parent, SortTerm):
             self.remove_sort_term(varref.parent)
-        elif varref.parent.TYPE == 'group':
+        elif isinstance(varref.parent, Group):
             self.remove_group_variable(varref)
         else: # selected variable
             self.remove_selected(varref)
@@ -46,7 +45,7 @@ def remove_selected(self, var):
     index = var_index(self.selected, var)
     if self.memorizing and not self.undoing:
         self.undo_manager.add_operation(UnselectVarOperation(var, index))
-    for var in self.selected.pop(index).get_nodes(VariableRef):
+    for var in self.selected.pop(index).iget_nodes(VariableRef):
         var.unregister_reference()
     assert check_relations(self)
 Select.remove_selected = remove_selected
@@ -57,7 +56,7 @@ def add_selected(self, term, index=None):
         term = VariableRef(term, noautoref=1)
         term.register_reference()
     else:
-        for var in term.get_nodes(VariableRef):
+        for var in term.iget_nodes(VariableRef):
             var = variable_ref(var)
             var.register_reference()
     if index is not None:
@@ -149,7 +148,7 @@ def add_main_restriction(rqlst, new_type, r_type, direction):
 
 def remove_has_text_relation(node):
     """remove has_text relation"""
-    for rel in get_nodes(node, Relation):
+    for rel in node.iget_nodes(Relation):
         if rel.r_type == 'has_text':
             node.remove_node(rel)
             return
@@ -159,8 +158,8 @@ def get_vars_relations(node):
     concern them
     """
     exp_concerns = {}
-    for exp in node.get_nodes(Relation):
-        for vref in exp.get_nodes(VariableRef):
+    for exp in node.iget_nodes(Relation):
+        for vref in exp.iget_nodes(VariableRef):
             exp_concerns.setdefault(vref.name, []).append(exp)
     return exp_concerns
 
@@ -182,9 +181,10 @@ def var_index(list, var):
 
 def check_relations(node):
     """test function"""
-    varrefs = get_nodes(node, VariableRef) + list(node.get_selected_variables())
+    varrefs = node.get_nodes(VariableRef)
+    varrefs += node.get_selected_variables()
     for n in getattr(node, 'main_relations', ()):
-        varrefs += get_nodes(n, VariableRef)
+        varrefs += n.iget_nodes(VariableRef)
     refs = {}
     for var in node.defined_vars.values():
         for varref in var.references():
