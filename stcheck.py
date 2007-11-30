@@ -130,11 +130,14 @@ class RQLSTChecker(object):
         
     def visit_or(self, ou, errors):
         assert len(ou.children) == 2, len(ou.children)
-        r1, r2 = ou.children[0], ou.children[1]
-        r1type = r1.r_type
-        r2type = r2.r_type
-        # XXX remove variable refs
         # simplify Ored expression of a symetric relation
+        r1, r2 = ou.children[0], ou.children[1]
+        try:
+            r1type = r1.r_type
+            r2type = r2.r_type
+        except AttributeError:
+            return # can't be
+        # XXX remove variable refs
         if r1type == r2type and self.schema.rschema(r1type).symetric:
             lhs1, rhs1 = r1.get_variable_parts()
             lhs2, rhs2 = r2.get_variable_parts()
