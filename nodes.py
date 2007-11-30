@@ -853,7 +853,6 @@ class Variable(object):
         result = None
         schema = self.root.schema
         for rel in chain(self.stinfo['typerels'], self.stinfo['relations']):
-            print rel
             if rel.r_type == 'is':
                 if self.name == rel.children[0].name:
                     etype = str(rel.children[1].children[0].value)
