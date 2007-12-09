@@ -236,6 +236,10 @@ class RQLSTAnnotator(object):
 
     def annotate(self, node):
         for i, term in enumerate(node.selected_terms()):
+            for func in term.iget_nodes(nodes.Function):
+                if func.descr().aggregat:
+                    node.has_aggregat = True
+                    break
             # register the selection column index
             for varref in term.iget_nodes(nodes.VariableRef):
                 varref.variable.stinfo['selected'].add(i)
@@ -293,15 +297,25 @@ class RQLSTAnnotator(object):
                     newvar = self.rewrite_shared_optional(exists, lhsvar)
                     if newvar is not None:
                         lhsvar = newvar
-                if relation.optional in ('right', 'both'):
+                if relation.optional == 'right':
                     lhsvar.stinfo['maybesimplified'] = False
+                elif relation.optional == 'both':
+                    lhsvar.stinfo['maybesimplified'] = False
+                    lhsvar.stinfo['optrelations'].add(relation)
+                elif relation.optional == 'left':
+                    lhsvar.stinfo['optrelations'].add(relation)
             try:
                 rhsvar = rhs.children[0].variable
                 if exists is not None:
                     newvar = self.rewrite_shared_optional(exists, rhsvar)
                     if newvar is not None:
                         rhsvar = newvar
-                if relation.optional in ('left', 'both'):
+                if relation.optional == 'right':
+                    rhsvar.stinfo['optrelations'].add(relation)
+                elif relation.optional == 'both':
+                    rhsvar.stinfo['maybesimplified'] = False
+                    rhsvar.stinfo['optrelations'].add(relation)
+                elif relation.optional == 'left':
                     rhsvar.stinfo['maybesimplified'] = False
             except AttributeError:
                 # may have been rewritten as well
