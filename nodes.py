@@ -753,6 +753,7 @@ class Variable(object):
             # relations where this variable is used on the lhs/rhs
             'relations': set(),
             'rhsrelations': set(),
+            'optrelations': set(),
             # True if this variable may be simplified (eg not used in optional
             # relations and no final relations where this variable is used on
             # the lhs)

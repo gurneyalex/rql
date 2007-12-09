@@ -51,50 +51,50 @@ class CheckClassTest(TestCase):
         
     def test_rewrite(self):
         for rql, expected in (
-#             ('Person X',
-#              'Any X WHERE X is Person'),
-#             ("Any X WHERE X eid IN (12), X name 'toto'",
-#              "Any X WHERE X eid 12, X name 'toto'"),
-#             ('Any X WHERE X work_for Y, Y eid 12',
-#              'Any X WHERE X work_for 12'),
-#             ('Any X WHERE Y work_for X, Y eid 12',
-#              'Any X WHERE 12 work_for X'),
+            ('Person X',
+             'Any X WHERE X is Person'),
+            ("Any X WHERE X eid IN (12), X name 'toto'",
+             "Any X WHERE X eid 12, X name 'toto'"),
+            ('Any X WHERE X work_for Y, Y eid 12',
+             'Any X WHERE X work_for 12'),
+            ('Any X WHERE Y work_for X, Y eid 12',
+             'Any X WHERE 12 work_for X'),
             ('Any X WHERE X work_for Y, Y eid IN (12)',
              'Any X WHERE X work_for 12'),
-#             ('Any X WHERE X work_for Y, Y eid IN (12) ORDERBY Y',
-#              'Any X WHERE X work_for 12 ORDERBY 12'),
-#             ('Any X WHERE X eid 12',
-#              'Any 12'),
-#             ('Any X WHERE X is Person, X eid 12',
-#              'Any 12'),
-#             ('Any X,Y WHERE X eid 0, Y eid 1, X work_for Y', 'Any 0,1 WHERE 0 work_for 1'),
-# # no more supported, use outerjoin explicitly
-# #            ('Any X,Y WHERE X work_for Y OR NOT X work_for Y', 'Any X,Y WHERE X? work_for Y?'),
-# #            ('Any X,Y WHERE NOT X work_for Y OR X work_for Y', 'Any X,Y WHERE X? work_for Y?'),
-#             # test symetric OR rewrite
-#             ("DISTINCT Any P WHERE P connait S OR S connait P, S nom 'chouette'",
-#              "DISTINCT Any P WHERE P connait S, S nom 'chouette'"),
-#             # queries that should not be rewritten
-#             ('DELETE Person X WHERE X eid 12', 'DELETE Person X WHERE X eid 12'),
-#             ('Any X WHERE X work_for Y, Y eid IN (12, 13)', 'Any X WHERE X work_for Y, Y eid IN(12, 13)'),
-#             ('Any X WHERE X work_for Y, NOT Y eid 12', 'Any X WHERE X work_for Y, NOT Y eid 12'),
-#             ('Any X WHERE NOT X eid 12', 'Any X WHERE NOT X eid 12'),
-#             ('Any N WHERE X eid 12, X name N', 'Any N WHERE X eid 12, X name N'),
+            ('Any X WHERE X work_for Y, Y eid IN (12) ORDERBY Y',
+             'Any X WHERE X work_for 12 ORDERBY 12'),
+            ('Any X WHERE X eid 12',
+             'Any 12'),
+            ('Any X WHERE X is Person, X eid 12',
+             'Any 12'),
+            ('Any X,Y WHERE X eid 0, Y eid 1, X work_for Y', 'Any 0,1 WHERE 0 work_for 1'),
+# no more supported, use outerjoin explicitly
+#            ('Any X,Y WHERE X work_for Y OR NOT X work_for Y', 'Any X,Y WHERE X? work_for Y?'),
+#            ('Any X,Y WHERE NOT X work_for Y OR X work_for Y', 'Any X,Y WHERE X? work_for Y?'),
+            # test symetric OR rewrite
+            ("DISTINCT Any P WHERE P connait S OR S connait P, S nom 'chouette'",
+             "DISTINCT Any P WHERE P connait S, S nom 'chouette'"),
+            # queries that should not be rewritten
+            ('DELETE Person X WHERE X eid 12', 'DELETE Person X WHERE X eid 12'),
+            ('Any X WHERE X work_for Y, Y eid IN (12, 13)', 'Any X WHERE X work_for Y, Y eid IN(12, 13)'),
+            ('Any X WHERE X work_for Y, NOT Y eid 12', 'Any X WHERE X work_for Y, NOT Y eid 12'),
+            ('Any X WHERE NOT X eid 12', 'Any X WHERE NOT X eid 12'),
+            ('Any N WHERE X eid 12, X name N', 'Any N WHERE X eid 12, X name N'),
 
-#             ('Any X WHERE X eid > 12', 'Any X WHERE X eid > 12'),
+            ('Any X WHERE X eid > 12', 'Any X WHERE X eid > 12'),
             
-#             ('Any X WHERE X eid 12, X require_permission P?, X relation Y',
-#              'Any X WHERE X eid 12, X require_permission P?, X relation Y'),
-#             ('Any X WHERE X eid 12, P? connait X',
-#              'Any X WHERE X eid 12, P? connait X'),
+            ('Any X WHERE X eid 12, X require_permission P?, X relation Y',
+             'Any X WHERE X eid 12, X require_permission P?, X relation Y'),
+            ('Any X WHERE X eid 12, P? connait X',
+             'Any X WHERE X eid 12, P? connait X'),
 
-#             ("Any X WHERE X firstname 'lulu',"
-#              "EXISTS (X owned_by U, U name 'lulufanclub' OR U name 'managers');",
-#              "Any X WHERE X firstname 'lulu', "
-#              "EXISTS(X owned_by U, (U name 'lulufanclub') OR (U name 'managers'))"),
+            ("Any X WHERE X firstname 'lulu',"
+             "EXISTS (X owned_by U, U name 'lulufanclub' OR U name 'managers');",
+             "Any X WHERE X firstname 'lulu', "
+             "EXISTS(X owned_by U, (U name 'lulufanclub') OR (U name 'managers'))"),
 
-#             ('Any X WHERE X eid 12, EXISTS(X truc "hop" OR X relation Y?)',
-#              "Any 12 WHERE EXISTS((A truc 'hop') OR (A relation Y?), 12 identity A)"),
+            ('Any X WHERE X eid 12, EXISTS(X truc "hop" OR X relation Y?)',
+             "Any 12 WHERE EXISTS((A truc 'hop') OR (A relation Y?), 12 identity A)"),
             
             ):
             yield self._test_rewrite, rql, expected

@@ -184,6 +184,8 @@ class Select(Statement):
         # limit / offset
         self.limit = None
         self.offset = 0
+        # set by the annotator
+        self.has_aggregat = False
 
     def set_limit(self, limit):
         if not isinstance(limit, (int, long)) or limit <= 0:
