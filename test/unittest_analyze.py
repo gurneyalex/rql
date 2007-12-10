@@ -54,6 +54,12 @@ class DummySchema:
         _types[type] = EntitySchema(type)
         
     _relations = {
+        'eid' : RelationSchema( ( ('Person', ('Int',) ),
+                                  ('Company', ('Int',) ),
+                                  ('Address', ('Int',) ),
+                                  ('Eetype', ('Int',) ),
+                                  )
+                                ),
         'name' : RelationSchema( ( ('Person', ('String',) ),
                                   ('Company', ('String',) ),
                                   )
@@ -81,6 +87,12 @@ class DummySchema:
                                        ('Eetype', ('Person',) ),
                                        )
                                      ),
+        'identity' : RelationSchema( ( ('Person', ('Person',) ),
+                                       ('Company', ('Company',) ),
+                                       ('Address', ('Address',) ),
+                                       ('Eetype', ('Eetype',) ),
+                                  )
+                                ),
         }
     def entities(self):
         return self._types.values()

@@ -70,7 +70,7 @@ SPEC_QUERIES = (
     'Any X WHERE X eid > 12;',
     'DELETE Any X WHERE X eid > 12;',
     
-    'Any X WHERE 5 in_state X;',
+#    'Any X WHERE 5 in_state X;',
     )
 
 E_TYPES = {"Person" : 'Person',

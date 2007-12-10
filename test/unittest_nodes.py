@@ -4,9 +4,11 @@ from logilab.common.testlib import TestCase, unittest_main
 
 from rql import nodes, stmts, parse
 
-E_TYPES = {'Person' : 'Person'}
+from unittest_analyze import DummySchema
+schema = DummySchema()
+E_TYPES = schema._types
 from rql.stcheck import RQLSTAnnotator
-annotator = RQLSTAnnotator(None, {})
+annotator = RQLSTAnnotator(schema, {})
 
 class NodesTest(TestCase):
         
