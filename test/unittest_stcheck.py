@@ -72,8 +72,8 @@ class CheckClassTest(TestCase):
 #            ('Any X,Y WHERE X work_for Y OR NOT X work_for Y', 'Any X,Y WHERE X? work_for Y?'),
 #            ('Any X,Y WHERE NOT X work_for Y OR X work_for Y', 'Any X,Y WHERE X? work_for Y?'),
             # test symetric OR rewrite
-            ("DISTINCT Any P WHERE P connait S OR S connait P, S nom 'chouette'",
-             "DISTINCT Any P WHERE P connait S, S nom 'chouette'"),
+            ("DISTINCT Any P WHERE P connait S OR S connait P, S name 'chouette'",
+             "DISTINCT Any P WHERE P connait S, S name 'chouette'"),
             # queries that should not be rewritten
             ('DELETE Person X WHERE X eid 12', 'DELETE Person X WHERE X eid 12'),
             ('Any X WHERE X work_for Y, Y eid IN (12, 13)', 'Any X WHERE X work_for Y, Y eid IN(12, 13)'),
@@ -83,8 +83,8 @@ class CheckClassTest(TestCase):
 
             ('Any X WHERE X eid > 12', 'Any X WHERE X eid > 12'),
             
-            ('Any X WHERE X eid 12, X require_permission P?, X relation Y',
-             'Any X WHERE X eid 12, X require_permission P?, X relation Y'),
+            ('Any X WHERE X eid 12, X connait P?, X work_for Y',
+             'Any X WHERE X eid 12, X connait P?, X work_for Y'),
             ('Any X WHERE X eid 12, P? connait X',
              'Any X WHERE X eid 12, P? connait X'),
 
@@ -93,8 +93,8 @@ class CheckClassTest(TestCase):
              "Any X WHERE X firstname 'lulu', "
              "EXISTS(X owned_by U, (U name 'lulufanclub') OR (U name 'managers'))"),
 
-            ('Any X WHERE X eid 12, EXISTS(X truc "hop" OR X relation Y?)',
-             "Any 12 WHERE EXISTS((A truc 'hop') OR (A relation Y?), 12 identity A)"),
+            ('Any X WHERE X eid 12, EXISTS(X name "hop" OR X work_for Y?)',
+             "Any 12 WHERE EXISTS((A name 'hop') OR (A work_for Y?), 12 identity A)"),
             
             ):
             yield self._test_rewrite, rql, expected
@@ -116,7 +116,7 @@ class CopyTest(TestCase):
 
     def test_copy_exists(self):
         tree = self.parse("Any X WHERE X firstname 'lulu',"
-                          "EXISTS (X owned_by U, U in_group G, G name 'lulufanclub' OR G name 'managers');")
+                          "EXISTS (X owned_by U, U work_for G, G name 'lulufanclub' OR G name 'managers');")
         self.simplify(tree, needcopy=False)
         copy = tree.copy()
         exists = copy.get_nodes(nodes.Exists)[0]
