@@ -233,8 +233,10 @@ class RQLSTAnnotator(object):
     def __init__(self, schema, special_relations=None):
         self.schema = schema
         self.special_relations = special_relations or {}
+        self._baseset = set(et.type for et in schema.entities() if not et.is_final())
 
     def annotate(self, node):
+        assert not node.annotated
         for i, term in enumerate(node.selected_terms()):
             for func in term.iget_nodes(nodes.Function):
                 if func.descr().aggregat:
@@ -244,10 +246,13 @@ class RQLSTAnnotator(object):
             for varref in term.iget_nodes(nodes.VariableRef):
                 varref.variable.stinfo['selected'].add(i)
                 varref.variable.set_scope(node)
+        for var in node.defined_vars.itervalues():
+            var.stinfo['possibletypes'] = self._baseset.copy()
         restr = node.get_restriction()
         if restr is not None:
             restr.accept(self, node)
-                    
+        node.annotated = True
+        
     def rewrite_shared_optional(self, exists, var):
         """if variable is shared across multiple scopes, need some tree
         rewriting
@@ -261,6 +266,8 @@ class RQLSTAnnotator(object):
                     vref.unregister_reference()
                     newvref = nodes.VariableRef(newvar)
                     rel.replace(vref, newvref)
+                    # shared reference
+                    newvar.stinfo['possibletypes'] = var.stinfo['possibletypes']
             rel = exists.add_relation(var, 'identity', newvar)
             # we have to force visit of the introduced relation
             self.visit_relation(rel, exists)
@@ -321,13 +328,14 @@ class RQLSTAnnotator(object):
                 # may have been rewritten as well
                 pass
         rtype = relation.r_type
-        try:
-            rschema = self.schema.rschema(rtype)
-        except (AttributeError, KeyError):
-            # no schema for "has_text" relation for instance XXX humm not true imo
-            # .schema may be None in test
-            rschema = None 
+        #try:
+        rschema = self.schema.rschema(rtype)
+        #except (AttributeError, KeyError):
+        #    # no schema for "has_text" relation for instance XXX humm not true imo
+        #    # .schema may be None in test
+        #    rschema = None
         if lhsvar is not None:
+            lhsvar.stinfo['possibletypes']  &= set(rschema.subjects())
             lhsvar.set_scope(scope)
             lhsvar.stinfo['relations'].add(relation)
             if rtype in self.special_relations:
@@ -343,6 +351,7 @@ class RQLSTAnnotator(object):
                     lhsvar.stinfo['maybesimplified'] = False
         for varref in rhs.iget_nodes(nodes.VariableRef):
             var = varref.variable
+            var.stinfo['possibletypes']  &= set(rschema.objects())
             var.set_scope(scope)
             var.stinfo['relations'].add(relation)
             var.stinfo['rhsrelations'].add(relation)
