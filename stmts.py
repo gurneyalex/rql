@@ -34,6 +34,8 @@ class Statement(nodes.EditableMixIn, Node):
         self.memorizing = 0
         # used to prevent from memorizing when undoing !
         self.undoing = False
+        # has this tree been annotated
+        self.annotated = False
         
     def __str__(self):
         return self.as_string(None, {})
