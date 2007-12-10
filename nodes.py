@@ -754,10 +754,10 @@ class Variable(object):
             'relations': set(),
             'rhsrelations': set(),
             'optrelations': set(),
-            # True if this variable may be simplified (eg not used in optional
+            # empty if this variable may be simplified (eg not used in optional
             # relations and no final relations where this variable is used on
             # the lhs)
-            'maybesimplified': True,
+            'blocsimplification': set(),
             # type relations (e.g. "is") where this variable is used on the lhs
             'typerels': set(),
             # uid relations (e.g. "eid") where this variable is used on the lhs

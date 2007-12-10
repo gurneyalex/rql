@@ -93,7 +93,8 @@ class RQLHelper:
             rqlstcopy = rqlst
         for var in rqlst.defined_vars.values():
             stinfo = var.stinfo
-            if stinfo['constnode'] and stinfo['maybesimplified']:
+            maybesimplified = stinfo.pop('blocsimplification')
+            if stinfo['constnode'] and not maybesimplified:
                 if rqlstcopy is None:
                     rqlstcopy = rqlst.copy()
                     self.annotate(rqlstcopy)

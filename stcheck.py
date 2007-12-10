@@ -264,6 +264,8 @@ class RQLSTAnnotator(object):
                 if vref.exists_root() is exists:
                     rel = vref.relation()
                     vref.unregister_reference()
+                    if rel in var.stinfo['blocsimplification']:
+                        var.stinfo['blocsimplification'].remove(rel)
                     newvref = nodes.VariableRef(newvar)
                     rel.replace(vref, newvref)
                     # shared reference
@@ -305,9 +307,9 @@ class RQLSTAnnotator(object):
                     if newvar is not None:
                         lhsvar = newvar
                 if relation.optional == 'right':
-                    lhsvar.stinfo['maybesimplified'] = False
+                    lhsvar.stinfo['blocsimplification'].add(relation)
                 elif relation.optional == 'both':
-                    lhsvar.stinfo['maybesimplified'] = False
+                    lhsvar.stinfo['blocsimplification'].add(relation)
                     lhsvar.stinfo['optrelations'].add(relation)
                 elif relation.optional == 'left':
                     lhsvar.stinfo['optrelations'].add(relation)
@@ -320,20 +322,15 @@ class RQLSTAnnotator(object):
                 if relation.optional == 'right':
                     rhsvar.stinfo['optrelations'].add(relation)
                 elif relation.optional == 'both':
-                    rhsvar.stinfo['maybesimplified'] = False
+                    rhsvar.stinfo['blocsimplification'].add(relation)
                     rhsvar.stinfo['optrelations'].add(relation)
                 elif relation.optional == 'left':
-                    rhsvar.stinfo['maybesimplified'] = False
+                    rhsvar.stinfo['blocsimplification'].add(relation)
             except AttributeError:
                 # may have been rewritten as well
                 pass
         rtype = relation.r_type
-        #try:
         rschema = self.schema.rschema(rtype)
-        #except (AttributeError, KeyError):
-        #    # no schema for "has_text" relation for instance XXX humm not true imo
-        #    # .schema may be None in test
-        #    rschema = None
         if lhsvar is not None:
             lhsvar.stinfo['possibletypes']  &= set(rschema.subjects())
             lhsvar.set_scope(scope)
@@ -346,16 +343,15 @@ class RQLSTAnnotator(object):
                     if not (relation._not or relation.operator() != '=') \
                            and isinstance(constnode, nodes.Constant):
                         lhsvar.stinfo['constnode'] = constnode
-            elif rschema is not None:
-                if rschema.is_final() or rschema.inlined:
-                    lhsvar.stinfo['maybesimplified'] = False
+            elif rschema.is_final() or rschema.inlined:
+                lhsvar.stinfo['blocsimplification'].add(relation)
         for varref in rhs.iget_nodes(nodes.VariableRef):
             var = varref.variable
             var.stinfo['possibletypes']  &= set(rschema.objects())
             var.set_scope(scope)
             var.stinfo['relations'].add(relation)
             var.stinfo['rhsrelations'].add(relation)
-            if varref is rhs.children[0] and rschema is not None and rschema.is_final():
+            if varref is rhs.children[0] and rschema.is_final():
                 var.stinfo['attrvars'].add( (getattr(lhsvar, 'name', None), relation.r_type) )
                 # give priority to variable which is not in an EXISTS as
                 # "main" attribute variable
