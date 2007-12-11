@@ -22,7 +22,7 @@ BAD_QUERIES = (
 
 #    'Any COUNT(X),P WHERE X concerns P', #9726
     'Any X, MAX(COUNT(B)) WHERE B concerns X GROUPBY X;',
-    
+
     )
 
 class CheckClassTest(TestCase):
