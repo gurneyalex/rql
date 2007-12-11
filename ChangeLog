@@ -1,8 +1,8 @@
 ChangeLog for RQL
 =================
 
- --
-    * cleanup, optimizations
+2007-12-11  --  0.15.0
+    * cleanup, optimizations, some api changes
 	
 2007-11-26  --  0.14.0
     * Node.get_type take kwargs as second argument to better guess the type of
