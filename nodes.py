@@ -354,7 +354,7 @@ class Comparison(HSMixin, Node):
                  value.type is None:
             operator = 'IS'            
         assert operator in ('<', '<=', '=', '>=', '>', 'ILIKE', 'LIKE', 'IS'), operator
-        self.operator = operator
+        self.operator = operator.encode()
         if value is not None:
             self.append(value)
 
