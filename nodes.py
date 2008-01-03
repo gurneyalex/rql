@@ -392,7 +392,7 @@ class MathExpression(HSMixin, BinaryNode):
 
     def __init__(self, operator, lhs=None, rhs=None):
         BinaryNode.__init__(self, lhs, rhs)
-        self.operator = operator
+        self.operator = operator.encode()
 
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node"""
