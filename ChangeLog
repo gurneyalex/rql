@@ -1,6 +1,9 @@
 ChangeLog for RQL
 =================
 
+2008-01-07  --  0.15.1
+    * ensure some attributes are encoded strings
+	
 2007-12-11  --  0.15.0
     * cleanup, optimizations, some api changes
 	
