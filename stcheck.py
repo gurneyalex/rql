@@ -109,9 +109,11 @@ class RQLSTChecker(object):
         
     def visit_group(self, group, errors):
         """check that selected variables are used in groups """
-        for var in group.root().selected:
-            if isinstance(var, nodes.VariableRef) and not var in group.children:
-                errors.append('variable %s should be grouped' % var)
+        # XXX that's not necessarily true, for instance:
+        #     Any X, P, MAX(R) WHERE X content_for F, F path P, X revision R GROUPBY P
+        #for var in group.root().selected:
+        #    if isinstance(var, nodes.VariableRef) and not var in group.children:
+        #        errors.append('variable %s should be grouped' % var)
         self._check_selected(group, 'group', errors)
                 
     def visit_sort(self, sort, errors):
