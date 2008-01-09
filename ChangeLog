@@ -1,6 +1,9 @@
 ChangeLog for RQL
 =================
 
+ --
+    * fix nested aggregat checking
+
 2008-01-07  --  0.15.1
     * ensure some attributes are encoded strings
 	

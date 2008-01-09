@@ -175,7 +175,7 @@ class RQLSTChecker(object):
                 errors.append(str(ex))
             if funcdescr.aggregat:
                 if isinstance(function.children[0], nodes.Function) and \
-                       function.descr().aggregat:
+                       function.children[0].descr().aggregat:
                     errors.append('can\'t nest aggregat functions')
             if funcdescr.name == 'IN':
                 assert function.parent.operator == '='
