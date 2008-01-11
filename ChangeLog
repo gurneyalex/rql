@@ -3,7 +3,8 @@ ChangeLog for RQL
 
  --
     * fix nested aggregat checking
-
+    * fix a bug in Relation.__repr__
+	
 2008-01-07  --  0.15.1
     * ensure some attributes are encoded strings
 	

@@ -1,7 +1,7 @@
 """RQL Syntax tree annotator
 
 :organization: Logilab
-:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 __docformat__ = "restructuredtext en"
@@ -111,9 +111,9 @@ class RQLSTChecker(object):
         """check that selected variables are used in groups """
         # XXX that's not necessarily true, for instance:
         #     Any X, P, MAX(R) WHERE X content_for F, F path P, X revision R GROUPBY P
-        #for var in group.root().selected:
-        #    if isinstance(var, nodes.VariableRef) and not var in group.children:
-        #        errors.append('variable %s should be grouped' % var)
+        for var in group.root().selected:
+            if isinstance(var, nodes.VariableRef) and not var in group.children:
+                errors.append('variable %s should be grouped' % var)
         self._check_selected(group, 'group', errors)
                 
     def visit_sort(self, sort, errors):
@@ -269,7 +269,8 @@ class RQLSTAnnotator(object):
                     if rel in var.stinfo['blocsimplification']:
                         var.stinfo['blocsimplification'].remove(rel)
                     newvref = nodes.VariableRef(newvar)
-                    rel.replace(vref, newvref)
+                    #print repr(rel), repr(vref)
+                    vref.parent.replace(vref, newvref)
                     # shared reference
                     newvar.stinfo['possibletypes'] = var.stinfo['possibletypes']
             rel = exists.add_relation(var, 'identity', newvar)

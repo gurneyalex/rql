@@ -275,7 +275,7 @@ class Relation(Node):
 
     def __repr__(self):
         if self.optional:
-            rtype = '%s[%s]' % self.r_type
+            rtype = '%s[%s]' % (self.r_type, self.optional)
         else:
             rtype = self.r_type
         try:
@@ -746,6 +746,7 @@ class Variable(object):
         # used to collect some global information about the syntax tree
         # most of them will be filled by the annotator
         self.stinfo = {
+            # main scope for this variable
             'scope': None,
             # link to VariableReference objects in the syntax tree
             # it must be a list to keep order
