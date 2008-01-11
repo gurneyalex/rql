@@ -361,7 +361,6 @@ class Delete(Statement):
     def selected_terms(self):
         return [vref for et, vref in self.main_variables]
     
-        
     def add_main_variable(self, etype, vref):
         """add a variable to the list of deleted variables"""
         #if etype == 'Any':
