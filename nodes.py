@@ -3,7 +3,7 @@ root nodes, defined in the `stmts` module.
 
 
 :organization: Logilab
-:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 __docformat__ = "restructuredtext en"
@@ -76,6 +76,7 @@ class EditableMixIn(object):
     def undo_manager(self):
         return self.root().undo_manager
 
+    @property
     def should_register_op(self):
         root = self.root()
         return root.memorizing and not root.undoing
