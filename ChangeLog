@@ -4,6 +4,8 @@ ChangeLog for RQL
  --
     * fix nested aggregat checking
     * fix a bug in Relation.__repr__
+    * fix should_register_op which was expected to be a property
+    * support for undoing limit/offset change
 	
 2008-01-07  --  0.15.1
     * ensure some attributes are encoded strings
