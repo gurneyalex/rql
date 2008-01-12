@@ -1,6 +1,6 @@
 """manages undos on rql syntax trees
 
-Copyright (c) 2003-2004 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
@@ -153,15 +153,32 @@ class AddSortOperation(NodeOperation):
         """undo the operation on the selection"""
         selection.remove_sort_term(self.node)
 
-class SetDistinctOperation:
-    """defines how to undo 'set_distinct'"""
+
+class ChangeValueOperation:
     
     def __init__(self, previous_value):
         self.value = previous_value
+
+class SetDistinctOperation(ChangeValueOperation):
+    """defines how to undo 'set_distinct'"""
         
     def undo(self, selection):
         """undo the operation on the selection"""
         selection.distinct = self.value
+
+class SetOffsetOperation(ChangeValueOperation):
+    """defines how to undo 'set_offset'"""
+        
+    def undo(self, selection):
+        """undo the operation on the selection"""
+        selection.offset = self.value
+
+class SetLimitOperation(ChangeValueOperation):
+    """defines how to undo 'set_limit'"""
+        
+    def undo(self, selection):
+        """undo the operation on the selection"""
+        selection.limit = self.value
     
 __all__ = ('SelectionManager', 'MakeVarOperation', 'UndefineVarOperation',
            'SelectVarOperation', 'UnselectVarOperation', 'AddNodeOperation',
