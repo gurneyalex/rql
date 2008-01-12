@@ -355,7 +355,7 @@ class RQLSTAnnotator(object):
             var.stinfo['relations'].add(relation)
             var.stinfo['rhsrelations'].add(relation)
             if varref is rhs.children[0] and rschema.is_final():
-                var.stinfo['attrvars'].add( (getattr(lhsvar, 'name', None), relation.r_type) )
+                var.stinfo['attrvars'].add( (lhsvar, relation.r_type) )
                 # give priority to variable which is not in an EXISTS as
                 # "main" attribute variable
                 if var.stinfo['attrvar'] is None or not relation.exists_root():
