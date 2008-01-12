@@ -3,7 +3,7 @@ This module defines only first level nodes (i.e. statements). Child nodes are
 defined in the nodes module
 
 :organization: Logilab
-:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 __docformat__ = "restructuredtext en"
@@ -190,13 +190,19 @@ class Select(Statement):
         self.has_aggregat = False
 
     def set_limit(self, limit):
-        if not isinstance(limit, (int, long)) or limit <= 0:
+        if limit is not None and (not isinstance(limit, (int, long)) or limit <= 0):
             raise BadRQLQuery('bad limit %s' % limit)
+        if self.should_register_op and limit != self.limit:
+            from rql.undo import SetLimitOperation
+            self.undo_manager.add_operation(SetLimitOperation(self.limit))
         self.limit = limit
 
     def set_offset(self, offset):
-        if not isinstance(offset, (int, long)) or offset <= 0:
+        if offset is not None and (not isinstance(offset, (int, long)) or offset <= 0):
             raise BadRQLQuery('bad offset %s' % offset)
+        if self.should_register_op and offset != self.offset:
+            from rql.undo import SetOffsetOperation
+            self.undo_manager.add_operation(SetOffsetOperation(self.offset))
         self.offset = offset
         
     def copy(self):
@@ -254,7 +260,7 @@ class Select(Statement):
 
     def set_distinct(self, value):
         """mark DISTINCT query"""
-        if self.should_register_op:
+        if self.should_register_op and value != self.distinct:
             from rql.undo import SetDistinctOperation
             self.undo_manager.add_operation(SetDistinctOperation(self.distinct))
         self.distinct = value
