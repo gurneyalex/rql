@@ -1,3 +1,9 @@
+rql (0.15.2-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Sylvain Thénault <Sylvain.Thenault@logilab.fr>  Mon, 14 Jan 2008 12:01:51 +0100
+
 rql (0.15.1-1) unstable; urgency=low
 
   * new upstream release

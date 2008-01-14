@@ -1,7 +1,7 @@
 ChangeLog for RQL
 =================
 
- --
+2008-01-14  --  0.15.2
     * fix nested aggregat checking
     * fix a bug in Relation.__repr__
     * fix should_register_op which was expected to be a property
