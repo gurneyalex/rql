@@ -5,14 +5,11 @@
 # adapted by Logilab for automatic generation by debianize
 # (part of the devtools project, http://www.logilab.org/projects/devtools)
 #
-# Copyright (c) 2003-2005 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
-
-# This is the debhelper compatability version to use.
-export DH_COMPAT=5
 
 build: build-stamp
 build-stamp: 
@@ -38,7 +35,7 @@ install: build
 	# remove test directory (installed in in the doc directory)
 	rm -rf debian/python-rql/usr/lib/python*/site-packages/rql/test
 	# install tests
-	(cd test && find . -type f -not \( -path '*/CVS/*' -or -name '*.pyc' \) -exec install -D --mode=644 {} ../debian/python-rql/usr/share/doc/python-rql/test/{} \;)
+	(cd test && find . -type f -not \( -name '*.pyc' \) -exec install -D --mode=644 {} ../debian/python-rql/usr/share/doc/python-rql/test/{} \;)
 
 # Build architecture-independent files here.
 binary-indep: build install
