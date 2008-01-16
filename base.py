@@ -74,7 +74,19 @@ class BaseNode(object):
                 return False
         return True
     
-    
+    def index_path(self):
+        if self.parent is None:
+            return [] 
+        myindex = self.parent.children.index(self)
+        parentindexpath = self.parent.index_path()
+        parentindexpath.append(myindex)
+        return parentindexpath
+
+    def go_to_index_path(self, path):
+        if not path:
+            return self
+        return self.children[path[0]].go_to_index_path(path[1:])
+        
 class Node(BaseNode):
     """class for nodes of the tree which may have children (almost all...)"""
     __slots__ = ('children',)
