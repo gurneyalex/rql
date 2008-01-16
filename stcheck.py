@@ -266,13 +266,34 @@ class RQLSTAnnotator(object):
                 if vref.exists_root() is exists:
                     rel = vref.relation()
                     vref.unregister_reference()
-                    if rel in var.stinfo['blocsimplification']:
-                        var.stinfo['blocsimplification'].remove(rel)
                     newvref = nodes.VariableRef(newvar)
-                    #print repr(rel), repr(vref)
                     vref.parent.replace(vref, newvref)
-                    # shared reference
-                    newvar.stinfo['possibletypes'] = var.stinfo['possibletypes']
+                    # update stinfo structure which may have already been
+                    # partially processed
+                    if rel in var.stinfo['rhsrelations']:
+                        lhs, rhs = rel.get_parts()
+                        if vref is rhs.children[0] and \
+                               self.schema.rschema(rel.r_type).is_final():
+                            update_attrvars(newvar, rel, lhs)
+                            lhsvar = getattr(lhs, 'variable', None)
+                            var.stinfo['attrvars'].remove( (lhsvar, rel.r_type) )
+                            if var.stinfo['attrvar'] is lhsvar:
+                                if var.stinfo['attrvars']:
+                                    var.stinfo['attrvar'] = iter(var.stinfo['attrvars']).next()
+                                else:
+                                    var.stinfo['attrvar'] = None
+                        var.stinfo['rhsrelations'].remove(rel)
+                        newvar.stinfo['rhsrelations'].add(rel)
+                    for stinfokey in ('blocsimplification','typerels', 'uidrels',
+                                      'relations', 'optrelations'):
+                        try:
+                            var.stinfo[stinfokey].remove(rel)
+                            newvar.stinfo[stinfokey].add(rel)
+                        except KeyError:
+                            continue
+            # shared references
+            newvar.stinfo['possibletypes'] = var.stinfo['possibletypes']
+            newvar.stinfo['constnode'] = var.stinfo['constnode']
             rel = exists.add_relation(var, 'identity', newvar)
             # we have to force visit of the introduced relation
             self.visit_relation(rel, exists)
@@ -291,11 +312,8 @@ class RQLSTAnnotator(object):
         
     def visit_relation(self, relation, scope):
         lhs, rhs = relation.get_parts()
-        try:
-            lhsvar = lhs.variable
-        except AttributeError:
-            # may be a constant once rqlst has been simplified
-            lhsvar = None
+        # may be a constant once rqlst has been simplified
+        lhsvar = getattr(lhs, 'variable', None)
         if relation.is_types_restriction():
             assert rhs.operator == '='
             assert not relation.optional
@@ -355,8 +373,13 @@ class RQLSTAnnotator(object):
             var.stinfo['relations'].add(relation)
             var.stinfo['rhsrelations'].add(relation)
             if varref is rhs.children[0] and rschema.is_final():
-                var.stinfo['attrvars'].add( (lhsvar, relation.r_type) )
-                # give priority to variable which is not in an EXISTS as
-                # "main" attribute variable
-                if var.stinfo['attrvar'] is None or not relation.exists_root():
-                    var.stinfo['attrvar'] = lhsvar or lhs
+                update_attrvars(var, relation, lhs)
+
+def update_attrvars(var, relation, lhs):
+    lhsvar = getattr(lhs, 'variable', None)
+    var.stinfo['attrvars'].add( (lhsvar, relation.r_type) )
+    # give priority to variable which is not in an EXISTS as
+    # "main" attribute variable
+    if var.stinfo['attrvar'] is None or not relation.exists_root():
+        var.stinfo['attrvar'] = lhsvar or lhs
+    
