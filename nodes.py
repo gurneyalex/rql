@@ -719,10 +719,6 @@ class SortTerm(Node):
     def exists_root(self):
         return False
             
-#     @property
-#     def var(self): # XXX deprecated, use .term
-#         return self.children[0]
-            
     @property
     def term(self): 
         return self.children[0]
