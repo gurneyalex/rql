@@ -1,6 +1,12 @@
 ChangeLog for RQL
 =================
 
+2008-01-17  --  0.15.3
+    * only put valuable relations in uidrels
+    * always put an operator node as rhs children of a Relation
+    * fix rewrite-shared_optional to correctly update stinfo
+    * new index_path / go_to_index_path methodes
+
 2008-01-14  --  0.15.2
     * fix nested aggregat checking
     * fix a bug in Relation.__repr__
