@@ -353,7 +353,7 @@ class Hercule(runtime.Parser):
         R_TYPE = self._scan('R_TYPE', context=_context)
         e = Relation(R_TYPE) ; e.append(var)
         added_expr = self.added_expr(V, _context)
-        e.append(added_expr) ; return e
+        e.append(Comparison('=', added_expr)) ; return e
 
     def expr(self, V, _parent=None):
         _context = self.Context(_parent, self._scanner, 'expr', [V])

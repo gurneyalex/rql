@@ -213,7 +213,7 @@ rule rels_decl<<V>>: simple_rel<<V>> (     {{ V.add_main_relation(simple_rel) }}
 
 
 rule simple_rel<<V>>: var<<V>> R_TYPE    {{ e = Relation(R_TYPE) ; e.append(var) }} 
-                      added_expr<<V>>    {{ e.append(added_expr) ; return e }}
+                      added_expr<<V>>    {{ e.append(Comparison('=', added_expr)) ; return e }}
 
 
 rule expr<<V>>: CMP_OP added_expr<<V>> {{ return Comparison(CMP_OP.upper(), added_expr) }}

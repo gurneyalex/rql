@@ -4,7 +4,7 @@ NOTE: used of __slots__ since applications may create a large number of nodes
       and we want this (an memory usage) as cheapiest as possible
       
 :organization: Logilab
-:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
