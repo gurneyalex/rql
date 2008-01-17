@@ -377,7 +377,8 @@ class Delete(Statement):
     def add_main_relation(self, relation):
         """add a relation to the list of deleted relations"""
         assert isinstance(relation.children[0], nodes.VariableRef)
-        assert isinstance(relation.children[1], nodes.VariableRef)
+        assert isinstance(relation.children[1], nodes.Comparison)
+        assert isinstance(relation.children[1].children[0], nodes.VariableRef)
         relation.parent = self
         self.main_relations.append( relation )
 
