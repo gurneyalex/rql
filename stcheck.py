@@ -353,7 +353,7 @@ class RQLSTAnnotator(object):
         rtype = relation.r_type
         rschema = self.schema.rschema(rtype)
         if lhsvar is not None:
-            lhsvar.stinfo['possibletypes']  &= set(rschema.subjects())
+            lhsvar.stinfo['possibletypes'] &= frozenset(rschema.subjects())
             lhsvar.set_scope(scope)
             lhsvar.stinfo['relations'].add(relation)
             if rtype in self.special_relations:
@@ -368,7 +368,7 @@ class RQLSTAnnotator(object):
                 lhsvar.stinfo['blocsimplification'].add(relation)
         for varref in rhs.iget_nodes(nodes.VariableRef):
             var = varref.variable
-            var.stinfo['possibletypes']  &= set(rschema.objects())
+            var.stinfo['possibletypes'] &= frozenset(rschema.objects())
             var.set_scope(scope)
             var.stinfo['relations'].add(relation)
             var.stinfo['rhsrelations'].add(relation)
