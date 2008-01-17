@@ -358,12 +358,14 @@ class RQLSTAnnotator(object):
             lhsvar.stinfo['relations'].add(relation)
             if rtype in self.special_relations:
                 key = '%srels' % self.special_relations[rtype]
-                lhsvar.stinfo.setdefault(key, set()).add(relation)
                 if key == 'uidrels':
                     constnode = relation.get_variable_parts()[1]
-                    if not (relation._not or relation.operator() != '=') \
-                           and isinstance(constnode, nodes.Constant):
-                        lhsvar.stinfo['constnode'] = constnode
+                    if not (relation._not or relation.operator() != '='):
+                        if isinstance(constnode, nodes.Constant):
+                            lhsvar.stinfo['constnode'] = constnode
+                        lhsvar.stinfo.setdefault(key, set()).add(relation)
+                else:
+                    lhsvar.stinfo.setdefault(key, set()).add(relation)
             elif rschema.is_final() or rschema.inlined:
                 lhsvar.stinfo['blocsimplification'].add(relation)
         for varref in rhs.iget_nodes(nodes.VariableRef):
