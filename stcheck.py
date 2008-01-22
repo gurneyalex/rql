@@ -41,7 +41,7 @@ class RQLSTChecker(object):
             self._visit(term, errors)
         self._visit(node, errors)
         if errors:
-            raise BadRQLQuery('\n** %s'%'\n** '.join(errors))                
+            raise BadRQLQuery('%s\n** %s' % (node, '\n** '.join(errors)))
         #if node.TYPE == 'select' and \
         #       not node.defined_vars and not node.get_restriction():
         #    result = []
