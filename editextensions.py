@@ -99,7 +99,7 @@ Select.remove_sort_terms = remove_sort_terms
 def remove_sort_term(self, term):
     """remove a sort term and the sort node if necessary"""
     sortterms = self.get_sortterms()
-    assert term in sortterms
+    assert term in sortterms.children
     if len(sortterms) == 1:
         self.remove_node(sortterms)
     else:
@@ -109,8 +109,8 @@ Select.remove_sort_term = remove_sort_term
 def remove_group_variable(self, var):
     """remove the group variable and the group node if necessary"""
     groups = self.get_groups()
-    assert var in groups
-    if len(groups) == 1:
+    assert var in groups.children
+    if len(groups.children) == 1:
         self.remove_node(groups)
     else:
         self.remove_node(var)
