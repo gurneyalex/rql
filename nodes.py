@@ -107,7 +107,7 @@ class EditableMixIn(object):
         #assert check_relations(self)
         return relation
     
-    def add_constant_restriction(self, variable, rtype, value, ctype,
+    def add_constant_restriction(self, var, rtype, value, ctype,
                                  operator='='):
         """builds a restriction node to express a constant restriction:
 
@@ -119,7 +119,7 @@ class EditableMixIn(object):
                 # FIXME : other cases
             else:
                 ctype = 'String'
-        return self.add_restriction(make_relation(variable, rtype, (value, ctype),
+        return self.add_restriction(make_relation(var, rtype, (value, ctype),
                                                   Constant, operator))
         
     def add_relation(self, lhsvar, rtype, rhsvar): 
@@ -130,6 +130,19 @@ class EditableMixIn(object):
     def add_eid_restriction(self, var, eid): 
         """builds a restriction node to express '<var> eid <eid>'"""
         return self.add_restriction(make_relation(var, 'eid', (eid, 'Int'), Constant))
+    
+    def add_type_restriction(self, var, etype):
+        """builds a restriction node to express : variable is etype"""
+        if isinstance(etype, (set, tuple, list)):
+            if len(etype) > 1:
+                rel = make_relation(var, 'is', ('IN',), Function, operator='=')
+                infunc = rel.children[1].children[0]
+                for atype in sorted(etype):
+                    infunc.append(Constant(atype, 'etype'))
+                return self.add_restriction(rel)
+            etype = iter(etype).next() # may be a set
+        return self.add_constant_restriction(var, 'is', etype, 'etype')
+
     
 
 # base RQL nodes ##############################################################

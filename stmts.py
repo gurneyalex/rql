@@ -116,10 +116,6 @@ class Statement(nodes.EditableMixIn, Node):
             var.root = self
             return var
         
-    def add_type_restriction(self, variable, etype):
-        """builds a restriction node to express : variable is etype"""
-        self.add_constant_restriction(variable, 'is', etype, 'etype')
-
     # recoverable modification methods ########################################
     
     @property
