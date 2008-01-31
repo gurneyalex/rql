@@ -238,7 +238,7 @@ class RQLSTAnnotator(object):
         self._baseset = set(et.type for et in schema.entities() if not et.is_final())
 
     def annotate(self, node):
-        assert not node.annotated
+        #assert not node.annotated
         for i, term in enumerate(node.selected_terms()):
             for func in term.iget_nodes(nodes.Function):
                 if func.descr().aggregat:

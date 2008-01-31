@@ -188,7 +188,8 @@ class ETypeResolver:
                     var, ','.join('"%s"' % t for t in alltypes))
             vars = [var]
         elif isinstance(rhs, nodes.Constant) and not rschema.is_final():
-            if not isinstance(lhs, nodes.VariableRef):
+            # rhs.type is None <-> NULL
+            if not isinstance(lhs, nodes.VariableRef) or rhs.type is None:
                 return
             var = lhs.name
             if self.uid_func:
