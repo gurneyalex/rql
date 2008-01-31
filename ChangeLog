@@ -1,6 +1,10 @@
 ChangeLog for RQL
 =================
 
+--
+    * understand "C is NULL"
+    * allow multiple annotation
+	
 2008-01-25  --  0.15.4
     * better add_type_restriction methods
     * nicer error message in stcheck
