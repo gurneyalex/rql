@@ -235,7 +235,6 @@ class RQLSTAnnotator(object):
     def __init__(self, schema, special_relations=None):
         self.schema = schema
         self.special_relations = special_relations or {}
-        self._baseset = set(et.type for et in schema.entities() if not et.is_final())
 
     def annotate(self, node):
         #assert not node.annotated
@@ -248,8 +247,6 @@ class RQLSTAnnotator(object):
             for varref in term.iget_nodes(nodes.VariableRef):
                 varref.variable.stinfo['selected'].add(i)
                 varref.variable.set_scope(node)
-        for var in node.defined_vars.itervalues():
-            var.stinfo['possibletypes'] = self._baseset.copy()
         restr = node.get_restriction()
         if restr is not None:
             restr.accept(self, node)
@@ -292,7 +289,6 @@ class RQLSTAnnotator(object):
                         except KeyError:
                             continue
             # shared references
-            newvar.stinfo['possibletypes'] = var.stinfo['possibletypes']
             newvar.stinfo['constnode'] = var.stinfo['constnode']
             rel = exists.add_relation(var, 'identity', newvar)
             # we have to force visit of the introduced relation
@@ -353,7 +349,6 @@ class RQLSTAnnotator(object):
         rtype = relation.r_type
         rschema = self.schema.rschema(rtype)
         if lhsvar is not None:
-            lhsvar.stinfo['possibletypes'] &= frozenset(rschema.subjects())
             lhsvar.set_scope(scope)
             lhsvar.stinfo['relations'].add(relation)
             if rtype in self.special_relations:
@@ -370,7 +365,6 @@ class RQLSTAnnotator(object):
                 lhsvar.stinfo['blocsimplification'].add(relation)
         for varref in rhs.iget_nodes(nodes.VariableRef):
             var = varref.variable
-            var.stinfo['possibletypes'] &= frozenset(rschema.objects())
             var.set_scope(scope)
             var.stinfo['relations'].add(relation)
             var.stinfo['rhsrelations'].add(relation)

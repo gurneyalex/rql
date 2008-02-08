@@ -613,7 +613,10 @@ class VariableRef(HSMixin, LeafNode):
 
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node"""
-        return (stmt.get_variable(self.name),)
+        newvar = stmt.get_variable(self.name)
+        # should copy variable's possibletypes on copy
+        newvar.stinfo['possibletypes'].update(self.variable.stinfo['possibletypes'])
+        return (newvar,)
 
     def is_equivalent(self, other):
         if not LeafNode.is_equivalent(self, other):
@@ -783,6 +786,8 @@ class Variable(object):
             'attrvars': set(),
             # constant node linked to an uid variable if any
             'constnode': None,
+            # possible types for this variable according to constraints in the tree
+            'possibletypes': set()
             }
     
     def accept(self, visitor, *args, **kwargs):
