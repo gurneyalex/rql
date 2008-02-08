@@ -86,6 +86,7 @@ class BaseNode(object):
         if not path:
             return self
         return self.children[path[0]].go_to_index_path(path[1:])
+
         
 class Node(BaseNode):
     """class for nodes of the tree which may have children (almost all...)"""

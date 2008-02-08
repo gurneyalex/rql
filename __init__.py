@@ -71,7 +71,8 @@ class RQLHelper:
     def annotate(self, rqlst):
         self._annotator.annotate(rqlst)
 
-    def get_solutions(self, rqlst, uid_func_mapping=None, kwargs=None, debug=False):
+    def get_solutions(self, rqlst, uid_func_mapping=None, kwargs=None,
+                      debug=False):
         """return a list of solutions for variables of the syntax tree
 
         each solution is a dictionary with variable's name as key and
@@ -79,10 +80,16 @@ class RQLHelper:
         """
         self._analyser_lock.acquire()
         try:
-            return self._analyser.visit(rqlst, uid_func_mapping, kwargs, debug)
+            solutions = self._analyser.visit(rqlst, uid_func_mapping, kwargs,
+                                             debug)
         finally:
             self._analyser_lock.release()
-
+        defined = rqlst.defined_vars
+        for solution in solutions:
+            for vname, etype in solution.iteritems():
+                defined[vname].stinfo['possibletypes'].add(etype)
+        return solutions
+    
     def simplify(self, rqlst, needcopy=True):
         #print 'simplify', rqlst.as_string(encoding='UTF8')
         if rqlst.TYPE != 'select':
