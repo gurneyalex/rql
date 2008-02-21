@@ -1,7 +1,8 @@
 """yapps input grammar for RQL.
 
-Copyright (c) 2004-2007 LOGILAB S.A. (Paris, FRANCE).
-http://www.logilab.fr/ -- mailto:contact@logilab.fr
+:organization: Logilab
+:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
 
@@ -40,16 +41,17 @@ parser Hercule:
     token SORT_DESC:   r'(?i)DESC'
     token LIMIT:       r'(?i)LIMIT'
     token OFFSET:      r'(?i)OFFSET'
-    token BOOLEAN:     r'(?i)TRUE|FALSE'
     token DATE:        r'(?i)TODAY'
     token DATETIME:    r'(?i)NOW'
+    token TRUE:        r'(?i)TRUE'
+    token FALSE:       r'(?i)FALSE'
     token NULL:        r'(?i)NULL'
     token EXISTS:      r'(?i)EXISTS'
     token CMP_OP:      r'(?i)<=|<|>=|>|~=|=|LIKE|ILIKE'
     token ADD_OP:      r'\+|-'
     token MUL_OP:      r'\*|/'
     token FUNCTION:    r'[A-Za-z_]+\s*(?=\()'
-    token R_TYPE:      r'[a-z][a-z0-9_]+'
+    token R_TYPE:      r'[a-z][a-z0-9_]*'
     token E_TYPE:      r'[A-Z][a-z]+[a-z0-9]*'
     token VARIABLE:    r'[A-Z][A-Z0-9_]*'
     token QMARK:       r'\?'
@@ -257,7 +259,8 @@ rule etype<<V>>: E_TYPE {{ return V.get_etype(E_TYPE) }}
 rule const: NULL       {{ return Constant('NULL', None) }}
           | DATE       {{ return Constant(DATE.upper(), 'Date') }}
           | DATETIME   {{ return Constant(DATETIME.upper(), 'Datetime') }}
-          | BOOLEAN    {{ return Constant(BOOLEAN.lower(), 'Boolean') }}
+          | TRUE       {{ return Constant(True, 'Boolean') }}
+          | FALSE      {{ return Constant(False, 'Boolean') }}
           | FLOAT      {{ return Constant(float(FLOAT), 'Float') }}
           | INT        {{ return Constant(int(INT), 'Int') }}
           | STRING     {{ return Constant(unquote(STRING), 'String') }}

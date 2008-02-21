@@ -1,6 +1,10 @@
 ChangeLog for RQL
 =================
-
+	
+ --
+    * use bool values for Boolean constants
+    * allow one char relation names
+	
 2008-02-15  --  0.16.0
     * understand "C is NULL"
     * allow multiple annotation
