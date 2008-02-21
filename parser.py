@@ -1,7 +1,8 @@
 """yapps input grammar for RQL.
 
-Copyright (c) 2004-2007 LOGILAB S.A. (Paris, FRANCE).
-http://www.logilab.fr/ -- mailto:contact@logilab.fr
+:organization: Logilab
+:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
 
@@ -46,16 +47,17 @@ class HerculeScanner(runtime.Scanner):
         ('SORT_DESC', re.compile('(?i)DESC')),
         ('LIMIT', re.compile('(?i)LIMIT')),
         ('OFFSET', re.compile('(?i)OFFSET')),
-        ('BOOLEAN', re.compile('(?i)TRUE|FALSE')),
         ('DATE', re.compile('(?i)TODAY')),
         ('DATETIME', re.compile('(?i)NOW')),
+        ('TRUE', re.compile('(?i)TRUE')),
+        ('FALSE', re.compile('(?i)FALSE')),
         ('NULL', re.compile('(?i)NULL')),
         ('EXISTS', re.compile('(?i)EXISTS')),
         ('CMP_OP', re.compile('(?i)<=|<|>=|>|~=|=|LIKE|ILIKE')),
         ('ADD_OP', re.compile('\\+|-')),
         ('MUL_OP', re.compile('\\*|/')),
         ('FUNCTION', re.compile('[A-Za-z_]+\\s*(?=\\()')),
-        ('R_TYPE', re.compile('[a-z][a-z0-9_]+')),
+        ('R_TYPE', re.compile('[a-z][a-z0-9_]*')),
         ('E_TYPE', re.compile('[A-Z][a-z]+[a-z0-9]*')),
         ('VARIABLE', re.compile('[A-Z][A-Z0-9_]*')),
         ('QMARK', re.compile('\\?')),
@@ -357,7 +359,7 @@ class Hercule(runtime.Parser):
 
     def expr(self, V, _parent=None):
         _context = self.Context(_parent, self._scanner, 'expr', [V])
-        _token = self._peek('CMP_OP', 'r"\\("', 'NULL', 'DATE', 'DATETIME', 'BOOLEAN', 'FLOAT', 'INT', 'STRING', 'SUBSTITUTE', 'VARIABLE', 'E_TYPE', 'FUNCTION', context=_context)
+        _token = self._peek('CMP_OP', 'r"\\("', 'NULL', 'DATE', 'DATETIME', 'TRUE', 'FALSE', 'FLOAT', 'INT', 'STRING', 'SUBSTITUTE', 'VARIABLE', 'E_TYPE', 'FUNCTION', context=_context)
         if _token == 'CMP_OP':
             CMP_OP = self._scan('CMP_OP', context=_context)
             added_expr = self.added_expr(V, _context)
@@ -388,7 +390,7 @@ class Hercule(runtime.Parser):
 
     def base_expr(self, V, _parent=None):
         _context = self.Context(_parent, self._scanner, 'base_expr', [V])
-        _token = self._peek('r"\\("', 'NULL', 'DATE', 'DATETIME', 'BOOLEAN', 'FLOAT', 'INT', 'STRING', 'SUBSTITUTE', 'VARIABLE', 'E_TYPE', 'FUNCTION', context=_context)
+        _token = self._peek('r"\\("', 'NULL', 'DATE', 'DATETIME', 'TRUE', 'FALSE', 'FLOAT', 'INT', 'STRING', 'SUBSTITUTE', 'VARIABLE', 'E_TYPE', 'FUNCTION', context=_context)
         if _token not in ['r"\\("', 'VARIABLE', 'E_TYPE', 'FUNCTION']:
             const = self.const(_context)
             return const
@@ -433,7 +435,7 @@ class Hercule(runtime.Parser):
 
     def const(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'const', [])
-        _token = self._peek('NULL', 'DATE', 'DATETIME', 'BOOLEAN', 'FLOAT', 'INT', 'STRING', 'SUBSTITUTE', context=_context)
+        _token = self._peek('NULL', 'DATE', 'DATETIME', 'TRUE', 'FALSE', 'FLOAT', 'INT', 'STRING', 'SUBSTITUTE', context=_context)
         if _token == 'NULL':
             NULL = self._scan('NULL', context=_context)
             return Constant('NULL', None)
@@ -443,9 +445,12 @@ class Hercule(runtime.Parser):
         elif _token == 'DATETIME':
             DATETIME = self._scan('DATETIME', context=_context)
             return Constant(DATETIME.upper(), 'Datetime')
-        elif _token == 'BOOLEAN':
-            BOOLEAN = self._scan('BOOLEAN', context=_context)
-            return Constant(BOOLEAN.lower(), 'Boolean')
+        elif _token == 'TRUE':
+            TRUE = self._scan('TRUE', context=_context)
+            return Constant(True, 'Boolean')
+        elif _token == 'FALSE':
+            FALSE = self._scan('FALSE', context=_context)
+            return Constant(False, 'Boolean')
         elif _token == 'FLOAT':
             FLOAT = self._scan('FLOAT', context=_context)
             return Constant(float(FLOAT), 'Float')
