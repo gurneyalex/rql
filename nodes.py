@@ -558,8 +558,10 @@ class Constant(HSMixin, LeafNode):
         returned if encoding is None)
         """
         if self.type is None or self.type in ('etype', 'Datetime', 'Date',
-                                              'Boolean', 'Int', 'Float'):
+                                              'Int', 'Float'):
             return str(self.value)
+        if self.type == 'Boolean':
+            return self.value and 'true' or 'false'
         if self.type == 'Substitute':
             # XXX could get some type information from self.root().schema()
             #     and linked relation
