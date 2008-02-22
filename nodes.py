@@ -600,7 +600,7 @@ class Constant(HSMixin, LeafNode):
         if self.type == 'Substitute':
             return kwargs[self.value]
         if self.type in ('Date', 'Datetime'): # TODAY, NOW
-            return KEYWORD_MAP[value]()
+            return KEYWORD_MAP[self.value]()
         return self.value
 
     def get_type(self, solution=None, kwargs=None):
