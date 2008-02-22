@@ -230,14 +230,13 @@ class Select(Statement):
             self.selected.insert(i, newnode)
             newnode.parent = self
             
-    def set_statement_type(self, stmt_type):
+    def set_statement_type(self, etype):
         """set the statement type for this selection
         this method must be called last (i.e. once selected variables has been
         added)
         """
         assert self.selected
-        # Person P  ->  Any P where P is 'Person'
-        etype = stmt_type.capitalize()
+        # Person P  ->  Any P where P is Person
         if etype != 'Any':
             for var in self.get_selected_variables():
                 self.add_type_restriction(var.variable, etype)

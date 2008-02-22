@@ -69,13 +69,16 @@ SPEC_QUERIES = (
 
     'Any X WHERE X eid > 12;',
     'DELETE Any X WHERE X eid > 12;',
-    
+
 #    'Any X WHERE 5 in_state X;',
     )
 
-E_TYPES = {"Person" : 'Person',
-           "Project" : 'Project',
-           "Story" : 'Story'}
+E_TYPES = {'Person' : 'Person',
+           'Project' : 'Project',
+           'Story' : 'Story',
+           'EmailAddress' : 'EmailAddress',
+           'EUser' : 'EUser',
+           }
 
 class ParserHercule(TestCase):
     _syntaxerr = SyntaxError
@@ -212,6 +215,12 @@ class ParserHercule(TestCase):
         exists = tree.get_nodes(nodes.Exists)[0]
         self.failUnless(exists.children[0].parent is exists)
         self.failUnless(exists.parent)
+
+    def test_etype(self):
+        tree = self.parse('EmailAddress X;')
+        self.assertEquals(tree.as_string(), 'Any X WHERE X is EmailAddress')
+        tree = self.parse('EUser X;')
+        self.assertEquals(tree.as_string(), 'Any X WHERE X is EUser')
 
 
 class ParserRQLHelper(ParserHercule):
