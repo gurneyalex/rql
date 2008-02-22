@@ -438,7 +438,7 @@ class Hercule(runtime.Parser):
         _token = self._peek('NULL', 'DATE', 'DATETIME', 'TRUE', 'FALSE', 'FLOAT', 'INT', 'STRING', 'SUBSTITUTE', context=_context)
         if _token == 'NULL':
             NULL = self._scan('NULL', context=_context)
-            return Constant('NULL', None)
+            return Constant(None, None)
         elif _token == 'DATE':
             DATE = self._scan('DATE', context=_context)
             return Constant(DATE.upper(), 'Date')

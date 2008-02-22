@@ -11,9 +11,17 @@ __docformat__ = "restructuredtext en"
 from itertools import chain
 
 try:
-    from mx.DateTime import DateTimeType
+    from mx.DateTime import DateTimeType, today, now
 except:
-    from datetime import datetime as DateTimeType
+    from datetime import datetime as DateTimeType, date, datetime
+    from time import localtime
+    def now():
+        return datetime(*localtime()[:6])
+    def today():
+        return date(*localtime()[:3])
+    
+KEYWORD_MAP = {'NOW' : now,
+               'TODAY': today}
 
 from rql import CoercionError
 from rql.base import Node, BinaryNode, LeafNode
@@ -557,8 +565,9 @@ class Constant(HSMixin, LeafNode):
         """return the tree as an encoded rql string (an unicode string is
         returned if encoding is None)
         """
-        if self.type is None or self.type in ('etype', 'Datetime', 'Date',
-                                              'Int', 'Float'):
+        if self.type is None:
+            return 'NULL'
+        if self.type in ('etype', 'Date', 'Datetime', 'Int', 'Float'):
             return str(self.value)
         if self.type == 'Boolean':
             return self.value and 'true' or 'false'
@@ -590,6 +599,8 @@ class Constant(HSMixin, LeafNode):
     def eval(self, kwargs):
         if self.type == 'Substitute':
             return kwargs[self.value]
+        if self.type in ('Date', 'Datetime'): # TODAY, NOW
+            return KEYWORD_MAP[value]()
         return self.value
 
     def get_type(self, solution=None, kwargs=None):
