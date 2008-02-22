@@ -256,7 +256,7 @@ rule var<<V>>: VARIABLE {{ return VariableRef(V.get_variable(VARIABLE)) }}
 rule etype<<V>>: E_TYPE {{ return V.get_etype(E_TYPE) }} 
 
 
-rule const: NULL       {{ return Constant('NULL', None) }}
+rule const: NULL       {{ return Constant(None, None) }}
           | DATE       {{ return Constant(DATE.upper(), 'Date') }}
           | DATETIME   {{ return Constant(DATETIME.upper(), 'Datetime') }}
           | TRUE       {{ return Constant(True, 'Boolean') }}
