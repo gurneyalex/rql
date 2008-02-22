@@ -52,7 +52,7 @@ parser Hercule:
     token MUL_OP:      r'\*|/'
     token FUNCTION:    r'[A-Za-z_]+\s*(?=\()'
     token R_TYPE:      r'[a-z][a-z0-9_]*'
-    token E_TYPE:      r'[A-Z][A-Za-z0-9]*[a-z]+'
+    token E_TYPE:      r'[A-Z][A-Za-z0-9]*[a-z]+[0-9]*'
     token VARIABLE:    r'[A-Z][A-Z0-9_]*'
     token QMARK:       r'\?'
 
