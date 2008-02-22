@@ -4,6 +4,7 @@ ChangeLog for RQL
  --
     * use bool values for Boolean constants
     * allow one char relation names
+    * allow multiple capitalized characters in entity types
 	
 2008-02-15  --  0.16.0
     * understand "C is NULL"
