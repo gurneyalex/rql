@@ -2,7 +2,7 @@ ChangeLog for RQL
 =================
 	
  --
-    * use bool values for Boolean constants
+    * use bool values for Boolean constants, None for NULL constant
     * allow one char relation names
     * allow multiple capitalized characters in entity types
 	
