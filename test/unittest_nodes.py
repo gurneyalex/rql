@@ -60,7 +60,7 @@ class NodesTest(TestCase):
         # test constant
         constant = tree.children[0].children[1].children[0]
         self.assertEqual(constant.type, None)
-        self.assertEqual(constant.value, 'NULL')
+        self.assertEqual(constant.value, None)
         
     def test_select_bool(self):
         tree = parse("Any X WHERE X name False;", E_TYPES)
@@ -69,14 +69,14 @@ class NodesTest(TestCase):
         # test constant
         constant = tree.children[0].children[1].children[0]
         self.assertEqual(constant.type, 'Boolean')
-        self.assertEqual(constant.value, 'false')
+        self.assertEqual(constant.value, False)
         tree = parse("Any X WHERE X name TRUE;", E_TYPES)
         # test serializing
         self.assertEqual(tree.as_string(), "Any X WHERE X name true")
         # test constant
         constant = tree.children[0].children[1].children[0]
         self.assertEqual(constant.type, 'Boolean')
-        self.assertEqual(constant.value, 'true')
+        self.assertEqual(constant.value, True)
         
     def test_select_date(self):
         tree = parse("Any X WHERE X born TODAY;", E_TYPES)
