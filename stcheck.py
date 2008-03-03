@@ -347,7 +347,10 @@ class RQLSTAnnotator(object):
                 # may have been rewritten as well
                 pass
         rtype = relation.r_type
-        rschema = self.schema.rschema(rtype)
+        try:
+            rschema = self.schema.rschema(rtype)
+        except KeyError:
+            raise BadRQLQuery('no relation %s' % rtype)
         if lhsvar is not None:
             lhsvar.set_scope(scope)
             lhsvar.stinfo['relations'].add(relation)
