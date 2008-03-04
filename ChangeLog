@@ -1,6 +1,10 @@
 ChangeLog for RQL
 =================
 
+ --
+    * method to add group variable with undoing support
+    * fix remove_sort_term
+	
 2008-02-27  --  0.17.0
     * use bool values for Boolean constants, None for NULL constant
     * allow one char relation names

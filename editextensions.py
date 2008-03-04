@@ -87,6 +87,22 @@ def add_sortvar(self, var, asc=True):
 Select.add_sortvar = add_sortvar
 
 
+def add_groupvar(self, var):
+    """add var in 'orderby' constraints
+    asc is a boolean indicating the group order (ascendent or descendent)
+    """
+    var = variable_ref(var)
+    var.register_reference()
+    if self.memorizing and not self.undoing:
+        self.undo_manager.add_operation(AddGroupOperation(var))
+    groups = self.get_groups()
+    if groups is None:
+        groups = Group()
+        self.append(groups)
+    groups.append(var)
+Select.add_groupvar = add_groupvar
+
+
 # shortcuts methods ###########################################################
 
 def remove_sort_terms(self):
@@ -100,7 +116,7 @@ def remove_sort_term(self, term):
     """remove a sort term and the sort node if necessary"""
     sortterms = self.get_sortterms()
     assert term in sortterms.children
-    if len(sortterms) == 1:
+    if len(sortterms.children) == 1:
         self.remove_node(sortterms)
     else:
         self.remove_node(term)        
