@@ -152,6 +152,13 @@ class AddSortOperation(NodeOperation):
     def undo(self, selection):
         """undo the operation on the selection"""
         selection.remove_sort_term(self.node)
+    
+class AddGroupOperation(NodeOperation):
+    """defines how to undo 'add group'"""
+
+    def undo(self, selection):
+        """undo the operation on the selection"""
+        selection.remove_group_variable(self.node)
 
 
 class ChangeValueOperation:
@@ -182,5 +189,6 @@ class SetLimitOperation(ChangeValueOperation):
     
 __all__ = ('SelectionManager', 'MakeVarOperation', 'UndefineVarOperation',
            'SelectVarOperation', 'UnselectVarOperation', 'AddNodeOperation',
-           'ReplaceNodeOperation', 'RemoveNodeOperation', 'AddSortOperation',
+           'ReplaceNodeOperation', 'RemoveNodeOperation', 
+           'AddSortOperation', 'AddGroupOperation',
            'SetDistinctOperation')
