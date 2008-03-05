@@ -102,6 +102,12 @@ def add_groupvar(self, var):
     groups.append(var)
 Select.add_groupvar = add_groupvar
 
+def change_optional(self, value):
+    stroot = self.root()
+    if stroot.memorizing and not stroot.undoing and value != self.optional:
+        stroot.undo_manager.add_operation(SetOptionalOperation(self, self.optional))
+    self.optional= value
+Relation.change_optional = change_optional
 
 # shortcuts methods ###########################################################
 
