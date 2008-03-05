@@ -186,9 +186,26 @@ class SetLimitOperation(ChangeValueOperation):
     def undo(self, selection):
         """undo the operation on the selection"""
         selection.limit = self.value
+
+class ChangeOptionalOperation(ChangeValueOperation):
+    """defines how to undo 'set_optional'"""
+        
+    def undo(self, selection):
+        """undo the operation on the selection"""
+        selection.offset = self.value
+
+class SetOptionalOperation(ChangeValueOperation):
+    """defines how to undo 'set_limit'"""
+    def __init__(self, rel, previous_value):
+        self.rel = rel
+        self.value = previous_value
+        
+    def undo(self, selection):
+        """undo the operation on the selection"""
+        self.rel.optional = self.value
     
 __all__ = ('SelectionManager', 'MakeVarOperation', 'UndefineVarOperation',
            'SelectVarOperation', 'UnselectVarOperation', 'AddNodeOperation',
            'ReplaceNodeOperation', 'RemoveNodeOperation', 
            'AddSortOperation', 'AddGroupOperation',
-           'SetDistinctOperation')
+           'SetOptionalOperation', 'SetDistinctOperation')
