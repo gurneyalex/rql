@@ -89,8 +89,11 @@ class Statement(nodes.EditableMixIn, Node):
 
     def allocate_varname(self):
         """return an yet undefined variable name"""
-        return self._varmaker.next()
-
+        name =  self._varmaker.next()
+        while name in self.defined_vars:
+            name =  self._varmaker.next()
+        return name
+    
     def get_etype(self, name):
         """return the type object for the given entity's type name
         
