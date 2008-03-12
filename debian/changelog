@@ -1,3 +1,10 @@
+rql (0.17.1-1) unstable; urgency=low
+
+  * new upstream release
+  * update copyright file
+
+ -- Sylvain Thénault <Sylvain.Thenault@logilab.fr>  Wed, 12 Mar 2008 10:45:25 +0100
+
 rql (0.17.0-1) unstable; urgency=low
 
   * new upstream release
