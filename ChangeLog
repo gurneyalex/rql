@@ -1,6 +1,9 @@
 ChangeLog for RQL
 =================
 
+--
+    * fix a bug in get_solutions,possible_types should be reseted first
+	
 2008-03-12  --  0.17.1
     * method to add group variable with undoing support
     * fix remove_sort_term
