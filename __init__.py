@@ -85,6 +85,8 @@ class RQLHelper:
         finally:
             self._analyser_lock.release()
         defined = rqlst.defined_vars
+        for var in defined.itervalues():
+            var.stinfo['possibletypes'] = set()
         for solution in solutions:
             for vname, etype in solution.iteritems():
                 defined[vname].stinfo['possibletypes'].add(etype)
