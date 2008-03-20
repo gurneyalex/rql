@@ -462,7 +462,7 @@ et certainement d'autres choses...
 Un inconvénient est que pour utiliser ce langage il faut bien connaitre le
 schema utilisé (avec les vrais noms de relations et d'entités, pas ceux affichés
 dans l'interface utilisateur). D'un autre coté, on peut pas vraiment contourner
-cela, et c'est le boulot d'une interface utilisateur de caché le RQL.
+cela, et c'est le boulot d'une interface utilisateur de cacher le RQL.
 
 
 A réfléchir
