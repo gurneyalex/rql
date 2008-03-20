@@ -206,7 +206,7 @@ Il existe un type spécial **Any**, revenant à ne pas spécifier de type.
 On peut contraindre les types possibles pour une variable à l'aide de la
 relation spéciale **is**.
 
-Le (les) types possible(s) pour chaque variable est déduit du schema en
+Le(s) type(s) possible(s) pour chaque variable est déduit du schema en
 fonction des contraintes exprimées ci-dessus et à l'aide des relations entre
 chaque variable.
 
@@ -215,7 +215,7 @@ Types de bases
 
 Les types de bases supportés sont les chaines (entre doubles ou simples quotes),
 les nombres entiers ou flottant (le séparateur étant le '.'), les dates et les
-booleens. On s'attend donc à recevoir un schema dans lequel les types String,
+booléens. On s'attend donc à recevoir un schéma dans lequel les types String,
 Int, Float, Date et Boolean sont définis.
 
 
@@ -460,7 +460,7 @@ Il manque pour l'instant:
 et certainement d'autres choses...
 
 Un inconvénient est que pour utiliser ce langage il faut bien connaitre le
-schema utilisé (avec les vrais noms de relations et d'entités, pas ceux affichés
+schéma utilisé (avec les vrais noms de relations et d'entités, pas ceux affichés
 dans l'interface utilisateur). D'un autre coté, on peut pas vraiment contourner
 cela, et c'est le boulot d'une interface utilisateur de cacher le RQL.
 
@@ -468,7 +468,7 @@ cela, et c'est le boulot d'une interface utilisateur de cacher le RQL.
 A réfléchir
 -----------
 
-Il serait pratique de pouvoir exprimer dans le schema des correspondances de
+Il serait pratique de pouvoir exprimer dans le schéma des correspondances de
 relations::
 
     Document class Type <-> Document occurence_of Fiche class Type
