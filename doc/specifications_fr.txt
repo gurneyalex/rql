@@ -155,7 +155,7 @@ Mise à jour d'entités, création de relations
 - *renommage de la personne nommée 'bidule' en 'toto', avec modification du prénom*
   ::
 
-       SET X nom 'toto', X prenom 'original' WHERE X is 'Person', X nom 'bidule'
+       SET X nom 'toto', X prenom 'original' WHERE X is Person, X nom 'bidule'
 
 - *insertion d'une relation de type 'connait' entre les objets reliés par la relation de type 'ami'*
   ::
@@ -174,7 +174,7 @@ Suppression d'entités ou de relations
 - *suppression de toutes les relations de type 'ami' partant de la personne nommée 'toto'*
   ::
 
-       DELETE X ami Y WHERE X is 'Person', X nom 'toto'
+       DELETE X ami Y WHERE X is Person, X nom 'toto'
 
 
 

@@ -111,7 +111,7 @@ L'essentiel
    
    Personne X ;
    ou
-   Any X WHERE X is 'Personne' ;
+   Any X WHERE X is Personne ;
 
 
 .1 *La societé nommé Logilab*
@@ -175,10 +175,7 @@ entités de type "Société"
 
 ::
    
-   Personne D,X WHERE X datenaiss D ORDERBY D DESC ;
-
-On note qu'il faut définir une variable et la séléctionner pour s'en
-servir pour le tri. 
+   Any X WHERE X is Personne, X datenaiss D ORDERBY D DESC ;
 
 
 .8 *Toutes les personnes groupées par leur société*
@@ -229,7 +226,7 @@ Exemples avancés
 
 ::
 
-   Any N, D where N is "Note", N type NULL, N diem D, N diem >= today,
+   Any N, D where N is Note, N type NULL, N diem D, N diem >= today,
    N diem < today + 7 ORDERBY D
 
 
