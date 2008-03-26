@@ -9,16 +9,7 @@ import sys
 import threading
 from cStringIO import StringIO
 
-from yapps.runtime import print_error, SyntaxError, NoMoreTokens
-
 from rql._exceptions import *
-from rql.interfaces import *
-from rql.parser import Hercule, HerculeScanner
-from rql.nodes import Constant
-from rql.stcheck import RQLSTChecker, RQLSTAnnotator
-from rql.analyze import ETypeResolver
-from rql.utils import is_keyword
-
 REQUIRED_TYPES = ['String', 'Float', 'Int', 'Boolean', 'Date']
 
 class RQLHelper:
@@ -30,12 +21,13 @@ class RQLHelper:
       - comparison of two queries
     """
     def __init__(self, schema, uid_func_mapping=None, special_relations=None,
-                 Resolver=ETypeResolver):
+                 resolver_class=None):
         # chech schema
         #for e_type in REQUIRED_TYPES:
         #    if not schema.has_entity(e_type):
         #        raise MissingType(e_type)
         # create helpers
+        from rql.stcheck import RQLSTChecker, RQLSTAnnotator
         special_relations = special_relations or {}
         if uid_func_mapping:
             for key in uid_func_mapping:
@@ -43,10 +35,14 @@ class RQLHelper:
         self._checker = RQLSTChecker(schema)
         self._annotator = RQLSTAnnotator(schema, special_relations)
         self._analyser_lock = threading.Lock()
-        self._analyser = Resolver(schema, uid_func_mapping)
+        if resolver_class is None:
+            from rql.analyze import ETypeResolver
+            resolver_class = ETypeResolver
+        self._analyser = resolver_class(schema, uid_func_mapping)
         self.set_schema(schema)
 
     def set_schema(self, schema):
+        from rql.utils import is_keyword
         self.e_types = etypes = {}
         for etype in schema.entities():
             etype = str(etype)
@@ -110,15 +106,16 @@ class RQLHelper:
                 if needcopy:
                     var = rqlstcopy.defined_vars[var.name]
                     stinfo = var.stinfo
-                assert len(stinfo['uidrels']) == 1, var
+                #assert len(stinfo['uidrels']) == 1, var
                 uidrel = stinfo['uidrels'].pop()
                 var = uidrel.children[0].variable
                 rqlstcopy.stinfo['rewritten'][var.name] = vconsts = []
                 rhs = uidrel.children[1].children[0]
-                assert isinstance(rhs, nodes.Constant), rhs
+                #from rql.nodes import Constant
+                #assert isinstance(rhs, nodes.Constant), rhs
                 for varref in var.references():
                     rel = varref.relation()
-                    assert varref.parent
+                    #assert varref.parent
                     if rel and (rel is uidrel or rel.is_types_restriction()):
                         # drop this relation
                         rel.parent.remove(rel)
@@ -147,6 +144,8 @@ class RQLHelper:
         
 def parse(rqlstring, e_types=None, print_errors=True): 
     """return a syntax tree from an sql string"""   
+    from yapps.runtime import print_error, SyntaxError, NoMoreTokens
+    from rql.parser import Hercule, HerculeScanner
     # make sure rql string ends with a semi-colon
     rqlstring = rqlstring.strip()
     if rqlstring and not rqlstring.endswith(';') :
