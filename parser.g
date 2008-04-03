@@ -6,7 +6,7 @@
 """
 
 
-from rql.stmts import Select, Delete, Insert, Update
+from rql.stmts import Union, Select, Delete, Insert, Update
 from rql.nodes import *
 
 _OR = OR
@@ -30,6 +30,7 @@ parser Hercule:
     token DELETE:      r'(?i)DELETE'
     token SET:         r'(?i)SET'
     token INSERT:      r'(?i)INSERT'
+    token UNION:       r'(?i)UNION'
     token DISTINCT:    r'(?i)DISTINCT'
     token WHERE:       r'(?i)WHERE'
     token OR:          r'(?i)OR'
@@ -75,14 +76,17 @@ parser Hercule:
 #  const -> constant
 #  cmp -> comparison
 
-rule goal<<T>>: DELETE _delete<<Delete(T)>> ';' {{ return _delete }}
+rule goal<<T>>: DELETE _delete<<Delete(T)>> ';'         {{ return _delete }}
 
-              | INSERT _insert<<Insert(T)>> ';' {{ return _insert }}
+              | INSERT _insert<<Insert(T)>> ';'         {{ return _insert }}
  
-              | SET update<<Update(T)>> ';'     {{ return update }}
+              | SET update<<Update(T)>> ';'             {{ return update }}
 
-              | select<<Select(T)>> ';'         {{ return select }}
-
+              | select<<Select(T)>>                     {{ root = select }}
+                  (                                     {{ root = root.TYPE == 'union' and root or Union(root) }} 
+                    UNION select<<Select(T)>>           {{ root.append(select) }} 
+                  )*                                   
+                sort<<root>> limit_offset<<root>> ';'   {{ return root }}
 
 # Deletion  ###################################################################
 
@@ -108,14 +112,12 @@ rule update<<V>>: rels_decl<<V>> restr<<V>> {{ return V }}
 
 # Selection  ##################################################################
 
-rule select<<V>>: DISTINCT select_base<<V>> {{ V.distinct = True ; return V }}
-
-                | select_base<<V>>          {{ return V }}
+rule select<<V>>: DISTINCT select_base<<V>>  {{ V.distinct = True ; return V }}
+                 | select_base<<V>>          {{ return V }}
 
 
 rule select_base<<V>>: E_TYPE selected_terms<<V>> restr<<V>> 
-                       group<<V>> sort<<V>> 
-                       limit_offset<<V>>  {{ V.set_statement_type(E_TYPE) ; return V }}
+                       group<<V>>  {{ V.set_statement_type(E_TYPE) ; return V }}
 
 
 rule selected_terms<<V>>: added_expr<<V>> (   {{ V.append_selected(added_expr) }}

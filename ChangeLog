@@ -1,6 +1,9 @@
 ChangeLog for RQL
 =================
 
+ --
+    * UNION support
+	
 2008-03-26  --  0.17.2
     * fix a bug in get_solutions,possible_types should be reseted first
     * some documentation update

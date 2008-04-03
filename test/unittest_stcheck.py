@@ -23,11 +23,14 @@ BAD_QUERIES = (
 #    'Any COUNT(X),P WHERE X concerns P', #9726
     'Any X, MAX(COUNT(B)) WHERE B concerns X GROUPBY X;',
 
+    'Any X WHERE X nom "toto" UNION Any X,F WHERE X firstname F;',
+
+    'Any Y WHERE X eid 12, X concerns Y UNION Any Y WHERE X eid 13, X located Y ORDERBY X',
+    
     )
 
 class CheckClassTest(TestCase):
-    """check wrong queries are correctly detected
-    """
+    """check wrong queries are correctly detected"""
     
     def setUp(self):
         helper = RQLHelper(DummySchema(), None, {'eid': 'uid'})
@@ -96,6 +99,8 @@ class CheckClassTest(TestCase):
             ('Any X WHERE X eid 12, EXISTS(X name "hop" OR X work_for Y?)',
              "Any 12 WHERE EXISTS((A name 'hop') OR (A work_for Y?), 12 identity A)"),
             
+            ('Any X WHERE X eid 12 UNION Any X WHERE X eid 13 ORDERBY X',
+             'Any 12 UNION Any 13 ORDERBY 1'),
             ):
             yield self._test_rewrite, rql, expected
 
