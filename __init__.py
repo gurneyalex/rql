@@ -80,26 +80,47 @@ class RQLHelper:
                                              debug)
         finally:
             self._analyser_lock.release()
-        defined = rqlst.defined_vars
-        for var in defined.itervalues():
-            var.stinfo['possibletypes'] = set()
-        for solution in solutions:
-            for vname, etype in solution.iteritems():
-                defined[vname].stinfo['possibletypes'].add(etype)
+        rqlst.set_possible_types(solutions)
         return solutions
     
     def simplify(self, rqlst, needcopy=True):
         #print 'simplify', rqlst.as_string(encoding='UTF8')
-        if rqlst.TYPE != 'select':
-            return rqlst
+        if rqlst.TYPE == 'select':
+            return self._simplify(rqlst, needcopy)
+        if rqlst.TYPE == 'union':
+            from rql import nodes
+            if needcopy:
+                rqlst = rqlst.copy()
+                self.annotate(rqlst)
+            sampleselection = rqlst.children[0].selected[:]
+            for select in rqlst.children:
+                self._simplify(select, False)
+                # deal with rewritten variable which are used in orderby
+                for vname in select.stinfo['rewritten']:
+                    try:
+                        var = rqlst.defined_vars.pop(vname)
+                    except KeyError:
+                        continue
+                    else:
+                        for i, term in enumerate(sampleselection):
+                            if getattr(term, 'name', None) == vname:
+                                for vref in var.references():
+                                    const = nodes.Constant(i+1, 'Int')
+                                    vref.parent.replace(vref, const)
+                                    vref.unregister_reference()
+                                break
+                        else:
+                            raise BadRQLQuery('order variable %s not found in some sub-query' % vname)
+        return rqlst
+        
+    def _simplify(self, rqlst, needcopy):
         if needcopy:
             rqlstcopy = None
         else: 
             rqlstcopy = rqlst
         for var in rqlst.defined_vars.values():
             stinfo = var.stinfo
-            maybesimplified = not stinfo['blocsimplification']
-            if stinfo['constnode'] and maybesimplified:
+            if stinfo['constnode'] and not stinfo['blocsimplification']:
                 if rqlstcopy is None:
                     rqlstcopy = rqlst.copy()
                     self.annotate(rqlstcopy)

@@ -278,6 +278,14 @@ class AnalyzerClassTest(TestCase):
         node = self.helper.simplify(node)
         sols = self.helper.get_solutions(node, debug=DEBUG)
         self.assertEqual(sols, [{'P': 'Person'}])
+        
+    def test_union(self):
+        node = self.helper.parse('Any P WHERE X eid 0, NOT X connait P UNION Any E1 WHERE E2 work_for E1, E2 eid 2')
+        sols = self.helper.get_solutions(node, debug=DEBUG)
+        self.assertEqual(sols, [[{'P': 'Person', 'X': 'Person'}], [{'E1': 'Company', 'E2': 'Person'}]])
+        node = self.helper.simplify(node)
+        sols = self.helper.get_solutions(node, debug=DEBUG)
+        self.assertEqual(sols, [[{'P': 'Person'}], [{'E1': 'Company'}]])
     
     def test_raise(self):
         for rql in UNRESOLVABLE_QUERIES:

@@ -8,6 +8,8 @@ defined in the nodes module
 """
 __docformat__ = "restructuredtext en"
 
+from itertools import izip
+
 from logilab.common.decorators import cached
 
 from rql import BadRQLQuery, CoercionError, nodes
@@ -119,6 +121,15 @@ class Statement(nodes.EditableMixIn, Node):
             var.root = self
             return var
         
+
+    def set_possible_types(self, solutions):
+        defined = self.defined_vars
+        for var in defined.itervalues():
+            var.stinfo['possibletypes'] = set()
+        for solution in solutions:
+            for vname, etype in solution.iteritems():
+                defined[vname].stinfo['possibletypes'].add(etype)
+
     # recoverable modification methods ########################################
     
     @property
@@ -164,17 +175,96 @@ class Statement(nodes.EditableMixIn, Node):
         #assert check_relations(self)
 
 
-                
+class Union(Statement):
+    """the select node is the root of the syntax tree for selection statement
+    using UNION
+    """
+    TYPE = 'union'
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit_union(self, *args, **kwargs)
+    
+    def leave(self, visitor, *args, **kwargs):
+        return visitor.leave_union(self, *args, **kwargs)
+
+    def __init__(self, firstselect=None):
+        Node.__init__(self)
+        # limit / offset
+        self.limit = None
+        self.offset = 0
+        if firstselect:
+            self.append(firstselect)
+        # for sort variables
+        self.sortterms = None
+        self.defined_vars = {}
+        # has this tree been annotated
+        self.annotated = False
+
+    def append(self, node):
+        if isinstance(node, nodes.Sort):
+            self.sortterms = node
+            node.parent = self
+        else:
+            Statement.append(self, node)
+            
+    def get_sortterms(self):
+        """return a list of sortterms (i.e a Sort object) or None if there is
+        no sortterm.
+        """
+        return self.sortterms
+    
+    def set_possible_types(self, solutions):
+        for select, selectsolutions in izip(self.children, solutions):
+            select.set_possible_types(selectsolutions)
+            
+    def copy(self):
+        new = Union()
+        for child in self.children:
+            new.append(child.copy())
+        if self.sortterms:
+            new.sortterms = self.sortterms.copy(new)
+        new.limit = self.limit
+        new.offset = self.offset
+        return new
+
+    # string representation ###################################################
+    
+    def as_string(self, encoding=None, kwargs=None):
+        """return the tree as an encoded rql string"""
+        s = [select.as_string(encoding, kwargs) for select in self.children]
+        s = [' UNION '.join(s)]
+        sorts = self.get_sortterms()
+        if sorts is not None:
+            s.append(sorts.as_string(encoding, kwargs))
+        if self.limit is not None:
+            s.append('LIMIT %s' % self.limit)
+        if self.offset:
+            s.append('OFFSET %s' % self.offset)
+        return ' '.join(s)                              
+
+    def __repr__(self):
+        s = [repr(select) for select in self.children]
+        s = ['\nUNION\n'.join(s)]
+        sorts = self.get_sortterms()
+        if sorts is not None:
+            s.append(repr(sorts))
+        if self.limit is not None:
+            s.append('LIMIT %s' % self.limit)
+        if self.offset:
+            s.append('OFFSET %s' % self.offset)
+        return ' '.join(s)                             
+ 
+
 class Select(Statement):
     """the select node is the root of the syntax tree for selection statement
+    without UNION
     """
     TYPE = 'select'
     
     def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_select( self, *args, **kwargs )
+        return visitor.visit_select(self, *args, **kwargs)
     
     def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_select( self, *args, **kwargs )
+        return visitor.leave_select(self, *args, **kwargs)
 
     def __init__(self, etypes):
         Statement.__init__(self, etypes)
@@ -213,7 +303,6 @@ class Select(Statement):
         new.offset = self.offset
         #assert check_relations(new)
         return new
-        
         
     # construction helper methods #############################################
 
@@ -303,12 +392,11 @@ class Select(Statement):
     # quick accessors #########################################################
     
     def get_sortterms(self):
-        """return a list of sortterms (i.e a Sort object).
-        return an empty list if there is no sortterm.
+        """return a list of sortterms (i.e a Sort object) or None if there is
+        no sortterm.
         """
-        for c in self.children:
-            if isinstance(c, nodes.Sort):
-                return c
+        if self.children and isinstance(self.children[-1], nodes.Sort):
+            return self.children[-1]
         return None
     
     def get_groups(self):

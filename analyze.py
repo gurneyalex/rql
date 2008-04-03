@@ -55,20 +55,28 @@ class ETypeResolver:
             assert len(uid_func_mapping) <= 1
             self.uid_func_mapping = uid_func_mapping
             self.uid_func = uid_func_mapping.values()[0]
+        self.kwargs = kwargs
+        if node.TYPE == 'union':
+            solutions = [self._visit_stmt(select, debug)
+                         for select in node.children]
+        else:
+            solutions = self._visit_stmt(node, debug)
+        return solutions
+            
+    def _visit_stmt(self, node, debug):
         if self.uid_func:
             # check rewritten uid const
             for consts in node.stinfo['rewritten'].values():
                 if not consts:
                     continue
-                uidtype = self.uid_func(consts[0].eval(kwargs))
+                uidtype = self.uid_func(consts[0].eval(self.kwargs))
                 for const in consts:
                     const.uidtype = uidtype
-        self.kwargs = kwargs
         # init variables for a visit
         domains = {}
         constraints = []
         # set domain for the all variables
-        for var in node.defined_vars.values():
+        for var in node.defined_vars.itervalues():
             domains[var.name] = fd.FiniteDomain(self._base_domain)
         # no variable short cut
         if not domains:
@@ -101,7 +109,6 @@ class ETypeResolver:
                          if not eschema.is_final()]
                 constraints.append(fd.make_expression(varnames, '%s in %s ' % (
                     '=='.join(varnames), types)))
-        
         # debug info
         if debug > 1:
             print "- AN1 -"+'-'*80
@@ -110,22 +117,20 @@ class ETypeResolver:
             pprint(domains)
             print "CONSTRAINTS:"
             pprint(constraints)
-            
-        return self.solve(node, domains, constraints, kwargs)
+        return self.solve(node, domains, constraints)
 
 
-    def solve(self, node, domains, constraints, kwargs=None):
+    def solve(self, node, domains, constraints):
         # solve the problem and check there is at least one solution
         r = Repository(domains.keys(), domains, constraints)
         solver = Solver()
         sols = solver.solve(r, verbose=0)
         if not sols:
-            rql = node.as_string('utf8', kwargs)
+            rql = node.as_string('utf8', self.kwargs)
             raise TypeResolverException(
                 'Unable to resolve variables types in "%s"!!' % (rql))
         return sols
 
-        
     def _visit(self, node, constraints):
         """recurse among the tree"""
         func = getattr(self, 'visit_%s' % node.__class__.__name__.lower())

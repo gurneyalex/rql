@@ -13,13 +13,12 @@ BAD_SYNTAX_QUERIES = (
     'ANY X WHERE (X name NULL or X name "chouette";',
     'INSERT Person X : X name "bidule" or X name "chouette";',
     'Any X WHERE "YO" related "UPI";',
-    # FIXME: why should those raise a syntax error ?
-#    'Any X groupby X;',
-#    'Any X orderby X;',
     # FIXME: incorrect because X/Y are not bound, not a syntax error
 #    'SET X travaille Y;',
     "Personne P WHERE OFFSET 200;",
-    )
+
+    'Any X WHERE X nom "toto" GROUPBY X ORDERBY X UNION Any X WHERE X firstname "toto" GROUPBY X ORDERBY X;',
+)
 
 BAD_QUERIES = (
     'Person Marcou;',
@@ -29,6 +28,7 @@ BAD_QUERIES = (
     'INSERT Person X : Y name "bidule" WHERE X work_for Y;',
     'Any X LIMIT -1;',
     'Any X OFFSET -1;',
+    'Any X ORDERBY Y;',
     )
 
 # FIXME: this shoud be generated from the spec file
@@ -71,6 +71,9 @@ SPEC_QUERIES = (
     'DELETE Any X WHERE X eid > 12;',
 
 #    'Any X WHERE 5 in_state X;',
+    'Any X WHERE X eid > 12 UNION Any X WHERE X eid < 23;',
+    'Any X WHERE X nom "toto" UNION Any X WHERE X firstname "toto";',
+    'Any X WHERE X nom "toto" GROUPBY X UNION Any X WHERE X firstname "toto" GROUPBY X ORDERBY X;',
     )
 
 E_TYPES = {'Person' : 'Person',
