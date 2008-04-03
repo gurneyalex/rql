@@ -8,8 +8,6 @@ defined in the nodes module
 """
 __docformat__ = "restructuredtext en"
 
-from itertools import izip
-
 from logilab.common.decorators import cached
 
 from rql import BadRQLQuery, CoercionError, nodes
@@ -122,7 +120,8 @@ class Statement(nodes.EditableMixIn, Node):
             return var
         
 
-    def set_possible_types(self, solutions):
+    def set_possible_types(self, solutions, solsidx=0):
+        solutions = solutions[solsidx]
         defined = self.defined_vars
         for var in defined.itervalues():
             var.stinfo['possibletypes'] = set()
@@ -196,6 +195,10 @@ class Union(Statement):
         # for sort variables
         self.sortterms = None
         self.defined_vars = {}
+        # recoverable modification attributes
+        self.memorizing = 0
+        # used to prevent from memorizing when undoing !
+        self.undoing = False
         # has this tree been annotated
         self.annotated = False
 
@@ -211,10 +214,10 @@ class Union(Statement):
         no sortterm.
         """
         return self.sortterms
-    
+        
     def set_possible_types(self, solutions):
-        for select, selectsolutions in izip(self.children, solutions):
-            select.set_possible_types(selectsolutions)
+        for i, select in enumerate(self.children):
+            select.set_possible_types(solutions, i)
             
     def copy(self):
         new = Union()
@@ -222,9 +225,53 @@ class Union(Statement):
             new.append(child.copy())
         if self.sortterms:
             new.sortterms = self.sortterms.copy(new)
+            new.sortterms.parent = new
         new.limit = self.limit
         new.offset = self.offset
         return new
+
+    def remove_node(self, node):
+        if node is self.sortterms:
+            for varref in node.iget_nodes(nodes.VariableRef):
+                varref.unregister_reference()
+            self.sortterms = None # XXX undoing
+        else:
+            Statement.remove_node(self, node)
+            
+    # access to select statements property, which in certain condition
+    # should have homogeneous values (don't use this in other cases)
+    
+    def get_groups(self):
+        """return a list of grouped variables (i.e a Group object) or None if
+        there is no grouped variable.
+        """
+        groups = self.children[0].get_groups()
+        if groups is None:
+            for c in self.children[1:]:
+                if c.get_groups() is not None:
+                    raise BadRQLQuery('inconsistent groups among subqueries')
+        else:
+            for c in self.children[1:]:
+                if not groups.is_equivalent(c.get_groups()):
+                    raise BadRQLQuery('inconsistent groups among subqueries')
+        return groups
+
+    def selected_terms(self):
+        selected = self.children[0].selected_terms()
+        for c in self.children[1:]:
+            cselected = c.selected_terms()
+            for i, term in enumerate(selected):
+                if not term.is_equivalent(cselected[i]):
+                    raise BadRQLQuery('inconsistent selection among subqueries')
+        return selected
+        
+    @property
+    def distinct(self):
+        distinct = self.children[0].distinct
+        for c in self.children[1:]:
+            if c.distinct != distinct:
+                raise BadRQLQuery('inconsistent distinct among subqueries')
+        return distinct
 
     # string representation ###################################################
     
@@ -400,8 +447,8 @@ class Select(Statement):
         return None
     
     def get_groups(self):
-        """return a list of grouped variables (i.e a Group object).
-        return an empty list if there is no grouped variable.
+        """return a list of grouped variables (i.e a Group object) or None if
+        there is no grouped variable.
         """
         for c in self.children:
             if isinstance(c, nodes.Group):

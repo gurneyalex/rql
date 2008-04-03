@@ -60,7 +60,7 @@ class ETypeResolver:
             solutions = [self._visit_stmt(select, debug)
                          for select in node.children]
         else:
-            solutions = self._visit_stmt(node, debug)
+            solutions = [self._visit_stmt(node, debug)]
         return solutions
             
     def _visit_stmt(self, node, debug):
