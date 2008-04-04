@@ -397,8 +397,12 @@ class Comparison(HSMixin, Node):
     
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
-        if len(self.children)==0:
+        if len(self.children) == 0:
             return self.operator
+        if len(self.children) == 2:
+            return '%s %s %s' % (self.children[0].as_string(encoding, kwargs),
+                                 self.operator.encode(),
+                                 self.children[1].as_string(encoding, kwargs))
         if self.operator in ('=', 'IS'):
             return self.children[0].as_string(encoding, kwargs)
         return '%s %s' % (self.operator.encode(),
@@ -664,31 +668,46 @@ class VariableRef(HSMixin, LeafNode):
     def get_description(self):
         return self.variable.get_description()
 
+class KWNode(Node):
+    __slots__ = ()    
+    def as_string(self, encoding=None, kwargs=None):
+        return '%s %s' % (self.keyword,
+                          ', '.join(child.as_string(encoding, kwargs)
+                                    for child in self.children))
 
-class Group(Node): 
+    def __repr__(self):
+        return '%s %s' % (self.keyword,
+                          ', '.join(repr(child) for child in self.children))
+    
+    def exists_root(self):
+        return False
+    
+class Group(KWNode): 
     """a group (GROUPBY) node"""
     __slots__ = ()
-    
+    keyword = 'GROUPBY'
     def accept(self, visitor, *args, **kwargs):
         return visitor.visit_group(self, *args, **kwargs)
     
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_group(self, *args, **kwargs)
-    
-    def as_string(self, encoding=None, kwargs=None):
-        return 'GROUPBY %s' % ', '.join(child.as_string(encoding, kwargs)
-                                        for child in self.children)
 
-    def __repr__(self):
-        return 'GROUPBY %s' % ', '.join(repr(child) for child in self.children)
     
-    def exists_root(self):
-        return False
+class Having(KWNode): 
+    """a having (HAVING) node"""
+    __slots__ = ()
+    keyword = 'HAVING'
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit_having(self, *args, **kwargs)
     
+    def leave(self, visitor, *args, **kwargs):
+        return visitor.leave_having(self, *args, **kwargs)
+
     
-class Sort(Node):
+class Sort(KWNode):
     """a sort (ORDERBY) node"""
     __slots__ = ()
+    keyword = 'ORDERBY'
     
     def accept(self, visitor, *args, **kwargs):
         return visitor.visit_sort(self, *args, **kwargs)
@@ -698,16 +717,6 @@ class Sort(Node):
 
     def selected_terms(self): # XXX duh? explain or remove
         return self 
-    
-    def as_string(self, encoding=None, kwargs=None):
-        return 'ORDERBY %s' % ', '.join(child.as_string(encoding, kwargs)
-                                        for child in self.children)
-    
-    def __repr__(self):
-        return 'ORDERBY %s' % ', '.join(repr(child) for child in self.children)
-    
-    def exists_root(self):
-        return False
     
 
 class SortTerm(Node):

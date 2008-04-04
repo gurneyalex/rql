@@ -63,8 +63,10 @@ SPEC_QUERIES = (
     'Any X WHERE X has_text "2.12.0";',
     'Any X,A,B,C,D WHERE X concerns 41,X title A,X state B,X priority C,X cost D ORDERBY A ASC;',
 
-    "Any X, COUNT(B) where B concerns X GROUPBY X ORDERBY 1;"
-
+    "Any X, COUNT(B) where B concerns X GROUPBY X ORDERBY 1;",
+    
+    "Any X, COUNT(B) where B concerns X GROUPBY X HAVING COUNT(B) > 2 ORDERBY 1;",
+    
     'Any X, MAX(COUNT(B)) WHERE B concerns X GROUPBY X;', # syntaxically correct
 
     'Any X WHERE X eid > 12;',
