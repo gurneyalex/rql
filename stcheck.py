@@ -92,7 +92,7 @@ class RQLSTChecker(object):
         self._visit_selectedterm(node, errors)
             
     def leave_select(self, selection, errors):
-        assert len(selection.children) <= 3
+        assert len(selection.children) <= 4
         selected = selection.selected
         # check selected variable are used in restriction
         if selection.get_restriction() is not None or len(selected) > 1:
@@ -150,7 +150,9 @@ class RQLSTChecker(object):
                     msg = 'variable %s used in %s is not referenced by subquery %s'
                     errors.append(msg % (vref.name, termtype, select.as_string()))
 
-
+    def visit_having(self, node, errors):
+        pass
+                
     def visit_sort(self, sort, errors):
         """check that variables used in sort are selected on DISTINCT query"""
         if sort.root().TYPE == 'union':
@@ -197,7 +199,7 @@ class RQLSTChecker(object):
         #                                                       relation)
         
     def visit_comparison(self, comparison, errors):
-        assert len(comparison.children) == 1, len(comparison.children)
+        assert len(comparison.children) in (1,2), len(comparison.children)
     
     def visit_mathexpression(self, mathexpr, errors):
         assert len(mathexpr.children) == 2, len(mathexpr.children)
@@ -251,13 +253,15 @@ class RQLSTChecker(object):
         pass
     def leave_and(self, node, errors):
         pass
-    def leave_group(self, node, errors):
-        pass
-    def leave_sort(self, node, errors):
-        pass
     def leave_sortterm(self, node, errors):
         pass
     def leave_function(self, node, errors):
+        pass
+    def leave_group(self, node, errors):
+        pass
+    def leave_having(self, node, errors):
+        pass
+    def leave_sort(self, node, errors):
         pass
 
         

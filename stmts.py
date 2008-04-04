@@ -457,11 +457,16 @@ class Select(Statement):
         return None
     
     def get_groups(self):
-        """return a list of grouped variables (i.e a Group object) or None if
-        there is no grouped variable.
-        """
+        """return a Group node or None if there is no grouped variable"""
         for c in self.children:
             if isinstance(c, nodes.Group):
+                return c
+        return None
+    
+    def get_having(self):
+        """return a Having or None if there is no HAVING clause"""
+        for c in self.children:
+            if isinstance(c, nodes.Having):
                 return c
         return None
     

@@ -37,6 +37,7 @@ parser Hercule:
     token AND:         r'(?i)AND'
     token NOT:         r'(?i)NOT'
     token GROUPBY:     r'(?i)GROUPBY'
+    token HAVING:      r'(?i)HAVING'
     token ORDERBY:     r'(?i)ORDERBY'
     token SORT_ASC:    r'(?i)ASC'
     token SORT_DESC:   r'(?i)DESC'
@@ -117,7 +118,7 @@ rule select<<V>>: DISTINCT select_base<<V>>  {{ V.distinct = True ; return V }}
 
 
 rule select_base<<V>>: E_TYPE selected_terms<<V>> restr<<V>> 
-                       group<<V>>  {{ V.set_statement_type(E_TYPE) ; return V }}
+                       group<<V>> having<<V>> {{ V.set_statement_type(E_TYPE) ; return V }}
 
 
 rule selected_terms<<V>>: added_expr<<V>> (   {{ V.append_selected(added_expr) }}
@@ -135,7 +136,17 @@ rule group<<V>>: GROUPBY        {{ G = Group() }}
 
                  |
 
+rule having<<V>>: HAVING               {{ G = Having() }}
+                   cmp_expr<<V>> (     {{ G.append(cmp_expr) }}
+                   ',' cmp_expr<<V>>
+                   )*                  {{ G.append(cmp_expr) ; V.append(G) }}
 
+                 |
+        
+rule cmp_expr<<V>>: added_expr<<V>>  {{ c1 = added_expr }}
+                    CMP_OP           {{ cmp = Comparison(CMP_OP.upper(), c1); }}
+                    added_expr<<V>>  {{ cmp.append(added_expr); return cmp }}
+        
 rule sort<<V>>: ORDERBY              {{ S = Sort() }}
                   sort_term<<V>> (   {{ S.append(sort_term) }}
                   ',' sort_term<<V>>
