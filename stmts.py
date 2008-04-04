@@ -195,6 +195,8 @@ class Union(Statement):
         # for sort variables
         self.sortterms = None
         self.defined_vars = {}
+        # ISchema
+        self.schema = None
         # recoverable modification attributes
         self.memorizing = 0
         # used to prevent from memorizing when undoing !
@@ -240,7 +242,8 @@ class Union(Statement):
             
     # access to select statements property, which in certain condition
     # should have homogeneous values (don't use this in other cases)
-    
+
+    @cached
     def get_groups(self):
         """return a list of grouped variables (i.e a Group object) or None if
         there is no grouped variable.
@@ -256,6 +259,7 @@ class Union(Statement):
                     raise BadRQLQuery('inconsistent groups among subqueries')
         return groups
 
+    @cached
     def selected_terms(self):
         selected = self.children[0].selected_terms()
         for c in self.children[1:]:
@@ -266,6 +270,12 @@ class Union(Statement):
         return selected
         
     @property
+    def selected(self):
+        # consistency check done by selected_terms
+        return self.children[0].selected
+        
+    @property
+    @cached
     def distinct(self):
         distinct = self.children[0].distinct
         for c in self.children[1:]:
