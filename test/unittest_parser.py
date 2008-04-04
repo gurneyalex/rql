@@ -81,6 +81,7 @@ E_TYPES = {'Person' : 'Person',
            'Story' : 'Story',
            'EmailAddress' : 'EmailAddress',
            'EUser' : 'EUser',
+           'State' : 'State',
            }
 
 class ParserHercule(TestCase):

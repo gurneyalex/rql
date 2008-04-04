@@ -696,12 +696,15 @@ class Sort(Node):
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_sort(self, *args, **kwargs)
 
-    def selected_terms(self):
-        return self
+    def selected_terms(self): # XXX duh? explain or remove
+        return self 
     
     def as_string(self, encoding=None, kwargs=None):
         return 'ORDERBY %s' % ', '.join(child.as_string(encoding, kwargs)
                                         for child in self.children)
+    
+    def __repr__(self):
+        return 'ORDERBY %s' % ', '.join(repr(child) for child in self.children)
     
     def exists_root(self):
         return False

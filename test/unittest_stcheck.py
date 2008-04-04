@@ -29,6 +29,13 @@ BAD_QUERIES = (
     
     )
 
+OK_QUERIES = (
+    'Any N,COUNT(X) WHERE X name N GROUPBY N'
+    ' UNION '
+    'Any N,COUNT(X) WHERE X firstname N GROUPBY N'
+    ' ORDERBY 2',
+    )
+
 class CheckClassTest(TestCase):
     """check wrong queries are correctly detected"""
     
@@ -47,6 +54,10 @@ class CheckClassTest(TestCase):
     def test_raise(self):
         for rql in BAD_QUERIES:
             yield self._test, rql
+        
+    def test_ok(self):
+        for rql in OK_QUERIES:
+            yield self.parse, rql
         
     def _test_rewrite(self, rql, expected):
         self.assertEquals(self.simplify(self.parse(rql)).as_string(),
