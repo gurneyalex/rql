@@ -10,7 +10,8 @@ import threading
 from cStringIO import StringIO
 
 from rql._exceptions import *
-REQUIRED_TYPES = ['String', 'Float', 'Int', 'Boolean', 'Date']
+
+#REQUIRED_TYPES = ['String', 'Float', 'Int', 'Boolean', 'Date']
 
 class RQLHelper:
     """Helper class for RQL handling
@@ -43,22 +44,21 @@ class RQLHelper:
 
     def set_schema(self, schema):
         from rql.utils import is_keyword
-        self.e_types = etypes = {}
         for etype in schema.entities():
             etype = str(etype)
             if is_keyword(etype) or etype.capitalize() == 'Any':
                 raise UsesReservedWord(etype)
-            etypes[etype] = etype
         for rtype in schema.relations():
             rtype = str(rtype)
             if is_keyword(rtype):# or rtype.lower() == 'is':
                 raise UsesReservedWord(rtype)
+        self._checker.schema = schema
         self._annotator.schema = schema
         self._analyser.set_schema(schema)
 
     def parse(self, rqlstring):
         """return a syntax tree from an sql string"""
-        rqlst = parse(rqlstring, self.e_types, False)
+        rqlst = parse(rqlstring, False)
         self._checker.check(rqlst)
         self.annotate(rqlst)
         rqlst.schema = self._annotator.schema
@@ -86,10 +86,9 @@ class RQLHelper:
     def simplify(self, rqlst, needcopy=True):
         #print 'simplify', rqlst.as_string(encoding='UTF8')
         if rqlst.TYPE == 'select':
-            return self._simplify(rqlst, needcopy)
-        if rqlst.TYPE == 'union':
             from rql import nodes
             if needcopy:
+                # XXX  should only copy when necessary ?
                 rqlst = rqlst.copy()
                 self.annotate(rqlst)
             sampleselection = rqlst.children[0].selected[:]
@@ -102,6 +101,7 @@ class RQLHelper:
                     except KeyError:
                         continue
                     else:
+                        # XXX what if vref inside a function for instance!
                         for i, term in enumerate(sampleselection):
                             if getattr(term, 'name', None) == vname:
                                 for vref in var.references():
@@ -163,7 +163,7 @@ class RQLHelper:
         return compare_tree(self.parse(rqlstring1), self.parse(rqlstring2))
 
         
-def parse(rqlstring, e_types=None, print_errors=True): 
+def parse(rqlstring, print_errors=True): 
     """return a syntax tree from an sql string"""   
     from yapps.runtime import print_error, SyntaxError, NoMoreTokens
     from rql.parser import Hercule, HerculeScanner
@@ -174,7 +174,7 @@ def parse(rqlstring, e_types=None, print_errors=True):
     # parse the RQL string
     parser = Hercule(HerculeScanner(rqlstring))
     try:
-        return parser.goal(e_types)
+        return parser.goal()
     except SyntaxError, ex:
         if not print_errors:
             raise RQLSyntaxError('%s\n%s' % (rqlstring, ex.msg))

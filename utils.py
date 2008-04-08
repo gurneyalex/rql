@@ -103,7 +103,7 @@ class RQLVisitorHandler:
     to visit a RQL syntax tree
     """
     
-    def visit_select(self, selection):
+    def visit_union(self, union):
         pass
     def visit_insert(self, insert):
         pass
@@ -117,6 +117,9 @@ class RQLVisitorHandler:
     def visit_sort(self, sort):
         pass
     def visit_sortterm(self, sortterm):
+        pass
+
+    def visit_select(self, selection):
         pass
     
     def visit_and(self, et):
