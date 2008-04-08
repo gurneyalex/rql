@@ -279,7 +279,7 @@ class RQLSTAnnotator(object):
 
     def annotate(self, node):
         #assert not node.annotated
-        if node.TYPE == 'union':
+        if node.TYPE == 'select':
             for select in node.children:
                 self._annotate_stmt(select)
         else:

@@ -17,17 +17,12 @@ from rql.utils import rqlvar_maker
 class Statement(nodes.EditableMixIn, Node):
     """base class for statement nodes"""
     
-    def __init__(self, etypes):
+    def __init__(self):
         Node.__init__(self)
-        # a dictionnary mapping known entity type names to the corresponding
-        # type object
-        self.e_types = etypes
         # dictionnary of defined variables in the original RQL syntax tree
         self.defined_vars = {}
-        # variable names generator
-        self._varmaker = rqlvar_maker(defined=self.defined_vars)
-        # syntax tree meta-information
-        self.stinfo = {'rewritten': {}}
+        # variable names generator, built when necessary
+        self._varmaker = None
         # ISchema
         self.schema = None
         # recoverable modification attributes
@@ -36,6 +31,8 @@ class Statement(nodes.EditableMixIn, Node):
         self.undoing = False
         # has this tree been annotated
         self.annotated = False
+        # syntax tree meta-information
+        self.stinfo = {}
         
     def __str__(self):
         return self.as_string(None, {})
@@ -45,7 +42,7 @@ class Statement(nodes.EditableMixIn, Node):
         raise NotImplementedError()
     
     def copy(self):
-        new = self.__class__(self.e_types)
+        new = self.__class__()
         new.schema = self.schema
         for child in self.children:
             new.append(child.copy(new))
@@ -89,6 +86,8 @@ class Statement(nodes.EditableMixIn, Node):
 
     def allocate_varname(self):
         """return an yet undefined variable name"""
+        if self._varmaker is None:
+            self._varmaker = rqlvar_maker(defined=self.defined_vars)
         name =  self._varmaker.next()
         while name in self.defined_vars:
             name =  self._varmaker.next()
@@ -99,13 +98,7 @@ class Statement(nodes.EditableMixIn, Node):
         
         raise BadRQLQuery on unknown type
         """
-        # do not check the type
-        if self.e_types is None:
-            return nodes.Constant(name, 'etype')
-        try:
-            return nodes.Constant(self.e_types[name], 'etype')
-        except KeyError:
-            raise BadRQLQuery('No such entity type %r' % name)
+        return nodes.Constant(name, 'etype')
         
     def get_variable(self, name):
         """get a variable instance from its name
@@ -316,24 +309,26 @@ class Select(Statement):
     without UNION
     """
     TYPE = 'select'
-    
     def accept(self, visitor, *args, **kwargs):
         return visitor.visit_select(self, *args, **kwargs)
     
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_select(self, *args, **kwargs)
 
-    def __init__(self, etypes):
-        Statement.__init__(self, etypes)
-        # distinct ?
-        self.distinct = False
-        # list of selected relations (maybe variables or functions)
-        self.selected = []
+    def __init__(self):
+        Statement.__init__(self)
         # limit / offset
         self.limit = None
         self.offset = 0
-        # set by the annotator
-        self.has_aggregat = False
+        # for sort variables
+        self.sortterms = None
+
+    def append(self, node):
+        if isinstance(node, nodes.Sort):
+            self.sortterms = node
+            node.parent = self
+        else:
+            Statement.append(self, node)
 
     def set_limit(self, limit):
         if limit is not None and (not isinstance(limit, (int, long)) or limit <= 0):
@@ -350,14 +345,135 @@ class Select(Statement):
             from rql.undo import SetOffsetOperation
             self.undo_manager.add_operation(SetOffsetOperation(self.offset))
         self.offset = offset
+            
+    def get_sortterms(self):
+        """return a list of sortterms (i.e a Sort object) or None if there is
+        no sortterm.
+        """
+        return self.sortterms
+        
+    def set_possible_types(self, solutions):
+        for i, select in enumerate(self.children):
+            select.set_possible_types(solutions, i)
+            
+    def copy(self):
+        new = Union()
+        for child in self.children:
+            new.append(child.copy())
+        if self.sortterms:
+            new.sortterms = self.sortterms.copy(new)
+            new.sortterms.parent = new
+        new.limit = self.limit
+        new.offset = self.offset
+        return new
+
+    def remove_node(self, node):
+        if node is self.sortterms:
+            for varref in node.iget_nodes(nodes.VariableRef):
+                varref.unregister_reference()
+            self.sortterms = None # XXX undoing
+        else:
+            Statement.remove_node(self, node)
+            
+    # access to select statements property, which in certain condition
+    # should have homogeneous values (don't use this in other cases)
+
+    @cached
+    def get_groups(self):
+        """return a list of grouped variables (i.e a Group object) or None if
+        there is no grouped variable.
+        """
+        groups = self.children[0].get_groups()
+        if groups is None:
+            for c in self.children[1:]:
+                if c.get_groups() is not None:
+                    raise BadRQLQuery('inconsistent groups among subqueries')
+        else:
+            for c in self.children[1:]:
+                if not groups.is_equivalent(c.get_groups()):
+                    raise BadRQLQuery('inconsistent groups among subqueries')
+        return groups
+
+    @cached
+    def selected_terms(self):
+        selected = self.children[0].selected_terms()
+        for c in self.children[1:]:
+            cselected = c.selected_terms()
+            for i, term in enumerate(selected):
+                if not term.is_equivalent(cselected[i]):
+                    raise BadRQLQuery('inconsistent selection among subqueries')
+        return selected
+        
+    @property
+    def selected(self):
+        # consistency check done by selected_terms
+        return self.children[0].selected
+        
+    @property
+    @cached
+    def distinct(self):
+        distinct = self.children[0].distinct
+        for c in self.children[1:]:
+            if c.distinct != distinct:
+                raise BadRQLQuery('inconsistent distinct among subqueries')
+        return distinct
+
+    # string representation ###################################################
+    
+    def as_string(self, encoding=None, kwargs=None):
+        """return the tree as an encoded rql string"""
+        s = [select.as_string(encoding, kwargs) for select in self.children]
+        s = [' UNION '.join(s)]
+        sorts = self.get_sortterms()
+        if sorts is not None:
+            s.append(sorts.as_string(encoding, kwargs))
+        if self.limit is not None:
+            s.append('LIMIT %s' % self.limit)
+        if self.offset:
+            s.append('OFFSET %s' % self.offset)
+        return ' '.join(s)                              
+
+    def __repr__(self):
+        s = [repr(select) for select in self.children]
+        s = ['\nUNION\n'.join(s)]
+        sorts = self.get_sortterms()
+        if sorts is not None:
+            s.append(repr(sorts))
+        if self.limit is not None:
+            s.append('LIMIT %s' % self.limit)
+        if self.offset:
+            s.append('OFFSET %s' % self.offset)
+        return ' '.join(s)                             
+ 
+
+class Select(Statement):
+    """the select node is the root of the syntax tree for selection statement
+    without UNION
+    """
+    TYPE = 'select'
+    
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit_select(self, *args, **kwargs)
+    
+    def leave(self, visitor, *args, **kwargs):
+        return visitor.leave_select(self, *args, **kwargs)
+
+    def __init__(self):
+        Statement.__init__(self)
+        # distinct ?
+        self.distinct = False
+        # list of selected relations (maybe variables or functions)
+        self.selected = []
+        # set by the annotator
+        self.has_aggregat = False
+        # syntax tree meta-information
+        self.stinfo['rewritten'] = {}
         
     def copy(self):
         new = Statement.copy(self)
         for child in self.selected:
             new.append_selected(child.copy(new))
         new.distinct = self.distinct
-        new.limit = self.limit
-        new.offset = self.offset
         #assert check_relations(new)
         return new
         
@@ -425,13 +541,9 @@ class Select(Statement):
         groups = self.get_groups()
         if groups is not None:
             s.append(groups.as_string(encoding, kwargs))
-        sorts = self.get_sortterms()
-        if sorts is not None:
-            s.append(sorts.as_string(encoding, kwargs))
-        if self.limit is not None:
-            s.append('LIMIT %s' % self.limit)
-        if self.offset:
-            s.append('OFFSET %s' % self.offset)
+        having = self.get_having()
+        if having is not None:
+            s.append(having.as_string(encoding, kwargs))
         return ' '.join(s)
                               
 
@@ -447,14 +559,6 @@ class Select(Statement):
         return '\n'.join(s)
 
     # quick accessors #########################################################
-    
-    def get_sortterms(self):
-        """return a list of sortterms (i.e a Sort object) or None if there is
-        no sortterm.
-        """
-        if self.children and isinstance(self.children[-1], nodes.Sort):
-            return self.children[-1]
-        return None
     
     def get_groups(self):
         """return a Group node or None if there is no grouped variable"""
@@ -494,8 +598,8 @@ class Delete(Statement):
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_delete( self, *args, **kwargs )
     
-    def __init__(self, etypes):
-        Statement.__init__(self, etypes)
+    def __init__(self):
+        Statement.__init__(self)
         self.main_variables = []
         self.main_relations = []
 
@@ -572,8 +676,8 @@ class Insert(Statement):
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_insert( self, *args, **kwargs )
     
-    def __init__(self, etypes):
-        Statement.__init__(self, etypes)
+    def __init__(self):
+        Statement.__init__(self)
         self.main_variables = []
         self.main_relations = []
         self.inserted_variables = {}
@@ -649,8 +753,8 @@ class Update(Statement):
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_update( self, *args, **kwargs )
 
-    def __init__(self, etypes):
-        Statement.__init__(self, etypes)
+    def __init__(self):
+        Statement.__init__(self)
         self.main_relations = []
 
     def selected_terms(self):

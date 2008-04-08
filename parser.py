@@ -73,31 +73,30 @@ class HerculeScanner(runtime.Scanner):
 
 class Hercule(runtime.Parser):
     Context = runtime.Context
-    def goal(self, T, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'goal', [T])
+    def goal(self, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'goal', [])
         _token = self._peek('DELETE', 'INSERT', 'SET', 'DISTINCT', 'E_TYPE', context=_context)
         if _token == 'DELETE':
             DELETE = self._scan('DELETE', context=_context)
-            _delete = self._delete(Delete(T), _context)
+            _delete = self._delete(Delete(), _context)
             self._scan("';'", context=_context)
             return _delete
         elif _token == 'INSERT':
             INSERT = self._scan('INSERT', context=_context)
-            _insert = self._insert(Insert(T), _context)
+            _insert = self._insert(Insert(), _context)
             self._scan("';'", context=_context)
             return _insert
         elif _token == 'SET':
             SET = self._scan('SET', context=_context)
-            update = self.update(Update(T), _context)
+            update = self.update(Update(), _context)
             self._scan("';'", context=_context)
             return update
         else: # in ['DISTINCT', 'E_TYPE']
-            select = self.select(Select(T), _context)
-            root = select
+            select = self.select(Select(), _context)
+            root = Union(); root.append(select)
             while self._peek('UNION', 'ORDERBY', "';'", 'LIMIT', 'OFFSET', context=_context) == 'UNION':
-                root = root.TYPE == 'union' and root or Union(root)
                 UNION = self._scan('UNION', context=_context)
-                select = self.select(Select(T), _context)
+                select = self.select(Select(), _context)
                 root.append(select)
             sort = self.sort(root, _context)
             limit_offset = self.limit_offset(root, _context)

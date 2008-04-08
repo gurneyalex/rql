@@ -77,17 +77,17 @@ parser Hercule:
 #  const -> constant
 #  cmp -> comparison
 
-rule goal<<T>>: DELETE _delete<<Delete(T)>> ';'         {{ return _delete }}
+rule goal: DELETE _delete<<Delete()>> ';'         {{ return _delete }}
 
-              | INSERT _insert<<Insert(T)>> ';'         {{ return _insert }}
+         | INSERT _insert<<Insert()>> ';'         {{ return _insert }}
  
-              | SET update<<Update(T)>> ';'             {{ return update }}
+         | SET update<<Update()>> ';'             {{ return update }}
 
-              | select<<Select(T)>>                     {{ root = select }}
-                  (                                     {{ root = root.TYPE == 'union' and root or Union(root) }} 
-                    UNION select<<Select(T)>>           {{ root.append(select) }} 
-                  )*                                   
-                sort<<root>> limit_offset<<root>> ';'   {{ return root }}
+         | select<<Select()>>                     {{ root = Union(); root.append(select) }}
+             (                                    
+               UNION select<<Select()>>           {{ root.append(select) }} 
+             )*                                   
+           sort<<root>> limit_offset<<root>> ';'  {{ return root }}
 
 # Deletion  ###################################################################
 
