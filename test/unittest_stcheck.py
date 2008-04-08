@@ -76,7 +76,7 @@ class CheckClassTest(TestCase):
             ('Any X WHERE X work_for Y, Y eid IN (12)',
              'Any X WHERE X work_for 12'),
             ('Any X WHERE X work_for Y, Y eid IN (12) ORDERBY Y',
-             'Any X WHERE X work_for 12 ORDERBY 12'),
+             'Any X WHERE X work_for 12'),
             ('Any X WHERE X eid 12',
              'Any 12'),
             ('Any X WHERE X is Person, X eid 12',
@@ -113,6 +113,7 @@ class CheckClassTest(TestCase):
             ('Any X WHERE X eid 12 UNION Any X WHERE X eid 13 ORDERBY X',
              'Any 12 UNION Any 13 ORDERBY 1'),
             ):
+            print rql, expected
             yield self._test_rewrite, rql, expected
 
 ##     def test_rewriten_as_string(self):
@@ -168,11 +169,11 @@ class AnnotateTest(TestCase):
     def test_is_rel_no_scope(self):
         """is relation used as type restriction should not affect variable's scope,
         and should not be included in stinfo['relations']"""
-        rqlst = self.parse('Any X WHERE C is Company, EXISTS(X work_for C)')
+        rqlst = self.parse('Any X WHERE C is Company, EXISTS(X work_for C)').children[0]
         C = rqlst.defined_vars['C']
         self.failIf(C.scope is rqlst, C.scope)
         self.assertEquals(len(C.stinfo['relations']), 1)
-        rqlst = self.parse('Any X, ET WHERE C is ET, EXISTS(X work_for C)')
+        rqlst = self.parse('Any X, ET WHERE C is ET, EXISTS(X work_for C)').children[0]
         C = rqlst.defined_vars['C']
         self.failUnless(C.scope is rqlst, C.scope)
         self.assertEquals(len(C.stinfo['relations']), 2)

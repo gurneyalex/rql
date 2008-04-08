@@ -16,21 +16,19 @@ from rql.utils import rqlvar_maker
 
 class Statement(nodes.EditableMixIn, Node):
     """base class for statement nodes"""
+
+    # default values for optional instance attributes, set on the instance when
+    # used
+    solutions = None # list of possibles solutions for used variables
+    undoing = False  # used to prevent from memorizing when undoing !
+    memorizing = 0   # recoverable modification attributes
+    schema = None    # ISchema
+    _varmaker = None # variable names generator, built when necessary
     
     def __init__(self):
         Node.__init__(self)
         # dictionnary of defined variables in the original RQL syntax tree
         self.defined_vars = {}
-        # variable names generator, built when necessary
-        self._varmaker = None
-        # ISchema
-        self.schema = None
-        # recoverable modification attributes
-        self.memorizing = 0
-        # used to prevent from memorizing when undoing !
-        self.undoing = False
-        # has this tree been annotated
-        self.annotated = False
         # syntax tree meta-information
         self.stinfo = {}
         
@@ -115,6 +113,7 @@ class Statement(nodes.EditableMixIn, Node):
 
     def set_possible_types(self, solutions, solsidx=0):
         solutions = solutions[solsidx]
+        self.solutions = solutions
         defined = self.defined_vars
         for var in defined.itervalues():
             var.stinfo['possibletypes'] = set()
@@ -171,48 +170,38 @@ class Union(Statement):
     """the select node is the root of the syntax tree for selection statement
     using UNION
     """
-    TYPE = 'union'
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_union(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_union(self, *args, **kwargs)
+    TYPE = 'select'
 
-    def __init__(self, firstselect=None):
-        Node.__init__(self)
+    def __init__(self):
+        Statement.__init__(self)
         # limit / offset
         self.limit = None
         self.offset = 0
-        if firstselect:
-            self.append(firstselect)
         # for sort variables
         self.sortterms = None
-        self.defined_vars = {}
-        # ISchema
-        self.schema = None
-        # recoverable modification attributes
-        self.memorizing = 0
-        # used to prevent from memorizing when undoing !
-        self.undoing = False
-        # has this tree been annotated
-        self.annotated = False
 
-    def append(self, node):
-        if isinstance(node, nodes.Sort):
-            self.sortterms = node
-            node.parent = self
-        else:
-            Statement.append(self, node)
-            
-    def get_sortterms(self):
-        """return a list of sortterms (i.e a Sort object) or None if there is
-        no sortterm.
-        """
-        return self.sortterms
-        
-    def set_possible_types(self, solutions):
-        for i, select in enumerate(self.children):
-            select.set_possible_types(solutions, i)
+    def __repr__(self):
+        s = [repr(select) for select in self.children]
+        s = ['\nUNION\n'.join(s)]
+        if self.sortterms is not None:
+            s.append(repr(self.sortterms))
+        if self.limit is not None:
+            s.append('LIMIT %s' % self.limit)
+        if self.offset:
+            s.append('OFFSET %s' % self.offset)
+        return ' '.join(s)                             
+    
+    def as_string(self, encoding=None, kwargs=None):
+        """return the tree as an encoded rql string"""
+        s = [select.as_string(encoding, kwargs) for select in self.children]
+        s = [' UNION '.join(s)]
+        if self.sortterms is not None:
+            s.append(self.sortterms.as_string(encoding, kwargs))
+        if self.limit is not None:
+            s.append('LIMIT %s' % self.limit)
+        if self.offset:
+            s.append('OFFSET %s' % self.offset)
+        return ' '.join(s)                              
             
     def copy(self):
         new = Union()
@@ -225,110 +214,15 @@ class Union(Statement):
         new.offset = self.offset
         return new
 
-    def remove_node(self, node):
-        if node is self.sortterms:
-            for varref in node.iget_nodes(nodes.VariableRef):
-                varref.unregister_reference()
-            self.sortterms = None # XXX undoing
-        else:
-            Statement.remove_node(self, node)
-            
-    # access to select statements property, which in certain condition
-    # should have homogeneous values (don't use this in other cases)
-
-    @cached
-    def get_groups(self):
-        """return a list of grouped variables (i.e a Group object) or None if
-        there is no grouped variable.
-        """
-        groups = self.children[0].get_groups()
-        if groups is None:
-            for c in self.children[1:]:
-                if c.get_groups() is not None:
-                    raise BadRQLQuery('inconsistent groups among subqueries')
-        else:
-            for c in self.children[1:]:
-                if not groups.is_equivalent(c.get_groups()):
-                    raise BadRQLQuery('inconsistent groups among subqueries')
-        return groups
-
-    @cached
-    def selected_terms(self):
-        selected = self.children[0].selected_terms()
-        for c in self.children[1:]:
-            cselected = c.selected_terms()
-            for i, term in enumerate(selected):
-                if not term.is_equivalent(cselected[i]):
-                    raise BadRQLQuery('inconsistent selection among subqueries')
-        return selected
-        
-    @property
-    def selected(self):
-        # consistency check done by selected_terms
-        return self.children[0].selected
-        
-    @property
-    @cached
-    def distinct(self):
-        distinct = self.children[0].distinct
-        for c in self.children[1:]:
-            if c.distinct != distinct:
-                raise BadRQLQuery('inconsistent distinct among subqueries')
-        return distinct
-
-    # string representation ###################################################
-    
-    def as_string(self, encoding=None, kwargs=None):
-        """return the tree as an encoded rql string"""
-        s = [select.as_string(encoding, kwargs) for select in self.children]
-        s = [' UNION '.join(s)]
-        sorts = self.get_sortterms()
-        if sorts is not None:
-            s.append(sorts.as_string(encoding, kwargs))
-        if self.limit is not None:
-            s.append('LIMIT %s' % self.limit)
-        if self.offset:
-            s.append('OFFSET %s' % self.offset)
-        return ' '.join(s)                              
-
-    def __repr__(self):
-        s = [repr(select) for select in self.children]
-        s = ['\nUNION\n'.join(s)]
-        sorts = self.get_sortterms()
-        if sorts is not None:
-            s.append(repr(sorts))
-        if self.limit is not None:
-            s.append('LIMIT %s' % self.limit)
-        if self.offset:
-            s.append('OFFSET %s' % self.offset)
-        return ' '.join(s)                             
- 
-
-class Select(Statement):
-    """the select node is the root of the syntax tree for selection statement
-    without UNION
-    """
-    TYPE = 'select'
     def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_select(self, *args, **kwargs)
+        return visitor.visit_union(self, *args, **kwargs)
     
     def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_select(self, *args, **kwargs)
-
-    def __init__(self):
-        Statement.__init__(self)
-        # limit / offset
-        self.limit = None
-        self.offset = 0
-        # for sort variables
-        self.sortterms = None
-
-    def append(self, node):
-        if isinstance(node, nodes.Sort):
-            self.sortterms = node
-            node.parent = self
-        else:
-            Statement.append(self, node)
+        return visitor.leave_union(self, *args, **kwargs)
+    
+    def set_sortterms(self, node):
+        self.sortterms = node
+        node.parent = self
 
     def set_limit(self, limit):
         if limit is not None and (not isinstance(limit, (int, long)) or limit <= 0):
@@ -345,27 +239,11 @@ class Select(Statement):
             from rql.undo import SetOffsetOperation
             self.undo_manager.add_operation(SetOffsetOperation(self.offset))
         self.offset = offset
-            
-    def get_sortterms(self):
-        """return a list of sortterms (i.e a Sort object) or None if there is
-        no sortterm.
-        """
-        return self.sortterms
         
     def set_possible_types(self, solutions):
+        assert len(solutions) == len(self.children)
         for i, select in enumerate(self.children):
             select.set_possible_types(solutions, i)
-            
-    def copy(self):
-        new = Union()
-        for child in self.children:
-            new.append(child.copy())
-        if self.sortterms:
-            new.sortterms = self.sortterms.copy(new)
-            new.sortterms.parent = new
-        new.limit = self.limit
-        new.offset = self.offset
-        return new
 
     def remove_node(self, node):
         if node is self.sortterms:
@@ -418,45 +296,12 @@ class Select(Statement):
                 raise BadRQLQuery('inconsistent distinct among subqueries')
         return distinct
 
-    # string representation ###################################################
-    
-    def as_string(self, encoding=None, kwargs=None):
-        """return the tree as an encoded rql string"""
-        s = [select.as_string(encoding, kwargs) for select in self.children]
-        s = [' UNION '.join(s)]
-        sorts = self.get_sortterms()
-        if sorts is not None:
-            s.append(sorts.as_string(encoding, kwargs))
-        if self.limit is not None:
-            s.append('LIMIT %s' % self.limit)
-        if self.offset:
-            s.append('OFFSET %s' % self.offset)
-        return ' '.join(s)                              
-
-    def __repr__(self):
-        s = [repr(select) for select in self.children]
-        s = ['\nUNION\n'.join(s)]
-        sorts = self.get_sortterms()
-        if sorts is not None:
-            s.append(repr(sorts))
-        if self.limit is not None:
-            s.append('LIMIT %s' % self.limit)
-        if self.offset:
-            s.append('OFFSET %s' % self.offset)
-        return ' '.join(s)                             
- 
 
 class Select(Statement):
     """the select node is the root of the syntax tree for selection statement
     without UNION
     """
     TYPE = 'select'
-    
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_select(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_select(self, *args, **kwargs)
 
     def __init__(self):
         Statement.__init__(self)
@@ -468,7 +313,37 @@ class Select(Statement):
         self.has_aggregat = False
         # syntax tree meta-information
         self.stinfo['rewritten'] = {}
-        
+
+    def __repr__(self):
+        if self.distinct:
+            base = 'DISTINCT Any'
+        else:
+            base = 'Any'
+        s = ['%s %s WHERE' % (base,
+                              ','.join([repr(v) for v in self.selected]))]
+        for child in self.children:
+            s.append(repr(child))
+        return '\n'.join(s)
+    
+    def as_string(self, encoding=None, kwargs=None):
+        """return the tree as an encoded rql string"""
+        if self.distinct:
+            base = 'DISTINCT Any'
+        else:
+            base = 'Any'
+        s = ['%s %s' % (base, ','.join(v.as_string(encoding, kwargs)
+                                       for v in self.selected))]
+        r = self.get_restriction()
+        if r is not None:
+            s.append('WHERE %s' % r.as_string(encoding, kwargs))
+        groups = self.get_groups()
+        if groups is not None:
+            s.append(groups.as_string(encoding, kwargs))
+        having = self.get_having()
+        if having is not None:
+            s.append(having.as_string(encoding, kwargs))
+        return ' '.join(s)
+                                      
     def copy(self):
         new = Statement.copy(self)
         for child in self.selected:
@@ -476,6 +351,12 @@ class Select(Statement):
         new.distinct = self.distinct
         #assert check_relations(new)
         return new
+    
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit_select(self, *args, **kwargs)
+    
+    def leave(self, visitor, *args, **kwargs):
+        return visitor.leave_select(self, *args, **kwargs)
         
     # construction helper methods #############################################
 
@@ -525,39 +406,6 @@ class Select(Statement):
             self.undo_manager.add_operation(SetDistinctOperation(self.distinct))
         self.distinct = value
         
-    # string representation ###################################################
-    
-    def as_string(self, encoding=None, kwargs=None):
-        """return the tree as an encoded rql string"""
-        if self.distinct:
-            base = 'DISTINCT Any'
-        else:
-            base = 'Any'
-        s = ['%s %s' % (base, ','.join(v.as_string(encoding, kwargs)
-                                       for v in self.selected))]
-        r = self.get_restriction()
-        if r is not None:
-            s.append('WHERE %s' % r.as_string(encoding, kwargs))
-        groups = self.get_groups()
-        if groups is not None:
-            s.append(groups.as_string(encoding, kwargs))
-        having = self.get_having()
-        if having is not None:
-            s.append(having.as_string(encoding, kwargs))
-        return ' '.join(s)
-                              
-
-    def __repr__(self):
-        if self.distinct:
-            base = 'DISTINCT Any'
-        else:
-            base = 'Any'
-        s = ['%s %s WHERE' % (base,
-                              ','.join([repr(v) for v in self.selected]))]
-        for child in self.children:
-            s.append(repr(child))
-        return '\n'.join(s)
-
     # quick accessors #########################################################
     
     def get_groups(self):
@@ -591,17 +439,41 @@ class Delete(Statement):
     """the Delete node is the root of the syntax tree for deletion statement
     """
     TYPE = 'delete'
-
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_delete( self, *args, **kwargs )
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_delete( self, *args, **kwargs )
     
     def __init__(self):
         Statement.__init__(self)
         self.main_variables = []
         self.main_relations = []
+    
+    def __repr__(self):
+        result = ['DELETE']
+        if self.main_variables:
+            result.append(', '.join(['%r %r' %(etype, var)
+                                     for etype, var in self.main_variables]))
+        if self.main_relations:
+            if self.main_variables:
+                result.append(',')
+            result.append(', '.join([repr(rel) for rel in self.main_relations]))
+        r = self.get_restriction()
+        if r is not None:
+            result.append('WHERE %r' % r)
+        return ' '.join(result)
+
+    def as_string(self, encoding=None, kwargs=None):
+        """return the tree as an encoded rql string"""
+        result = ['DELETE']
+        if self.main_variables:
+            result.append(', '.join(['%s %s' %(etype, var)
+                                     for etype, var in self.main_variables]))
+        if self.main_relations:
+            if self.main_variables:
+                result.append(',')
+            result.append(', '.join([rel.as_string(encoding, kwargs)
+                                     for rel in self.main_relations]))                
+        r = self.get_restriction()
+        if r is not None:
+            result.append('WHERE %s' % r.as_string(encoding, kwargs))
+        return ' '.join(result)
 
     def copy(self):
         new = Statement.copy(self)
@@ -612,6 +484,12 @@ class Delete(Statement):
             new.add_main_relation(child.copy(new))
         #assert check_relations(new)
         return new
+
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit_delete( self, *args, **kwargs )
+    
+    def leave(self, visitor, *args, **kwargs):
+        return visitor.leave_delete( self, *args, **kwargs )
     
     def get_selected_variables(self):
         return self.selected_terms()
@@ -634,53 +512,43 @@ class Delete(Statement):
         relation.parent = self
         self.main_relations.append( relation )
 
-    def as_string(self, encoding=None, kwargs=None):
-        """return the tree as an encoded rql string"""
-        result = ['DELETE']
-        if self.main_variables:
-            result.append(', '.join(['%s %s' %(etype, var)
-                                     for etype, var in self.main_variables]))
-        if self.main_relations:
-            if self.main_variables:
-                result.append(',')
-            result.append(', '.join([rel.as_string(encoding, kwargs)
-                                     for rel in self.main_relations]))                
-        r = self.get_restriction()
-        if r is not None:
-            result.append('WHERE %s' % r.as_string(encoding, kwargs))
-        return ' '.join(result)
-    
-    def __repr__(self):
-        result = ['DELETE']
-        if self.main_variables:
-            result.append(', '.join(['%r %r' %(etype, var)
-                                     for etype, var in self.main_variables]))
-        if self.main_relations:
-            if self.main_variables:
-                result.append(',')
-            result.append(', '.join([repr(rel) for rel in self.main_relations]))
-        r = self.get_restriction()
-        if r is not None:
-            result.append('WHERE %r' % r)
-        return ' '.join(result)
-
 
 class Insert(Statement):
     """the Insert node is the root of the syntax tree for insertion statement
     """
     TYPE = 'insert'
-
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_insert( self, *args, **kwargs )
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_insert( self, *args, **kwargs )
     
     def __init__(self):
         Statement.__init__(self)
         self.main_variables = []
         self.main_relations = []
         self.inserted_variables = {}
+                              
+    def __repr__(self):
+        result = ['INSERT']
+        result.append(', '.join(['%r %r' % (etype, var)
+                                 for etype, var in self.main_variables]))
+        if self.main_relations:
+            result.append(':')
+            result.append(', '.join([repr(rel) for rel in self.main_relations]))
+        restr = self.get_restriction()
+        if restr is not None:
+            result.append('WHERE %r' % restr)
+        return ' '.join(result)
+
+    def as_string(self, encoding=None, kwargs=None):
+        """return the tree as an encoded rql string"""
+        result = ['INSERT']
+        result.append(', '.join(['%s %s' % (etype, var)
+                                 for etype, var in self.main_variables]))
+        if self.main_relations:
+            result.append(':')
+            result.append(', '.join([rel.as_string(encoding, kwargs)
+                                     for rel in self.main_relations]))
+        restr = self.get_restriction()
+        if restr is not None:
+            result.append('WHERE %s' % restr.as_string(encoding, kwargs))
+        return ' '.join(result)
 
     def copy(self):
         new = Statement.copy(self)
@@ -691,6 +559,12 @@ class Insert(Statement):
             new.add_main_relation(child.copy(new))
         #assert check_relations(new)
         return new
+
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit_insert( self, *args, **kwargs )
+    
+    def leave(self, visitor, *args, **kwargs):
+        return visitor.leave_insert( self, *args, **kwargs )
 
     def selected_terms(self):
         return [vref for et, vref in self.main_variables]
@@ -715,62 +589,15 @@ insertion variable'
         relation.parent = self
         self.main_relations.append( relation )
 
-    def as_string(self, encoding=None, kwargs=None):
-        """return the tree as an encoded rql string"""
-        result = ['INSERT']
-        result.append(', '.join(['%s %s' % (etype, var)
-                                 for etype, var in self.main_variables]))
-        if self.main_relations:
-            result.append(':')
-            result.append(', '.join([rel.as_string(encoding, kwargs)
-                                     for rel in self.main_relations]))
-        restr = self.get_restriction()
-        if restr is not None:
-            result.append('WHERE %s' % restr.as_string(encoding, kwargs))
-        return ' '.join(result)
-                              
-    def __repr__(self):
-        result = ['INSERT']
-        result.append(', '.join(['%r %r' % (etype, var)
-                                 for etype, var in self.main_variables]))
-        if self.main_relations:
-            result.append(':')
-            result.append(', '.join([repr(rel) for rel in self.main_relations]))
-        restr = self.get_restriction()
-        if restr is not None:
-            result.append('WHERE %r' % restr)
-        return ' '.join(result)
-
         
 class Update(Statement):
     """the Update node is the root of the syntax tree for update statement
     """
     TYPE = 'update'
 
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_update( self, *args, **kwargs )
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_update( self, *args, **kwargs )
-
     def __init__(self):
         Statement.__init__(self)
         self.main_relations = []
-
-    def selected_terms(self):
-        return []
-
-    def copy(self):
-        new = Statement.copy(self)
-        for child in self.main_relations:
-            new.add_main_relation(child.copy(new))
-        #assert check_relations(new)
-        return new
-        
-    def add_main_relation(self, relation):
-        """add a relation to the list of modified relations"""
-        relation.parent = self
-        self.main_relations.append( relation )
 
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
@@ -782,4 +609,23 @@ class Update(Statement):
             result.append('WHERE %s' % r.as_string(encoding, kwargs))
         return ' '.join(result)
 
-#from rql.editextensions import check_relations
+    def copy(self):
+        new = Statement.copy(self)
+        for child in self.main_relations:
+            new.add_main_relation(child.copy(new))
+        #assert check_relations(new)
+        return new
+
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit_update( self, *args, **kwargs )
+    
+    def leave(self, visitor, *args, **kwargs):
+        return visitor.leave_update( self, *args, **kwargs )
+
+    def selected_terms(self):
+        return []
+        
+    def add_main_relation(self, relation):
+        """add a relation to the list of modified relations"""
+        relation.parent = self
+        self.main_relations.append( relation )

@@ -211,13 +211,13 @@ class Hercule(runtime.Parser):
         _token = self._peek('ORDERBY', "';'", 'LIMIT', 'OFFSET', context=_context)
         if _token == 'ORDERBY':
             ORDERBY = self._scan('ORDERBY', context=_context)
-            S = Sort()
+            S = Sort(); V.set_sortterms(S)
             sort_term = self.sort_term(V, _context)
             while self._peek("','", "';'", 'LIMIT', 'OFFSET', context=_context) == "','":
                 S.append(sort_term)
                 self._scan("','", context=_context)
                 sort_term = self.sort_term(V, _context)
-            S.append(sort_term) ; V.append(S)
+            S.append(sort_term)
         else: # in ["';'", 'LIMIT', 'OFFSET']
             pass
 

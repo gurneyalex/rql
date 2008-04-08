@@ -142,23 +142,24 @@ class RQLSTChecker(object):
         for vref in term.iget_nodes(nodes.VariableRef):
             # no stinfo yet, use references
             for select in union.children:
-                for ovref in select.defined_vars[vref.name].references():
-                    rel = ovref.relation()
-                    if rel is not None:
-                        break
-                else:
+                try:
+                    for ovref in select.defined_vars[vref.name].references():
+                        rel = ovref.relation()
+                        if rel is not None:
+                            break
+                    else:
+                        msg = 'variable %s used in %s is not referenced by subquery %s'
+                        errors.append(msg % (vref.name, termtype, select.as_string()))
+                except KeyError:
                     msg = 'variable %s used in %s is not referenced by subquery %s'
                     errors.append(msg % (vref.name, termtype, select.as_string()))
-
+                    
     def visit_having(self, node, errors):
         pass
                 
     def visit_sort(self, sort, errors):
         """check that variables used in sort are selected on DISTINCT query"""
-        if sort.root().TYPE == 'union':
-            self._check_union_selected(sort, 'sort', errors)
-        else:
-            self._check_selected(sort, 'sort', errors)
+        self._check_union_selected(sort, 'sort', errors)
     
     def visit_sortterm(self, sortterm, errors):
         term = sortterm.term

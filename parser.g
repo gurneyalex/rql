@@ -147,10 +147,10 @@ rule cmp_expr<<V>>: added_expr<<V>>  {{ c1 = added_expr }}
                     CMP_OP           {{ cmp = Comparison(CMP_OP.upper(), c1); }}
                     added_expr<<V>>  {{ cmp.append(added_expr); return cmp }}
         
-rule sort<<V>>: ORDERBY              {{ S = Sort() }}
+rule sort<<V>>: ORDERBY              {{ S = Sort(); V.set_sortterms(S) }}
                   sort_term<<V>> (   {{ S.append(sort_term) }}
                   ',' sort_term<<V>>
-                  )*                 {{ S.append(sort_term) ; V.append(S) }}
+                  )*                 {{ S.append(sort_term) }}
 
                 |
 
