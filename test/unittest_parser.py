@@ -78,21 +78,13 @@ SPEC_QUERIES = (
     'Any X WHERE X nom "toto" GROUPBY X UNION Any X WHERE X firstname "toto" GROUPBY X ORDERBY X;',
     )
 
-E_TYPES = {'Person' : 'Person',
-           'Project' : 'Project',
-           'Story' : 'Story',
-           'EmailAddress' : 'EmailAddress',
-           'EUser' : 'EUser',
-           'State' : 'State',
-           }
-
 class ParserHercule(TestCase):
     _syntaxerr = SyntaxError
 
     def parse(self, string, print_errors=False):
         try:
             parser = Hercule(HerculeScanner(string))
-            return parser.goal(E_TYPES)
+            return parser.goal()
         except SyntaxError, ex:
             if print_errors:
                 # try to get error message from yapps
@@ -102,7 +94,7 @@ class ParserHercule(TestCase):
 
     def test_precedence_1(self):
         tree = self.parse("Any X WHERE X firstname 'lulu' AND X name 'toto' OR X name 'tutu';")
-        base = tree.children[0]
+        base = tree.children[0].children[0]
         self.assertEqual(isinstance(base, nodes.OR), 1)
         self.assertEqual(isinstance(base.children[0], nodes.AND), 1)
         self.assertEqual(isinstance(base.children[1], nodes.Relation), 1)
@@ -110,7 +102,7 @@ class ParserHercule(TestCase):
 
     def test_precedence_2(self):
         tree = self.parse("Any X WHERE X firstname 'lulu', X name 'toto' OR X name 'tutu';")
-        base = tree.children[0]
+        base = tree.children[0].children[0]
         self.assertEqual(isinstance(base, nodes.AND), 1)
         self.assertEqual(isinstance(base.children[0], nodes.Relation), 1)
         self.assertEqual(isinstance(base.children[1], nodes.OR), 1)
@@ -118,7 +110,7 @@ class ParserHercule(TestCase):
 
     def test_precedence_3(self):
         tree = self.parse("Any X WHERE X firstname 'lulu' AND (X name 'toto' or X name 'tutu');")
-        base = tree.children[0]
+        base = tree.children[0].children[0]
         self.assertEqual(isinstance(base, nodes.AND), 1)
         self.assertEqual(isinstance(base.children[0], nodes.Relation), 1)
         self.assertEqual(isinstance(base.children[1], nodes.OR), 1)
@@ -126,40 +118,40 @@ class ParserHercule(TestCase):
 
     def test_precedence_4(self):
         tree = self.parse("Any X WHERE X firstname 'lulu' OR X name 'toto' AND X name 'tutu';")
-        base = tree.children[0]
+        base = tree.children[0].children[0]
         self.assertEqual(isinstance(base, nodes.OR), 1)
         self.assertEqual(isinstance(base.children[0], nodes.Relation), 1)
         self.assertEqual(isinstance(base.children[1], nodes.AND), 1)
 
     def test_string_1(self):
         tree = self.parse(r"Any X WHERE X firstname 'lu\"lu';")
-        const = tree.children[0].children[1].children[0]
+        const = tree.children[0].children[0].children[1].children[0]
         self.assertEqual(const.value, r'lu\"lu')
 
     def test_string_2(self):
         tree = self.parse(r"Any X WHERE X firstname 'lu\'lu';")
-        const = tree.children[0].children[1].children[0]
+        const = tree.children[0].children[0].children[1].children[0]
         self.assertEqual(const.value, 'lu\'lu')
 
     def test_string_3(self):
         tree = self.parse(r'Any X WHERE X firstname "lu\'lu";')
-        const = tree.children[0].children[1].children[0]
+        const = tree.children[0].children[0].children[1].children[0]
         self.assertEqual(const.value, r"lu\'lu")
 
     def test_string_4(self):
         tree = self.parse(r'Any X WHERE X firstname "lu\"lu";')
-        const = tree.children[0].children[1].children[0]
+        const = tree.children[0].children[0].children[1].children[0]
         self.assertEqual(const.value, "lu\"lu")
 
     def test_math_1(self):
         tree = self.parse(r'Any X WHERE X date (TODAY + 1);')
-        math = tree.children[0].children[1].children[0]
+        math = tree.children[0].children[0].children[1].children[0]
         self.assert_(isinstance(math, nodes.MathExpression))
         self.assertEqual(math.operator, '+')
 
     def test_math_2(self):
         tree = self.parse(r'Any X WHERE X date (TODAY + 1 * 2);')
-        math = tree.children[0].children[1].children[0]
+        math = tree.children[0].children[0].children[1].children[0]
         self.assert_(isinstance(math, nodes.MathExpression))
         self.assertEqual(math.operator, '+')
         math2 = math.children[1]
@@ -168,7 +160,7 @@ class ParserHercule(TestCase):
 
     def test_math_3(self):
         tree = self.parse(r'Any X WHERE X date (TODAY + 1) * 2;')
-        math = tree.children[0].children[1].children[0]
+        math = tree.children[0].children[0].children[1].children[0]
         self.assert_(isinstance(math, nodes.MathExpression))
         self.assertEqual(math.operator, '*')
         math2 = math.children[0]
@@ -177,23 +169,23 @@ class ParserHercule(TestCase):
 
     def test_substitute(self):
         tree = self.parse("Any X WHERE X firstname %(firstname)s;")
-        cste = tree.children[0].children[1].children[0]
+        cste = tree.children[0].children[0].children[1].children[0]
         self.assert_(isinstance(cste, nodes.Constant))
         self.assertEquals(cste.type, 'Substitute')
         self.assertEquals(cste.value, 'firstname')
 
     def test_optional_relation(self):
         tree = self.parse(r'Any X WHERE X related Y;')
-        related = tree.children[0]
+        related = tree.children[0].children[0]
         self.assertEquals(related.optional, None)
         tree = self.parse(r'Any X WHERE X? related Y;')
-        related = tree.children[0]
+        related = tree.children[0].children[0]
         self.assertEquals(related.optional, 'left')
         tree = self.parse(r'Any X WHERE X related Y?;')
-        related = tree.children[0]
+        related = tree.children[0].children[0]
         self.assertEquals(related.optional, 'right')
         tree = self.parse(r'Any X WHERE X? related Y?;')
-        related = tree.children[0]
+        related = tree.children[0].children[0]
         self.assertEquals(related.optional, 'both')
 
     def test_spec(self):
@@ -234,7 +226,7 @@ class ParserRQLHelper(ParserHercule):
 
     def parse(self, string, print_errors=False):
         try:
-            return parse(string, E_TYPES, print_errors)
+            return parse(string, print_errors)
         except:
             raise
 
