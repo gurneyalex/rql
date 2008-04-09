@@ -10,9 +10,10 @@ class RQLUndoTestCase(TestCase):
         rqlst = parse('Person X')
         orig = rqlst.as_string()
         rqlst.save_state()
-        var = rqlst.children[0].make_variable()
-        rqlst.children[0].remove_selected(rqlst.selected[0])
-        rqlst.children[0].add_selected(var)
+        select = rqlst.children[0]
+        var = select.make_variable()
+        select.remove_selected(select.selected[0])
+        select.add_selected(var)
         # check operations
         self.assertEquals(rqlst.as_string(), 'Any %s WHERE X is Person' % var.name)
         # check references before recovering
@@ -27,9 +28,10 @@ class RQLUndoTestCase(TestCase):
         rqlst = parse('Any lower(N) WHERE X is Person, X name N')
         orig = rqlst.as_string()
         rqlst.save_state()
-        var = rqlst.children[0].make_variable()
-        rqlst.children[0].remove_selected(rqlst.selected[0])
-        rqlst.children[0].add_selected(var)
+        select = rqlst.children[0]
+        var = select.make_variable()
+        select.remove_selected(select.selected[0])
+        select.add_selected(var)
         # check operations
         self.assertEquals(rqlst.as_string(), 'Any %s WHERE X is Person, X name N' % var.name)
         # check references before recovering

@@ -42,11 +42,11 @@ class NodesTest(TestCase):
     def test_select_base_1(self):
         tree = self._parse("Any X WHERE X is Person")
         self.assertIsInstance(tree, stmts.Union)
-        self.assertEqual(tree.distinct, False)
         self.assertEqual(tree.limit, None)
         self.assertEqual(tree.offset, 0)
         select = tree.children[0]
         self.assertIsInstance(select, stmts.Select)
+        self.assertEqual(select.distinct, False)
         self.assertEqual(len(select.children), 1)
         self.assertIsInstance(select.children[0], nodes.Relation)
         
@@ -141,7 +141,7 @@ class NodesTest(TestCase):
         select = stmts.Select()
         restriction = tree.children[0].get_restriction()
         self.check_equal_but_not_same(restriction, restriction.copy(select))
-        groups = tree.children[0].get_groups()
+        groups = tree.children[0].groups
         self.check_equal_but_not_same(groups, groups.copy(select))
         sorts = tree.sortterms
         self.check_equal_but_not_same(sorts, sorts.copy(select))

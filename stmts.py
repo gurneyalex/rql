@@ -242,46 +242,47 @@ class Union(Statement):
     
     def get_description(self):
         return [c.get_description() for c in self.children]
-    
-    @cached
-    def get_groups(self):
-        """return a list of grouped variables (i.e a Group object) or None if
-        there is no grouped variable.
-        """
-        groups = self.children[0].get_groups()
-        if groups is None:
-            for c in self.children[1:]:
-                if c.get_groups() is not None:
-                    raise BadRQLQuery('inconsistent groups among subqueries')
-        else:
-            for c in self.children[1:]:
-                if not groups.is_equivalent(c.get_groups()):
-                    raise BadRQLQuery('inconsistent groups among subqueries')
-        return groups
 
-    @cached
-    def selected_terms(self):
-        selected = self.children[0].selected_terms()
-        for c in self.children[1:]:
-            cselected = c.selected_terms()
-            for i, term in enumerate(selected):
-                if not term.is_equivalent(cselected[i]):
-                    raise BadRQLQuery('inconsistent selection among subqueries')
-        return selected
+#     @property
+#     @cached
+#     def groups(self):
+#         """return a list of grouped variables (i.e a Group object) or None if
+#         there is no grouped variable.
+#         """
+#         groups = self.children[0].get_groups()
+#         if groups is None:
+#             for c in self.children[1:]:
+#                 if c.get_groups() is not None:
+#                     raise BadRQLQuery('inconsistent groups among subqueries')
+#         else:
+#             for c in self.children[1:]:
+#                 if not groups.is_equivalent(c.get_groups()):
+#                     raise BadRQLQuery('inconsistent groups among subqueries')
+#         return groups
+
+#     @cached
+#     def selected_terms(self):
+#         selected = self.children[0].selected_terms()
+#         for c in self.children[1:]:
+#             cselected = c.selected_terms()
+#             for i, term in enumerate(selected):
+#                 if not term.is_equivalent(cselected[i]):
+#                     raise BadRQLQuery('inconsistent selection among subqueries')
+#         return selected
         
-    @property
-    def selected(self):
-        # consistency check done by selected_terms
-        return self.children[0].selected
+#     @property
+#     def selected(self):
+#         # consistency check done by selected_terms
+#         return self.children[0].selected
         
-    @property
-    @cached
-    def distinct(self):
-        distinct = self.children[0].distinct
-        for c in self.children[1:]:
-            if c.distinct != distinct:
-                raise BadRQLQuery('inconsistent distinct among subqueries')
-        return distinct
+#     @property
+#     @cached
+#     def distinct(self):
+#         distinct = self.children[0].distinct
+#         for c in self.children[1:]:
+#             if c.distinct != distinct:
+#                 raise BadRQLQuery('inconsistent distinct among subqueries')
+#         return distinct
 
     # recoverable modification methods ########################################
     
@@ -398,10 +399,10 @@ class Select(Statement):
         r = self.get_restriction()
         if r is not None:
             s.append('WHERE %s' % r.as_string(encoding, kwargs))
-        groups = self.get_groups()
+        groups = self.groups
         if groups is not None:
             s.append(groups.as_string(encoding, kwargs))
-        having = self.get_having()
+        having = self.having
         if having is not None:
             s.append(having.as_string(encoding, kwargs))
         return ' '.join(s)
@@ -426,15 +427,17 @@ class Select(Statement):
         if stop_to_select:
             return self
         return self.parent
-    
-    def get_groups(self):
+
+    @property
+    def groups(self):
         """return a Group node or None if there is no grouped variable"""
         for c in self.children:
             if isinstance(c, nodes.Group):
                 return c
         return None
     
-    def get_having(self):
+    @property
+    def having(self):
         """return a Having or None if there is no HAVING clause"""
         for c in self.children:
             if isinstance(c, nodes.Having):
@@ -568,7 +571,7 @@ class Select(Statement):
         if self.should_register_op:
             from rql.undo import AddGroupOperation
             self.undo_manager.add_operation(AddGroupOperation(var))
-        groups = self.get_groups()
+        groups = self.groups
         if groups is None:
             groups = Group()
             self.append(groups)
@@ -576,7 +579,7 @@ class Select(Statement):
 
     def remove_group_var(self, var):
         """remove the group variable and the group node if necessary"""
-        groups = self.get_groups()
+        groups = self.groups
         assert var in groups.children
         if len(groups.children) == 1:
             self.remove_node(groups)

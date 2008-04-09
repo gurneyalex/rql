@@ -164,8 +164,9 @@ class RQLSTChecker(object):
     def visit_sortterm(self, sortterm, errors):
         term = sortterm.term
         if isinstance(term, nodes.Constant):
-            if len(sortterm.root().selected) < term.value:
-                errors.append('order column out of bound %s' % term.value)
+            for select in sortterm.root().children:
+                if len(select.selected) < term.value:
+                    errors.append('order column out of bound %s' % term.value)
     
     def visit_and(self, et, errors):
         assert len(et.children) == 2, len(et.children)
