@@ -318,7 +318,7 @@ class Union(Statement):
             self.undo_manager.add_operation(RemoveNodeOperation(node))
         node.parent.remove(node)
 
-    def add_sortvar(self, var, asc=True):
+    def add_sort_var(self, var, asc=True):
         """add var in 'orderby' constraints
         asc is a boolean indicating the sort order (ascendent or descendent)
         """
@@ -513,7 +513,7 @@ class Select(Statement):
             elif isinstance(varref.parent, nodes.SortTerm):
                 self.parent.remove_sort_term(varref.parent)
             elif isinstance(varref.parent, nodes.Group):
-                self.remove_group_variable(varref)
+                self.remove_group_var(varref)
             else: # selected variable
                 self.remove_selected(varref)
         # effective undefine operation
@@ -559,7 +559,7 @@ class Select(Statement):
             from rql.undo import SelectVarOperation
             self.undo_manager.add_operation(SelectVarOperation(term))
 
-    def add_groupvar(self, var):
+    def add_group_var(self, var):
         """add var in 'orderby' constraints
         asc is a boolean indicating the group order (ascendent or descendent)
         """
@@ -574,7 +574,7 @@ class Select(Statement):
             self.append(groups)
         groups.append(var)
 
-    def remove_group_variable(self, var):
+    def remove_group_var(self, var):
         """remove the group variable and the group node if necessary"""
         groups = self.get_groups()
         assert var in groups.children
