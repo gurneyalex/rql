@@ -14,14 +14,14 @@ from rql import BadRQLQuery, CoercionError, nodes
 from rql.base import Node
 from rql.utils import rqlvar_maker
 
+
+
 class Statement(nodes.EditableMixIn, Node):
     """base class for statement nodes"""
 
     # default values for optional instance attributes, set on the instance when
     # used
     solutions = None # list of possibles solutions for used variables
-    undoing = False  # used to prevent from memorizing when undoing !
-    memorizing = 0   # recoverable modification attributes
     schema = None    # ISchema
     _varmaker = None # variable names generator, built when necessary
     
@@ -48,7 +48,7 @@ class Statement(nodes.EditableMixIn, Node):
         
     # navigation helper methods #############################################
     
-    def root(self):
+    def root(self, stop_to_select=True):
         """return the root node of the tree"""
         return self
         
@@ -68,7 +68,7 @@ class Statement(nodes.EditableMixIn, Node):
         return None
     
     def selected_terms(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @property
     def scope(self):
@@ -107,9 +107,8 @@ class Statement(nodes.EditableMixIn, Node):
             return self.defined_vars[name]
         except:
             self.defined_vars[name] = var = nodes.Variable(name)
-            var.root = self
+            var.stmt = self
             return var
-        
 
     def set_possible_types(self, solutions, solsidx=0):
         solutions = solutions[solsidx]
@@ -121,49 +120,6 @@ class Statement(nodes.EditableMixIn, Node):
             for vname, etype in solution.iteritems():
                 defined[vname].stinfo['possibletypes'].add(etype)
 
-    # recoverable modification methods ########################################
-    
-    @property
-    @cached
-    def undo_manager(self):
-        from rql.undo import SelectionManager
-        return SelectionManager(self)
-
-    def save_state(self):
-        """save the current tree"""
-        self.undo_manager.push_state()
-        self.memorizing += 1
-
-    def recover(self):
-        """reverts the tree as it was when save_state() was last called"""
-        self.memorizing -= 1
-        assert self.memorizing >= 0
-        self.undo_manager.recover()    
-
-    def make_variable(self, etype=None):
-        """create a new variable with an unique name for this tree"""
-        var = self.get_variable(self.allocate_varname())
-        if self.memorizing and not self.undoing:
-            from rql.undo import MakeVarOperation
-            self.undo_manager.add_operation(MakeVarOperation(var))
-        return var
-    
-    def remove_node(self, node):
-        """remove the given node from the tree
-
-        USE THIS METHOD INSTEAD OF .remove to get correct variable references
-        handling
-        """
-        # unregister variable references in the removed subtree
-        for varref in node.iget_nodes(nodes.VariableRef):
-            varref.unregister_reference()
-            #if not varref.variable.references():
-            #    del node.root().defined_vars[varref.name]
-        if self.memorizing and not self.undoing:
-            from rql.undo import RemoveNodeOperation
-            self.undo_manager.add_operation(RemoveNodeOperation(node))
-        node.parent.remove(node)
-        #assert check_relations(self)
 
 
 class Union(Statement):
@@ -171,6 +127,10 @@ class Union(Statement):
     using UNION
     """
     TYPE = 'select'
+    # default values for optional instance attributes, set on the instance when
+    # used
+    undoing = False  # used to prevent from memorizing when undoing !
+    memorizing = 0   # recoverable modification attributes
 
     def __init__(self):
         Statement.__init__(self)
@@ -244,14 +204,6 @@ class Union(Statement):
         assert len(solutions) == len(self.children)
         for i, select in enumerate(self.children):
             select.set_possible_types(solutions, i)
-
-    def remove_node(self, node):
-        if node is self.sortterms:
-            for varref in node.iget_nodes(nodes.VariableRef):
-                varref.unregister_reference()
-            self.sortterms = None # XXX undoing
-        else:
-            Statement.remove_node(self, node)
             
     # access to select statements property, which in certain condition
     # should have homogeneous values (don't use this in other cases)
@@ -296,10 +248,87 @@ class Union(Statement):
                 raise BadRQLQuery('inconsistent distinct among subqueries')
         return distinct
 
+    # recoverable modification methods ########################################
+    
+    @property
+    @cached
+    def undo_manager(self):
+        from rql.undo import SelectionManager
+        return SelectionManager(self)
+
+    def save_state(self):
+        """save the current tree"""
+        self.undo_manager.push_state()
+        self.memorizing += 1
+
+    def recover(self):
+        """reverts the tree as it was when save_state() was last called"""
+        self.memorizing -= 1
+        assert self.memorizing >= 0
+        self.undo_manager.recover()    
+
+    def make_variable(self, etype=None):
+        """create a new variable with an unique name for this tree"""
+        var = self.get_variable(self.allocate_varname())
+        if self.memorizing and not self.undoing:
+            from rql.undo import MakeVarOperation
+            self.undo_manager.add_operation(MakeVarOperation(var))
+        return var
+    
+    def remove_node(self, node):
+        """remove the given node from the tree
+
+        USE THIS METHOD INSTEAD OF .remove to get correct variable references
+        handling
+        """
+        # unregister variable references in the removed subtree
+        for varref in node.iget_nodes(nodes.VariableRef):
+            varref.unregister_reference()
+            #if not varref.variable.references():
+            #    del node.root().defined_vars[varref.name]
+        if self.should_register_op:
+            from rql.undo import RemoveNodeOperation
+            self.undo_manager.add_operation(RemoveNodeOperation(node))
+        node.parent.remove(node)
+        #assert check_relations(self)
+
+    def add_sortvar(self, var, asc=True):
+        """add var in 'orderby' constraints
+        asc is a boolean indicating the sort order (ascendent or descendent)
+        """
+        var = nodes.variable_ref(var)
+        var.register_reference()
+        term = nodes.SortTerm(var, asc)
+        self.add_sort_term(term)
+        
+    def add_sort_term(self, term):
+        if self.should_register_op:
+            from rql.undo import AddSortOperation
+            self.undo_manager.add_operation(AddSortOperation(term))
+        sortterms = sortterms
+        if self.sortterms is None:
+            self.set_sortterms(nodes.Sort())
+        self.sortterms.append(term)
+
+    def remove_sort_terms(self):
+        if self.sortterms is not None:
+            for term in self.sortterms.children:
+                self.remove_sort_term(term)
+        
+    def remove_sort_term(self, term):
+        """remove a sort term and the sort node if necessary"""
+        assert term in self.sortterms.children
+        if self.should_register_op:
+            from rql.undo import RemoveSortOperation
+            self.undo_manager.add_operation(RemoveSortOperation(term))        
+        self.remove_node(term)        
+        if not self.sortterms.children:
+            self.sortterms = None
+
 
 class Select(Statement):
-    """the select node is the root of the syntax tree for selection statement
-    without UNION
+    """the select node is the base statement of the syntax tree for selection
+    statement, always child of a UNION root.
     """
     TYPE = 'select'
 
@@ -358,6 +387,40 @@ class Select(Statement):
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_select(self, *args, **kwargs)
         
+    # quick accessors #########################################################
+    
+    def root(self, stop_to_select=True):
+        """return the root node of the tree"""
+        if stop_to_select:
+            return self
+        return self.parent
+    
+    def get_groups(self):
+        """return a Group node or None if there is no grouped variable"""
+        for c in self.children:
+            if isinstance(c, nodes.Group):
+                return c
+        return None
+    
+    def get_having(self):
+        """return a Having or None if there is no HAVING clause"""
+        for c in self.children:
+            if isinstance(c, nodes.Having):
+                return c
+        return None
+    
+    def get_selected_variables(self):
+        """returns all selected variables, including those used in aggregate
+        functions
+        """
+        for term in self.selected_terms():
+            for node in term.iget_nodes(nodes.VariableRef):
+                yield node
+
+    def selected_terms(self):
+        """returns selected terms"""
+        return self.selected[:]
+        
     # construction helper methods #############################################
 
     def append_selected(self, term):
@@ -405,35 +468,93 @@ class Select(Statement):
             from rql.undo import SetDistinctOperation
             self.undo_manager.add_operation(SetDistinctOperation(self.distinct))
         self.distinct = value
-        
-    # quick accessors #########################################################
-    
-    def get_groups(self):
-        """return a Group node or None if there is no grouped variable"""
-        for c in self.children:
-            if isinstance(c, nodes.Group):
-                return c
-        return None
-    
-    def get_having(self):
-        """return a Having or None if there is no HAVING clause"""
-        for c in self.children:
-            if isinstance(c, nodes.Having):
-                return c
-        return None
-    
-    def get_selected_variables(self):
-        """returns all selected variables, including those used in aggregate
-        functions
+
+    def undefine_variable(self, var):
+        """undefine the given variable and remove all relations where it appears"""
+        assert check_relations(self)
+        if hasattr(var, 'variable'):
+            var = var.variable
+        # remove relations where this variable is referenced
+        for varref in var.references():
+            rel = varref.relation()
+            if rel is not None:
+                self.remove_node(rel)
+                continue
+            elif isinstance(varref.parent, nodes.SortTerm):
+                self.remove_sort_term(varref.parent)
+            elif isinstance(varref.parent, nodes.Group):
+                self.remove_group_variable(varref)
+            else: # selected variable
+                self.remove_selected(varref)
+        # effective undefine operation
+        if self.should_register_op:
+            from rql.undo import UndefineVarOperation
+            self.undo_manager.add_operation(UndefineVarOperation(var))
+        del self.defined_vars[var.name]
+        #assert check_relations(self)
+
+
+    def _var_index(self, var):
+        """get variable index in the list using identity (Variable and VariableRef
+        define __cmp__
         """
-        for term in self.selected_terms():
-            for node in term.iget_nodes(nodes.VariableRef):
-                yield node
+        for i in xrange(len(self.selected)):
+            if list[i] is var:
+                return i
+        raise IndexError()
 
-    def selected_terms(self):
-        """returns selected terms"""
-        return self.selected[:]
+    def remove_selected(self, var):
+        """deletes var from selection variable"""
+        #assert isinstance(var, VariableRef)
+        index = self.var_index(var)
+        if self.should_register_op:
+            from rql.undo import UnselectVarOperation
+            self.undo_manager.add_operation(UnselectVarOperation(var, index))
+        for vref in self.selected.pop(index).iget_nodes(VariableRef):
+            vref.unregister_reference()
+        #assert check_relations(self)
 
+    def add_selected(self, term, index=None):
+        """override Select.add_selected to memoize modification when needed"""
+        if isinstance(term, Variable):
+            term = nodes.VariableRef(term, noautoref=1)
+            term.register_reference()
+        else:
+            for var in term.iget_nodes(VariableRef):
+                var = nodes.variable_ref(var)
+                var.register_reference()
+        if index is not None:
+            self.selected.insert(index, term)
+        else:
+            self.selected.append(term)
+        if self.should_register_op:
+            from rql.undo import SelectVarOperation
+            self.undo_manager.add_operation(SelectVarOperation(term))
+        #assert check_relations(self)
+
+    def add_groupvar(self, var):
+        """add var in 'orderby' constraints
+        asc is a boolean indicating the group order (ascendent or descendent)
+        """
+        var = nodes.variable_ref(var)
+        var.register_reference()
+        if self.should_register_op:
+            from rql.undo import AddGroupOperation
+            self.undo_manager.add_operation(AddGroupOperation(var))
+        groups = self.get_groups()
+        if groups is None:
+            groups = Group()
+            self.append(groups)
+        groups.append(var)
+
+    def remove_group_variable(self, var):
+        """remove the group variable and the group node if necessary"""
+        groups = self.get_groups()
+        assert var in groups.children
+        if len(groups.children) == 1:
+            self.remove_node(groups)
+        else:
+            self.remove_node(var)
     
 class Delete(Statement):
     """the Delete node is the root of the syntax tree for deletion statement
