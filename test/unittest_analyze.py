@@ -151,7 +151,7 @@ class AnalyzerClassTest(TestCase):
     def test_base_2(self):
         node = self.helper.parse('Person X')
         # check constant type of the is relation inserted
-        self.assertEqual(node.get_restriction().children[1].children[0].type,
+        self.assertEqual(node.children[0].get_restriction().children[1].children[0].type,
                          'etype')
         sols = self.helper.get_solutions(node, debug=DEBUG)
         self.assertEqual(sols, [[{'X': 'Person'}]])

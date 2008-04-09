@@ -56,22 +56,14 @@ class ETypeResolver:
             self.uid_func_mapping = uid_func_mapping
             self.uid_func = uid_func_mapping.values()[0]
         self.kwargs = kwargs
-        if node.TYPE == 'union':
-            solutions = [self._visit_stmt(select, debug)
+        if node.TYPE == 'select':
+            solutions = [self._visit_stmt(select, node.TYPE, debug)
                          for select in node.children]
         else:
-            solutions = [self._visit_stmt(node, debug)]
+            solutions = [self._visit_stmt(node, node.TYPE, debug)]
         return solutions
-            
-    def _visit_stmt(self, node, debug):
-        if self.uid_func:
-            # check rewritten uid const
-            for consts in node.stinfo['rewritten'].values():
-                if not consts:
-                    continue
-                uidtype = self.uid_func(consts[0].eval(self.kwargs))
-                for const in consts:
-                    const.uidtype = uidtype
+
+    def _visit_stmt(self, node, stype, debug):
         # init variables for a visit
         domains = {}
         constraints = []
@@ -82,7 +74,7 @@ class ETypeResolver:
         if not domains:
             return [{}]
         # add restriction specific to delete and insert 
-        if node.TYPE in ('delete', 'insert'):
+        if stype in ('delete', 'insert'):
             for etype, variable in node.main_variables:
                 if node.TYPE == 'delete' and etype == 'Any':
                     continue
@@ -93,15 +85,23 @@ class ETypeResolver:
             for relation in node.main_relations:
                 self._visit(relation, constraints)
         # add restriction specific to update
-        elif node.TYPE == 'update':
+        elif stype == 'update':
             for relation in node.main_relations:
                 self._visit(relation, constraints)
-        
+        elif self.uid_func:
+            # check rewritten uid const
+            for consts in node.stinfo['rewritten'].values():
+                if not consts:
+                    continue
+                uidtype = self.uid_func(consts[0].eval(self.kwargs))
+                for const in consts:
+                    const.uidtype = uidtype
+            
         restriction = node.get_restriction()
         if restriction is not None:
             # get constraints from the restriction subtree
             self._visit(restriction, constraints)
-        elif node.TYPE == 'select':
+        elif stype == 'select':
             varnames = [v.name for v in node.get_selected_variables()]
             if varnames:
                 # add constraint on real relation types if no restriction
