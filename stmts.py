@@ -14,6 +14,20 @@ from rql import BadRQLQuery, CoercionError, nodes
 from rql.base import Node
 from rql.utils import rqlvar_maker
 
+            
+def _check_references(defined, varrefs):
+    refs = {}
+    for var in defined.values():
+        for vref in var.references():
+            # be careful, Variable and VariableRef define __cmp__
+            if not [v for v in varrefs if v is vref]:
+                raise AssertionError('buggy reference %r in %r (actual var: %r)' %
+                                     (varref, self, var))
+            refs[id(vref)] = 1
+    for vref in varrefs:
+        if not refs.has_key(id(vref)):
+            raise AssertionError('unreferenced varref %r' % vref)
+    return True
 
 
 class Statement(nodes.EditableMixIn, Node):
@@ -128,6 +142,14 @@ class Statement(nodes.EditableMixIn, Node):
             for vname, etype in solution.iteritems():
                 defined[vname].stinfo['possibletypes'].add(etype)
 
+    def check_references(self):
+        """test function"""
+        varrefs = self.get_nodes(nodes.VariableRef)
+        varrefs += self.get_selected_variables()
+        for n in getattr(self, 'main_relations', ()):
+            varrefs += n.iget_nodes(nodes.VariableRef)
+        return _check_references(self.defined_vars, varrefs)
+
 
 
 class Union(Statement):
@@ -218,6 +240,7 @@ class Union(Statement):
 
     def get_description(self):
         return [c.get_description() for c in self.children]
+    
     @cached
     def get_groups(self):
         """return a list of grouped variables (i.e a Group object) or None if
@@ -292,7 +315,6 @@ class Union(Statement):
             from rql.undo import RemoveNodeOperation
             self.undo_manager.add_operation(RemoveNodeOperation(node))
         node.parent.remove(node)
-        #assert check_relations(self)
 
     def add_sortvar(self, var, asc=True):
         """add var in 'orderby' constraints
@@ -325,6 +347,15 @@ class Union(Statement):
         self.remove_node(term)        
         if not self.sortterms.children:
             self.sortterms = None
+
+    def check_references(self):
+        """test function"""
+        for select in self.children:
+            select.check_references()
+        if self.sortterms:
+            varrefs = self.sortterms.get_nodes(nodes.VariableRef)
+            _check_references(self.defined_vars, varrefs)
+        return True
 
 
 class Select(Statement):
@@ -378,7 +409,6 @@ class Select(Statement):
         for child in self.selected:
             new.append_selected(child.copy(new))
         new.distinct = self.distinct
-        #assert check_relations(new)
         return new
     
     def accept(self, visitor, *args, **kwargs):
@@ -471,17 +501,15 @@ class Select(Statement):
 
     def undefine_variable(self, var):
         """undefine the given variable and remove all relations where it appears"""
-        assert check_relations(self)
         if hasattr(var, 'variable'):
             var = var.variable
         # remove relations where this variable is referenced
         for varref in var.references():
             rel = varref.relation()
             if rel is not None:
-                self.remove_node(rel)
-                continue
+                self.parent.remove_node(rel)
             elif isinstance(varref.parent, nodes.SortTerm):
-                self.remove_sort_term(varref.parent)
+                self.parent.remove_sort_term(varref.parent)
             elif isinstance(varref.parent, nodes.Group):
                 self.remove_group_variable(varref)
             else: # selected variable
@@ -491,46 +519,43 @@ class Select(Statement):
             from rql.undo import UndefineVarOperation
             self.undo_manager.add_operation(UndefineVarOperation(var))
         del self.defined_vars[var.name]
-        #assert check_relations(self)
-
 
     def _var_index(self, var):
         """get variable index in the list using identity (Variable and VariableRef
         define __cmp__
         """
-        for i in xrange(len(self.selected)):
-            if list[i] is var:
+        for i, term in enumerate(self.selected):
+            if term is var:
                 return i
         raise IndexError()
 
     def remove_selected(self, var):
         """deletes var from selection variable"""
         #assert isinstance(var, VariableRef)
-        index = self.var_index(var)
+        index = self._var_index(var)
         if self.should_register_op:
             from rql.undo import UnselectVarOperation
             self.undo_manager.add_operation(UnselectVarOperation(var, index))
-        for vref in self.selected.pop(index).iget_nodes(VariableRef):
+        for vref in self.selected.pop(index).iget_nodes(nodes.VariableRef):
             vref.unregister_reference()
-        #assert check_relations(self)
 
     def add_selected(self, term, index=None):
         """override Select.add_selected to memoize modification when needed"""
-        if isinstance(term, Variable):
+        if isinstance(term, nodes.Variable):
             term = nodes.VariableRef(term, noautoref=1)
             term.register_reference()
         else:
-            for var in term.iget_nodes(VariableRef):
+            for var in term.iget_nodes(nodes.VariableRef):
                 var = nodes.variable_ref(var)
                 var.register_reference()
         if index is not None:
             self.selected.insert(index, term)
+            term.parent = self
         else:
-            self.selected.append(term)
+            self.append_selected(term)
         if self.should_register_op:
             from rql.undo import SelectVarOperation
             self.undo_manager.add_operation(SelectVarOperation(term))
-        #assert check_relations(self)
 
     def add_groupvar(self, var):
         """add var in 'orderby' constraints
@@ -555,6 +580,7 @@ class Select(Statement):
             self.remove_node(groups)
         else:
             self.remove_node(var)
+
     
 class Delete(Statement):
     """the Delete node is the root of the syntax tree for deletion statement
@@ -603,7 +629,6 @@ class Delete(Statement):
             new.add_main_variable(etype, vref)
         for child in self.main_relations:
             new.add_main_relation(child.copy(new))
-        #assert check_relations(new)
         return new
 
     def accept(self, visitor, *args, **kwargs):
@@ -678,7 +703,6 @@ class Insert(Statement):
             new.add_main_variable(etype, vref)
         for child in self.main_relations:
             new.add_main_relation(child.copy(new))
-        #assert check_relations(new)
         return new
 
     def accept(self, visitor, *args, **kwargs):
@@ -734,7 +758,6 @@ class Update(Statement):
         new = Statement.copy(self)
         for child in self.main_relations:
             new.add_main_relation(child.copy(new))
-        #assert check_relations(new)
         return new
 
     def accept(self, visitor, *args, **kwargs):

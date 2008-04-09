@@ -53,22 +53,3 @@ def get_vars_relations(node):
         for vref in exp.iget_nodes(VariableRef):
             exp_concerns.setdefault(vref.name, []).append(exp)
     return exp_concerns
-
-def check_relations(node):
-    """test function"""
-    varrefs = node.get_nodes(VariableRef)
-    varrefs += node.get_selected_variables()
-    for n in getattr(node, 'main_relations', ()):
-        varrefs += n.iget_nodes(VariableRef)
-    refs = {}
-    for var in node.defined_vars.values():
-        for varref in var.references():
-            # be careful, Variable and VariableRef define __cmp__
-            if not [v for v in varrefs if v is varref]:
-                raise AssertionError('buggy reference %r in %r (actual var: %r)' %
-                                         (varref, node, var))
-            refs[id(varref)] = 1
-    for varref in varrefs:
-        if not refs.has_key(id(varref)):
-            raise AssertionError('unreferenced varref %r' % varref)
-    return True

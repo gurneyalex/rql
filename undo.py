@@ -7,7 +7,7 @@
 """
 __docformat__ = "restructuredtext en"
 
-from rql.nodes import VariableRef, BinaryNode
+from rql.nodes import VariableRef, Variable, BinaryNode
 
 class SelectionManager:
     """manage the operation stacks"""
@@ -49,7 +49,11 @@ class NodeOperation:
     """abstract class for node manipulation operations"""
     def __init__(self, node):
         self.node = node
-
+        if isinstance(node, Variable):
+            self.root = node.stmt
+        else:
+            self.root = node.root()
+        
     def __str__(self):
         """undo the operation on the selection"""
         return "%s %s" % (self.__class__.__name__, self.node)    
@@ -61,7 +65,7 @@ class MakeVarOperation(NodeOperation):
 
     def undo(self, selection):
         """undo the operation on the selection"""
-        selection.undefine_variable(self.node)
+        self.root.undefine_variable(self.node)
 
 class UndefineVarOperation(NodeOperation):
     """defines how to undo 'undefine_variable()'"""
@@ -69,14 +73,14 @@ class UndefineVarOperation(NodeOperation):
     def undo(self, selection):
         """undo the operation on the selection"""
         var = self.node
-        selection.defined_vars[var.name] = var
+        self.root.defined_vars[var.name] = var
 
 class SelectVarOperation(NodeOperation):
     """defines how to undo add_selected()"""
 
     def undo(self, selection):
         """undo the operation on the selection"""
-        selection.remove_selected(self.node)
+        self.root.remove_selected(self.node)
 
 class UnselectVarOperation(NodeOperation):
     """defines how to undo 'unselect_var()'"""
@@ -86,7 +90,7 @@ class UnselectVarOperation(NodeOperation):
 
     def undo(self, selection):
         """undo the operation on the selection"""
-        selection.add_selected(self.node, self.index)
+        self.root.add_selected(self.node, self.index)
 
 
 # Undo for node operations ####################################################
