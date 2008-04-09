@@ -216,6 +216,8 @@ class Union(Statement):
     # access to select statements property, which in certain condition
     # should have homogeneous values (don't use this in other cases)
 
+    def get_description(self):
+        return [c.get_description() for c in self.children]
     @cached
     def get_groups(self):
         """return a list of grouped variables (i.e a Group object) or None if
