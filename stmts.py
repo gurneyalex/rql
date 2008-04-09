@@ -81,15 +81,6 @@ class Statement(nodes.EditableMixIn, Node):
         return False
     
     # construction helper methods #############################################
-
-    def allocate_varname(self):
-        """return an yet undefined variable name"""
-        if self._varmaker is None:
-            self._varmaker = rqlvar_maker(defined=self.defined_vars)
-        name =  self._varmaker.next()
-        while name in self.defined_vars:
-            name =  self._varmaker.next()
-        return name
     
     def get_etype(self, name):
         """return the type object for the given entity's type name
@@ -110,6 +101,23 @@ class Statement(nodes.EditableMixIn, Node):
             var.stmt = self
             return var
 
+    def allocate_varname(self):
+        """return an yet undefined variable name"""
+        if self._varmaker is None:
+            self._varmaker = rqlvar_maker(defined=self.defined_vars)
+        name =  self._varmaker.next()
+        while name in self.defined_vars:
+            name =  self._varmaker.next()
+        return name
+        
+    def make_variable(self, etype=None):
+        """create a new variable with an unique name for this tree"""
+        var = self.get_variable(self.allocate_varname())
+        if self.should_register_op:
+            from rql.undo import MakeVarOperation
+            self.undo_manager.add_operation(MakeVarOperation(var))
+        return var
+    
     def set_possible_types(self, solutions, solsidx=0):
         solutions = solutions[solsidx]
         self.solutions = solutions
@@ -167,7 +175,7 @@ class Union(Statement):
         new = Union()
         for child in self.children:
             new.append(child.copy())
-        if self.sortterms:
+        if self.sortterms is not None:
             new.sortterms = self.sortterms.copy(new)
             new.sortterms.parent = new
         new.limit = self.limit
@@ -267,14 +275,6 @@ class Union(Statement):
         assert self.memorizing >= 0
         self.undo_manager.recover()    
 
-    def make_variable(self, etype=None):
-        """create a new variable with an unique name for this tree"""
-        var = self.get_variable(self.allocate_varname())
-        if self.memorizing and not self.undoing:
-            from rql.undo import MakeVarOperation
-            self.undo_manager.add_operation(MakeVarOperation(var))
-        return var
-    
     def remove_node(self, node):
         """remove the given node from the tree
 
@@ -317,7 +317,6 @@ class Union(Statement):
         
     def remove_sort_term(self, term):
         """remove a sort term and the sort node if necessary"""
-        assert term in self.sortterms.children
         if self.should_register_op:
             from rql.undo import RemoveSortOperation
             self.undo_manager.add_operation(RemoveSortOperation(term))        
@@ -330,7 +329,6 @@ class Select(Statement):
     """the select node is the base statement of the syntax tree for selection
     statement, always child of a UNION root.
     """
-    TYPE = 'select'
 
     def __init__(self):
         Statement.__init__(self)

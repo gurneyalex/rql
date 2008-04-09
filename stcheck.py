@@ -305,9 +305,9 @@ class RQLSTAnnotator(object):
         """if variable is shared across multiple scopes, need some tree
         rewriting
         """
-        if var.scope is var.root:
+        if var.scope is var.stmt:
             # allocate a new variable
-            newvar = var.root.make_variable()
+            newvar = var.stmt.make_variable()
             for vref in var.references():
                 if vref.exists_root() is exists:
                     rel = vref.relation()

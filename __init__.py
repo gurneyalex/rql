@@ -91,7 +91,6 @@ class RQLHelper:
                 # XXX  should only copy when necessary ?
                 rqlst = rqlst.copy()
                 self.annotate(rqlst)
-            sampleselection = rqlst.children[0].selected[:]
             for select in rqlst.children:
                 self._simplify(select, False)
                 # deal with rewritten variable which are used in orderby
@@ -101,16 +100,11 @@ class RQLHelper:
                     except KeyError:
                         continue
                     else:
-                        # XXX what if vref inside a function for instance!
-                        for i, term in enumerate(sampleselection):
-                            if getattr(term, 'name', None) == vname:
-                                for vref in var.references():
-                                    const = nodes.Constant(i+1, 'Int')
-                                    vref.parent.replace(vref, const)
-                                    vref.unregister_reference()
-                                break
-                        else:
-                            raise BadRQLQuery('order variable %s not found in some sub-query' % vname)
+                        for vref in var.references():
+                            term = vref.parent
+                            while not isinstance(term, nodes.SortTerm):
+                                term = term.parent
+                            rqlst.remove_sort_term(term)
         return rqlst
         
     def _simplify(self, rqlst, needcopy):

@@ -747,7 +747,7 @@ class SortTerm(Node):
     
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node"""
-        return (self.term.copy(stmt), self.asc)
+        return (None, self.asc, True)
 
     def is_equivalent(self, other):
         if not Node.is_equivalent(self, other):

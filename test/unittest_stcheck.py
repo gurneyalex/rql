@@ -111,9 +111,8 @@ class CheckClassTest(TestCase):
              "Any 12 WHERE EXISTS((A name 'hop') OR (A work_for Y?), 12 identity A)"),
             
             ('Any X WHERE X eid 12 UNION Any X WHERE X eid 13 ORDERBY X',
-             'Any 12 UNION Any 13 ORDERBY 1'),
+             'Any 12 UNION Any 13'),
             ):
-            print rql, expected
             yield self._test_rewrite, rql, expected
 
 ##     def test_rewriten_as_string(self):
@@ -141,16 +140,19 @@ class CopyTest(TestCase):
         self.failUnless(exists.parent)
         
     def test_copy_internals(self):
-        stmt = self.parse('Any X,U WHERE C owned_by U, NOT X owned_by U, X eid 1, C eid 2')
-        self.simplify(stmt, needcopy=False)
+        root = self.parse('Any X,U WHERE C owned_by U, NOT X owned_by U, X eid 1, C eid 2')
+        self.simplify(root, needcopy=False)
+        stmt = root.children[0]
         self.assertEquals(stmt.defined_vars['U'].valuable_references(), 3)
-        copy = stmts.Select(stmt.e_types)
+        copy = stmts.Select()
         copy.append_selected(stmt.selected[0].copy(copy))
         copy.append_selected(stmt.selected[1].copy(copy))
         copy.append(stmt.get_restriction().copy(copy))
-        self.annotate(copy)
-        self.simplify(copy, needcopy=False)
-        self.assertEquals(copy.as_string(), 'Any 1,U WHERE 2 owned_by U, NOT 1 owned_by U')
+        newroot = stmts.Union()
+        newroot.append(copy)
+        self.annotate(newroot)
+        self.simplify(newroot, needcopy=False)
+        self.assertEquals(newroot.as_string(), 'Any 1,U WHERE 2 owned_by U, NOT 1 owned_by U')
         self.assertEquals(copy.defined_vars['U'].valuable_references(), 3)
 
 
