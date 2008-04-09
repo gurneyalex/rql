@@ -26,9 +26,9 @@ class BaseNode(object):
     def scope(self):
         return self.parent.scope
     
-    def root(self):
+    def root(self, stop_to_select=True):
         """return the root node of the tree"""
-        return self.parent.root()
+        return self.parent.root(stop_to_select)
 
     def exists_root(self):
         return self.parent.exists_root()

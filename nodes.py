@@ -43,10 +43,16 @@ def etype_from_pyobj(value):
     # XXX Bytes
     return 'String'
 
+def variable_ref(var):
+    """get a VariableRef"""
+    if isinstance(var, Variable):
+        return VariableRef(var, noautoref=1)
+    assert isinstance(var, VariableRef)
+    return var    
+
 
 class HSMixin(object):
-    """mixin class for classes which may be the lhs or rhs of an expression
-    """
+    """mixin class for classes which may be the lhs or rhs of an expression"""
     __slots__ = ()
     
     def relation(self):
@@ -82,12 +88,13 @@ class EditableMixIn(object):
    
     @property
     def undo_manager(self):
-        return self.root().undo_manager
+        return self.root(False).undo_manager
 
     @property
     def should_register_op(self):
-        root = self.root()
-        return root.memorizing and not root.undoing
+        root = self.root(False)
+        # root is None during parsing
+        return root is not None and root.memorizing and not root.undoing
     
     def add(self, relation):
         """add a restriction relation (XXX should not collide with add_restriction
@@ -150,7 +157,6 @@ class EditableMixIn(object):
                 return self.add_restriction(rel)
             etype = iter(etype).next() # may be a set
         return self.add_constant_restriction(var, 'is', etype, 'etype')
-
     
 
 # base RQL nodes ##############################################################
@@ -360,6 +366,13 @@ class Relation(Node):
         rhs = self.children[1].children[0]
         return lhs, rhs
 
+    def change_optional(self, value):
+        stroot = self.root()
+        if stroot.should_register_op and value != self.optional:
+            from rql.undo import SetOptionalOperation
+            stroot.undo_manager.add_operation(SetOptionalOperation(self, self.optional))
+        self.optional= value
+
     
 class Comparison(HSMixin, Node):
     """handle comparisons:
@@ -474,7 +487,7 @@ class MathExpression(HSMixin, BinaryNode):
         return the name of this relation, else return the type of the math
         expression
         """
-        schema = self.root().schema
+        schema = self.root(False).schema
         for vref in self.iget_nodes(VariableRef):
             rtype = vref.get_description()
             if schema.has_relation(rtype):
@@ -775,12 +788,12 @@ class Variable(object):
     
     collects information about a variable use in a syntax tree
     """
-    __slots__ = ('name', 'root', 'stinfo', '_querier_data')
+    __slots__ = ('name', 'stmt', 'stinfo', '_querier_data')
         
     def __init__(self, name):
         self.name = name.strip().encode()
         # reference to the selection
-        self.root = None
+        self.stmt = None
         # used to collect some global information about the syntax tree
         # most of them will be filled by the annotator
         self.stinfo = {
@@ -829,7 +842,7 @@ class Variable(object):
         return '%s(%#X)' % (self.name, id(self))
     
     def set_scope(self, scopenode):
-        if scopenode is self.root or self.stinfo['scope'] is None:
+        if scopenode is self.stmt or self.stinfo['scope'] is None:
             self.stinfo['scope'] = scopenode
     def get_scope(self):
         return self.stinfo['scope']
@@ -862,10 +875,14 @@ class Variable(object):
         """return the index of this variable in the selection if it's selected,
         else None
         """
-        for i, term in enumerate(self.root.selected_terms()):
+        for i, term in enumerate(self.stmt.selected_terms()):
             for node in term.iget_nodes(VariableRef):
                 if node.variable is self:
                     return i
+
+    @property
+    def schema(self):
+        return self.stmt.root().schema
     
     def get_type(self, solution=None, kwargs=None):
         """return entity type of this object, 'Any' if not found"""
@@ -873,7 +890,7 @@ class Variable(object):
             return solution[self.name]
         for rel in self.stinfo['typerels']:
             return str(rel.children[1].children[0].value)
-        schema = self.root.schema
+        schema = self.schema
         if schema is not None:
             for rel in self.stinfo['rhsrelations']:
                 try:
@@ -893,7 +910,7 @@ class Variable(object):
         """
         etype = 'Any'
         result = None
-        schema = self.root.schema
+        schema = self.schema
         for rel in chain(self.stinfo['typerels'], self.stinfo['relations']):
             if rel.r_type == 'is':
                 if self.name == rel.children[0].name:

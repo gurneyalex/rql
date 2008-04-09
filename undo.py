@@ -1,8 +1,11 @@
 """manages undos on rql syntax trees
 
-Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
-http://www.logilab.fr/ -- mailto:contact@logilab.fr
+
+:organization: Logilab
+:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
+__docformat__ = "restructuredtext en"
 
 from rql.nodes import VariableRef, BinaryNode
 
@@ -51,7 +54,7 @@ class NodeOperation:
         """undo the operation on the selection"""
         return "%s %s" % (self.__class__.__name__, self.node)    
 
-# Undo for variable manipulationoperations  ###################################
+# Undo for variable manipulation operations  ##################################
         
 class MakeVarOperation(NodeOperation):
     """defines how to undo make_variable"""
@@ -86,7 +89,7 @@ class UnselectVarOperation(NodeOperation):
         selection.add_selected(self.node, self.index)
 
 
-# Undo for node operations #####################################################
+# Undo for node operations ####################################################
 
 class AddNodeOperation(NodeOperation):
     """defines how to undo 'add node'"""   
@@ -153,6 +156,13 @@ class AddSortOperation(NodeOperation):
         """undo the operation on the selection"""
         selection.remove_sort_term(self.node)
     
+class RemoveSortOperation(NodeOperation):
+    """defines how to undo 'add sort'"""
+
+    def undo(self, selection):
+        """undo the operation on the selection"""
+        selection.add_sort_term(self.node)
+    
 class AddGroupOperation(NodeOperation):
     """defines how to undo 'add group'"""
 
@@ -160,9 +170,9 @@ class AddGroupOperation(NodeOperation):
         """undo the operation on the selection"""
         selection.remove_group_variable(self.node)
 
+# misc operations #############################################################
 
-class ChangeValueOperation:
-    
+class ChangeValueOperation:    
     def __init__(self, previous_value):
         self.value = previous_value
 
