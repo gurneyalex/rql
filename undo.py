@@ -172,7 +172,7 @@ class AddGroupOperation(NodeOperation):
 
     def undo(self, selection):
         """undo the operation on the selection"""
-        selection.remove_group_variable(self.node)
+        selection.remove_group_var(self.node)
 
 # misc operations #############################################################
 
