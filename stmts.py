@@ -237,7 +237,9 @@ class Union(Statement):
             
     # access to select statements property, which in certain condition
     # should have homogeneous values (don't use this in other cases)
-
+    def get_restriction(self):
+        raise ValueError('Union has no restriction')
+    
     def get_description(self):
         return [c.get_description() for c in self.children]
     
