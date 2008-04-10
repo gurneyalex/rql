@@ -74,7 +74,6 @@ class Statement(nodes.EditableMixIn, Node):
         And, or Relation instance.
         return None if there is no restriction clauses.
         """
-        # XXX : le commentaire correspond pas!!!
         for c in self.children:
             if not isinstance(c, nodes.Group) and not isinstance(c, nodes.Sort):
                 return c
@@ -223,7 +222,7 @@ class Union(Statement):
         self.limit = limit
 
     def set_offset(self, offset):
-        if offset is not None and (not isinstance(offset, (int, long)) or offset <= 0):
+        if offset is not None and (not isinstance(offset, (int, long)) or offset < 0):
             raise BadRQLQuery('bad offset %s' % offset)
         if self.should_register_op and offset != self.offset:
             from rql.undo import SetOffsetOperation
@@ -329,13 +328,12 @@ class Union(Statement):
         self.add_sort_term(term)
         
     def add_sort_term(self, term):
-        if self.should_register_op:
-            from rql.undo import AddSortOperation
-            self.undo_manager.add_operation(AddSortOperation(term))
-        sortterms = sortterms
         if self.sortterms is None:
             self.set_sortterms(nodes.Sort())
         self.sortterms.append(term)
+        if self.should_register_op:
+            from rql.undo import AddSortOperation
+            self.undo_manager.add_operation(AddSortOperation(term))
 
     def remove_sort_terms(self):
         if self.sortterms is not None:
@@ -501,7 +499,7 @@ class Select(Statement):
         """mark DISTINCT query"""
         if self.should_register_op and value != self.distinct:
             from rql.undo import SetDistinctOperation
-            self.undo_manager.add_operation(SetDistinctOperation(self.distinct))
+            self.undo_manager.add_operation(SetDistinctOperation(self.distinct, self))
         self.distinct = value
 
     def undefine_variable(self, var):
@@ -568,23 +566,23 @@ class Select(Statement):
         """
         var = nodes.variable_ref(var)
         var.register_reference()
+        groups = self.groups
+        if groups is None:
+            groups = nodes.Group()
+            self.append(groups)
+        groups.append(var)
         if self.should_register_op:
             from rql.undo import AddGroupOperation
             self.undo_manager.add_operation(AddGroupOperation(var))
-        groups = self.groups
-        if groups is None:
-            groups = Group()
-            self.append(groups)
-        groups.append(var)
 
     def remove_group_var(self, var):
         """remove the group variable and the group node if necessary"""
         groups = self.groups
         assert var in groups.children
         if len(groups.children) == 1:
-            self.remove_node(groups)
+            self.parent.remove_node(groups)
         else:
-            self.remove_node(var)
+            self.parent.remove_node(var)
 
     
 class Delete(Statement):

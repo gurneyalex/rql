@@ -60,6 +60,12 @@ class DummySchema:
                                   ('Eetype', ('Int',) ),
                                   )
                                 ),
+        'creation_date' : RelationSchema( ( ('Person', ('Datetime',) ),
+                                            ('Company', ('Datetime',) ),
+                                            ('Address', ('Datetime',) ),
+                                            ('Eetype', ('Datetime',) ),
+                                            )
+                                ),
         'name' : RelationSchema( ( ('Person', ('String',) ),
                                   ('Company', ('String',) ),
                                   )
