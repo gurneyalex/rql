@@ -2,12 +2,32 @@
 
 from logilab.common.testlib import TestCase, unittest_main
 
-from rql import nodes, stmts, parse
+from rql import nodes, stmts, parse, BadRQLQuery
 
 from unittest_analyze import DummySchema
 schema = DummySchema()
 from rql.stcheck import RQLSTAnnotator
 annotator = RQLSTAnnotator(schema, {})
+
+class EtypeFromPyobjTC(TestCase):
+    def test_bool(self):
+        self.assertEquals(nodes.etype_from_pyobj(True), 'Boolean')
+        self.assertEquals(nodes.etype_from_pyobj(False), 'Boolean')
+        
+    def test_int(self):
+        self.assertEquals(nodes.etype_from_pyobj(0), 'Int')
+        self.assertEquals(nodes.etype_from_pyobj(1L), 'Int')
+        
+    def test_float(self):
+        self.assertEquals(nodes.etype_from_pyobj(0.), 'Float')
+        
+    def test_datetime(self):
+        self.assertEquals(nodes.etype_from_pyobj(nodes.now()), 'Datetime')
+        self.assertEquals(nodes.etype_from_pyobj(nodes.today()), 'Datetime')
+        
+    def test_string(self):
+        self.assertEquals(nodes.etype_from_pyobj('hop'), 'String')
+        self.assertEquals(nodes.etype_from_pyobj(u'hop'), 'String')
 
 class NodesTest(TestCase):
     def _parse(self, rql, normrql=None):
@@ -38,9 +58,92 @@ class NodesTest(TestCase):
         #    self.check_equal_but_not_same(tree1.children[i], tree2.children[i])
     
     # selection tests #########################################################
-    
+
+    def test_union_set_limit(self):
+        tree = self._parse("Any X WHERE X is Person")
+        self.assertEquals(tree.limit, None)
+        self.assertRaises(BadRQLQuery, tree.set_limit, 0)
+        self.assertRaises(BadRQLQuery, tree.set_limit, -1)
+        self.assertRaises(BadRQLQuery, tree.set_limit, '1')
+        tree.save_state()
+        tree.set_limit(10)
+        self.assertEquals(tree.limit, 10)
+        tree.recover()
+        self.assertEquals(tree.limit, None)
+        
+    def test_union_set_offset(self):
+        tree = self._parse("Any X WHERE X is Person")
+        self.assertRaises(BadRQLQuery, tree.set_offset, -1)
+        self.assertRaises(BadRQLQuery, tree.set_offset, '1')
+        self.assertEquals(tree.offset, 0)
+        tree.save_state()
+        tree.set_offset(0)
+        self.assertEquals(tree.offset, 0)
+        tree.set_offset(10)
+        self.assertEquals(tree.offset, 10)
+        tree.recover()
+        self.assertEquals(tree.offset, 0)
+
+    def test_union_add_sort_var(self):
+        tree = self._parse('Any X')
+        tree.save_state()
+        tree.add_sort_var(tree.get_variable('X'))
+        tree.check_references()
+        self.assertEquals(tree.as_string(), 'Any X ORDERBY X')
+        tree.recover()
+        tree.check_references()
+        self.assertEquals(tree.as_string(), 'Any X')
+
+    def test_union_remove_sort_terms(self):
+        tree = self._parse('Any X ORDERBY X')
+        tree.save_state()
+        tree.remove_sort_terms()
+        tree.check_references()
+        self.assertEquals(tree.as_string(), 'Any X')
+        tree.recover()
+        tree.check_references()
+        self.assertEquals(tree.as_string(), 'Any X ORDERBY X')
+
+    def test_select_set_distinct(self):
+        tree = self._parse('DISTINCT Any X')
+        tree.save_state()
+        select = tree.children[0]
+        self.assertEquals(select.distinct, True)
+        tree.save_state()
+        select.set_distinct(True)
+        self.assertEquals(select.distinct, True)
+        tree.recover()
+        self.assertEquals(select.distinct, True)
+        select.set_distinct(False)
+        self.assertEquals(select.distinct, False)
+        tree.recover()
+        self.assertEquals(select.distinct, True)
+
+    def test_select_add_group_var(self):
+        tree = self._parse('Any X')
+        tree.save_state()
+        select = tree.children[0]
+        select.add_group_var(select.get_variable('X'))
+        tree.check_references()
+        self.assertEquals(tree.as_string(), 'Any X GROUPBY X')
+        tree.recover()
+        tree.check_references()
+        self.assertEquals(tree.as_string(), 'Any X')
+
+    def test_select_remove_group_var(self):
+        tree = self._parse('Any X GROUPBY X')
+        tree.save_state()
+        select = tree.children[0]
+        select.remove_group_var(select.groups.children[0])
+        tree.check_references()
+        self.assertEquals(tree.as_string(), 'Any X')
+        tree.recover()
+        tree.check_references()
+        self.assertEquals(tree.as_string(), 'Any X GROUPBY X')
+                             
     def test_select_base_1(self):
         tree = self._parse("Any X WHERE X is Person")
+        self.assertRaises(ValueError, tree.get_restriction)
         self.assertIsInstance(tree, stmts.Union)
         self.assertEqual(tree.limit, None)
         self.assertEqual(tree.offset, 0)
@@ -49,6 +152,7 @@ class NodesTest(TestCase):
         self.assertEqual(select.distinct, False)
         self.assertEqual(len(select.children), 1)
         self.assertIsInstance(select.children[0], nodes.Relation)
+        self.assert_(select.children[0] is select.get_restriction())
         
     def test_select_base_2(self):
         tree = self._simpleparse("Any X WHERE X is Person")
@@ -265,11 +369,15 @@ class NodesTest(TestCase):
         
     # non regression tests ####################################################
     
-    def test_get_description_aggregat(self):
-        tree = parse("Any COUNT(N) WHERE X name N GROUPBY N;")
+    def test_get_description_and_get_type(self):
+        tree = parse("Any N,COUNT(X),NOW-D WHERE X name N, X creation_date D GROUPBY N;")
         annotator.annotate(tree)
-        self.assertEqual(tree.get_description(), [['COUNT(name)']])
-        self.assertEqual(tree.children[0].selected[0].get_type(), 'Int')
+        tree.schema = schema
+        self.assertEqual(tree.get_description(), [['name', 'COUNT(name)', 'creation_date']])
+        self.assertEqual(tree.children[0].selected[0].get_type(), 'Any')
+        self.assertEqual(tree.children[0].selected[1].get_type(), 'Int')
+        self.assertEqual(tree.children[0].defined_vars['D'].get_type({'D': 'Datetime'}), 'Datetime')
+        self.assertEqual(tree.children[0].selected[2].get_type({'D': 'Datetime'}), 'Interval')
 
 
 class GetNodesFunctionTest(TestCase):

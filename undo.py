@@ -172,20 +172,21 @@ class AddGroupOperation(NodeOperation):
 
     def undo(self, selection):
         """undo the operation on the selection"""
-        selection.remove_group_var(self.node)
+        self.root.remove_group_var(self.node)
 
 # misc operations #############################################################
 
 class ChangeValueOperation:    
-    def __init__(self, previous_value):
+    def __init__(self, previous_value, node=None):
         self.value = previous_value
+        self.node = node
 
 class SetDistinctOperation(ChangeValueOperation):
     """defines how to undo 'set_distinct'"""
         
     def undo(self, selection):
         """undo the operation on the selection"""
-        selection.distinct = self.value
+        self.node.distinct = self.value
 
 class SetOffsetOperation(ChangeValueOperation):
     """defines how to undo 'set_offset'"""

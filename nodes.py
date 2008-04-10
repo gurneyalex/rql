@@ -96,17 +96,8 @@ class EditableMixIn(object):
         # root is None during parsing
         return root is not None and root.memorizing and not root.undoing
     
-    def add(self, relation):
-        """add a restriction relation (XXX should not collide with add_restriction
-        or add_relation optionaly plugged by the editextensions module
-        """
-        r = self.get_restriction()
-        if r is not None:
-            self.replace(r, AND(r, relation))
-        else:
-            self.insert(0, relation)
-            
     def add_restriction(self, relation):
+        """add a restriction relation"""
         r = self.get_restriction()
         if r is not None:
             newnode = AND(r, relation)
@@ -129,11 +120,7 @@ class EditableMixIn(object):
         variable rtype = value
         """
         if ctype is None:
-            if isinstance(value, int):
-                ctype = 'Int'
-                # FIXME : other cases
-            else:
-                ctype = 'String'
+            ctype = etype_from_pyobj(value)
         return self.add_restriction(make_relation(var, rtype, (value, ctype),
                                                   Constant, operator))
         
@@ -828,12 +815,6 @@ class Variable(object):
             'possibletypes': set()
             }
     
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_variable(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_variable(self, *args, **kwargs)
-        
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         return self.name
