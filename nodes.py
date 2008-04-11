@@ -714,9 +714,6 @@ class Sort(KWNode):
     
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_sort(self, *args, **kwargs)
-
-    def selected_terms(self): # XXX duh? explain or remove
-        return self 
     
 
 class SortTerm(Node):
