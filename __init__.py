@@ -140,9 +140,9 @@ class RQLHelper:
                         # should have been set by the analyzer
                         #assert rhs.uidtype , (rqlst, rhs, id(rhs))
                         vconsts.append(rhs)
-                        # substitute rhs
-                        if rel and uidrel._not:
-                            rel._not = rel._not or uidrel._not
+#                         # substitute rhs
+#                         if rel and uidrel._not:
+#                             rel._not = rel._not or uidrel._not
                         varref.parent.replace(varref, rhs)
                 del rqlstcopy.defined_vars[var.name]
         return rqlstcopy or rqlst

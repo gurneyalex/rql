@@ -32,7 +32,9 @@ parser Hercule:
     token INSERT:      r'(?i)INSERT'
     token UNION:       r'(?i)UNION'
     token DISTINCT:    r'(?i)DISTINCT'
+    token FROM:        r'(?i)FROM'
     token WHERE:       r'(?i)WHERE'
+    token AS:          r'(?i)AS'
     token OR:          r'(?i)OR'
     token AND:         r'(?i)AND'
     token NOT:         r'(?i)NOT'
@@ -56,6 +58,7 @@ parser Hercule:
     token R_TYPE:      r'[a-z][a-z0-9_]*'
     token E_TYPE:      r'[A-Z][A-Za-z0-9]*[a-z]+[0-9]*'
     token VARIABLE:    r'[A-Z][A-Z0-9_]*'
+    token COLALIAS:    r'[A-Z][A-Z0-9_]*\.\d+'
     token QMARK:       r'\?'
 
     token STRING:      r"'([^\'\\]|\\.)*'|\"([^\\\"\\]|\\.)*\""
@@ -77,17 +80,14 @@ parser Hercule:
 #  const -> constant
 #  cmp -> comparison
 
-rule goal: DELETE _delete<<Delete()>> ';'         {{ return _delete }}
+rule goal: DELETE _delete<<Delete()>> ';'      {{ return _delete }}
 
-         | INSERT _insert<<Insert()>> ';'         {{ return _insert }}
+         | INSERT _insert<<Insert()>> ';'      {{ return _insert }}
  
-         | SET update<<Update()>> ';'             {{ return update }}
+         | SET update<<Update()>> ';'          {{ return update }}
 
-         | select<<Select()>>                     {{ root = Union(); root.append(select) }}
-             (                                    
-               UNION select<<Select()>>           {{ root.append(select) }} 
-             )*                                   
-           sort<<root>> limit_offset<<root>> ';'  {{ return root }}
+         | union
+           sort<<union>> limit_offset<<union>> ';'  {{ return union }}
 
 # Deletion  ###################################################################
 
@@ -113,14 +113,20 @@ rule update<<V>>: rels_decl<<V>> restr<<V>> {{ return V }}
 
 # Selection  ##################################################################
 
+rule union: select<<Select()>>         {{ root = Union(); root.append(select) }}
+            ( UNION select<<Select()>> {{ root.append(select) }} 
+            )*                         {{ return root }}
+
 rule select<<V>>: DISTINCT select_base<<V>>  {{ V.distinct = True ; return V }}
                  | select_base<<V>>          {{ return V }}
 
 
-rule select_base<<V>>: E_TYPE selected_terms<<V>> restr<<V>> 
+rule select_base<<V>>: E_TYPE selected_terms<<V>> select_from<<V>>  restr<<V>> 
                        group<<V>> having<<V>> {{ V.set_statement_type(E_TYPE) ; return V }}
 
-
+rule select_from<<V>>: FROM  r"\(" union r"\)" AS VARIABLE {{ V.set_from(union, VARIABLE) }}
+                     |
+        
 rule selected_terms<<V>>: added_expr<<V>> (   {{ V.append_selected(added_expr) }}
                             ',' added_expr<<V>>
                             )*                    {{ V.append_selected(added_expr) }}
@@ -185,22 +191,24 @@ rule restr<<V>>: WHERE rels<<V>> {{ V.append(rels) }}
 
 rule rels<<V>>: ored_rels<<V>>       {{ lhs = ored_rels }}
                 ( ',' ored_rels<<V>> {{ lhs = AND(lhs, ored_rels) }}
-                )*                   {{ return lhs }}
-
-
+                )*                  {{ return lhs }}
+        
+        
+        
 rule ored_rels<<V>>: anded_rels<<V>>  {{ lhs = anded_rels }}
                      ( OR anded_rels<<V>> {{ lhs = _OR(lhs,anded_rels) }}
                      )*                 {{ return lhs }}
+        
+rule anded_rels<<V>>: not_rels<<V>>        {{ lhs = not_rels }}
+                      (  AND not_rels<<V>> {{ lhs = _AND(lhs, not_rels) }}
+                      )*                  {{ return lhs }}
+
+rule not_rels<<V>>: NOT rel<<V>> {{ not_ = Not(); not_.append(rel); return not_ }}
+        
+                  | rel<<V>>     {{ return rel }}
 
 
-rule anded_rels<<V>>: rel<<V>>        {{ lhs = rel }}
-                      (  AND rel<<V>> {{ lhs = _AND(lhs,rel) }}
-                      )*              {{ return lhs }}
-
-
-rule rel<<V>>: NOT base_rel<<V>>       {{ base_rel._not = 1; return base_rel }} 
-
-               | base_rel<<V>>         {{ return base_rel }}
+rule rel<<V>>: base_rel<<V>>           {{ return base_rel }}
 
                | r"\(" rels<<V>> r"\)" {{ return rels }}
 
@@ -264,8 +272,10 @@ rule func<<V>>: FUNCTION r"\("              {{ F = Function(FUNCTION) }}
                   r"\)"                       {{ return F }} 
 
 
-rule var<<V>>: VARIABLE {{ return VariableRef(V.get_variable(VARIABLE)) }} 
-
+rule var<<V>>: VARIABLE {{ return VariableRef(V.get_variable(VARIABLE)) }}
+        
+             | COLALIAS {{ return ColumnAlias(COLALIAS) }} 
+        
 rule etype<<V>>: E_TYPE {{ return V.get_etype(E_TYPE) }} 
 
 
