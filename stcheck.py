@@ -11,7 +11,7 @@ from logilab.common.compat import any
 from rql import nodes
 from rql._exceptions import BadRQLQuery
 from rql.utils import function_description
-
+from rql.stmts import Union
 
 class GoTo(Exception):
     """exception used to control the visit of the tree"""
@@ -281,11 +281,12 @@ class RQLSTAnnotator(object):
 
     def annotate(self, node):
         #assert not node.annotated
-        if node.TYPE == 'select':
+        if isinstance(node, Union):
             for select in node.children:
                 self._annotate_stmt(select)
         else:
             self._annotate_stmt(node)
+        node.annotated = True
             
     def _annotate_stmt(self, node):
         for i, term in enumerate(node.selected_terms()):
@@ -300,7 +301,6 @@ class RQLSTAnnotator(object):
         restr = node.get_restriction()
         if restr is not None:
             restr.accept(self, node)
-        node.annotated = True
         
     def rewrite_shared_optional(self, exists, var):
         """if variable is shared across multiple scopes, need some tree
