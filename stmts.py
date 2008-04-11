@@ -8,6 +8,8 @@ defined in the nodes module
 """
 __docformat__ = "restructuredtext en"
 
+from copy import deepcopy
+
 from logilab.common.decorators import cached
 
 from rql import BadRQLQuery, CoercionError, nodes
@@ -53,9 +55,14 @@ class Statement(nodes.EditableMixIn, Node):
         """return the tree as an encoded rql string"""
         raise NotImplementedError()
     
-    def copy(self):
+    def copy(self, copy_solutions=True, solutions=None):
         new = self.__class__()
-        new.schema = self.schema
+        if self.schema is not None:
+            new.schema = self.schema
+        if solutions is not None:
+            new.solutions = solutions
+        elif copy_solutions and self.solutions is not None:
+            new.solutions = deepcopy(self.solutions)
         for child in self.children:
             new.append(child.copy(new))
         return new
@@ -192,17 +199,18 @@ class Union(Statement):
             s.append('OFFSET %s' % self.offset)
         return ' '.join(s)                              
             
-    def copy(self):
+    def copy(self, copy_children=True):
         new = Union()
-        for child in self.children:
-            new.append(child.copy())
+        if copy_children:
+            for child in self.children:
+                new.append(child.copy())
         if self.sortterms is not None:
             new.sortterms = self.sortterms.copy(new)
             new.sortterms.parent = new
         new.limit = self.limit
         new.offset = self.offset
         return new
-
+    
     def accept(self, visitor, *args, **kwargs):
         return visitor.visit_union(self, *args, **kwargs)
     
@@ -405,8 +413,8 @@ class Select(Statement):
             s.append(having.as_string(encoding, kwargs))
         return ' '.join(s)
                                       
-    def copy(self):
-        new = Statement.copy(self)
+    def copy(self, copy_solutions=True):
+        new = Statement.copy(self, copy_solutions)
         for child in self.selected:
             new.append_selected(child.copy(new))
         new.distinct = self.distinct
