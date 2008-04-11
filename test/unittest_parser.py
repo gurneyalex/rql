@@ -18,6 +18,10 @@ BAD_SYNTAX_QUERIES = (
     "Personne P WHERE OFFSET 200;",
 
     'Any X WHERE X nom "toto" GROUPBY X ORDERBY X UNION Any X WHERE X firstname "toto" GROUPBY X ORDERBY X;',
+
+    'Any X, X/Y FROM (Any SUM(X) WHERE X is Person) WHERE X is Person;', # missing AS for subquery
+    
+    'Any X, X/Y FROM (Any X WHERE X is) WHERE X is Person;', # missing AS for subquery
 )
 
 BAD_QUERIES = (
@@ -76,6 +80,16 @@ SPEC_QUERIES = (
     'Any X WHERE X eid > 12 UNION Any X WHERE X eid < 23;',
     'Any X WHERE X nom "toto" UNION Any X WHERE X firstname "toto";',
     'Any X WHERE X nom "toto" GROUPBY X UNION Any X WHERE X firstname "toto" GROUPBY X ORDERBY X;',
+
+    'Any X, X/Y.1 FROM (Any SUM(X) WHERE X is Person) AS Y WHERE X is Person;',
+    'Any Y.1, COUNT(X) FROM (Person X UNION Document X) AS Y WHERE X bla Y.1 GROUPBY Y.1;',
+    
+    'Any T1.2, COUNT(T1.1)'
+    '  FROM (Any X,N WHERE X name N, X transition_of E, E name %(name)s'
+    '        UNION '
+    '        Any X,N WHERE X name N, X state_of E, E name %(name)s) AS T1'
+    ' GROUPBY T1.1'
+    ' ORDERBY 2 DESC, T1.2;',
     )
 
 class ParserHercule(TestCase):
@@ -91,7 +105,11 @@ class ParserHercule(TestCase):
                 print_error(ex, parser._scanner)
                 print
             raise
-
+        except Exception, ex:
+            if print_errors:
+                print string, ex
+            raise
+        
     def test_precedence_1(self):
         tree = self.parse("Any X WHERE X firstname 'lulu' AND X name 'toto' OR X name 'tutu';")
         base = tree.children[0].children[0]
@@ -122,6 +140,18 @@ class ParserHercule(TestCase):
         self.assertEqual(isinstance(base, nodes.OR), 1)
         self.assertEqual(isinstance(base.children[0], nodes.Relation), 1)
         self.assertEqual(isinstance(base.children[1], nodes.AND), 1)
+        
+    def test_not_precedence_0(self):
+        tree = self.parse("Any X WHERE NOT X firstname 'lulu', X name 'toto';")
+        self.assertEqual(str(tree), "Any X WHERE NOT X firstname 'lulu', X name 'toto'")
+
+    def test_not_precedence_1(self):
+        tree = self.parse("Any X WHERE NOT X firstname 'lulu' AND X name 'toto';")
+        self.assertEqual(str(tree), "Any X WHERE NOT X firstname 'lulu', X name 'toto'")
+
+    def test_not_precedence_2(self):
+        tree = self.parse("Any X WHERE NOT X firstname 'lulu' OR X name 'toto';")
+        self.assertEqual(str(tree), "Any X WHERE (NOT X firstname 'lulu') OR (X name 'toto')")
 
     def test_string_1(self):
         tree = self.parse(r"Any X WHERE X firstname 'lu\"lu';")
@@ -193,7 +223,7 @@ class ParserHercule(TestCase):
         for rql in SPEC_QUERIES:
 #            print "Orig:", rql
 #            print "Resu:", rqltree
-            yield self.assert_, self.parse(rql)
+            yield self.assert_, self.parse(rql, True)
 
     def test_raise_badsyntax_error(self):
         for rql in BAD_SYNTAX_QUERIES:

@@ -131,14 +131,14 @@ class RQLSTChecker(object):
         """check that selected variables are used in groups """
         # XXX that's not necessarily true, for instance:
         #     Any X, P, MAX(R) WHERE X content_for F, F path P, X revision R GROUPBY P
-        for var in group.root().selected:
+        for var in group.stmt.selected:
             if isinstance(var, nodes.VariableRef) and not var in group.children:
                 errors.append('variable %s should be grouped' % var)
         self._check_selected(group, 'group', errors)
                 
     def _check_union_selected(self, term, termtype, errors):
         """check that variables referenced in the given term are selected"""
-        union = term.root()
+        union = term.root
         for vref in term.iget_nodes(nodes.VariableRef):
             # no stinfo yet, use references
             for select in union.children:
@@ -164,7 +164,7 @@ class RQLSTChecker(object):
     def visit_sortterm(self, sortterm, errors):
         term = sortterm.term
         if isinstance(term, nodes.Constant):
-            for select in sortterm.root().children:
+            for select in sortterm.root.children:
                 if len(select.selected) < term.value:
                     errors.append('order column out of bound %s' % term.value)
     
@@ -191,10 +191,17 @@ class RQLSTChecker(object):
                     raise GoTo(r1)
             except AttributeError:
                 pass
+
+    def visit_not(self, not_, errors):
+        pass
+    def leave_not(self, not_, errors):
+        pass
     
     def visit_relation(self, relation, errors):
-        assert not (relation._not and relation.optional)
-
+        if relation.optional and relation.neged_rel():
+            errors.append("can use optional relation under NOT (%s)"
+                          % relation.as_string())
+    
     def leave_relation(self, relation, errors):
         pass
         #assert isinstance(lhs, nodes.VariableRef), '%s: %s' % (lhs.__class__,
@@ -310,7 +317,7 @@ class RQLSTAnnotator(object):
             # allocate a new variable
             newvar = var.stmt.make_variable()
             for vref in var.references():
-                if vref.exists_root() is exists:
+                if vref.scope is exists:
                     rel = vref.relation()
                     vref.unregister_reference()
                     newvref = nodes.VariableRef(newvar)
@@ -351,6 +358,9 @@ class RQLSTAnnotator(object):
     def visit_exists(self, node, scope):
         node.children[0].accept(self, node)
         
+    def visit_not(self, node, scope):
+        node.children[0].accept(self, scope)
+        
     def visit_and(self, node, scope):
         node.children[0].accept(self, scope)
         node.children[1].accept(self, scope)
@@ -367,7 +377,9 @@ class RQLSTAnnotator(object):
                 lhsvar.stinfo['typerels'].add(relation)
             return
         if relation.optional is not None:
-            exists = relation.exists_root()
+            exists = relation.scope
+            if not isinstance(exists, nodes.Exists):
+                exists = None
             if lhsvar is not None:
                 if exists is not None:
                     newvar = self.rewrite_shared_optional(exists, lhsvar)
@@ -408,7 +420,8 @@ class RQLSTAnnotator(object):
                 key = '%srels' % self.special_relations[rtype]
                 if key == 'uidrels':
                     constnode = relation.get_variable_parts()[1]
-                    if not (relation._not or relation.operator() != '='):
+                    if not (relation.operator() != '=' or
+                            isinstance(relation.parent, nodes.Not)):
                         if isinstance(constnode, nodes.Constant):
                             lhsvar.stinfo['constnode'] = constnode
                         lhsvar.stinfo.setdefault(key, set()).add(relation)
@@ -429,6 +442,6 @@ def update_attrvars(var, relation, lhs):
     var.stinfo['attrvars'].add( (lhsvar, relation.r_type) )
     # give priority to variable which is not in an EXISTS as
     # "main" attribute variable
-    if var.stinfo['attrvar'] is None or not relation.exists_root():
+    if var.stinfo['attrvar'] is None or not isinstance(relation.scope, nodes.Exists):
         var.stinfo['attrvar'] = lhsvar or lhs
     

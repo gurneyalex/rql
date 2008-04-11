@@ -88,11 +88,11 @@ class EditableMixIn(object):
    
     @property
     def undo_manager(self):
-        return self.root(False).undo_manager
+        return self.root.undo_manager
 
     @property
     def should_register_op(self):
-        root = self.root(False)
+        root = self.root
         # root is None during parsing
         return root is not None and root.memorizing and not root.undoing
     
@@ -167,6 +167,8 @@ class AND(BinaryNode):
     
     def ored_rel(self, _fromnode=None):
         return self.parent.ored_rel(_fromnode or self)
+    def neged_rel(self, _fromnode=None):
+        return self.parent.neged_rel(_fromnode or self)
 
     
 class OR(BinaryNode):
@@ -180,7 +182,6 @@ class OR(BinaryNode):
         return visitor.leave_or(self, *args, **kwargs)
     
     def as_string(self, encoding=None, kwargs=None):
-        """return the tree as an encoded rql string"""
         return '(%s) OR (%s)' % (self.children[0].as_string(encoding, kwargs),
                                  self.children[1].as_string(encoding, kwargs))
     
@@ -189,22 +190,39 @@ class OR(BinaryNode):
     
     def ored_rel(self, _fromnode=None):
         return self
+    def neged_rel(self, _fromnode=None):
+        return self.parent.neged_rel(_fromnode or self)
+
+
+class Not(Node):
+    """a logical NOT node (unary)"""
+    __slots__ = ()
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit_not(self, *args, **kwargs)
+    
+    def leave(self, visitor, *args, **kwargs):
+        return visitor.leave_not(self, *args, **kwargs)
+    
+    def as_string(self, encoding=None, kwargs=None):
+        if isinstance(self.children[0], (Exists, Relation)):
+            return 'NOT %s' % self.children[0].as_string(encoding, kwargs)
+        return 'NOT (%s)' % self.children[0].as_string(encoding, kwargs)
+
+    def ored_rel(self, _fromnode=None):
+        return self.parent.ored_rel(_fromnode or self)
+    def neged_rel(self, _fromnode=None):
+        return self
 
 
 class Exists(EditableMixIn, Node):
     """EXISTS sub query"""
-    __slots__ = ('_not',)
+    __slots__ = ()
 
-    def __init__(self, restriction=None, _not=0):
+    def __init__(self, restriction=None):
         Node.__init__(self)
-        self._not = _not
         if restriction is not None:
             self.append(restriction)
 
-    def initargs(self, stmt):
-        """return list of arguments to give to __init__ to clone this node"""
-        return (None, self._not)
-    
     def is_equivalent(self, other):
         raise NotImplementedError
     
@@ -215,24 +233,16 @@ class Exists(EditableMixIn, Node):
         return visitor.leave_exists(self, *args, **kwargs)
                 
     def as_string(self, encoding=None, kwargs=None):
-        """return the tree as an encoded rql string"""
         content = self.children and self.children[0].as_string(encoding, kwargs)
-        if self._not:
-            return 'NOT EXISTS(%s)' % content
         return 'EXISTS(%s)' % content
 
     def __repr__(self):
         content = self.children and repr(self.children[0])
-        if self._not:
-            return 'NOT EXISTS(%s)' % content
         return 'EXISTS(%s)' % content
 
     def get_restriction(self):
         return self.children[0]
 
-    def exists_root(self):
-        return self
-    
     @property
     def scope(self):
         return self
@@ -241,29 +251,29 @@ class Exists(EditableMixIn, Node):
         if _fromnode: # stop here
             return False
         return self.parent.ored_rel(_fromnode or self)
-
+    def neged_rel(self, _fromnode=None):
+        if _fromnode: # stop here
+            return False
+        return self.parent.neged_rel(_fromnode or self)
     
 class Relation(Node):
     """a RQL relation"""
-    __slots__ = ('r_type', '_not', 'optional', '_querier_data')
+    __slots__ = ('r_type', 'optional', '_querier_data')
     
-    def __init__(self, r_type, _not=0, optional=None):
+    def __init__(self, r_type, optional=None):
         Node.__init__(self)
         self.r_type = r_type.encode()
-        self._not = _not
         self.optional = None
         self.set_optional(optional)
     
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node"""
-        return self.r_type, self._not, self.optional
+        return self.r_type, self.optional
         
     def is_equivalent(self, other):
         if not Node.is_equivalent(self, other):
             return False
         if self.r_type != other.r_type:
-            return False
-        if self._not != other._not:
             return False
         return True
     
@@ -284,8 +294,6 @@ class Relation(Node):
                 rhs += '?'
         except IndexError:
             return repr(self) # not fully built relation
-        if self._not:
-            return 'NOT %s %s %s' % (lhs, self.r_type, rhs)
         return '%s %s %s' % (lhs, self.r_type, rhs)
 
     def __repr__(self):
@@ -294,9 +302,6 @@ class Relation(Node):
         else:
             rtype = self.r_type
         try:
-            if self._not:
-                return 'Relation(not %r %s %r)' % (self.children[0], rtype,
-                                                   self.children[1])
             return 'Relation(%r %s %r)' % (self.children[0], rtype,
                                            self.children[1])
         except IndexError:
@@ -316,6 +321,8 @@ class Relation(Node):
     
     def ored_rel(self, _fromnode=None):
         return self.parent.ored_rel(_fromnode or self)
+    def neged_rel(self, _fromnode=None):
+        return self.parent.neged_rel(_fromnode or self)
 
     def is_types_restriction(self):
         if self.r_type != 'is':
@@ -354,10 +361,10 @@ class Relation(Node):
         return lhs, rhs
 
     def change_optional(self, value):
-        stroot = self.root()
-        if stroot.should_register_op and value != self.optional:
+        root = self.root
+        if root.should_register_op and value != self.optional:
             from rql.undo import SetOptionalOperation
-            stroot.undo_manager.add_operation(SetOptionalOperation(self, self.optional))
+            root.undo_manager.add_operation(SetOptionalOperation(self, self.optional))
         self.optional= value
 
     
@@ -474,7 +481,7 @@ class MathExpression(HSMixin, BinaryNode):
         return the name of this relation, else return the type of the math
         expression
         """
-        schema = self.root(False).schema
+        schema = self.root.schema
         for vref in self.iget_nodes(VariableRef):
             rtype = vref.get_description()
             if schema.has_relation(rtype):
@@ -537,6 +544,26 @@ class Function(HSMixin, Node):
         return function_description(self.name)
 
 
+class ColumnAlias(HSMixin, LeafNode):
+    __slots__ = ('alias', 'colnum')
+    def __init__(self, descr):
+        alias, colnum = descr.split('.')
+        self.alias = alias.encode()
+        self.colnum = int(colnum)
+        
+    def initargs(self, stmt):
+        return (self.as_string(),)
+    
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit_columnalias(self, *args, **kwargs)
+    
+    def leave(self, visitor, *args, **kwargs):
+        return visitor.leave_columnalias(self, *args, **kwargs)
+    
+    def as_string(self, encoding=None, kwargs=None):
+        return '%s.%s' % (self.alias, self.colnum)
+        
+        
 class Constant(HSMixin, LeafNode):
     """String, Int, TRUE, FALSE, TODAY, NULL..."""
     __slots__ = ('value', 'type', 'uid', 'uidtype')
@@ -678,10 +705,7 @@ class KWNode(Node):
     def __repr__(self):
         return '%s %s' % (self.keyword,
                           ', '.join(repr(child) for child in self.children))
-    
-    def exists_root(self):
-        return False
-    
+        
 class Group(KWNode): 
     """a group (GROUPBY) node"""
     __slots__ = ()
@@ -754,9 +778,6 @@ class SortTerm(Node):
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_sortterm(self, *args, **kwargs)
 
-    def exists_root(self):
-        return False
-            
     @property
     def term(self): 
         return self.children[0]
@@ -860,7 +881,7 @@ class Variable(object):
 
     @property
     def schema(self):
-        return self.stmt.root().schema
+        return self.stmt.root.schema
     
     def get_type(self, solution=None, kwargs=None):
         """return entity type of this object, 'Any' if not found"""

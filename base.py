@@ -23,15 +23,17 @@ class BaseNode(object):
         return ()
     
     @property
+    def root(self):
+        """return the root node of the tree"""
+        return self.parent.root
+    
+    @property
+    def stmt(self):
+        return self.parent.stmt
+    
+    @property
     def scope(self):
         return self.parent.scope
-    
-    def root(self, stop_to_select=True):
-        """return the root node of the tree"""
-        return self.parent.root(stop_to_select)
-
-    def exists_root(self):
-        return self.parent.exists_root()
 
     def get_nodes(self, klass):
         """return the list of nodes of a given class in the subtree

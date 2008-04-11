@@ -69,9 +69,23 @@ class Statement(nodes.EditableMixIn, Node):
         
     # navigation helper methods #############################################
     
-    def root(self, stop_to_select=True):
+    @property 
+    def root(self):
         """return the root node of the tree"""
         return self
+        
+    @property
+    def stmt(self):
+        return self
+
+    @property
+    def scope(self):
+        return self
+    
+    def ored_rel(self, _fromnode=None):
+        return None
+    def neged_rel(self, _fromnode=None):
+        return None
         
     def get_selected_variables(self):
         return self.selected_terms()
@@ -89,16 +103,6 @@ class Statement(nodes.EditableMixIn, Node):
     
     def selected_terms(self):
         raise NotImplementedError()
-
-    @property
-    def scope(self):
-        return self
-    
-    def exists_root(self):
-        return None
-    
-    def ored_rel(self, _fromnode=None):
-        return False
     
     # construction helper methods #############################################
     
@@ -378,6 +382,8 @@ class Select(Statement):
         self.distinct = False
         # list of selected relations (maybe variables or functions)
         self.selected = []
+        # subqueries alias
+        self.aliases = {}
         # set by the annotator
         self.has_aggregat = False
         # syntax tree meta-information
@@ -428,10 +434,9 @@ class Select(Statement):
         
     # quick accessors #########################################################
     
-    def root(self, stop_to_select=True):
+    @property 
+    def root(self):
         """return the root node of the tree"""
-        if stop_to_select:
-            return self
         return self.parent
 
     @property
@@ -491,6 +496,11 @@ class Select(Statement):
             for var in self.get_selected_variables():
                 self.add_type_restriction(var.variable, etype)
 
+    def set_from(self, node, alias):
+        if alias in self.aliases:
+            raise BadRQLQuery('Duplicated alias %s' % alias)
+        self.aliases[alias] = node
+        
     def get_description(self):
         """return the list of types or relations (if not found) associated to
         selected variables
