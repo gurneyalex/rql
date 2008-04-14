@@ -127,14 +127,9 @@ UNRESOLVABLE_QUERIES = (
     )
 
 DEBUG = 0
-ALL_SOLS = [[{'X': 'Address'}, {'X': 'Company'},
-             {'X': 'Eetype'}, {'X': 'Person'}]]
+ALL_SOLS = [{'X': 'Address'}, {'X': 'Company'},
+            {'X': 'Eetype'}, {'X': 'Person'}]
 
-
-def sort_sols(solss):
-    for sols in solss:
-        sols.sort()
-    return solss
 
 class AnalyzerClassTest(TestCase):
     """check wrong queries arre correctly detected
@@ -145,60 +140,77 @@ class AnalyzerClassTest(TestCase):
     
     def setUp(self):
         self.helper = RQLHelper(DummySchema(), {'eid': self._type_from_eid})
+
+    def test_raise(self):
+        for rql in UNRESOLVABLE_QUERIES:
+            if DEBUG:
+                print rql
+            node = self.helper.parse(rql)
+            self.assertRaises(TypeResolverException,
+                              self.helper.get_solutions, node, debug=DEBUG)
         
     def test_base_1(self):
         node = self.helper.parse('Any X')
-        solss = sort_sols(self.helper.get_solutions(node, debug=DEBUG))
-        self.assertEqual(solss, [[{'X': 'Address'},
-                                  {'X': 'Company'},
-                                  {'X': 'Eetype'},
-                                  {'X': 'Person'}]])
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(sols, [{'X': 'Address'},
+                                {'X': 'Company'},
+                                {'X': 'Eetype'},
+                                {'X': 'Person'}])
         
     def test_base_2(self):
         node = self.helper.parse('Person X')
         # check constant type of the is relation inserted
         self.assertEqual(node.children[0].get_restriction().children[1].children[0].type,
                          'etype')
-        sols = self.helper.get_solutions(node, debug=DEBUG)
-        self.assertEqual(sols, [[{'X': 'Person'}]])
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = node.children[0].solutions
+        self.assertEqual(sols, [{'X': 'Person'}])
         
     def test_base_3(self):
         node = self.helper.parse('Any X WHERE X eid 1')
-        sols = self.helper.get_solutions(node, debug=DEBUG)
-        self.assertEqual(sols, [[{'X': 'Person'}]])
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = node.children[0].solutions
+        self.assertEqual(sols, [{'X': 'Person'}])
         node = self.helper.simplify(node)
-        sols = self.helper.get_solutions(node, debug=DEBUG)
-        self.assertEqual(sols, [[{}]])
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = node.children[0].solutions
+        self.assertEqual(sols, [{}])
     
     def test_base_guess_1(self):
         node = self.helper.parse('Person X WHERE X work_for Y')
-        sols = sort_sols(self.helper.get_solutions(node, debug=DEBUG))
-        self.assertEqual(sols, [[{'X': 'Person', 'Y': 'Company'}]])
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(sols, [{'X': 'Person', 'Y': 'Company'}])
     
     def test_base_guess_2(self):
         node = self.helper.parse('Any X WHERE X name "Logilab"')
-        sols = sort_sols(self.helper.get_solutions(node, debug=DEBUG))
-        self.assertEqual(sols, [[{'X': 'Company'}, {'X': 'Person'}]])
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(sols, [{'X': 'Company'}, {'X': 'Person'}])
     
     def test_is_query(self):
         node = self.helper.parse('Any T WHERE X name "logilab", X is T')
-        sols = sort_sols(self.helper.get_solutions(node, debug=DEBUG))
-        self.assertEqual(sols, [[{'X': 'Company', 'T': 'Eetype'},
-                                {'X': 'Person', 'T': 'Eetype'}]])
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(sols, [{'X': 'Company', 'T': 'Eetype'},
+                                {'X': 'Person', 'T': 'Eetype'}])
 
     def test_is_query_const(self):
         node = self.helper.parse('Any X WHERE X is T, T eid 10')
-        sols = sort_sols(self.helper.get_solutions(node, debug=DEBUG))
-        self.assertEqual(sols, [[{'X': 'Address', 'T': 'Eetype'},
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(sols, [{'X': 'Address', 'T': 'Eetype'},
                                 {'X': 'Company', 'T': 'Eetype'},
-                                {'X': 'Person', 'T': 'Eetype'}]])
+                                {'X': 'Person', 'T': 'Eetype'}])
 
     def test_not(self):
         node = self.helper.parse('Any X WHERE not X is Person')
-        sols = sort_sols(self.helper.get_solutions(node, debug=DEBUG))
-        expected = ALL_SOLS[0][:]
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        expected = ALL_SOLS[:]
         expected.remove({'X': 'Person'})
-        self.assertEqual(sols, [expected])
+        self.assertEqual(sols, expected)
 
     def test_uid_func_mapping(self):
         h = self.helper
@@ -208,18 +220,21 @@ class AnalyzerClassTest(TestCase):
         uid_func_mapping = {'name': type_from_uid}
         # constant as rhs of the uid relation
         node = h.parse('Any X WHERE X name "Logilab"')
-        sols = h.get_solutions(node, uid_func_mapping, debug=DEBUG)
-        self.assertEquals(sols, [[{'X': 'Company'}]])
+        h.get_solutions(node, uid_func_mapping, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEquals(sols, [{'X': 'Company'}])
         # variable as rhs of the uid relation
         node = h.parse('Any N WHERE X name N')
-        sols = sort_sols(h.get_solutions(node, uid_func_mapping, debug=DEBUG))
-        self.assertEquals(sols, [[{'X': 'Company', 'N': 'String'},
-                                {'X': 'Person', 'N': 'String'}]])
+        h.get_solutions(node, uid_func_mapping, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEquals(sols, [{'X': 'Company', 'N': 'String'},
+                                {'X': 'Person', 'N': 'String'}])
         # substitute as rhs of the uid relation
         node = h.parse('Any X WHERE X name %(company)s')
-        sols = h.get_solutions(node, uid_func_mapping, {'company': 'Logilab'},
-                               debug=DEBUG)
-        self.assertEquals(sols, [[{'X': 'Company'}]])
+        h.get_solutions(node, uid_func_mapping, {'company': 'Logilab'},
+                        debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEquals(sols, [{'X': 'Company'}])
 
 
     def test_unusableuid_func_mapping(self):
@@ -229,93 +244,116 @@ class AnalyzerClassTest(TestCase):
             return 'Company'
         uid_func_mapping = {'name': type_from_uid}
         node = h.parse('Any X WHERE NOT X name %(company)s')
-        sols = sort_sols(h.get_solutions(node, uid_func_mapping, {'company': 'Logilab'},
-                                         debug=DEBUG))
+        h.get_solutions(node, uid_func_mapping, {'company': 'Logilab'},
+                        debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
         self.assertEquals(sols, ALL_SOLS)
         node = h.parse('Any X WHERE X name > %(company)s')
-        sols = sort_sols(h.get_solutions(node, uid_func_mapping, {'company': 'Logilab'},
-                                         debug=DEBUG))
+        h.get_solutions(node, uid_func_mapping, {'company': 'Logilab'},
+                        debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
         self.assertEquals(sols, ALL_SOLS)
         
         
     def test_base_guess_3(self):
         node = self.helper.parse('Any Z WHERE X name Z GROUPBY Z')
-        sols = sort_sols(self.helper.get_solutions(node, debug=DEBUG))
-        self.assertEqual(sols, [[{'X': 'Company', 'Z': 'String'},
-                                 {'X': 'Person', 'Z': 'String'}]])
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(sols, [{'X': 'Company', 'Z': 'String'},
+                                 {'X': 'Person', 'Z': 'String'}])
 
     def test_var_name(self):
         node = self.helper.parse('Any E1 WHERE E2 is Person, E2 name E1 GROUPBY E1')
-        sols = self.helper.get_solutions(node, debug=DEBUG)
-        self.assertEqual(sols, [[{'E2': 'Person', 'E1': 'String'}]])
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(sols, [{'E2': 'Person', 'E1': 'String'}])
 
     def test_insert_1(self):
         node = self.helper.parse('INSERT Person X : X name "toto", X work_for Y WHERE Y name "logilab"')
-        sols = self.helper.get_solutions(node, debug=DEBUG)
-        self.assertEqual(sols, [[{'X': 'Person', 'Y': 'Company'}]])
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = sorted(node.solutions)
+        self.assertEqual(sols, [{'X': 'Person', 'Y': 'Company'}])
 
     def test_relation_eid(self):
         node = self.helper.parse('Any E2 WHERE E2 work_for E1, E2 eid 2')
-        sols = self.helper.get_solutions(node, debug=DEBUG)
-        self.assertEqual(sols, [[{'E1': 'Company', 'E2': 'Person'}]])
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(sols, [{'E1': 'Company', 'E2': 'Person'}])
         node = self.helper.simplify(node)
-        sols = self.helper.get_solutions(node, debug=DEBUG)
-        self.assertEqual(sols, [[{'E1': 'Company'}]])
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(sols, [{'E1': 'Company'}])
         
         node = self.helper.parse('Any E1 WHERE E2 work_for E1, E2 eid 2')
-        sols = self.helper.get_solutions(node, debug=DEBUG)
-        self.assertEqual(sols, [[{'E1': 'Company', 'E2': 'Person'}]])
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(sols, [{'E1': 'Company', 'E2': 'Person'}])
         node = self.helper.simplify(node)
-        sols = self.helper.get_solutions(node, debug=DEBUG)
-        self.assertEqual(sols, [[{'E1': 'Company'}]])
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(sols, [{'E1': 'Company'}])
         
     def test_not_symetric_relation_eid(self):
         node = self.helper.parse('Any P WHERE X eid 0, NOT X connait P')
-        sols = self.helper.get_solutions(node, debug=DEBUG)
-        self.assertEqual(sols, [[{'P': 'Person', 'X': 'Person'}]])
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(sols, [{'P': 'Person', 'X': 'Person'}])
         node = self.helper.simplify(node)
-        sols = self.helper.get_solutions(node, debug=DEBUG)
-        self.assertEqual(sols, [[{'P': 'Person'}]])
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(sols, [{'P': 'Person'}])
         
     def test_union(self):
         node = self.helper.parse('Any P WHERE X eid 0, NOT X connait P UNION Any E1 WHERE E2 work_for E1, E2 eid 2')
-        sols = self.helper.get_solutions(node, debug=DEBUG)
-        self.assertEqual(sols, [[{'P': 'Person', 'X': 'Person'}], [{'E1': 'Company', 'E2': 'Person'}]])
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(sols, [{'P': 'Person', 'X': 'Person'}], [{'E1': 'Company', 'E2': 'Person'}])
         node = self.helper.simplify(node)
-        sols = self.helper.get_solutions(node, debug=DEBUG)
-        self.assertEqual(sols, [[{'P': 'Person'}], [{'E1': 'Company'}]])
-    
-    def test_raise(self):
-        for rql in UNRESOLVABLE_QUERIES:
-            if DEBUG:
-                print rql
-            node = self.helper.parse(rql)
-            self.assertRaises(TypeResolverException,
-                              self.helper.get_solutions, node, debug=DEBUG)
-
-        
-    def test_nongrer_not_u_ownedby_u(self):
-        node = self.helper.parse('Any U WHERE NOT U owned_by U')
-        sols = self.helper.get_solutions(node, debug=DEBUG)
-        self.assertEqual(sols, [[{'U': 'Person'}]])
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(sols, [{'P': 'Person'}], [{'E1': 'Company'}])
         
     def test_exists(self):
         node = self.helper.parse("Any X WHERE X firstname 'lulu',"
                                  "EXISTS (X owned_by U, U name 'lulufanclub' OR U name 'managers');")
-        sols = self.helper.get_solutions(node, debug=DEBUG)
-        self.assertEqual(sols, [[{'X': 'Person',
-                                 'U': 'Person'}]])
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(sols, [{'X': 'Person',
+                                 'U': 'Person'}])
 
+    def test_subqueries(self):
+        node = self.helper.parse('Any L, Y, F '
+                                 'FROM (Any X,F WHERE X is Person, X firstname F '
+                                 'UNION Any X,F WHERE X is Company, X name F) AS (Y,F) '
+                                 'WHERE Y located L;')
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(node.children[0].from_[0].children[0].solutions, [{'X': 'Person',
+                                                                            'F': 'String'}])
+        self.assertEqual(node.children[0].from_[0].children[1].solutions, [{'X': 'Company',
+                                                                            'F': 'String'}])
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(sols, [{'Y': 'Company', 'L': 'Address',
+                                 'F': 'String'},
+                                {'Y': 'Person', 'L': 'Address',
+                                 'F': 'String'}])
 
-##     def test_raise(self):
-##         for rql in UNRESOLVABLE_QUERIES:
-##             print rql
-##             node = self.helper.parse(rql)
-##             try:
-##                 sols = self.helper.get_solutions( node )
-##                 print sols
-##             except TypeResolverException:
-##                 print "No sols"
+    def test_subqueries_aggregat(self):
+        node = self.helper.parse('Any L, SUM(X)*100/Y '
+                                 'FROM (Any SUM(X) WHERE X is Person) AS Y '
+                                 'WHERE X is Person, X located L GROUPBY L;')
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(node.children[0].from_[0].children[0].solutions, [{'X': 'Person'}])
+        self.assertEqual(node.children[0].solutions, [{'X': 'Person', 'Y': 'Person',
+                                                       'L': 'Address'}])
+        
+    def test_nongrer_not_u_ownedby_u(self):
+        node = self.helper.parse('Any U WHERE NOT U owned_by U')
+        self.helper.get_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(sols, [{'U': 'Person'}])
+        
 
 if __name__ == '__main__':
     unittest_main()

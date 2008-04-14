@@ -49,78 +49,15 @@ class ETypeResolver:
         self._base_domain = [str(etype) for etype in schema.entities()]
         self._nonfinal_domain = [str(etype) for etype in schema.entities() if not etype.is_final()]
         
-    def visit(self, node, uid_func_mapping=None, kwargs=None, debug=False):
-        # FIXME: not thread safe
-        if uid_func_mapping:
-            assert len(uid_func_mapping) <= 1
-            self.uid_func_mapping = uid_func_mapping
-            self.uid_func = uid_func_mapping.values()[0]
-        self.kwargs = kwargs
-        if node.TYPE == 'select':
-            solutions = [self._visit_stmt(select, node.TYPE, debug)
-                         for select in node.children]
-        else:
-            solutions = [self._visit_stmt(node, node.TYPE, debug)]
-        return solutions
-
-    def _visit_stmt(self, node, stype, debug):
-        # init variables for a visit
-        domains = {}
-        constraints = []
-        # set domain for the all variables
-        for var in node.defined_vars.itervalues():
-            domains[var.name] = fd.FiniteDomain(self._base_domain)
-        # no variable short cut
-        if not domains:
-            return [{}]
-        # add restriction specific to delete and insert 
-        if stype in ('delete', 'insert'):
-            for etype, variable in node.main_variables:
-                if node.TYPE == 'delete' and etype == 'Any':
-                    continue
-                assert etype in self.schema, etype
-                var = variable.name
-                constraints.append(fd.make_expression(
-                    (var,), '%s == %r' % (var, etype)))
-            for relation in node.main_relations:
-                self._visit(relation, constraints)
-        # add restriction specific to update
-        elif stype == 'update':
-            for relation in node.main_relations:
-                self._visit(relation, constraints)
-        elif self.uid_func:
-            # check rewritten uid const
-            for consts in node.stinfo['rewritten'].values():
-                if not consts:
-                    continue
-                uidtype = self.uid_func(consts[0].eval(self.kwargs))
-                for const in consts:
-                    const.uidtype = uidtype
-            
-        restriction = node.get_restriction()
-        if restriction is not None:
-            # get constraints from the restriction subtree
-            self._visit(restriction, constraints)
-        elif stype == 'select':
-            varnames = [v.name for v in node.get_selected_variables()]
-            if varnames:
-                # add constraint on real relation types if no restriction
-                types = [eschema.type for eschema in self.schema.entities()
-                         if not eschema.is_final()]
-                constraints.append(fd.make_expression(varnames, '%s in %s ' % (
-                    '=='.join(varnames), types)))
+    def solve(self, node, domains, constraints):
         # debug info
-        if debug > 1:
+        if self.debug > 1:
             print "- AN1 -"+'-'*80
             print node
             print "DOMAINS:"
             pprint(domains)
             print "CONSTRAINTS:"
             pprint(constraints)
-        return self.solve(node, domains, constraints)
-
-
-    def solve(self, node, domains, constraints):
         # solve the problem and check there is at least one solution
         r = Repository(domains.keys(), domains, constraints)
         solver = Solver()
@@ -129,16 +66,17 @@ class ETypeResolver:
             rql = node.as_string('utf8', self.kwargs)
             raise TypeResolverException(
                 'Unable to resolve variables types in "%s"!!' % (rql))
-        return sols
+        node.set_possible_types(sols)
 
-    def _visit(self, node, constraints):
+    def _visit(self, node, constraints=None):
         """recurse among the tree"""
         func = getattr(self, 'visit_%s' % node.__class__.__name__.lower())
-        func(node, constraints)
-        #node.accept(self, constraints)
-        for c in node.children:
-            self._visit(c, constraints)
-
+        if constraints is None:
+            func(node)
+        else:
+            func(node, constraints)
+            for c in node.children:
+                self._visit(c, constraints)
 
     def _uid_node_types(self, valnode):
         types = set()
@@ -151,6 +89,100 @@ class ETypeResolver:
             cst.uidtype = self.uid_func(eid)
             types.add(cst.uidtype)
         return types
+
+    def _init_stmt(self, node):
+        # init variables for a visit
+        domains = {}
+        # set domain for the all variables
+        for var in node.defined_vars.itervalues():
+            domains[var.name] = fd.FiniteDomain(self._base_domain)
+        # no variable short cut
+        return domains
+        
+    def visit(self, node, uid_func_mapping=None, kwargs=None, debug=False):
+        # FIXME: not thread safe
+        self.debug = 2#debug
+        if uid_func_mapping:
+            assert len(uid_func_mapping) <= 1
+            self.uid_func_mapping = uid_func_mapping
+            self.uid_func = uid_func_mapping.values()[0]
+        self.kwargs = kwargs
+        self._visit(node)
+        
+    def visit_union(self, node):
+        for select in node.children:
+            self._visit(select)
+
+    def visit_insert(self, node):
+        if not node.defined_vars:
+            node.set_possible_types([{}])
+            return
+        domains = self._init_stmt(node)
+        constraints = []
+        for etype, variable in node.main_variables:
+            if node.TYPE == 'delete' and etype == 'Any':
+                continue
+            assert etype in self.schema, etype
+            var = variable.name
+            constraints.append(fd.make_expression(
+                (var,), '%s == %r' % (var, etype)))
+        for relation in node.main_relations:
+            self._visit(relation, constraints)
+        restriction = node.get_restriction()
+        if restriction is not None:
+            # get constraints from the restriction subtree
+            self._visit(restriction, constraints)
+        self.solve(node, domains, constraints)
+        
+    visit_delete = visit_insert
+    
+    def visit_update(self, node):
+        if not node.defined_vars:
+            node.set_possible_types([{}])
+            return
+        domains = self._init_stmt(node)
+        constraints = []
+        for relation in node.main_relations:
+            self._visit(relation, constraints)
+        restriction = node.get_restriction()
+        if restriction is not None:
+            # get constraints from the restriction subtree
+            self._visit(restriction, constraints)
+        self.solve(node, domains, constraints)
+        
+    def visit_select(self, node):
+        if not (node.defined_vars or node.aliases):
+            node.set_possible_types([{}])
+            return
+        for subquery in node.from_: # resolve subqueries first
+            self.visit_union(subquery)
+        domains = self._init_stmt(node)
+        for ca in node.aliases.itervalues():
+            etypes = set(stmt.selected[ca.colnum].get_type(sol, self.kwargs)
+                         for stmt in ca.query.children for sol in stmt.solutions)
+            domains[ca.name] = fd.FiniteDomain(etypes)
+        constraints = []
+        if self.uid_func:
+            # check rewritten uid const
+            for consts in node.stinfo['rewritten'].values():
+                if not consts:
+                    continue
+                uidtype = self.uid_func(consts[0].eval(self.kwargs))
+                for const in consts:
+                    const.uidtype = uidtype
+        restriction = node.get_restriction()
+        if restriction is None:
+            varnames = [v.name for v in node.get_selected_variables()]
+            if varnames:
+                # add constraint on real relation types if no restriction
+                types = [eschema.type for eschema in self.schema.entities()
+                         if not eschema.is_final()]
+                constraints.append(fd.make_expression(varnames, '%s in %s ' % (
+                    '=='.join(varnames), types)))
+        else:
+            # get constraints from the restriction subtree
+            self._visit(restriction, constraints)
+        self.solve(node, domains, constraints)
     
     def visit_relation(self, relation, constraints):
         """extract constraints for an relation according to it's  type"""

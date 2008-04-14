@@ -126,6 +126,8 @@ class RQLVisitorHandler:
         pass
     def visit_or(self, ou):
         pass        
+    def visit_not(self, not_):
+        pass
     def visit_relation(self, relation):
         pass
     def visit_comparison(self, comparison):

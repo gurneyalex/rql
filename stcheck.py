@@ -64,7 +64,7 @@ class RQLSTChecker(object):
                     
     def _check_selected(self, term, termtype, errors):
         """check that variables referenced in the given term are selected"""
-        for vref in term.iget_nodes(nodes.VariableRef):
+        for vref in variable_refs(term):
             # no stinfo yet, use references
             for ovref in vref.variable.references():
                 rel = ovref.relation()
@@ -243,17 +243,17 @@ class RQLSTChecker(object):
 ##                    (variableref.root(), variableref.variable, variableref.root().defined_vars)
 ##         except AttributeError:
 ##             raise Exception((variableref.root(), variableref.variable))
-        
+    def leave_variableref(self, node, errors):
+        pass
+
     def visit_constant(self, constant, errors):
         assert len(constant.children)==0
         if constant.type == 'etype' and constant.relation().r_type != 'is':
             msg ='using an entity type in only allowed with "is" relation'
             errors.append(msg)
-
     def leave_constant(self, node, errors):
         pass 
-    def leave_variableref(self, node, errors):
-        pass
+
     def leave_comparison(self, node, errors):
         pass
     def leave_mathexpression(self, node, errors):
@@ -274,7 +274,11 @@ class RQLSTChecker(object):
         pass
 
         
-
+def variable_refs(node):
+    for vref in node.iget_nodes(nodes.VariableRef):
+        if isinstance(vref.variable, nodes.Variable):
+            yield vref
+            
 class RQLSTAnnotator(object):
     """ annotate RQL syntax tree to ease further code generation from it.
     
@@ -302,9 +306,9 @@ class RQLSTAnnotator(object):
                     node.has_aggregat = True
                     break
             # register the selection column index
-            for varref in term.iget_nodes(nodes.VariableRef):
-                varref.variable.stinfo['selected'].add(i)
-                varref.variable.set_scope(node)
+            for vref in variable_refs(term):
+                vref.variable.stinfo['selected'].add(i)
+                vref.variable.set_scope(node)
         restr = node.get_restriction()
         if restr is not None:
             restr.accept(self, node)
@@ -370,6 +374,8 @@ class RQLSTAnnotator(object):
         lhs, rhs = relation.get_parts()
         # may be a constant once rqlst has been simplified
         lhsvar = getattr(lhs, 'variable', None)
+        if not isinstance(lhsvar, nodes.Variable):
+            lhsvar = None
         if relation.is_types_restriction():
             assert rhs.operator == '='
             assert not relation.optional
@@ -429,12 +435,12 @@ class RQLSTAnnotator(object):
                     lhsvar.stinfo.setdefault(key, set()).add(relation)
             elif rschema.is_final() or rschema.inlined:
                 lhsvar.stinfo['blocsimplification'].add(relation)
-        for varref in rhs.iget_nodes(nodes.VariableRef):
-            var = varref.variable
+        for vref in variable_refs(rhs):
+            var = vref.variable
             var.set_scope(scope)
             var.stinfo['relations'].add(relation)
             var.stinfo['rhsrelations'].add(relation)
-            if varref is rhs.children[0] and rschema.is_final():
+            if vref is rhs.children[0] and rschema.is_final():
                 update_attrvars(var, relation, lhs)
 
 def update_attrvars(var, relation, lhs):

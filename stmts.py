@@ -142,15 +142,14 @@ class Statement(nodes.EditableMixIn, Node):
             self.undo_manager.add_operation(MakeVarOperation(var))
         return var
     
-    def set_possible_types(self, solutions, solsidx=0):
-        solutions = solutions[solsidx]
+    def set_possible_types(self, solutions):
         self.solutions = solutions
         defined = self.defined_vars
         for var in defined.itervalues():
             var.stinfo['possibletypes'] = set()
-        for solution in solutions:
-            for vname, etype in solution.iteritems():
-                defined[vname].stinfo['possibletypes'].add(etype)
+            for solution in solutions:
+                for etype in solution.itervalues():
+                    var.stinfo['possibletypes'].add(etype)
 
     def check_references(self):
         """test function"""
@@ -242,9 +241,7 @@ class Union(Statement):
         self.offset = offset
         
     def set_possible_types(self, solutions):
-        assert len(solutions) == len(self.children)
-        for i, select in enumerate(self.children):
-            select.set_possible_types(solutions, i)
+        raise RuntimeError('Union has no solutions')
             
     # access to select statements property, which in certain condition
     # should have homogeneous values (don't use this in other cases)
@@ -384,6 +381,7 @@ class Select(Statement):
         self.selected = []
         # subqueries alias
         self.aliases = {}
+        self.from_ = []
         # set by the annotator
         self.has_aggregat = False
         # syntax tree meta-information
@@ -408,6 +406,15 @@ class Select(Statement):
             base = 'Any'
         s = ['%s %s' % (base, ','.join(v.as_string(encoding, kwargs)
                                        for v in self.selected))]
+        if self.from_:
+            s.append('FROM')
+            for subquery in self.from_:
+                s.append('(%s) AS' % subquery.as_string(encoding, kwargs))
+                aliases = self.subquery_aliases(subquery)
+                if len(aliases) == 1:
+                    s.append(aliases[0].name)
+                else:
+                    s.append('(%s)' % ','.join(ca.name for ca in aliases))
         r = self.get_restriction()
         if r is not None:
             s.append('WHERE %s' % r.as_string(encoding, kwargs))
@@ -424,6 +431,9 @@ class Select(Statement):
         for child in self.selected:
             new.append_selected(child.copy(new))
         new.distinct = self.distinct
+        for child in self.from_:
+            new.add_subquery(child.copy(), [ca.name for ca in self.subquery_aliases(child)])
+        new.distinct = self.distinct
         return new
     
     def accept(self, visitor, *args, **kwargs):
@@ -431,8 +441,22 @@ class Select(Statement):
     
     def leave(self, visitor, *args, **kwargs):
         return visitor.leave_select(self, *args, **kwargs)
+
+    def get_variable(self, name):
+        """get a variable instance from its name
         
+        the variable is created if it doesn't exist yet
+        """
+        if name in self.aliases:
+            return self.aliases[name]
+        return super(Select, self).get_variable(name)
+    
     # quick accessors #########################################################
+
+    def subquery_aliases(self, subquery):
+        aliases = [ca for ca in self.aliases.itervalues() if ca.query is subquery]
+        aliases.sort(key=lambda x: x.colnum)
+        return aliases
     
     @property 
     def root(self):
@@ -496,11 +520,20 @@ class Select(Statement):
             for var in self.get_selected_variables():
                 self.add_type_restriction(var.variable, etype)
 
-    def set_from(self, node, alias):
-        if alias in self.aliases:
-            raise BadRQLQuery('Duplicated alias %s' % alias)
-        self.aliases[alias] = node
-        
+    def add_subquery(self, union, aliases):
+        if len(aliases) != len(union.children[0].selected):
+            raise BadRQLQuery('Should have the same number of aliases than selected terms in sub-query')
+        self.from_.append(union)
+        union.parent = self
+        for i, alias in enumerate(aliases):
+            if alias in self.aliases:
+                raise BadRQLQuery('Duplicated alias %s' % alias)
+            self.aliases[alias] = nodes.ColumnAlias(alias, i, union)
+            # alias may already have been used as a regular variable, replace it
+            if alias in self.defined_vars:
+                for vref in self.defined_vars.pop(alias).references():
+                    vref.variable = self.aliases[alias]
+                    
     def get_description(self):
         """return the list of types or relations (if not found) associated to
         selected variables

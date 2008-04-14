@@ -544,24 +544,26 @@ class Function(HSMixin, Node):
         return function_description(self.name)
 
 
-class ColumnAlias(HSMixin, LeafNode):
-    __slots__ = ('alias', 'colnum')
-    def __init__(self, descr):
-        alias, colnum = descr.split('.')
-        self.alias = alias.encode()
+class ColumnAlias(object):
+    __slots__ = ('name', 'colnum', 'query')
+    def __init__(self, alias, colnum, query=None):
+        self.name = alias.encode()
         self.colnum = int(colnum)
+        self.query = query
         
-    def initargs(self, stmt):
-        return (self.as_string(),)
+    def register_reference(self, vref):
+        pass
+#     def initargs(self, stmt):
+#         return (self.alias, self.colnum)
     
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_columnalias(self, *args, **kwargs)
+#     def accept(self, visitor, *args, **kwargs):
+#         return visitor.visit_columnalias(self, *args, **kwargs)
     
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_columnalias(self, *args, **kwargs)
+#     def leave(self, visitor, *args, **kwargs):
+#         return visitor.leave_columnalias(self, *args, **kwargs)
     
-    def as_string(self, encoding=None, kwargs=None):
-        return '%s.%s' % (self.alias, self.colnum)
+#     def as_string(self, encoding=None, kwargs=None):
+#         return self.alias
         
         
 class Constant(HSMixin, LeafNode):
