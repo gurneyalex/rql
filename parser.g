@@ -124,8 +124,21 @@ rule select<<V>>: DISTINCT select_base<<V>>  {{ V.distinct = True ; return V }}
 rule select_base<<V>>: E_TYPE selected_terms<<V>> select_from<<V>>  restr<<V>> 
                        group<<V>> having<<V>> {{ V.set_statement_type(E_TYPE) ; return V }}
 
-rule select_from<<V>>: FROM  r"\(" union r"\)" AS VARIABLE {{ V.set_from(union, VARIABLE) }}
+rule select_from<<V>>: FROM  subqueries<<V>>
                      |
+
+rule subqueries<<V>>: subquery<<V>> (
+                         ',' subquery<<V>>
+                      )* 
+            
+        
+rule subquery<<V>>: r"\(" union r"\)" AS aliases {{ V.add_subquery(union, aliases) }}
+            
+rule aliases: VARIABLE               {{ return [VARIABLE] }}
+             | r"\("  VARIABLE  (     {{ variables = [VARIABLE] }}
+                      ',' VARIABLE    {{ variables.append(VARIABLE) }}
+                      )*  
+               r"\)"                  {{ return variables }}
         
 rule selected_terms<<V>>: added_expr<<V>> (   {{ V.append_selected(added_expr) }}
                             ',' added_expr<<V>>
@@ -274,7 +287,7 @@ rule func<<V>>: FUNCTION r"\("              {{ F = Function(FUNCTION) }}
 
 rule var<<V>>: VARIABLE {{ return VariableRef(V.get_variable(VARIABLE)) }}
         
-             | COLALIAS {{ return ColumnAlias(COLALIAS) }} 
+#             | COLALIAS {{ return ColumnAlias(COLALIAS) }} 
         
 rule etype<<V>>: E_TYPE {{ return V.get_etype(E_TYPE) }} 
 

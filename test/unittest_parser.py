@@ -81,15 +81,15 @@ SPEC_QUERIES = (
     'Any X WHERE X nom "toto" UNION Any X WHERE X firstname "toto";',
     'Any X WHERE X nom "toto" GROUPBY X UNION Any X WHERE X firstname "toto" GROUPBY X ORDERBY X;',
 
-    'Any X, X/Y.1 FROM (Any SUM(X) WHERE X is Person) AS Y WHERE X is Person;',
-    'Any Y.1, COUNT(X) FROM (Person X UNION Document X) AS Y WHERE X bla Y.1 GROUPBY Y.1;',
+    'Any X, X/Y FROM (Any SUM(X) WHERE X is Person) AS Y WHERE X is Person;',
+    'Any Y, COUNT(X) FROM (Person X UNION Document X) AS Y WHERE X bla Y GROUPBY Y;',
     
-    'Any T1.2, COUNT(T1.1)'
+    'Any T2, COUNT(T1)'
     '  FROM (Any X,N WHERE X name N, X transition_of E, E name %(name)s'
     '        UNION '
-    '        Any X,N WHERE X name N, X state_of E, E name %(name)s) AS T1'
-    ' GROUPBY T1.1'
-    ' ORDERBY 2 DESC, T1.2;',
+    '        Any X,N WHERE X name N, X state_of E, E name %(name)s) AS (T1,T2)'
+    ' GROUPBY T1'
+    ' ORDERBY 2 DESC, T2;',
     )
 
 class ParserHercule(TestCase):

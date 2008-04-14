@@ -27,6 +27,7 @@ BAD_QUERIES = (
 
     'Any Y WHERE X eid 12, X concerns Y UNION Any Y WHERE X eid 13, X located Y ORDERBY X',
     
+    'Any X, X/Z FROM (Any SUM(X) WHERE X is Person) AS Y WHERE X is Person;',
     )
 
 OK_QUERIES = (

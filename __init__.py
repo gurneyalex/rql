@@ -69,19 +69,17 @@ class RQLHelper:
 
     def get_solutions(self, rqlst, uid_func_mapping=None, kwargs=None,
                       debug=False):
-        """return a list of solutions for variables of the syntax tree
+        """set solutions for variables of the syntax tree
 
         each solution is a dictionary with variable's name as key and
         variable's type as value
         """
         self._analyser_lock.acquire()
         try:
-            solutions = self._analyser.visit(rqlst, uid_func_mapping, kwargs,
+            self._analyser.visit(rqlst, uid_func_mapping, kwargs,
                                              debug)
         finally:
             self._analyser_lock.release()
-        rqlst.set_possible_types(solutions)
-        return solutions
     
     def simplify(self, rqlst, needcopy=True):
         #print 'simplify', rqlst.as_string(encoding='UTF8')
