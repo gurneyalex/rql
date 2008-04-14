@@ -199,8 +199,18 @@ class RQLSTChecker(object):
     
     def visit_relation(self, relation, errors):
         if relation.optional and relation.neged_rel():
-            errors.append("can use optional relation under NOT (%s)"
-                          % relation.as_string())
+                errors.append("can use optional relation under NOT (%s)"
+                              % relation.as_string())
+        # special case "X identity Y"
+        if relation.r_type == 'identity':
+            assert not isinstance(relation.parent, Not)
+            assert rhs.operator == '='
+        # special case "C is NULL"
+        elif relation.r_type == 'is' and relation.children[1].operator == 'IS':
+            assert isinstance(lhs, VariableRef), lhs
+            assert isinstance(rhs.children[0], Constant)
+            assert rhs.operator == 'IS', rhs.operator
+            assert rhs.children[0].type == None
     
     def leave_relation(self, relation, errors):
         pass

@@ -101,7 +101,7 @@ class ETypeResolver:
         
     def visit(self, node, uid_func_mapping=None, kwargs=None, debug=False):
         # FIXME: not thread safe
-        self.debug = 2#debug
+        self.debug = debug
         if uid_func_mapping:
             assert len(uid_func_mapping) <= 1
             self.uid_func_mapping = uid_func_mapping
