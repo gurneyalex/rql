@@ -49,10 +49,7 @@ class NodeOperation:
     """abstract class for node manipulation operations"""
     def __init__(self, node):
         self.node = node
-        if isinstance(node, Variable):
-            self.root = node.stmt
-        else:
-            self.root = node.root()
+        self.stmt = node.stmt
         
     def __str__(self):
         """undo the operation on the selection"""
@@ -65,7 +62,7 @@ class MakeVarOperation(NodeOperation):
 
     def undo(self, selection):
         """undo the operation on the selection"""
-        self.root.undefine_variable(self.node)
+        self.stmt.undefine_variable(self.node)
 
 class UndefineVarOperation(NodeOperation):
     """defines how to undo 'undefine_variable()'"""
@@ -73,14 +70,14 @@ class UndefineVarOperation(NodeOperation):
     def undo(self, selection):
         """undo the operation on the selection"""
         var = self.node
-        self.root.defined_vars[var.name] = var
+        self.stmt.defined_vars[var.name] = var
 
 class SelectVarOperation(NodeOperation):
     """defines how to undo add_selected()"""
 
     def undo(self, selection):
         """undo the operation on the selection"""
-        self.root.remove_selected(self.node)
+        self.stmt.remove_selected(self.node)
 
 class UnselectVarOperation(NodeOperation):
     """defines how to undo 'unselect_var()'"""
@@ -90,7 +87,7 @@ class UnselectVarOperation(NodeOperation):
 
     def undo(self, selection):
         """undo the operation on the selection"""
-        self.root.add_selected(self.node, self.index)
+        self.stmt.add_selected(self.node, self.index)
 
 
 # Undo for node operations ####################################################
@@ -172,7 +169,7 @@ class AddGroupOperation(NodeOperation):
 
     def undo(self, selection):
         """undo the operation on the selection"""
-        self.root.remove_group_var(self.node)
+        self.stmt.remove_group_var(self.node)
 
 # misc operations #############################################################
 

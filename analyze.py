@@ -45,7 +45,7 @@ class ETypeResolver:
             
     def set_schema(self, schema):
         self.schema = schema
-        # default domain for a variable
+        # default domains for a variable
         self._base_domain = [str(etype) for etype in schema.entities()]
         self._nonfinal_domain = [str(etype) for etype in schema.entities() if not etype.is_final()]
         
@@ -159,14 +159,14 @@ class ETypeResolver:
         if relation.is_types_restriction():
             types = [c.value for c in rhs.iget_nodes(nodes.Constant)
                      if c.type == 'etype']
-            if relation._not:
+            if isinstance(relation.parent, nodes.Not):
                 not_types = [t for t in self._nonfinal_domain if not t in types]
                 types = not_types
             constraints.append(fd.make_expression(
                 (lhs.name,), '%s in %s ' % (lhs.name, types)))
             return
         elif rtype in self.uid_func_mapping:
-            if relation._not or relation.operator() != '=':
+            if isinstance(relation.parent, nodes.Not) or relation.operator() != '=':
                 # non final entity types
                 types = self._nonfinal_domain
             else:
@@ -245,6 +245,8 @@ class ETypeResolver:
         pass
     def visit_or(self, ou, constraints):
         pass        
+    def visit_not(self, et, constraints):
+        pass
     def visit_comparison(self, comparison, constraints):
         pass
     def visit_mathexpression(self, mathexpression, constraints):
@@ -466,13 +468,13 @@ class UnifyingETypeResolver:
 #        print "Relation", r_type
         lhs, rhs = relation.get_parts()
         expr_sols = rhs.accept(self)
-        if r_type == 'is' and not relation._not:
+        if r_type == 'is' and not isinstance(relation.parent, nodes.Not):
             for s in expr_sols:
                 typ = s['type']
                 s[lhs.name] = typ
                 del s['type']
             return expr_sols
-        elif r_type == 'is' and relation._not:
+        elif r_type == 'is' and isinstance(relation.parent, nodes.Not):
             all_types = [ { lhs.name: t } for t in self._base_domain]
             sols = []
             not_types = [ s['type'] for s in expr_sols ]
