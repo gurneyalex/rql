@@ -202,7 +202,6 @@ class Union(Statement):
         return ' '.join(s)                              
             
     def copy(self, copy_children=True):
-        print 'copying', self
         new = Union()
         if copy_children:
             for child in self.children:
@@ -211,7 +210,6 @@ class Union(Statement):
             new.set_sortterms(self.sortterms.copy(new))
         new.limit = self.limit
         new.offset = self.offset
-        print '-->', new
         return new
     
     def accept(self, visitor, *args, **kwargs):
@@ -243,6 +241,13 @@ class Union(Statement):
     def set_possible_types(self, solutions):
         raise RuntimeError('Union has no solutions')
             
+    @property 
+    def root(self):
+        """return the root node of the tree"""
+        if self.parent is None:
+            return self
+        return self.parent
+    
     # access to select statements property, which in certain condition
     # should have homogeneous values (don't use this in other cases)
     def get_restriction(self):
@@ -427,12 +432,15 @@ class Select(Statement):
         return ' '.join(s)
                                       
     def copy(self, copy_solutions=True):
-        new = Statement.copy(self, copy_solutions)
+        new = Select()
+        if copy_solutions and self.solutions is not None:
+            new.solutions = deepcopy(self.solutions)
+        for child in self.from_: # copy subqueries first
+            new.add_subquery(child.copy(), [ca.name for ca in self.subquery_aliases(child)])
+        for child in self.children:
+            new.append(child.copy(new))
         for child in self.selected:
             new.append_selected(child.copy(new))
-        new.distinct = self.distinct
-        for child in self.from_:
-            new.add_subquery(child.copy(), [ca.name for ca in self.subquery_aliases(child)])
         new.distinct = self.distinct
         return new
     

@@ -171,7 +171,10 @@ class ETypeResolver:
                 for const in consts:
                     const.uidtype = uidtype
         restriction = node.get_restriction()
-        if restriction is None:
+        if not restriction is None:
+            # get constraints from the restriction subtree
+            self._visit(restriction, constraints)
+        elif not node.from_:
             varnames = [v.name for v in node.get_selected_variables()]
             if varnames:
                 # add constraint on real relation types if no restriction
@@ -179,9 +182,6 @@ class ETypeResolver:
                          if not eschema.is_final()]
                 constraints.append(fd.make_expression(varnames, '%s in %s ' % (
                     '=='.join(varnames), types)))
-        else:
-            # get constraints from the restriction subtree
-            self._visit(restriction, constraints)
         self.solve(node, domains, constraints)
     
     def visit_relation(self, relation, constraints):
