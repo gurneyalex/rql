@@ -180,7 +180,6 @@ class RQLSTChecker(object):
             r2type = r2.r_type
         except AttributeError:
             return # can't be
-        # XXX remove variable refs
         if r1type == r2type and self.schema.rschema(r1type).symetric:
             lhs1, rhs1 = r1.get_variable_parts()
             lhs2, rhs2 = r2.get_variable_parts()
@@ -188,6 +187,8 @@ class RQLSTChecker(object):
                 if (lhs1.variable is rhs2.variable and
                     rhs1.variable is lhs2.variable):
                     ou.parent.replace(ou, r1)
+                    for vref in r2.get_nodes(nodes.VariableRef):
+                        vref.unregister_reference()
                     raise GoTo(r1)
             except AttributeError:
                 pass
