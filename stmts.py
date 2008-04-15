@@ -148,8 +148,7 @@ class Statement(nodes.EditableMixIn, Node):
         for var in defined.itervalues():
             var.stinfo['possibletypes'] = set()
             for solution in solutions:
-                for etype in solution.itervalues():
-                    var.stinfo['possibletypes'].add(etype)
+                var.stinfo['possibletypes'].add(solution[var.name])
 
     def check_references(self):
         """test function"""
@@ -203,15 +202,16 @@ class Union(Statement):
         return ' '.join(s)                              
             
     def copy(self, copy_children=True):
+        print 'copying', self
         new = Union()
         if copy_children:
             for child in self.children:
                 new.append(child.copy())
         if self.sortterms is not None:
-            new.sortterms = self.sortterms.copy(new)
-            new.sortterms.parent = new
+            new.set_sortterms(self.sortterms.copy(new))
         new.limit = self.limit
         new.offset = self.offset
+        print '-->', new
         return new
     
     def accept(self, visitor, *args, **kwargs):

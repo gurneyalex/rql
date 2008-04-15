@@ -203,12 +203,14 @@ class RQLSTChecker(object):
                               % relation.as_string())
         # special case "X identity Y"
         if relation.r_type == 'identity':
-            assert not isinstance(relation.parent, Not)
+            lhs, rhs = relation.children
+            assert not isinstance(relation.parent, nodes.Not)
             assert rhs.operator == '='
         # special case "C is NULL"
         elif relation.r_type == 'is' and relation.children[1].operator == 'IS':
-            assert isinstance(lhs, VariableRef), lhs
-            assert isinstance(rhs.children[0], Constant)
+            lhs, rhs = relation.children
+            assert isinstance(lhs, nodes.VariableRef), lhs
+            assert isinstance(rhs.children[0], nodes.Constant)
             assert rhs.operator == 'IS', rhs.operator
             assert rhs.children[0].type == None
     
