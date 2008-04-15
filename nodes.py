@@ -556,14 +556,14 @@ class ColumnAlias(object):
         
     def register_reference(self, vref):
         pass
-#     def initargs(self, stmt):
-#         return (self.alias, self.colnum)
+    def init_copy(self, old):
+        pass
     
-#     def accept(self, visitor, *args, **kwargs):
-#         return visitor.visit_columnalias(self, *args, **kwargs)
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit_columnalias(self, *args, **kwargs)
     
-#     def leave(self, visitor, *args, **kwargs):
-#         return visitor.leave_columnalias(self, *args, **kwargs)
+    def leave(self, visitor, *args, **kwargs):
+        return visitor.leave_columnalias(self, *args, **kwargs)
     
 #     def as_string(self, encoding=None, kwargs=None):
 #         return self.alias
@@ -663,8 +663,7 @@ class VariableRef(HSMixin, LeafNode):
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node"""
         newvar = stmt.get_variable(self.name)
-        # should copy variable's possibletypes on copy
-        newvar.stinfo['possibletypes'].update(self.variable.stinfo['possibletypes'])
+        newvar.init_copy(self.variable)
         return (newvar,)
 
     def is_equivalent(self, other):
@@ -864,6 +863,11 @@ class Variable(object):
         return self.stinfo['scope']
     scope = property(get_scope, set_scope)
 
+    def init_copy(self, old):
+        # should copy variable's possibletypes on copy
+        if not self.stinfo['possibletypes']:
+            self.stinfo['possibletypes'].update(old.stinfo['possibletypes'])
+        
     def register_reference(self, varref):
         """add a reference to this variable"""
         assert not [v for v in self.stinfo['references'] if v is varref]

@@ -22,7 +22,8 @@ BAD_SYNTAX_QUERIES = (
     'Any X, X/Y FROM (Any SUM(X) WHERE X is Person) WHERE X is Person;', # missing AS for subquery
     
     'Any X, X/Y FROM (Any X WHERE X is) WHERE X is Person;', # missing AS for subquery
-)
+
+    )
 
 BAD_QUERIES = (
     'Person Marcou;',
@@ -33,6 +34,9 @@ BAD_QUERIES = (
     'Any X LIMIT -1;',
     'Any X OFFSET -1;',
     'Any X ORDERBY Y;',
+    'Any N,COUNT(X) FROM (Any X, N WHERE X name N, X is State UNION '
+    '                     Any X, N WHERE X name N, X is Transition) AS X,N' # alias should be grouped
+    ' GROUPBY N HAVING COUNT(X)>1',
     )
 
 # FIXME: this shoud be generated from the spec file
