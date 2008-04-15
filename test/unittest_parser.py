@@ -218,22 +218,6 @@ class ParserHercule(TestCase):
         related = tree.children[0].children[0]
         self.assertEquals(related.optional, 'both')
 
-    def test_spec(self):
-        """test all RQL string found in the specification and test they are well parsed"""
-        for rql in SPEC_QUERIES:
-#            print "Orig:", rql
-#            print "Resu:", rqltree
-            yield self.assert_, self.parse(rql, True)
-
-    def test_raise_badsyntax_error(self):
-        for rql in BAD_SYNTAX_QUERIES:
-            yield self.assertRaises, self._syntaxerr, self.parse, rql
-
-    def test_raise_badrqlquery(self):
-        BAD_QUERIES = ('Person Marcou;',)
-        for rql in BAD_QUERIES:
-            yield self.assertRaises, BadRQLQuery, self.parse, rql
-
     def test_exists(self):
         tree = self.parse("Any X WHERE X firstname 'lulu',"
                           "EXISTS (X owned_by U, U in_group G, G name 'lulufanclub' OR G name 'managers');")
@@ -250,6 +234,21 @@ class ParserHercule(TestCase):
         tree = self.parse('EUser X;')
         self.assertEquals(tree.as_string(), 'Any X WHERE X is EUser')
 
+    def test_spec(self):
+        """test all RQL string found in the specification and test they are well parsed"""
+        for rql in SPEC_QUERIES:
+#            print "Orig:", rql
+#            print "Resu:", rqltree
+            yield self.assert_, self.parse(rql, True)
+
+    def test_raise_badsyntax_error(self):
+        for rql in BAD_SYNTAX_QUERIES:
+            yield self.assertRaises, self._syntaxerr, self.parse, rql
+
+    def test_raise_badrqlquery(self):
+        BAD_QUERIES = ('Person Marcou;',)
+        for rql in BAD_QUERIES:
+            yield self.assertRaises, BadRQLQuery, self.parse, rql
 
 class ParserRQLHelper(ParserHercule):
     _syntaxerr = RQLSyntaxError

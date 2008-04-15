@@ -207,7 +207,9 @@ class Not(Node):
         if isinstance(self.children[0], (Exists, Relation)):
             return 'NOT %s' % self.children[0].as_string(encoding, kwargs)
         return 'NOT (%s)' % self.children[0].as_string(encoding, kwargs)
-
+    
+    __repr__ = as_string
+    
     def ored_rel(self, _fromnode=None):
         return self.parent.ored_rel(_fromnode or self)
     def neged_rel(self, _fromnode=None):
@@ -255,6 +257,7 @@ class Exists(EditableMixIn, Node):
         if _fromnode: # stop here
             return False
         return self.parent.neged_rel(_fromnode or self)
+
     
 class Relation(Node):
     """a RQL relation"""
@@ -841,6 +844,18 @@ class Variable(object):
     
     def __repr__(self):
         return '%s(%#X)' % (self.name, id(self))
+    
+    def accept(self, visitor, *args, **kwargs):
+        """though variable are not actually tree nodes, they may be visited in
+        some cases
+        """
+        return visitor.visit_variable(self, *args, **kwargs)
+    
+    def leave(self, visitor, *args, **kwargs):
+        """though variable are not actually tree nodes, they may be visited in
+        some cases
+        """
+        return visitor.leave_variable(self, *args, **kwargs)
     
     def set_scope(self, scopenode):
         if scopenode is self.stmt or self.stinfo['scope'] is None:
