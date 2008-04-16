@@ -261,7 +261,8 @@ class Exists(EditableMixIn, Node):
     
 class Relation(Node):
     """a RQL relation"""
-    __slots__ = ('r_type', 'optional', '_querier_data')
+    __slots__ = ('r_type', 'optional',
+                 '_q_sqltable', '_q_needcast') # XXX ginco specific
     
     def __init__(self, r_type, optional=None):
         Node.__init__(self)
@@ -548,7 +549,8 @@ class Function(HSMixin, Node):
 
 
 class ColumnAlias(object):
-    __slots__ = ('name', 'colnum', 'query')
+    __slots__ = ('name', 'colnum', 'query',
+                 '_q_sql') # XXX ginco specific
     def __init__(self, alias, colnum, query=None):
         self.name = alias.encode()
         self.colnum = int(colnum)
@@ -797,7 +799,8 @@ class Variable(object):
     
     collects information about a variable use in a syntax tree
     """
-    __slots__ = ('name', 'stmt', 'stinfo', '_querier_data')
+    __slots__ = ('name', 'stmt', 'stinfo',
+                 '_q_invariant', '_q_sql', '_q_sqltable') # XXX ginco specific
         
     def __init__(self, name):
         self.name = name.strip().encode()
