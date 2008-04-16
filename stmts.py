@@ -206,6 +206,7 @@ class Union(Statement):
         if copy_children:
             for child in self.children:
                 new.append(child.copy())
+                assert new.children[-1].parent is new
         if self.sortterms is not None:
             new.set_sortterms(self.sortterms.copy(new))
         new.limit = self.limit
@@ -315,22 +316,6 @@ class Union(Statement):
         self.memorizing -= 1
         assert self.memorizing >= 0
         self.undo_manager.recover()    
-
-    def remove_node(self, node):
-        """remove the given node from the tree
-
-        USE THIS METHOD INSTEAD OF .remove to get correct variable references
-        handling
-        """
-        # unregister variable references in the removed subtree
-        for varref in node.iget_nodes(nodes.VariableRef):
-            varref.unregister_reference()
-            #if not varref.variable.references():
-            #    del node.root().defined_vars[varref.name]
-        if self.should_register_op:
-            from rql.undo import RemoveNodeOperation
-            self.undo_manager.add_operation(RemoveNodeOperation(node))
-        node.parent.remove(node)
 
     def add_sort_var(self, var, asc=True):
         """add var in 'orderby' constraints
