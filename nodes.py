@@ -95,6 +95,22 @@ class EditableMixIn(object):
         root = self.root
         # root is None during parsing
         return root is not None and root.memorizing and not root.undoing
+
+    def remove_node(self, node):
+        """remove the given node from the tree
+
+        USE THIS METHOD INSTEAD OF .remove to get correct variable references
+        handling
+        """
+        # unregister variable references in the removed subtree
+        for varref in node.iget_nodes(VariableRef):
+            varref.unregister_reference()
+            #if not varref.variable.references():
+            #    del node.root().defined_vars[varref.name]
+        if self.should_register_op:
+            from rql.undo import RemoveNodeOperation
+            self.undo_manager.add_operation(RemoveNodeOperation(node))
+        node.parent.remove(node)
     
     def add_restriction(self, relation):
         """add a restriction relation"""
@@ -324,6 +340,8 @@ class Relation(Node):
         return self
     
     def ored_rel(self, _fromnode=None):
+        print 'ORED', repr(self)
+        print 'PARENT',self.parent
         return self.parent.ored_rel(_fromnode or self)
     def neged_rel(self, _fromnode=None):
         return self.parent.neged_rel(_fromnode or self)

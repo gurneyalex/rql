@@ -56,11 +56,12 @@ class RQLHelper:
         self._annotator.schema = schema
         self._analyser.set_schema(schema)
 
-    def parse(self, rqlstring):
+    def parse(self, rqlstring, annotate=True):
         """return a syntax tree from an sql string"""
         rqlst = parse(rqlstring, False)
         self._checker.check(rqlst)
-        self.annotate(rqlst)
+        if annotate:
+            self.annotate(rqlst)
         rqlst.schema = self._annotator.schema
         return rqlst
     

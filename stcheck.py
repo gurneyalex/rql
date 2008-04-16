@@ -392,6 +392,7 @@ class RQLSTAnnotator(object):
     visit_or = visit_and
         
     def visit_relation(self, relation, scope):
+        assert relation.parent, repr(relation)
         lhs, rhs = relation.get_parts()
         # may be a constant once rqlst has been simplified
         lhsvar = getattr(lhs, 'variable', None)
