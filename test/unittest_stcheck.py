@@ -113,6 +113,9 @@ class CheckClassTest(TestCase):
             
             ('Any X WHERE X eid 12 UNION Any X WHERE X eid 13 ORDERBY X',
              'Any 12 UNION Any 13'),
+
+            ('Any X FROM (Any X WHERE X eid 12) AS X',
+             'Any X FROM (Any 12) AS X'),
             ):
             yield self._test_rewrite, rql, expected
 
@@ -134,7 +137,7 @@ class CopyTest(TestCase):
     def test_copy_exists(self):
         tree = self.parse("Any X WHERE X firstname 'lulu',"
                           "EXISTS (X owned_by U, U work_for G, G name 'lulufanclub' OR G name 'managers');")
-        self.simplify(tree, needcopy=False)
+        self.simplify(tree)
         copy = tree.copy()
         exists = copy.get_nodes(nodes.Exists)[0]
         self.failUnless(exists.children[0].parent is exists)
@@ -142,7 +145,7 @@ class CopyTest(TestCase):
         
     def test_copy_internals(self):
         root = self.parse('Any X,U WHERE C owned_by U, NOT X owned_by U, X eid 1, C eid 2')
-        self.simplify(root, needcopy=False)
+        self.simplify(root)
         stmt = root.children[0]
         self.assertEquals(stmt.defined_vars['U'].valuable_references(), 3)
         copy = stmts.Select()
@@ -152,7 +155,7 @@ class CopyTest(TestCase):
         newroot = stmts.Union()
         newroot.append(copy)
         self.annotate(newroot)
-        self.simplify(newroot, needcopy=False)
+        self.simplify(newroot)
         self.assertEquals(newroot.as_string(), 'Any 1,U WHERE 2 owned_by U, NOT 1 owned_by U')
         self.assertEquals(copy.defined_vars['U'].valuable_references(), 3)
 
@@ -179,6 +182,16 @@ class AnnotateTest(TestCase):
         rqlst = self.parse('Any X, ET WHERE C is ET, EXISTS(X work_for C)').children[0]
         C = rqlst.defined_vars['C']
         self.failUnless(C.scope is rqlst, C.scope)
+        self.assertEquals(len(C.stinfo['relations']), 2)
+
+    def test_subquery_annotation(self):
+        rqlst = self.parse('Any X FROM (Any X WHERE C is Company, EXISTS(X work_for C)) AS X').children[0]
+        C = rqlst.from_[0].children[0].defined_vars['C']
+        self.failIf(C.scope is rqlst, C.scope)
+        self.assertEquals(len(C.stinfo['relations']), 1)
+        rqlst = self.parse('Any X,ET FROM (Any X, ET WHERE C is ET, EXISTS(X work_for C)) AS (X,ET)').children[0]
+        C = rqlst.from_[0].children[0].defined_vars['C']
+        self.failUnless(C.scope is rqlst.from_[0].children[0], C.scope)
         self.assertEquals(len(C.stinfo['relations']), 2)
         
 if __name__ == '__main__':

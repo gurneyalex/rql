@@ -81,16 +81,17 @@ class RQLHelper:
         finally:
             self._analyser_lock.release()
     
-    def simplify(self, rqlst, needcopy=True):
+    def simplify(self, rqlst):
+        """simplify rqlst by rewritten non final variable associated to a const
+        node (if annotator say we can...)
+
+        The tree is modified in-place
+        """
         #print 'simplify', rqlst.as_string(encoding='UTF8')
         if rqlst.TYPE == 'select':
             from rql import nodes
-            if needcopy:
-                # XXX  should only copy when necessary ?
-                rqlst = rqlst.copy()
-                self.annotate(rqlst)
             for select in rqlst.children:
-                self._simplify(select, False)
+                self._simplify(select)
                 # deal with rewritten variable which are used in orderby
                 for vname in select.stinfo['rewritten']:
                     try:
@@ -105,24 +106,18 @@ class RQLHelper:
                             rqlst.remove_sort_term(term)
         return rqlst
         
-    def _simplify(self, rqlst, needcopy):
-        if needcopy:
-            rqlstcopy = None
-        else: 
-            rqlstcopy = rqlst
+    def _simplify(self, rqlst):
+        # recurse on subqueries first
+        for subquery in rqlst.from_:
+            for select in subquery.children:
+                self._simplify(select)
         for var in rqlst.defined_vars.values():
             stinfo = var.stinfo
             if stinfo['constnode'] and not stinfo['blocsimplification']:
-                if rqlstcopy is None:
-                    rqlstcopy = rqlst.copy()
-                    self.annotate(rqlstcopy)
-                if needcopy:
-                    var = rqlstcopy.defined_vars[var.name]
-                    stinfo = var.stinfo
                 #assert len(stinfo['uidrels']) == 1, var
                 uidrel = stinfo['uidrels'].pop()
                 var = uidrel.children[0].variable
-                rqlstcopy.stinfo['rewritten'][var.name] = vconsts = []
+                rqlst.stinfo['rewritten'][var.name] = vconsts = []
                 rhs = uidrel.children[1].children[0]
                 #from rql.nodes import Constant
                 #assert isinstance(rhs, nodes.Constant), rhs
@@ -133,7 +128,7 @@ class RQLHelper:
                         # drop this relation
                         rel.parent.remove(rel)
                     else:
-                        rhs = rhs.copy(rqlstcopy)
+                        rhs = rhs.copy(rqlst)
                         rhs.uid = True
                         # should have been set by the analyzer
                         #assert rhs.uidtype , (rqlst, rhs, id(rhs))
@@ -142,8 +137,8 @@ class RQLHelper:
 #                         if rel and uidrel._not:
 #                             rel._not = rel._not or uidrel._not
                         varref.parent.replace(varref, rhs)
-                del rqlstcopy.defined_vars[var.name]
-        return rqlstcopy or rqlst
+                del rqlst.defined_vars[var.name]
+        return rqlst or rqlst
         
     def compare(self, rqlstring1, rqlstring2):
         """compares 2 RQL requests

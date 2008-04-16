@@ -90,6 +90,9 @@ class RQLSTChecker(object):
     
     def visit_select(self, node, errors):
         self._visit_selectedterm(node, errors)
+        #XXX from should be added to children, no ?
+        for subquery in node.from_:
+            self.visit_union(subquery, errors)
             
     def leave_select(self, selection, errors):
         assert len(selection.children) <= 4
@@ -306,11 +309,16 @@ class RQLSTAnnotator(object):
     def annotate(self, node):
         #assert not node.annotated
         if isinstance(node, Union):
-            for select in node.children:
-                self._annotate_stmt(select)
+            self._annotate_union(node)
         else:
             self._annotate_stmt(node)
         node.annotated = True
+
+    def _annotate_union(self, node):
+        for select in node.children:
+            for subquery in select.from_:
+                self._annotate_union(subquery)
+            self._annotate_stmt(select)
             
     def _annotate_stmt(self, node):
         for i, term in enumerate(node.selected_terms()):
