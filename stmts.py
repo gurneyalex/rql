@@ -455,8 +455,7 @@ class Select(Statement):
         # this may occurs with rql optimization, for instance on
         # 'Any X WHERE X eid 12' query
         if not self.defined_vars:
-            assert len(solutions) == 1
-            self.solutions = solutions
+            self.solutions = [{}]
         else:
             newsolutions = []
             for origsol in solutions:
