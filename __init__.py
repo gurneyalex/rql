@@ -68,8 +68,8 @@ class RQLHelper:
     def annotate(self, rqlst):
         self._annotator.annotate(rqlst)
 
-    def get_solutions(self, rqlst, uid_func_mapping=None, kwargs=None,
-                      debug=False):
+    def compute_solutions(self, rqlst, uid_func_mapping=None, kwargs=None,
+                          debug=False):
         """set solutions for variables of the syntax tree
 
         each solution is a dictionary with variable's name as key and
@@ -107,18 +107,18 @@ class RQLHelper:
                             rqlst.remove_sort_term(term)
         return rqlst
         
-    def _simplify(self, rqlst):
+    def _simplify(self, select):
         # recurse on subqueries first
-        for subquery in rqlst.from_:
+        for subquery in select.from_:
             for select in subquery.children:
                 self._simplify(select)
-        for var in rqlst.defined_vars.values():
+        for var in select.defined_vars.values():
             stinfo = var.stinfo
             if stinfo['constnode'] and not stinfo['blocsimplification']:
                 #assert len(stinfo['uidrels']) == 1, var
                 uidrel = stinfo['uidrels'].pop()
                 var = uidrel.children[0].variable
-                rqlst.stinfo['rewritten'][var.name] = vconsts = []
+                select.stinfo['rewritten'][var.name] = vconsts = []
                 rhs = uidrel.children[1].children[0]
                 #from rql.nodes import Constant
                 #assert isinstance(rhs, nodes.Constant), rhs
@@ -129,17 +129,18 @@ class RQLHelper:
                         # drop this relation
                         rel.parent.remove(rel)
                     else:
-                        rhs = rhs.copy(rqlst)
+                        rhs = rhs.copy(select)
                         rhs.uid = True
                         # should have been set by the analyzer
-                        #assert rhs.uidtype , (rqlst, rhs, id(rhs))
+                        #assert rhs.uidtype , (select, rhs, id(rhs))
                         vconsts.append(rhs)
 #                         # substitute rhs
 #                         if rel and uidrel._not:
 #                             rel._not = rel._not or uidrel._not
                         varref.parent.replace(varref, rhs)
-                del rqlst.defined_vars[var.name]
-        return rqlst or rqlst
+                del select.defined_vars[var.name]
+        if select.stinfo['rewritten']:
+            select.clean_solutions()
         
     def compare(self, rqlstring1, rqlstring2):
         """compares 2 RQL requests
