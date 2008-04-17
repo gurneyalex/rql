@@ -26,9 +26,9 @@ from yapps import runtime
 
 class HerculeScanner(runtime.Scanner):
     patterns = [
+        ("','", re.compile(',')),
         ('r"\\)"', re.compile('\\)')),
         ('r"\\("', re.compile('\\(')),
-        ("','", re.compile(',')),
         ('":"', re.compile(':')),
         ("';'", re.compile(';')),
         ('\\s+', re.compile('\\s+')),
@@ -78,7 +78,7 @@ class Hercule(runtime.Parser):
     Context = runtime.Context
     def goal(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'goal', [])
-        _token = self._peek('DELETE', 'INSERT', 'SET', 'DISTINCT', 'E_TYPE', context=_context)
+        _token = self._peek('DELETE', 'INSERT', 'SET', 'r"\\("', 'DISTINCT', 'E_TYPE', context=_context)
         if _token == 'DELETE':
             DELETE = self._scan('DELETE', context=_context)
             _delete = self._delete(Delete(), _context)
@@ -94,7 +94,7 @@ class Hercule(runtime.Parser):
             update = self.update(Update(), _context)
             self._scan("';'", context=_context)
             return update
-        else: # in ['DISTINCT', 'E_TYPE']
+        else: # in ['r"\\("', 'DISTINCT', 'E_TYPE']
             union = self.union(_context)
             sort = self.sort(union, _context)
             limit_offset = self.limit_offset(union, _context)
@@ -148,6 +148,18 @@ class Hercule(runtime.Parser):
 
     def select(self, V, _parent=None):
         _context = self.Context(_parent, self._scanner, 'select', [V])
+        _token = self._peek('r"\\("', 'DISTINCT', 'E_TYPE', context=_context)
+        if _token != 'r"\\("':
+            _select = self._select(V, _context)
+            return _select
+        else: # == 'r"\\("'
+            self._scan('r"\\("', context=_context)
+            _select = self._select(V, _context)
+            self._scan('r"\\)"', context=_context)
+            return _select
+
+    def _select(self, V, _parent=None):
+        _context = self.Context(_parent, self._scanner, '_select', [V])
         _token = self._peek('DISTINCT', 'E_TYPE', context=_context)
         if _token == 'DISTINCT':
             DISTINCT = self._scan('DISTINCT', context=_context)
@@ -169,7 +181,7 @@ class Hercule(runtime.Parser):
 
     def select_from(self, V, _parent=None):
         _context = self.Context(_parent, self._scanner, 'select_from', [V])
-        _token = self._peek('FROM', 'WHERE', "','", 'GROUPBY', 'HAVING', "';'", 'UNION', 'r"\\)"', 'ORDERBY', 'LIMIT', 'OFFSET', context=_context)
+        _token = self._peek('FROM', 'WHERE', "','", 'GROUPBY', 'HAVING', "';'", 'r"\\)"', 'UNION', 'ORDERBY', 'LIMIT', 'OFFSET', context=_context)
         if _token == 'FROM':
             FROM = self._scan('FROM', context=_context)
             subqueries = self.subqueries(V, _context)
@@ -179,7 +191,7 @@ class Hercule(runtime.Parser):
     def subqueries(self, V, _parent=None):
         _context = self.Context(_parent, self._scanner, 'subqueries', [V])
         subquery = self.subquery(V, _context)
-        while self._peek("','", 'WHERE', 'GROUPBY', 'HAVING', "';'", 'UNION', 'r"\\)"', 'ORDERBY', 'LIMIT', 'OFFSET', context=_context) == "','":
+        while self._peek("','", 'WHERE', 'GROUPBY', 'HAVING', "';'", 'r"\\)"', 'UNION', 'ORDERBY', 'LIMIT', 'OFFSET', context=_context) == "','":
             self._scan("','", context=_context)
             subquery = self.subquery(V, _context)
 
@@ -189,11 +201,11 @@ class Hercule(runtime.Parser):
         union = self.union(_context)
         self._scan('r"\\)"', context=_context)
         AS = self._scan('AS', context=_context)
-        colalias = self.colalias(_context)
-        V.add_subquery(union, colalias)
+        aliases = self.aliases(_context)
+        V.add_subquery(union, aliases)
 
-    def colalias(self, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'colalias', [])
+    def aliases(self, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'aliases', [])
         _token = self._peek('VARIABLE', 'r"\\("', context=_context)
         if _token == 'VARIABLE':
             VARIABLE = self._scan('VARIABLE', context=_context)
@@ -220,12 +232,12 @@ class Hercule(runtime.Parser):
 
     def group(self, V, _parent=None):
         _context = self.Context(_parent, self._scanner, 'group', [V])
-        _token = self._peek('GROUPBY', 'HAVING', 'UNION', 'r"\\)"', 'ORDERBY', "';'", 'LIMIT', 'OFFSET', context=_context)
+        _token = self._peek('GROUPBY', 'HAVING', 'r"\\)"', 'UNION', 'ORDERBY', "';'", 'LIMIT', 'OFFSET', context=_context)
         if _token == 'GROUPBY':
             GROUPBY = self._scan('GROUPBY', context=_context)
             G = Group()
             var = self.var(V, _context)
-            while self._peek("','", 'R_TYPE', 'QMARK', 'HAVING', 'WHERE', '":"', 'MUL_OP', 'GROUPBY', "';'", 'ADD_OP', 'UNION', 'r"\\)"', 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'ORDERBY', 'LIMIT', 'OFFSET', 'FROM', 'AND', 'OR', context=_context) == "','":
+            while self._peek("','", 'R_TYPE', 'QMARK', 'HAVING', 'WHERE', '":"', 'MUL_OP', 'GROUPBY', "';'", 'r"\\)"', 'ADD_OP', 'UNION', 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'FROM', 'ORDERBY', 'LIMIT', 'OFFSET', 'AND', 'OR', context=_context) == "','":
                 G.append(var)
                 self._scan("','", context=_context)
                 var = self.var(V, _context)
@@ -235,17 +247,17 @@ class Hercule(runtime.Parser):
 
     def having(self, V, _parent=None):
         _context = self.Context(_parent, self._scanner, 'having', [V])
-        _token = self._peek('HAVING', 'UNION', 'r"\\)"', 'ORDERBY', "';'", 'LIMIT', 'OFFSET', context=_context)
+        _token = self._peek('HAVING', 'r"\\)"', 'UNION', 'ORDERBY', "';'", 'LIMIT', 'OFFSET', context=_context)
         if _token == 'HAVING':
             HAVING = self._scan('HAVING', context=_context)
             G = Having()
             cmp_expr = self.cmp_expr(V, _context)
-            while self._peek("','", 'UNION', 'r"\\)"', 'ORDERBY', "';'", 'LIMIT', 'OFFSET', context=_context) == "','":
+            while self._peek("','", 'r"\\)"', 'UNION', 'ORDERBY', "';'", 'LIMIT', 'OFFSET', context=_context) == "','":
                 G.append(cmp_expr)
                 self._scan("','", context=_context)
                 cmp_expr = self.cmp_expr(V, _context)
             G.append(cmp_expr) ; V.append(G)
-        else: # in ['UNION', 'r"\\)"', 'ORDERBY', "';'", 'LIMIT', 'OFFSET']
+        else: # in ['r"\\)"', 'UNION', 'ORDERBY', "';'", 'LIMIT', 'OFFSET']
             pass
 
     def cmp_expr(self, V, _parent=None):
@@ -317,7 +329,7 @@ class Hercule(runtime.Parser):
 
     def restr(self, V, _parent=None):
         _context = self.Context(_parent, self._scanner, 'restr', [V])
-        _token = self._peek('WHERE', 'GROUPBY', "';'", 'HAVING', 'UNION', 'r"\\)"', 'ORDERBY', 'LIMIT', 'OFFSET', context=_context)
+        _token = self._peek('WHERE', 'GROUPBY', "';'", 'HAVING', 'r"\\)"', 'UNION', 'ORDERBY', 'LIMIT', 'OFFSET', context=_context)
         if _token == 'WHERE':
             WHERE = self._scan('WHERE', context=_context)
             rels = self.rels(V, _context)
@@ -423,7 +435,7 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'vars_decl', [V])
         E_TYPE = self._scan('E_TYPE', context=_context)
         var = self.var(V, _context)
-        while self._peek("','", 'R_TYPE', 'QMARK', 'WHERE', '":"', 'GROUPBY', "';'", 'MUL_OP', 'HAVING', 'ADD_OP', 'UNION', 'r"\\)"', 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'ORDERBY', 'FROM', 'LIMIT', 'OFFSET', 'AND', 'OR', context=_context) == "','":
+        while self._peek("','", 'R_TYPE', 'QMARK', 'WHERE', '":"', 'GROUPBY', "';'", 'MUL_OP', 'HAVING', 'ADD_OP', 'r"\\)"', 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'UNION', 'FROM', 'ORDERBY', 'LIMIT', 'OFFSET', 'AND', 'OR', context=_context) == "','":
             V.add_main_variable(E_TYPE, var)
             self._scan("','", context=_context)
             E_TYPE = self._scan('E_TYPE', context=_context)
@@ -433,7 +445,7 @@ class Hercule(runtime.Parser):
     def rels_decl(self, V, _parent=None):
         _context = self.Context(_parent, self._scanner, 'rels_decl', [V])
         simple_rel = self.simple_rel(V, _context)
-        while self._peek("','", 'WHERE', 'GROUPBY', "';'", 'HAVING', 'UNION', 'r"\\)"', 'ORDERBY', 'LIMIT', 'OFFSET', context=_context) == "','":
+        while self._peek("','", 'WHERE', 'GROUPBY', "';'", 'HAVING', 'r"\\)"', 'UNION', 'ORDERBY', 'LIMIT', 'OFFSET', context=_context) == "','":
             V.add_main_relation(simple_rel)
             self._scan("','", context=_context)
             simple_rel = self.simple_rel(V, _context)
@@ -462,7 +474,7 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'added_expr', [V])
         muled_expr = self.muled_expr(V, _context)
         lhs = muled_expr
-        while self._peek('ADD_OP', "','", 'r"\\)"', 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'FROM', 'QMARK', 'WHERE', 'GROUPBY', 'HAVING', "';'", 'LIMIT', 'OFFSET', 'UNION', 'AND', 'ORDERBY', 'OR', context=_context) == 'ADD_OP':
+        while self._peek('ADD_OP', "','", 'r"\\)"', 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'FROM', 'QMARK', 'WHERE', 'GROUPBY', 'HAVING', "';'", 'LIMIT', 'OFFSET', 'AND', 'UNION', 'OR', 'ORDERBY', context=_context) == 'ADD_OP':
             ADD_OP = self._scan('ADD_OP', context=_context)
             muled_expr = self.muled_expr(V, _context)
             lhs = MathExpression( ADD_OP, lhs, muled_expr )
@@ -472,7 +484,7 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'muled_expr', [V])
         base_expr = self.base_expr(V, _context)
         lhs = base_expr
-        while self._peek('MUL_OP', 'ADD_OP', "','", 'r"\\)"', 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'FROM', 'QMARK', 'WHERE', 'GROUPBY', 'HAVING', "';'", 'LIMIT', 'OFFSET', 'UNION', 'AND', 'ORDERBY', 'OR', context=_context) == 'MUL_OP':
+        while self._peek('MUL_OP', 'ADD_OP', "','", 'r"\\)"', 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'FROM', 'QMARK', 'WHERE', 'GROUPBY', 'HAVING', "';'", 'LIMIT', 'OFFSET', 'AND', 'UNION', 'OR', 'ORDERBY', context=_context) == 'MUL_OP':
             MUL_OP = self._scan('MUL_OP', context=_context)
             base_expr = self.base_expr(V, _context)
             lhs = MathExpression( MUL_OP, lhs, base_expr)
@@ -505,7 +517,7 @@ class Hercule(runtime.Parser):
         self._scan('r"\\("', context=_context)
         F = Function(FUNCTION)
         added_expr = self.added_expr(V, _context)
-        while self._peek("','", 'r"\\)"', 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'FROM', 'QMARK', 'WHERE', 'GROUPBY', 'HAVING', "';'", 'LIMIT', 'OFFSET', 'UNION', 'AND', 'ORDERBY', 'OR', context=_context) == "','":
+        while self._peek("','", 'r"\\)"', 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'FROM', 'QMARK', 'WHERE', 'GROUPBY', 'HAVING', "';'", 'LIMIT', 'OFFSET', 'AND', 'UNION', 'OR', 'ORDERBY', context=_context) == "','":
             F.append(added_expr)
             self._scan("','", context=_context)
             added_expr = self.added_expr(V, _context)

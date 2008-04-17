@@ -82,6 +82,7 @@ SPEC_QUERIES = (
 
 #    'Any X WHERE 5 in_state X;',
     'Any X WHERE X eid > 12 UNION Any X WHERE X eid < 23;',
+    '(Any X WHERE X eid > 12) UNION (Any X WHERE X eid < 23);',
     'Any X WHERE X nom "toto" UNION Any X WHERE X firstname "toto";',
     'Any X WHERE X nom "toto" GROUPBY X UNION Any X WHERE X firstname "toto" GROUPBY X ORDERBY X;',
 

@@ -117,7 +117,10 @@ rule union: select<<Select()>>         {{ root = Union(); root.append(select) }}
             ( UNION select<<Select()>> {{ root.append(select) }} 
             )*                         {{ return root }}
 
-rule select<<V>>: DISTINCT select_base<<V>>  {{ V.distinct = True ; return V }}
+rule select<<V>>: _select<<V>>              {{ return _select }}
+                 | r"\(" _select<<V>> r"\)" {{ return _select }}
+        
+rule _select<<V>>: DISTINCT select_base<<V>>  {{ V.distinct = True ; return V }}
                  | select_base<<V>>          {{ return V }}
 
 
