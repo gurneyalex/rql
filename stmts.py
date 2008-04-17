@@ -239,7 +239,6 @@ class Union(Statement):
             self.undo_manager.add_operation(SetOffsetOperation(self.offset))
         self.offset = offset
         
-<<<<<<< /home/syt/cvs_work/rql/stmts.py
     def set_possible_types(self, solutions):
         raise RuntimeError('Union has no solutions')
             
@@ -427,193 +426,6 @@ class Select(Statement):
             new.add_subquery(child.copy(), [ca.name for ca in self.subquery_aliases(child)])
         for child in self.children:
             new.append(child.copy(new))
-=======
-    def set_possible_types(self, solutions):
-        raise RuntimeError('Union has no solutions')
-            
-    @property 
-    def root(self):
-        """return the root node of the tree"""
-        if self.parent is None:
-            return self
-        return self.parent
-    
-    # access to select statements property, which in certain condition
-    # should have homogeneous values (don't use this in other cases)
-    def get_restriction(self):
-        raise ValueError('Union has no restriction')
-    
-    def get_description(self):
-        return [c.get_description() for c in self.children]
-
-#     @property
-#     @cached
-#     def groups(self):
-#         """return a list of grouped variables (i.e a Group object) or None if
-#         there is no grouped variable.
-#         """
-#         groups = self.children[0].get_groups()
-#         if groups is None:
-#             for c in self.children[1:]:
-#                 if c.get_groups() is not None:
-#                     raise BadRQLQuery('inconsistent groups among subqueries')
-#         else:
-#             for c in self.children[1:]:
-#                 if not groups.is_equivalent(c.get_groups()):
-#                     raise BadRQLQuery('inconsistent groups among subqueries')
-#         return groups
-
-#     @cached
-#     def selected_terms(self):
-#         selected = self.children[0].selected_terms()
-#         for c in self.children[1:]:
-#             cselected = c.selected_terms()
-#             for i, term in enumerate(selected):
-#                 if not term.is_equivalent(cselected[i]):
-#                     raise BadRQLQuery('inconsistent selection among subqueries')
-#         return selected
-        
-#     @property
-#     def selected(self):
-#         # consistency check done by selected_terms
-#         return self.children[0].selected
-        
-#     @property
-#     @cached
-#     def distinct(self):
-#         distinct = self.children[0].distinct
-#         for c in self.children[1:]:
-#             if c.distinct != distinct:
-#                 raise BadRQLQuery('inconsistent distinct among subqueries')
-#         return distinct
-
-    # recoverable modification methods ########################################
-    
-    @property
-    @cached
-    def undo_manager(self):
-        from rql.undo import SelectionManager
-        return SelectionManager(self)
-
-    def save_state(self):
-        """save the current tree"""
-        self.undo_manager.push_state()
-        self.memorizing += 1
-
-    def recover(self):
-        """reverts the tree as it was when save_state() was last called"""
-        self.memorizing -= 1
-        assert self.memorizing >= 0
-        self.undo_manager.recover()    
-
-    def add_sort_var(self, var, asc=True):
-        """add var in 'orderby' constraints
-        asc is a boolean indicating the sort order (ascendent or descendent)
-        """
-        var = nodes.variable_ref(var)
-        var.register_reference()
-        term = nodes.SortTerm(var, asc)
-        self.add_sort_term(term)
-        
-    def add_sort_term(self, term):
-        if self.sortterms is None:
-            self.set_sortterms(nodes.Sort())
-        self.sortterms.append(term)
-        if self.should_register_op:
-            from rql.undo import AddSortOperation
-            self.undo_manager.add_operation(AddSortOperation(term))
-
-    def remove_sort_terms(self):
-        if self.sortterms is not None:
-            for term in self.sortterms.children:
-                self.remove_sort_term(term)
-        
-    def remove_sort_term(self, term):
-        """remove a sort term and the sort node if necessary"""
-        if self.should_register_op:
-            from rql.undo import RemoveSortOperation
-            self.undo_manager.add_operation(RemoveSortOperation(term))        
-        self.remove_node(term)        
-        if not self.sortterms.children:
-            self.sortterms = None
-
-    def check_references(self):
-        """test function"""
-        for select in self.children:
-            select.check_references()
-        if self.sortterms:
-            varrefs = self.sortterms.get_nodes(nodes.VariableRef)
-            _check_references(self.defined_vars, varrefs)
-        return True
-
-
-class Select(Statement):
-    """the select node is the base statement of the syntax tree for selection
-    statement, always child of a UNION root.
-    """
-
-    def __init__(self):
-        Statement.__init__(self)
-        # distinct ?
-        self.distinct = False
-        # list of selected relations (maybe variables or functions)
-        self.selected = []
-        # subqueries alias
-        self.aliases = {}
-        self.from_ = []
-        # set by the annotator
-        self.has_aggregat = False
-        # syntax tree meta-information
-        self.stinfo['rewritten'] = {}
-
-    def __repr__(self):
-        if self.distinct:
-            base = 'DISTINCT Any'
-        else:
-            base = 'Any'
-        s = ['%s %s WHERE' % (base,
-                              ','.join([repr(v) for v in self.selected]))]
-        for child in self.children:
-            s.append(repr(child))
-        return '\n'.join(s)
-    
-    def as_string(self, encoding=None, kwargs=None):
-        """return the tree as an encoded rql string"""
-        if self.distinct:
-            base = 'DISTINCT Any'
-        else:
-            base = 'Any'
-        s = ['%s %s' % (base, ','.join(v.as_string(encoding, kwargs)
-                                       for v in self.selected))]
-        if self.from_:
-            s.append('FROM')
-            for subquery in self.from_:
-                s.append('(%s) AS' % subquery.as_string(encoding, kwargs))
-                aliases = self.subquery_aliases(subquery)
-                if len(aliases) == 1:
-                    s.append(aliases[0].name)
-                else:
-                    s.append('(%s)' % ','.join(ca.name for ca in aliases))
-        r = self.get_restriction()
-        if r is not None:
-            s.append('WHERE %s' % r.as_string(encoding, kwargs))
-        groups = self.groups
-        if groups is not None:
-            s.append(groups.as_string(encoding, kwargs))
-        having = self.having
-        if having is not None:
-            s.append(having.as_string(encoding, kwargs))
-        return ' '.join(s)
-                                      
-    def copy(self, copy_solutions=True):
-        new = Select()
-        if copy_solutions and self.solutions is not None:
-            new.solutions = deepcopy(self.solutions)
-        for child in self.from_: # copy subqueries first
-            new.add_subquery(child.copy(), [ca.name for ca in self.subquery_aliases(child)])
-        for child in self.children:
-            new.append(child.copy(new))
->>>>>>> /tmp/stmts.py~other.ib2aRw
         for child in self.selected:
             new.append_selected(child.copy(new))
         new.distinct = self.distinct
@@ -628,7 +440,6 @@ class Select(Statement):
     def get_variable(self, name):
         """get a variable instance from its name
         
-<<<<<<< /home/syt/cvs_work/rql/stmts.py
         the variable is created if it doesn't exist yet
         """
         if name in self.aliases:
@@ -695,53 +506,6 @@ class Select(Statement):
     def selected_terms(self):
         """returns selected terms"""
         return self.selected[:]
-=======
-        the variable is created if it doesn't exist yet
-        """
-        if name in self.aliases:
-            return self.aliases[name]
-        return super(Select, self).get_variable(name)
-    
-    # quick accessors #########################################################
-
-    def subquery_aliases(self, subquery):
-        aliases = [ca for ca in self.aliases.itervalues() if ca.query is subquery]
-        aliases.sort(key=lambda x: x.colnum)
-        return aliases
-    
-    @property 
-    def root(self):
-        """return the root node of the tree"""
-        return self.parent
-
-    @property
-    def groups(self):
-        """return a Group node or None if there is no grouped variable"""
-        for c in self.children:
-            if isinstance(c, nodes.Group):
-                return c
-        return None
-    
-    @property
-    def having(self):
-        """return a Having or None if there is no HAVING clause"""
-        for c in self.children:
-            if isinstance(c, nodes.Having):
-                return c
-        return None
-    
-    def get_selected_variables(self):
-        """returns all selected variables, including those used in aggregate
-        functions
-        """
-        for term in self.selected_terms():
-            for node in term.iget_nodes(nodes.VariableRef):
-                yield node
-
-    def selected_terms(self):
-        """returns selected terms"""
-        return self.selected[:]
->>>>>>> /tmp/stmts.py~other.ib2aRw
         
     # construction helper methods #############################################
 

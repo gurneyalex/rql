@@ -340,8 +340,6 @@ class Relation(Node):
         return self
     
     def ored_rel(self, _fromnode=None):
-        print 'ORED', repr(self)
-        print 'PARENT',self.parent
         return self.parent.ored_rel(_fromnode or self)
     def neged_rel(self, _fromnode=None):
         return self.parent.neged_rel(_fromnode or self)
