@@ -224,7 +224,8 @@ class Not(Node):
             return 'NOT %s' % self.children[0].as_string(encoding, kwargs)
         return 'NOT (%s)' % self.children[0].as_string(encoding, kwargs)
     
-    __repr__ = as_string
+    def __repr__(self, encoding=None, kwargs=None):
+        return 'NOT (%s)' % repr(self.children[0])
     
     def ored_rel(self, _fromnode=None):
         return self.parent.ored_rel(_fromnode or self)
@@ -648,7 +649,7 @@ class Constant(HSMixin, LeafNode):
         return repr(self.value)
         
     def __repr__(self):
-        return self.as_string()
+        return self.as_string('utf8')
 
     def eval(self, kwargs):
         if self.type == 'Substitute':

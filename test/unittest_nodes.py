@@ -379,6 +379,9 @@ class NodesTest(TestCase):
         self.assertEqual(tree.children[0].defined_vars['D'].get_type({'D': 'Datetime'}), 'Datetime')
         self.assertEqual(tree.children[0].selected[2].get_type({'D': 'Datetime'}), 'Interval')
 
+    def test_repr_encoding(self):
+        tree = parse(u'Any N where NOT N has_text "bidüle"')
+        repr(tree)
 
 class GetNodesFunctionTest(TestCase):
     def test_known_values_1(self):
