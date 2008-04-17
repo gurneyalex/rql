@@ -563,29 +563,6 @@ class Function(HSMixin, Node):
     def descr(self):
         """return the type of object returned by this function if known"""
         return function_description(self.name)
-
-
-class ColumnAlias(object):
-    __slots__ = ('name', 'colnum', 'query',
-                 '_q_sql') # XXX ginco specific
-    def __init__(self, alias, colnum, query=None):
-        self.name = alias.encode()
-        self.colnum = int(colnum)
-        self.query = query
-        
-    def register_reference(self, vref):
-        pass
-    def init_copy(self, old):
-        pass
-    
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_columnalias(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_columnalias(self, *args, **kwargs)
-    
-#     def as_string(self, encoding=None, kwargs=None):
-#         return self.alias
         
         
 class Constant(HSMixin, LeafNode):
@@ -808,6 +785,34 @@ class SortTerm(Node):
 
 
 ###############################################################################
+
+class ColumnAlias(object):
+    __slots__ = ('name', 'colnum', 'query',
+                 '_q_sql') # XXX ginco specific
+    def __init__(self, alias, colnum, query=None):
+        self.name = alias.encode()
+        self.colnum = int(colnum)
+        self.query = query
+        
+    def register_reference(self, vref):
+        pass
+    def init_copy(self, old):
+        pass
+    
+    def get_type(self, solution=None, kwargs=None):
+        """return entity type of this object, 'Any' if not found"""
+        if solution:
+            return solution[self.name]
+        return 'Any'    
+    
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit_columnalias(self, *args, **kwargs)
+    
+    def leave(self, visitor, *args, **kwargs):
+        return visitor.leave_columnalias(self, *args, **kwargs)
+    
+#     def as_string(self, encoding=None, kwargs=None):
+#         return self.alias
     
 class Variable(object):
     """
