@@ -535,9 +535,10 @@ class Select(Statement):
             for var in self.get_selected_variables():
                 self.add_type_restriction(var.variable, etype)
 
-    def add_subquery(self, union, aliases):
-        if len(aliases) != len(union.children[0].selected):
-            raise BadRQLQuery('Should have the same number of aliases than selected terms in sub-query')
+    def add_subquery(self, union, aliases, check=True):
+        if check and len(aliases) != len(union.children[0].selected):
+            raise BadRQLQuery('Should have the same number of aliases than '
+                              'selected terms in sub-query')
         self.from_.append(union)
         union.parent = self
         for i, alias in enumerate(aliases):
@@ -650,6 +651,9 @@ class Select(Statement):
         else:
             self.parent.remove_node(var)
 
+    def select_only_variables(self):
+        self.selected = [vref for term in self.selected
+                         for vref in term.iget_nodes(nodes.VariableRef)]
     
 class Delete(Statement):
     """the Delete node is the root of the syntax tree for deletion statement
