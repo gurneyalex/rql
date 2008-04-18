@@ -247,7 +247,7 @@ class Union(Statement):
         """return the root node of the tree"""
         if self.parent is None:
             return self
-        return self.parent
+        return self.parent.root
     
     # access to select statements property, which in certain condition
     # should have homogeneous values (don't use this in other cases)
