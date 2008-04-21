@@ -146,6 +146,8 @@ class AnalyzerClassTest(TestCase):
             if DEBUG:
                 print rql
             node = self.helper.parse(rql)
+            print rql
+            print node
             self.assertRaises(TypeResolverException,
                               self.helper.compute_solutions, node, debug=DEBUG)
         
@@ -161,7 +163,7 @@ class AnalyzerClassTest(TestCase):
     def test_base_2(self):
         node = self.helper.parse('Person X')
         # check constant type of the is relation inserted
-        self.assertEqual(node.children[0].get_restriction().children[1].children[0].type,
+        self.assertEqual(node.children[0].where.children[1].children[0].type,
                          'etype')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = node.children[0].solutions
@@ -256,14 +258,14 @@ class AnalyzerClassTest(TestCase):
         
         
     def test_base_guess_3(self):
-        node = self.helper.parse('Any Z WHERE X name Z GROUPBY Z')
+        node = self.helper.parse('Any Z GROUPBY Z WHERE X name Z')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
         self.assertEqual(sols, [{'X': 'Company', 'Z': 'String'},
                                  {'X': 'Person', 'Z': 'String'}])
 
     def test_var_name(self):
-        node = self.helper.parse('Any E1 WHERE E2 is Person, E2 name E1 GROUPBY E1')
+        node = self.helper.parse('Any E1 GROUPBY E1 WHERE E2 is Person, E2 name E1')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
         self.assertEqual(sols, [{'E2': 'Person', 'E1': 'String'}])
@@ -304,7 +306,7 @@ class AnalyzerClassTest(TestCase):
         self.assertEqual(sols, [{'P': 'Person'}])
         
     def test_union(self):
-        node = self.helper.parse('Any P WHERE X eid 0, NOT X connait P UNION Any E1 WHERE E2 work_for E1, E2 eid 2')
+        node = self.helper.parse('(Any P WHERE X eid 0, NOT X connait P) UNION (Any E1 WHERE E2 work_for E1, E2 eid 2)')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
         self.assertEqual(sols, [{'P': 'Person', 'X': 'Person'}], [{'E1': 'Company', 'E2': 'Person'}])
@@ -322,15 +324,14 @@ class AnalyzerClassTest(TestCase):
                                  'U': 'Person'}])
 
     def test_subqueries(self):
-        node = self.helper.parse('Any L, Y, F '
-                                 'FROM (Any X,F WHERE X is Person, X firstname F '
-                                 'UNION Any X,F WHERE X is Company, X name F) AS (Y,F) '
-                                 'WHERE Y located L;')
+        node = self.helper.parse('Any L, Y, F WHERE Y located L '
+                                 'WITH Y,F BEING ((Any X,F WHERE X is Person, X firstname F) '
+                                 'UNION (Any X,F WHERE X is Company, X name F))')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
-        self.assertEqual(node.children[0].from_[0].children[0].solutions, [{'X': 'Person',
+        self.assertEqual(node.children[0].with_[0].query.children[0].solutions, [{'X': 'Person',
                                                                             'F': 'String'}])
-        self.assertEqual(node.children[0].from_[0].children[1].solutions, [{'X': 'Company',
+        self.assertEqual(node.children[0].with_[0].query.children[1].solutions, [{'X': 'Company',
                                                                             'F': 'String'}])
         sols = sorted(node.children[0].solutions)
         self.assertEqual(sols, [{'Y': 'Company', 'L': 'Address',
@@ -339,12 +340,12 @@ class AnalyzerClassTest(TestCase):
                                  'F': 'String'}])
 
     def test_subqueries_aggregat(self):
-        node = self.helper.parse('Any L, SUM(X)*100/Y '
-                                 'FROM (Any SUM(X) WHERE X is Person) AS Y '
-                                 'WHERE X is Person, X located L GROUPBY L;')
+        node = self.helper.parse('Any L, SUM(X)*100/Y GROUPBY L '
+                                 'WHERE X is Person, X located L '
+                                 'WITH Y BEING (Any SUM(X) WHERE X is Person)')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
-        self.assertEqual(node.children[0].from_[0].children[0].solutions, [{'X': 'Person'}])
+        self.assertEqual(node.children[0].with_[0].query.children[0].solutions, [{'X': 'Person'}])
         self.assertEqual(node.children[0].solutions, [{'X': 'Person', 'Y': 'Person',
                                                        'L': 'Address'}])
         

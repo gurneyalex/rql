@@ -17,7 +17,8 @@ BAD_SYNTAX_QUERIES = (
 #    'SET X travaille Y;',
     "Personne P WHERE OFFSET 200;",
 
-    'Any X WHERE X nom "toto" GROUPBY X ORDERBY X UNION Any X WHERE X firstname "toto" GROUPBY X ORDERBY X;',
+    'Any X GROUPBY X ORDERBY X WHERE X nom "toto" UNION Any X GROUPBY X ORDERBY X WHERE X firstname "toto";',
+    '(Any X GROUPBY X WHERE X nom "toto") UNION (Any X GROUPBY X WHERE X firstname "toto") ORDERBY X;',
 
     'Any X, X/Y FROM (Any SUM(X) WHERE X is Person) WHERE X is Person;', # missing AS for subquery
     
@@ -34,9 +35,10 @@ BAD_QUERIES = (
     'Any X LIMIT -1;',
     'Any X OFFSET -1;',
     'Any X ORDERBY Y;',
-    'Any N,COUNT(X) FROM (Any X, N WHERE X name N, X is State UNION '
-    '                     Any X, N WHERE X name N, X is Transition) AS X,N' # alias should be grouped
-    ' GROUPBY N HAVING COUNT(X)>1',
+    'Any N,COUNT(X) GROUPBY N '
+    ' HAVING COUNT(X)>1 '
+    ' WITH X,N BEING (Any X, N WHERE X name N, X is State UNION '
+    '                 Any X, N WHERE X name N, X is Transition);',
     )
 
 # FIXME: this shoud be generated from the spec file
@@ -73,7 +75,7 @@ SPEC_QUERIES = (
 
     "Any X, COUNT(B) where B concerns X GROUPBY X ORDERBY 1;",
     
-    "Any X, COUNT(B) where B concerns X GROUPBY X HAVING COUNT(B) > 2 ORDERBY 1;",
+    "Any X, COUNT(B) GROUPBY X ORDERBY 1 WHERE B concerns X HAVING COUNT(B) > 2;",
     
     'Any X, MAX(COUNT(B)) WHERE B concerns X GROUPBY X;', # syntaxically correct
 
@@ -81,20 +83,20 @@ SPEC_QUERIES = (
     'DELETE Any X WHERE X eid > 12;',
 
 #    'Any X WHERE 5 in_state X;',
-    'Any X WHERE X eid > 12 UNION Any X WHERE X eid < 23;',
     '(Any X WHERE X eid > 12) UNION (Any X WHERE X eid < 23);',
-    'Any X WHERE X nom "toto" UNION Any X WHERE X firstname "toto";',
-    'Any X WHERE X nom "toto" GROUPBY X UNION Any X WHERE X firstname "toto" GROUPBY X ORDERBY X;',
+    '(Any X WHERE X nom "toto") UNION (Any X WHERE X firstname "toto");',
+    '(Any X WHERE X nom "toto" GROUPBY X) UNION (Any X WHERE X firstname "toto" GROUPBY X ORDERBY X);',
 
-    'Any X, X/Y FROM (Any SUM(X) WHERE X is Person) AS Y WHERE X is Person;',
-    'Any Y, COUNT(X) FROM (Person X UNION Document X) AS Y WHERE X bla Y GROUPBY Y;',
+    'Any X, X/Y WHERE X is Person WITH Y BEING (Any SUM(X) WHERE X is Person);',
+    'Any Y, COUNT(X) GROUPBY Y WHERE X bla Y WITH Y BEING ((Person X) UNION (Document X));',
     
     'Any T2, COUNT(T1)'
-    '  FROM (Any X,N WHERE X name N, X transition_of E, E name %(name)s'
-    '        UNION '
-    '        Any X,N WHERE X name N, X state_of E, E name %(name)s) AS (T1,T2)'
     ' GROUPBY T1'
-    ' ORDERBY 2 DESC, T2;',
+    ' ORDERBY 2 DESC, T2;'
+    ' WITH T1,T2 BEING ('
+    '      (Any X,N WHERE X name N, X transition_of E, E name %(name)s)'
+    '       UNION '
+    '      (Any X,N WHERE X name N, X state_of E, E name %(name)s))',
     )
 
 class ParserHercule(TestCase):
@@ -117,34 +119,34 @@ class ParserHercule(TestCase):
         
     def test_precedence_1(self):
         tree = self.parse("Any X WHERE X firstname 'lulu' AND X name 'toto' OR X name 'tutu';")
-        base = tree.children[0].children[0]
-        self.assertEqual(isinstance(base, nodes.OR), 1)
-        self.assertEqual(isinstance(base.children[0], nodes.AND), 1)
+        base = tree.children[0].where
+        self.assertEqual(isinstance(base, nodes.Or), 1)
+        self.assertEqual(isinstance(base.children[0], nodes.And), 1)
         self.assertEqual(isinstance(base.children[1], nodes.Relation), 1)
         self.assertEqual(str(tree), "Any X WHERE (X firstname 'lulu', X name 'toto') OR (X name 'tutu')")
 
     def test_precedence_2(self):
         tree = self.parse("Any X WHERE X firstname 'lulu', X name 'toto' OR X name 'tutu';")
-        base = tree.children[0].children[0]
-        self.assertEqual(isinstance(base, nodes.AND), 1)
+        base = tree.children[0].where
+        self.assertEqual(isinstance(base, nodes.And), 1)
         self.assertEqual(isinstance(base.children[0], nodes.Relation), 1)
-        self.assertEqual(isinstance(base.children[1], nodes.OR), 1)
+        self.assertEqual(isinstance(base.children[1], nodes.Or), 1)
         self.assertEqual(str(tree), "Any X WHERE X firstname 'lulu', (X name 'toto') OR (X name 'tutu')")
 
     def test_precedence_3(self):
         tree = self.parse("Any X WHERE X firstname 'lulu' AND (X name 'toto' or X name 'tutu');")
-        base = tree.children[0].children[0]
-        self.assertEqual(isinstance(base, nodes.AND), 1)
+        base = tree.children[0].where
+        self.assertEqual(isinstance(base, nodes.And), 1)
         self.assertEqual(isinstance(base.children[0], nodes.Relation), 1)
-        self.assertEqual(isinstance(base.children[1], nodes.OR), 1)
+        self.assertEqual(isinstance(base.children[1], nodes.Or), 1)
         self.assertEqual(str(tree), "Any X WHERE X firstname 'lulu', (X name 'toto') OR (X name 'tutu')")
 
     def test_precedence_4(self):
         tree = self.parse("Any X WHERE X firstname 'lulu' OR X name 'toto' AND X name 'tutu';")
-        base = tree.children[0].children[0]
-        self.assertEqual(isinstance(base, nodes.OR), 1)
+        base = tree.children[0].where
+        self.assertEqual(isinstance(base, nodes.Or), 1)
         self.assertEqual(isinstance(base.children[0], nodes.Relation), 1)
-        self.assertEqual(isinstance(base.children[1], nodes.AND), 1)
+        self.assertEqual(isinstance(base.children[1], nodes.And), 1)
         
     def test_not_precedence_0(self):
         tree = self.parse("Any X WHERE NOT X firstname 'lulu', X name 'toto';")
@@ -160,33 +162,33 @@ class ParserHercule(TestCase):
 
     def test_string_1(self):
         tree = self.parse(r"Any X WHERE X firstname 'lu\"lu';")
-        const = tree.children[0].children[0].children[1].children[0]
+        const = tree.children[0].where.children[1].children[0]
         self.assertEqual(const.value, r'lu\"lu')
 
     def test_string_2(self):
         tree = self.parse(r"Any X WHERE X firstname 'lu\'lu';")
-        const = tree.children[0].children[0].children[1].children[0]
+        const = tree.children[0].where.children[1].children[0]
         self.assertEqual(const.value, 'lu\'lu')
 
     def test_string_3(self):
         tree = self.parse(r'Any X WHERE X firstname "lu\'lu";')
-        const = tree.children[0].children[0].children[1].children[0]
+        const = tree.children[0].where.children[1].children[0]
         self.assertEqual(const.value, r"lu\'lu")
 
     def test_string_4(self):
         tree = self.parse(r'Any X WHERE X firstname "lu\"lu";')
-        const = tree.children[0].children[0].children[1].children[0]
+        const = tree.children[0].where.children[1].children[0]
         self.assertEqual(const.value, "lu\"lu")
 
     def test_math_1(self):
         tree = self.parse(r'Any X WHERE X date (TODAY + 1);')
-        math = tree.children[0].children[0].children[1].children[0]
+        math = tree.children[0].where.children[1].children[0]
         self.assert_(isinstance(math, nodes.MathExpression))
         self.assertEqual(math.operator, '+')
 
     def test_math_2(self):
         tree = self.parse(r'Any X WHERE X date (TODAY + 1 * 2);')
-        math = tree.children[0].children[0].children[1].children[0]
+        math = tree.children[0].where.children[1].children[0]
         self.assert_(isinstance(math, nodes.MathExpression))
         self.assertEqual(math.operator, '+')
         math2 = math.children[1]
@@ -195,7 +197,7 @@ class ParserHercule(TestCase):
 
     def test_math_3(self):
         tree = self.parse(r'Any X WHERE X date (TODAY + 1) * 2;')
-        math = tree.children[0].children[0].children[1].children[0]
+        math = tree.children[0].where.children[1].children[0]
         self.assert_(isinstance(math, nodes.MathExpression))
         self.assertEqual(math.operator, '*')
         math2 = math.children[0]
@@ -204,23 +206,23 @@ class ParserHercule(TestCase):
 
     def test_substitute(self):
         tree = self.parse("Any X WHERE X firstname %(firstname)s;")
-        cste = tree.children[0].children[0].children[1].children[0]
+        cste = tree.children[0].where.children[1].children[0]
         self.assert_(isinstance(cste, nodes.Constant))
         self.assertEquals(cste.type, 'Substitute')
         self.assertEquals(cste.value, 'firstname')
 
     def test_optional_relation(self):
         tree = self.parse(r'Any X WHERE X related Y;')
-        related = tree.children[0].children[0]
+        related = tree.children[0].where
         self.assertEquals(related.optional, None)
         tree = self.parse(r'Any X WHERE X? related Y;')
-        related = tree.children[0].children[0]
+        related = tree.children[0].where
         self.assertEquals(related.optional, 'left')
         tree = self.parse(r'Any X WHERE X related Y?;')
-        related = tree.children[0].children[0]
+        related = tree.children[0].where
         self.assertEquals(related.optional, 'right')
         tree = self.parse(r'Any X WHERE X? related Y?;')
-        related = tree.children[0].children[0]
+        related = tree.children[0].where
         self.assertEquals(related.optional, 'both')
 
     def test_exists(self):
@@ -229,7 +231,7 @@ class ParserHercule(TestCase):
         self.assertEqual(tree.as_string(),
                          "Any X WHERE X firstname 'lulu', "
                          "EXISTS(X owned_by U, U in_group G, (G name 'lulufanclub') OR (G name 'managers'))")
-        exists = tree.get_nodes(nodes.Exists)[0]
+        exists = tree.children[0].where.get_nodes(nodes.Exists)[0]
         self.failUnless(exists.children[0].parent is exists)
         self.failUnless(exists.parent)
 

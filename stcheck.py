@@ -8,10 +8,12 @@ __docformat__ = "restructuredtext en"
 
 from logilab.common.compat import any
 
-from rql import nodes
 from rql._exceptions import BadRQLQuery
 from rql.utils import function_description
+from rql.nodes import (VariableRef, Constant, Not, Exists, Function,
+                       Variable, variable_refs)
 from rql.stmts import Union
+
 
 class GoTo(Exception):
     """exception used to control the visit of the tree"""
@@ -45,19 +47,17 @@ class RQLSTChecker(object):
         #        result.append(term.eval(kwargs))
             
     def _visit(self, node, errors):
-        skipfurther = None
         try:
             node.accept(self, errors)
         except GoTo, ex:
-            skipfurther = True
             self._visit(ex.node, errors)
-        if skipfurther is None:
+        else:
             for c in node.children:
                 self._visit(c, errors)
             node.leave(self, errors)
             
     def _visit_selectedterm(self, node, errors):
-        for i, term in enumerate(node.selected_terms()):
+        for i, term in enumerate(node.selection):
             # selected terms are not included by the default visit,
             # accept manually each of them
             self._visit(term, errors)
@@ -77,50 +77,64 @@ class RQLSTChecker(object):
     # statement nodes #########################################################
 
     def visit_union(self, node, errors):
-        nbselected = len(node.children[0].selected)
+        nbselected = len(node.children[0].selection)
         for select in node.children[1:]:
-            if not len(select.selected) == nbselected:
+            if not len(select.selection) == nbselected:
                 errors.append('when using union, all subqueries should have '
-                              'the same number of selected terms')
-        if node.sortterms:
-            self._visit(node.sortterms, errors)
-            
+                              'the same number of selected terms')            
     def leave_union(self, node, errors):
         pass
     
     def visit_select(self, node, errors):
         self._visit_selectedterm(node, errors)
-        #XXX from should be added to children, no ?
-        for subquery in node.from_:
-            self.visit_union(subquery, errors)
-            
-    def leave_select(self, selection, errors):
-        assert len(selection.children) <= 4
-        selected = selection.selected
+#         #XXX from should be added to children, no ?
+#         for subquery in node.from_:
+#             self.visit_union(subquery, errors)
+#         if node.sortterms:
+#             self._visit(node.sortterms, errors)            
+    def leave_select(self, node, errors):
+        selected = node.selection
         # check selected variable are used in restriction
-        if selection.get_restriction() is not None or len(selected) > 1:
+        if node.where is not None or len(selected) > 1:
             for term in selected:
                 self._check_selected(term, 'selection', errors)
+        if node.groupby:
+            # check that selected variables are used in groups
+            for var in node.selection:
+                if isinstance(var, VariableRef) and not var in node.groupby:
+                    errors.append('variable %s should be grouped' % var)
+            for group in node.groupby:
+                self._check_selected(group, 'group', errors)
+#         # check that variables referenced in the given term are selected
+#         for term in node.orderby:
+#             for vref in term.iget_nodes(VariableRef):
+#                 # no stinfo yet, use references
+#                 try:
+#                     for ovref in node.defined_vars[vref.name].references():
+#                         rel = ovref.relation()
+#                         if rel is not None:
+#                             break
+#                     else:
+#                         msg = 'variable %s used in %s is not referenced by %s'
+#                         errors.append(msg % (vref.name, termtype, node.as_string()))
+#                 except KeyError:
+#                     msg = 'variable %s used in %s is not referenced by %s'
+#                     errors.append(msg % (vref.name, termtype, node.as_string()))
 
     def visit_insert(self, insert, errors):
         self._visit_selectedterm(insert, errors)
-        assert len(insert.children) <= 1
-
     def leave_insert(self, node, errors):
         pass
 
     def visit_delete(self, delete, errors):
         self._visit_selectedterm(delete, errors)
-        assert len(delete.children) <= 1
-
     def leave_delete(self, node, errors):
         pass
         
-    def visit_update(self, update, errors):
+    def visit_set(self, update, errors):
         self._visit_selectedterm(update, errors)
-        assert len(update.children) <= 1        
-        
-    def leave_update(self, node, errors):
+        assert len(update.children) <= 1                
+    def leave_set(self, node, errors):
         pass                
 
     # tree nodes ##############################################################
@@ -129,50 +143,25 @@ class RQLSTChecker(object):
         pass
     def leave_exists(self, node, errors):
         pass
-        
-    def visit_group(self, group, errors):
-        """check that selected variables are used in groups """
-        # XXX that's not necessarily true, for instance:
-        #     Any X, P, MAX(R) WHERE X content_for F, F path P, X revision R GROUPBY P
-        for var in group.stmt.selected:
-            if isinstance(var, nodes.VariableRef) and not var in group.children:
-                errors.append('variable %s should be grouped' % var)
-        self._check_selected(group, 'group', errors)
-                
-    def _check_union_selected(self, term, termtype, errors):
-        """check that variables referenced in the given term are selected"""
-        union = term.root
-        for vref in term.iget_nodes(nodes.VariableRef):
-            # no stinfo yet, use references
-            for select in union.children:
-                try:
-                    for ovref in select.defined_vars[vref.name].references():
-                        rel = ovref.relation()
-                        if rel is not None:
-                            break
-                    else:
-                        msg = 'variable %s used in %s is not referenced by subquery %s'
-                        errors.append(msg % (vref.name, termtype, select.as_string()))
-                except KeyError:
-                    msg = 'variable %s used in %s is not referenced by subquery %s'
-                    errors.append(msg % (vref.name, termtype, select.as_string()))
-                    
-    def visit_having(self, node, errors):
+    
+    def visit_subquery(self, node, errors):
         pass
-                
-    def visit_sort(self, sort, errors):
-        """check that variables used in sort are selected on DISTINCT query"""
-        self._check_union_selected(sort, 'sort', errors)
+    def leave_subquery(self, node, errors):
+        pass 
     
     def visit_sortterm(self, sortterm, errors):
         term = sortterm.term
-        if isinstance(term, nodes.Constant):
+        if isinstance(term, Constant):
             for select in sortterm.root.children:
-                if len(select.selected) < term.value:
+                if len(select.selection) < term.value:
                     errors.append('order column out of bound %s' % term.value)
+    def leave_sortterm(self, node, errors):
+        pass
     
     def visit_and(self, et, errors):
         assert len(et.children) == 2, len(et.children)
+    def leave_and(self, node, errors):
+        pass
         
     def visit_or(self, ou, errors):
         assert len(ou.children) == 2, len(ou.children)
@@ -190,11 +179,13 @@ class RQLSTChecker(object):
                 if (lhs1.variable is rhs2.variable and
                     rhs1.variable is lhs2.variable):
                     ou.parent.replace(ou, r1)
-                    for vref in r2.get_nodes(nodes.VariableRef):
+                    for vref in r2.get_nodes(VariableRef):
                         vref.unregister_reference()
                     raise GoTo(r1)
             except AttributeError:
                 pass
+    def leave_or(self, node, errors):
+        pass
 
     def visit_not(self, not_, errors):
         pass
@@ -208,26 +199,29 @@ class RQLSTChecker(object):
         # special case "X identity Y"
         if relation.r_type == 'identity':
             lhs, rhs = relation.children
-            assert not isinstance(relation.parent, nodes.Not)
+            assert not isinstance(relation.parent, Not)
             assert rhs.operator == '='
         # special case "C is NULL"
         elif relation.r_type == 'is' and relation.children[1].operator == 'IS':
             lhs, rhs = relation.children
-            assert isinstance(lhs, nodes.VariableRef), lhs
-            assert isinstance(rhs.children[0], nodes.Constant)
+            assert isinstance(lhs, VariableRef), lhs
+            assert isinstance(rhs.children[0], Constant)
             assert rhs.operator == 'IS', rhs.operator
             assert rhs.children[0].type == None
-    
     def leave_relation(self, relation, errors):
         pass
-        #assert isinstance(lhs, nodes.VariableRef), '%s: %s' % (lhs.__class__,
+        #assert isinstance(lhs, VariableRef), '%s: %s' % (lhs.__class__,
         #                                                       relation)
         
     def visit_comparison(self, comparison, errors):
         assert len(comparison.children) in (1,2), len(comparison.children)
+    def leave_comparison(self, node, errors):
+        pass
     
     def visit_mathexpression(self, mathexpr, errors):
         assert len(mathexpr.children) == 2, len(mathexpr.children)
+    def leave_mathexpression(self, node, errors):
+        pass
         
     def visit_function(self, function, errors):
         try:
@@ -240,7 +234,7 @@ class RQLSTChecker(object):
             except BadRQLQuery, ex:
                 errors.append(str(ex))
             if funcdescr.aggregat:
-                if isinstance(function.children[0], nodes.Function) and \
+                if isinstance(function.children[0], Function) and \
                        function.children[0].descr().aggregat:
                     errors.append('can\'t nest aggregat functions')
             if funcdescr.name == 'IN':
@@ -250,6 +244,8 @@ class RQLSTChecker(object):
                     function.parent.remove(function)
                 else:
                     assert len(function.children) >= 1
+    def leave_function(self, node, errors):
+        pass
 
     def visit_variableref(self, variableref, errors):
         assert len(variableref.children)==0
@@ -270,30 +266,7 @@ class RQLSTChecker(object):
     def leave_constant(self, node, errors):
         pass 
 
-    def leave_comparison(self, node, errors):
-        pass
-    def leave_mathexpression(self, node, errors):
-        pass
-    def leave_or(self, node, errors):
-        pass
-    def leave_and(self, node, errors):
-        pass
-    def leave_sortterm(self, node, errors):
-        pass
-    def leave_function(self, node, errors):
-        pass
-    def leave_group(self, node, errors):
-        pass
-    def leave_having(self, node, errors):
-        pass
-    def leave_sort(self, node, errors):
-        pass
 
-        
-def variable_refs(node):
-    for vref in node.iget_nodes(nodes.VariableRef):
-        if isinstance(vref.variable, nodes.Variable):
-            yield vref
             
 class RQLSTAnnotator(object):
     """ annotate RQL syntax tree to ease further code generation from it.
@@ -308,21 +281,21 @@ class RQLSTAnnotator(object):
 
     def annotate(self, node):
         #assert not node.annotated
-        if isinstance(node, Union):
-            self._annotate_union(node)
-        else:
-            self._annotate_stmt(node)
-        node.annotated = True
+        node.accept(self)
+        #node.annotated = True
 
-    def _annotate_union(self, node):
+    visit_insert = visit_delete = visit_set = lambda s,n: None
+    
+    def visit_union(self, node):
         for select in node.children:
-            for subquery in select.from_:
-                self._annotate_union(subquery)
-            self._annotate_stmt(select)
+            self.visit_select(select)
             
-    def _annotate_stmt(self, node):
-        for i, term in enumerate(node.selected_terms()):
-            for func in term.iget_nodes(nodes.Function):
+    def visit_select(self, node):
+        if node.with_ is not None:
+            for subquery in node.with_:
+                self.visit_union(subquery.query)
+        for i, term in enumerate(node.selection):
+            for func in term.iget_nodes(Function):
                 if func.descr().aggregat:
                     node.has_aggregat = True
                     break
@@ -330,10 +303,9 @@ class RQLSTAnnotator(object):
             for vref in variable_refs(term):
                 vref.variable.stinfo['selected'].add(i)
                 vref.variable.set_scope(node)
-        restr = node.get_restriction()
-        if restr is not None:
-            restr.accept(self, node)
-        
+        if node.where is not None:
+            node.where.accept(self, node)
+            
     def rewrite_shared_optional(self, exists, var):
         """if variable is shared across multiple scopes, need some tree
         rewriting
@@ -345,7 +317,7 @@ class RQLSTAnnotator(object):
                 if vref.scope is exists:
                     rel = vref.relation()
                     vref.unregister_reference()
-                    newvref = nodes.VariableRef(newvar)
+                    newvref = VariableRef(newvar)
                     vref.parent.replace(vref, newvref)
                     # update stinfo structure which may have already been
                     # partially processed
@@ -396,7 +368,7 @@ class RQLSTAnnotator(object):
         lhs, rhs = relation.get_parts()
         # may be a constant once rqlst has been simplified
         lhsvar = getattr(lhs, 'variable', None)
-        if not isinstance(lhsvar, nodes.Variable):
+        if not isinstance(lhsvar, Variable):
             lhsvar = None
         if relation.is_types_restriction():
             assert rhs.operator == '='
@@ -406,7 +378,7 @@ class RQLSTAnnotator(object):
             return
         if relation.optional is not None:
             exists = relation.scope
-            if not isinstance(exists, nodes.Exists):
+            if not isinstance(exists, Exists):
                 exists = None
             if lhsvar is not None:
                 if exists is not None:
@@ -449,8 +421,8 @@ class RQLSTAnnotator(object):
                 if key == 'uidrels':
                     constnode = relation.get_variable_parts()[1]
                     if not (relation.operator() != '=' or
-                            isinstance(relation.parent, nodes.Not)):
-                        if isinstance(constnode, nodes.Constant):
+                            isinstance(relation.parent, Not)):
+                        if isinstance(constnode, Constant):
                             lhsvar.stinfo['constnode'] = constnode
                         lhsvar.stinfo.setdefault(key, set()).add(relation)
                 else:
@@ -470,6 +442,6 @@ def update_attrvars(var, relation, lhs):
     var.stinfo['attrvars'].add( (lhsvar, relation.r_type) )
     # give priority to variable which is not in an EXISTS as
     # "main" attribute variable
-    if var.stinfo['attrvar'] is None or not isinstance(relation.scope, nodes.Exists):
+    if var.stinfo['attrvar'] is None or not isinstance(relation.scope, Exists):
         var.stinfo['attrvar'] = lhsvar or lhs
     

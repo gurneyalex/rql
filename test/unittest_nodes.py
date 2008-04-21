@@ -84,20 +84,22 @@ class NodesTest(TestCase):
         tree.recover()
         self.assertEquals(tree.offset, 0)
 
-    def test_union_add_sort_var(self):
+    def test_select_add_sort_var(self):
         tree = self._parse('Any X')
         tree.save_state()
-        tree.add_sort_var(tree.get_variable('X'))
+        select = tree.children[0]
+        select.add_sort_var(select.get_variable('X'))
         tree.check_references()
         self.assertEquals(tree.as_string(), 'Any X ORDERBY X')
         tree.recover()
         tree.check_references()
         self.assertEquals(tree.as_string(), 'Any X')
 
-    def test_union_remove_sort_terms(self):
+    def test_select_remove_sort_terms(self):
         tree = self._parse('Any X ORDERBY X')
         tree.save_state()
-        tree.remove_sort_terms()
+        select = tree.children[0]
+        select.remove_sort_terms()
         tree.check_references()
         self.assertEquals(tree.as_string(), 'Any X')
         tree.recover()
@@ -134,7 +136,7 @@ class NodesTest(TestCase):
         tree = self._parse('Any X GROUPBY X')
         tree.save_state()
         select = tree.children[0]
-        select.remove_group_var(select.groups.children[0])
+        select.remove_group_var(select.groupby[0])
         tree.check_references()
         self.assertEquals(tree.as_string(), 'Any X')
         tree.recover()
@@ -143,97 +145,94 @@ class NodesTest(TestCase):
                              
     def test_select_base_1(self):
         tree = self._parse("Any X WHERE X is Person")
-        self.assertRaises(ValueError, tree.get_restriction)
         self.assertIsInstance(tree, stmts.Union)
         self.assertEqual(tree.limit, None)
         self.assertEqual(tree.offset, 0)
         select = tree.children[0]
         self.assertIsInstance(select, stmts.Select)
         self.assertEqual(select.distinct, False)
-        self.assertEqual(len(select.children), 1)
-        self.assertIsInstance(select.children[0], nodes.Relation)
-        self.assert_(select.children[0] is select.get_restriction())
+        self.assertEqual(len(select.children), 2)
+        self.assert_(select.children[0] is select.selection[0])
+        self.assert_(select.children[1] is select.where)
+        self.assertIsInstance(select.where, nodes.Relation)
         
     def test_select_base_2(self):
         tree = self._simpleparse("Any X WHERE X is Person")
-        self.assertEqual(len(tree.children), 1)
+        self.assertEqual(len(tree.children), 2)
         self.assertEqual(tree.distinct, False)
         
     def test_select_distinct(self):
         tree = self._simpleparse("DISTINCT Any X WHERE X is Person")
-        self.assertEqual(len(tree.children), 1)
+        self.assertEqual(len(tree.children), 2)
         self.assertEqual(tree.distinct, True)
         
     def test_select_null(self):
         tree = self._simpleparse("Any X WHERE X name NULL")
-        constant = tree.children[0].children[1].children[0]
+        constant = tree.where.children[1].children[0]
         self.assertEqual(constant.type, None)
         self.assertEqual(constant.value, None)
         
     def test_select_true(self):
         tree = self._simpleparse("Any X WHERE X name TRUE")
-        constant = tree.children[0].children[1].children[0]
+        constant = tree.where.children[1].children[0]
         self.assertEqual(constant.type, 'Boolean')
         self.assertEqual(constant.value, True)
         
     def test_select_false(self):
         tree = self._simpleparse("Any X WHERE X name FALSE")
-        constant = tree.children[0].children[1].children[0]
+        constant = tree.where.children[1].children[0]
         self.assertEqual(constant.type, 'Boolean')
         self.assertEqual(constant.value, False)
         
     def test_select_date(self):
         tree = self._simpleparse("Any X WHERE X born TODAY")
-        constant = tree.children[0].children[1].children[0]
+        constant = tree.where.children[1].children[0]
         self.assertEqual(constant.type, 'Date')
         self.assertEqual(constant.value, 'TODAY')
         
     def test_select_int(self):
         tree = self._simpleparse("Any X WHERE X name 1")
-        constant = tree.children[0].children[1].children[0]
+        constant = tree.where.children[1].children[0]
         self.assertEqual(constant.type, 'Int')
         self.assertEqual(constant.value, 1)
         
     def test_select_float(self):
         tree = self._simpleparse("Any X WHERE X name 1.0")
-        constant = tree.children[0].children[1].children[0]
+        constant = tree.where.children[1].children[0]
         self.assertEqual(constant.type, 'Float')
         self.assertEqual(constant.value, 1.0)
         
     def test_select_group(self):
-        tree = self._simpleparse("Any X WHERE X is Person, X name N GROUPBY N")
+        tree = self._simpleparse("Any X GROUPBY N WHERE X is Person, X name N")
         self.assertEqual(tree.distinct, False)
-        self.assertEqual(len(tree.children), 2)
-        self.assertIsInstance(tree.children[0], nodes.AND)
-        self.assertIsInstance(tree.children[1], nodes.Group)
-        self.assertIsInstance(tree.children[1].children[0], nodes.VariableRef)
-        self.assertEqual(tree.children[1].children[0].name, 'N')
+        self.assertEqual(len(tree.children), 3)
+        self.assertIsInstance(tree.where, nodes.And)
+        self.assertIsInstance(tree.groupby[0], nodes.VariableRef)
+        self.assertEqual(tree.groupby[0].name, 'N')
 
     def test_select_ord_default(self):
-        tree = self._parse("Any X WHERE X is Person, X name N ORDERBY N")
-        self.assertEqual(tree.sortterms.children[0].asc, 1)
+        tree = self._parse("Any X ORDERBY N WHERE X is Person, X name N")
+        self.assertEqual(tree.children[0].orderby[0].asc, 1)
 
     def test_select_ord_desc(self):
-        tree = self._parse("Any X WHERE X is Person, X name N ORDERBY N DESC")
+        tree = self._parse("Any X ORDERBY N DESC WHERE X is Person, X name N")
         select = tree.children[0]
-        self.assertEqual(len(select.children), 1)
-        self.assertIsInstance(select.children[0], nodes.AND)
-        sort = tree.sortterms
-        self.assertIsInstance(sort, nodes.Sort)
-        self.assertIsInstance(sort.children[0], nodes.SortTerm)
-        self.assertEqual(sort.children[0].term.name, 'N')
-        self.assertEqual(sort.children[0].asc, 0)
+        self.assertEqual(len(select.children), 3)
+        self.assertIsInstance(select.where, nodes.And)
+        sort = select.orderby
+        self.assertIsInstance(sort[0], nodes.SortTerm)
+        self.assertEqual(sort[0].term.name, 'N')
+        self.assertEqual(sort[0].asc, 0)
         self.assertEqual(select.distinct, False)
 
     def test_select_group_ord_asc(self):
-        tree = self._parse("Any X WHERE X is Person, X name N GROUPBY N ORDERBY N ASC",
-                           "Any X WHERE X is Person, X name N GROUPBY N ORDERBY N")
+        tree = self._parse("Any X GROUPBY N ORDERBY N ASC WHERE X is Person, X name N",
+                           "Any X GROUPBY N ORDERBY N WHERE X is Person, X name N")
         select = tree.children[0]
-        self.assertEqual(len(select.children), 2)
-        group = select.children[1]
-        self.assertIsInstance(group, nodes.Group)
-        self.assertIsInstance(group.children[0], nodes.VariableRef)
-        self.assertEqual(group.children[0].name, 'N')
+        self.assertEqual(len(select.children), 4)
+        group = select.groupby
+        self.assertIsInstance(group[0], nodes.VariableRef)
+        self.assertEqual(group[0].name, 'N')
 
     def test_select_limit_offset(self):
         tree = self._parse("Any X WHERE X name 1.0 LIMIT 10 OFFSET 10")
@@ -241,17 +240,18 @@ class NodesTest(TestCase):
         self.assertEqual(tree.offset, 10)
         
     def test_copy(self):
-        tree = self._parse("Any X,LOWER(Y) WHERE X is Person, X name N, X date >= TODAY GROUPBY N ORDERBY N")
+        tree = self._parse("Any X,LOWER(Y) GROUPBY N ORDERBY N WHERE X is Person, X name N, X date >= TODAY")
         select = stmts.Select()
-        restriction = tree.children[0].get_restriction()
+        restriction = tree.children[0].where
         self.check_equal_but_not_same(restriction, restriction.copy(select))
-        groups = tree.children[0].groups
-        self.check_equal_but_not_same(groups, groups.copy(select))
-        sorts = tree.sortterms
-        self.check_equal_but_not_same(sorts, sorts.copy(select))
+        group = tree.children[0].groupby[0]
+        self.check_equal_but_not_same(group, group.copy(select))
+        sort = tree.children[0].orderby[0]
+        self.check_equal_but_not_same(sort, sort.copy(select))
 
     def test_selected_index(self):
-        tree = self._simpleparse("Any X WHERE X is Person, X name N ORDERBY N DESC")
+        tree = self._simpleparse("Any X ORDERBY N DESC WHERE X is Person, X name N")
+        annotator.annotate(tree)
         self.assertEquals(tree.defined_vars['X'].selected_index(), 0)
         self.assertEquals(tree.defined_vars['N'].selected_index(), None)
             
@@ -260,7 +260,7 @@ class NodesTest(TestCase):
     def test_insert_base_1(self):
         tree = self._parse("INSERT Person X")
         self.assertIsInstance(tree, stmts.Insert)
-        self.assertEqual(tree.children, [])
+        self.assertEqual(len(tree.children), 1)
         # test specific attributes
         self.assertEqual(len(tree.main_relations), 0)
         self.assertEqual(len(tree.main_variables), 1)
@@ -294,8 +294,8 @@ class NodesTest(TestCase):
         
     def test_insert_where(self):
         tree = self._parse("INSERT Person X : X name 'bidule', X friend Y WHERE Y name 'chouette'")
-        self.assertEqual(len(tree.children), 1)
-        self.assertIsInstance(tree.children[0], nodes.Relation)
+        self.assertEqual(len(tree.children), 4)
+        self.assertIsInstance(tree.where, nodes.Relation)
         # test specific attributes
         self.assertEqual(len(tree.main_relations), 2)
         for relation in tree.main_relations:
@@ -309,9 +309,9 @@ class NodesTest(TestCase):
     
     def test_update_1(self):
         tree = self._parse("SET X name 'toto' WHERE X is Person, X name 'bidule'")
-        self.assertIsInstance(tree, stmts.Update)
-        self.assertEqual(len(tree.children), 1)
-        self.assertIsInstance(tree.children[0], nodes.AND)
+        self.assertIsInstance(tree, stmts.Set)
+        self.assertEqual(len(tree.children), 2)
+        self.assertIsInstance(tree.where, nodes.And)
 
         
     # deletion tests #########################################################
@@ -319,14 +319,14 @@ class NodesTest(TestCase):
     def test_delete_1(self):
         tree = self._parse("DELETE Person X WHERE X name 'toto'")
         self.assertIsInstance(tree, stmts.Delete)
-        self.assertEqual(len(tree.children), 1)
-        self.assertIsInstance(tree.children[0], nodes.Relation)
+        self.assertEqual(len(tree.children), 2)
+        self.assertIsInstance(tree.where, nodes.Relation)
         
     def test_delete_2(self):
         tree = self._parse("DELETE X friend Y WHERE X name 'toto'")
         self.assertIsInstance(tree, stmts.Delete)
-        self.assertEqual(len(tree.children), 1)
-        self.assertIsInstance(tree.children[0], nodes.Relation)
+        self.assertEqual(len(tree.children), 2)
+        self.assertIsInstance(tree.where, nodes.Relation)
         
     # as_string tests ####################################################
     
@@ -370,14 +370,14 @@ class NodesTest(TestCase):
     # non regression tests ####################################################
     
     def test_get_description_and_get_type(self):
-        tree = parse("Any N,COUNT(X),NOW-D WHERE X name N, X creation_date D GROUPBY N;")
+        tree = parse("Any N,COUNT(X),NOW-D GROUPBY N WHERE X name N, X creation_date D;")
         annotator.annotate(tree)
         tree.schema = schema
         self.assertEqual(tree.get_description(), [['name', 'COUNT(name)', 'creation_date']])
-        self.assertEqual(tree.children[0].selected[0].get_type(), 'Any')
-        self.assertEqual(tree.children[0].selected[1].get_type(), 'Int')
-        self.assertEqual(tree.children[0].defined_vars['D'].get_type({'D': 'Datetime'}), 'Datetime')
-        self.assertEqual(tree.children[0].selected[2].get_type({'D': 'Datetime'}), 'Interval')
+        self.assertEqual(tree.where.selected[0].get_type(), 'Any')
+        self.assertEqual(tree.where.selected[1].get_type(), 'Int')
+        self.assertEqual(tree.where.defined_vars['D'].get_type({'D': 'Datetime'}), 'Datetime')
+        self.assertEqual(tree.where.selected[2].get_type({'D': 'Datetime'}), 'Interval')
 
     def test_repr_encoding(self):
         tree = parse(u'Any N where NOT N has_text "bidüle"')
@@ -394,15 +394,11 @@ class GetNodesFunctionTest(TestCase):
     def test_known_values_2(self):
         tree = parse('Any X where X name "turlututu", Y know X, Y name "chapo pointu"').children[0]
         varrefs = tree.get_nodes(nodes.VariableRef)
-        self.assertEquals(len(varrefs), 4)
+        self.assertEquals(len(varrefs), 5)
         for varref in varrefs:
-            self.assertEquals(isinstance(varref, nodes.VariableRef), 1)
-        names = [ x.name for x in varrefs ]
-        names.sort()
-        self.assertEquals(names[0], 'X')
-        self.assertEquals(names[1], 'X')
-        self.assertEquals(names[2], 'Y')
-        self.assertEquals(names[3], 'Y')
+            self.assertIsInstance(varref, nodes.VariableRef)
+        self.assertEquals(sorted(x.name for x in varrefs),
+                          ['X', 'X', 'X', 'Y', 'Y'])    
 
     def test_iknown_values_1(self):
         tree = parse('Any X where X name "turlututu"').children[0]
@@ -414,15 +410,11 @@ class GetNodesFunctionTest(TestCase):
     def test_iknown_values_2(self):
         tree = parse('Any X where X name "turlututu", Y know X, Y name "chapo pointu"').children[0]
         varrefs = list(tree.iget_nodes(nodes.VariableRef))
-        self.assertEquals(len(varrefs), 4)
+        self.assertEquals(len(varrefs), 5)
         for varref in varrefs:
-            self.assertEquals(isinstance(varref, nodes.VariableRef), 1)
-        names = [ x.name for x in varrefs ]
-        names.sort()
-        self.assertEquals(names[0], 'X')
-        self.assertEquals(names[1], 'X')
-        self.assertEquals(names[2], 'Y')
-        self.assertEquals(names[3], 'Y')    
+            self.assertIsInstance(varref, nodes.VariableRef)
+        self.assertEquals(sorted(x.name for x in varrefs),
+                          ['X', 'X', 'X', 'Y', 'Y'])    
     
 if __name__ == '__main__':
     unittest_main()

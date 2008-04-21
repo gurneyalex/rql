@@ -24,8 +24,8 @@ KEYWORD_MAP = {'NOW' : now,
                'TODAY': today}
 
 from rql import CoercionError
-from rql.base import Node, BinaryNode, LeafNode
-from rql.utils import function_description, quote, uquote
+from rql.base import BaseNode, Node, BinaryNode, LeafNode
+from rql.utils import function_description, quote, uquote, build_visitor_stub
 
 CONSTANT_TYPES = frozenset((None, 'Date', 'Datetime', 'Boolean', 'Float', 'Int',
                             'String', 'Substitute', 'etype'))
@@ -49,6 +49,11 @@ def variable_ref(var):
         return VariableRef(var, noautoref=1)
     assert isinstance(var, VariableRef)
     return var    
+
+def variable_refs(node):
+    for vref in node.iget_nodes(VariableRef):
+        if isinstance(vref.variable, Variable):
+            yield vref
 
 
 class HSMixin(object):
@@ -94,7 +99,7 @@ class EditableMixIn(object):
     def should_register_op(self):
         root = self.root
         # root is None during parsing
-        return root is not None and root.memorizing and not root.undoing
+        return root is not None and root.should_register_op
 
     def remove_node(self, node):
         """remove the given node from the tree
@@ -114,19 +119,18 @@ class EditableMixIn(object):
     
     def add_restriction(self, relation):
         """add a restriction relation"""
-        r = self.get_restriction()
+        r = self.where
         if r is not None:
-            newnode = AND(r, relation)
-            self.replace(r, newnode)
+            newnode = And(r, relation)
+            self.set_where(newnode)
             if self.should_register_op:
                 from rql.undo import ReplaceNodeOperation
                 self.undo_manager.add_operation(ReplaceNodeOperation(r, newnode))
         else:
-            self.insert(0, relation)
+            self.set_where(relation)
             if self.should_register_op:
                 from rql.undo import AddNodeOperation
                 self.undo_manager.add_operation(AddNodeOperation(relation))
-        #assert check_relations(self)
         return relation
     
     def add_constant_restriction(self, var, rtype, value, ctype,
@@ -161,18 +165,115 @@ class EditableMixIn(object):
             etype = iter(etype).next() # may be a set
         return self.add_constant_restriction(var, 'is', etype, 'etype')
     
+# keywordsection nodes ########################################################
+
+# class KWNode(Node):
+#     __slots__ = ()
+    
+#     def as_string(self, encoding=None, kwargs=None):
+#         return '%s %s' % (self.__class__.__name__.upper(),
+#                           ', '.join(child.as_string(encoding, kwargs)
+#                                     for child in self.children))
+#     def __repr__(self):
+#         return '%s %s' % (self.__class__.__name__.upper(),
+#                           ', '.join(repr(child) for child in self.children))
+        
+# class Where(BaseNode): 
+#     """WHERE clause"""
+#     __slots__ = ('node',)
+#     def __init__(self, node):
+#         self.node = node
+#         node.parent = self
+#     @property
+#     def children(self):
+#         return (self.node,)
+    
+    
+#     def copy(self, stmt):
+#         """create and return a copy of this node and its descendant
+
+#         stmt is the root node, which should be use to get new variables
+#         """
+#         return Where(self.node.copy(stmt))
+    
+#     def accept(self, visitor, *args, **kwargs):
+#         return visitor.visit_where(self, *args, **kwargs)
+#     def leave(self, visitor, *args, **kwargs):
+#         return visitor.leave_where(self, *args, **kwargs)
+#     def as_string(self, encoding=None, kwargs=None):
+#         return 'WHERE %s' % ', '.join(child.as_string(encoding, kwargs)
+#                                       for child in self.children)
+#         return 'WHERE %s' % ', '.join(repr(child) for child in self.children)
+
+        
+# class GroupBy(KWNode): 
+#     """GROUPBY clause"""
+#     __slots__ = ()
+#     def accept(self, visitor, *args, **kwargs):
+#         return visitor.visit_groupby(self, *args, **kwargs)
+#     def leave(self, visitor, *args, **kwargs):
+#         return visitor.leave_groupby(self, *args, **kwargs)
+
+    
+# class Having(KWNode): 
+#     """HAVING clause"""
+#     __slots__ = ()
+#     def accept(self, visitor, *args, **kwargs):
+#         return visitor.visit_having(self, *args, **kwargs)
+#     def leave(self, visitor, *args, **kwargs):
+#         return visitor.leave_having(self, *args, **kwargs)
+
+    
+# class OrderBy(KWNode):
+#     """ORDERBY clause"""
+#     __slots__ = ()
+#     def accept(self, visitor, *args, **kwargs):
+#         return visitor.visit_orderby(self, *args, **kwargs)
+#     def leave(self, visitor, *args, **kwargs):
+#         return visitor.leave_orderby(self, *args, **kwargs)
+
+    
+# class With(KWNode):
+#     """WITH clause"""
+#     __slots__ = ()
+#     def accept(self, visitor, *args, **kwargs):
+#         return visitor.visit_sort(self, *args, **kwargs)
+#     def leave(self, visitor, *args, **kwargs):
+#         return visitor.leave_sort(self, *args, **kwargs)
+    
 
 # base RQL nodes ##############################################################
 
-class AND(BinaryNode):
+class SubQuery(BaseNode):
+    """WITH clause"""
+    __slots__ = ('aliases', 'query')
+    def set_aliases(self, aliases):
+        self.aliases = aliases
+        for node in aliases:
+            node.parent = self
+            
+    def set_query(self, node):
+        self.query = node
+        node.parent = self
+
+    def copy(self, stmt):
+        self.set_aliases([v.copy(stmt) for v in self.aliases])
+        self.set_query(self.query.copy())
+        
+    @property
+    def children(self):
+        return self.aliases + [self.query]
+    
+    def as_string(self, encoding=None, kwargs=None):
+        return '%s BEING (%s)' % (','.join(v.name for v in self.aliases),
+                                  self.query.as_string())
+    def __repr__(self):
+        return '%s BEING (%s)' % (','.join(repr(v) for v in self.aliases),
+                                  repr(self.query))
+    
+class And(BinaryNode):
     """a logical AND node (binary)"""
     __slots__ = ()
-    
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_and(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_and(self, *args, **kwargs)
     
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
@@ -187,15 +288,9 @@ class AND(BinaryNode):
         return self.parent.neged_rel(_fromnode or self)
 
     
-class OR(BinaryNode):
+class Or(BinaryNode):
     """a logical OR node (binary)"""
     __slots__ = ()
-    
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_or(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_or(self, *args, **kwargs)
     
     def as_string(self, encoding=None, kwargs=None):
         return '(%s) OR (%s)' % (self.children[0].as_string(encoding, kwargs),
@@ -213,11 +308,6 @@ class OR(BinaryNode):
 class Not(Node):
     """a logical NOT node (unary)"""
     __slots__ = ()
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_not(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_not(self, *args, **kwargs)
     
     def as_string(self, encoding=None, kwargs=None):
         if isinstance(self.children[0], (Exists, Relation)):
@@ -233,34 +323,35 @@ class Not(Node):
         return self
 
 
-class Exists(EditableMixIn, Node):
+class Exists(EditableMixIn, BaseNode):
     """EXISTS sub query"""
-    __slots__ = ()
+    __slots__ = ('query',)
 
     def __init__(self, restriction=None):
-        Node.__init__(self)
         if restriction is not None:
-            self.append(restriction)
+            self.set_where(restriction)
 
+    @property
+    def children(self):
+        return (self.query,)
+    
     def is_equivalent(self, other):
         raise NotImplementedError
-    
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_exists(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_exists(self, *args, **kwargs)
-                
+                    
     def as_string(self, encoding=None, kwargs=None):
-        content = self.children and self.children[0].as_string(encoding, kwargs)
+        content = self.query and self.query.as_string(encoding, kwargs)
         return 'EXISTS(%s)' % content
 
     def __repr__(self):
-        content = self.children and repr(self.children[0])
-        return 'EXISTS(%s)' % content
+        return 'EXISTS(%s)' % repr(self.query)
 
-    def get_restriction(self):
-        return self.children[0]
+    def set_where(self, node):
+        self.query = node
+        node.parent = self
+    
+    @property
+    def where(self):
+        return self.query
 
     @property
     def scope(self):
@@ -297,12 +388,6 @@ class Relation(Node):
         if self.r_type != other.r_type:
             return False
         return True
-    
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_relation( self, *args, **kwargs )
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_relation( self, *args, **kwargs )
     
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
@@ -342,7 +427,9 @@ class Relation(Node):
     
     def ored_rel(self, _fromnode=None):
         return self.parent.ored_rel(_fromnode or self)
-    def neged_rel(self, _fromnode=None):
+    def neged_rel(self, _fromnode=None, strict=False):
+        if strict:
+            return isinstance(self.parent, Not)
         return self.parent.neged_rel(_fromnode or self)
 
     def is_types_restriction(self):
@@ -417,12 +504,6 @@ class Comparison(HSMixin, Node):
             return False
         return self.operator == other.operator
     
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_comparison( self, *args, **kwargs )
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_comparison( self, *args, **kwargs )
-    
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         if len(self.children) == 0:
@@ -457,12 +538,6 @@ class MathExpression(HSMixin, BinaryNode):
             return False
         return self.operator == other.operator
 
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_mathexpression(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_mathexpression(self, *args, **kwargs)
-        
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         return '(%s %s %s)' % (self.children[0].as_string(encoding, kwargs),
@@ -529,12 +604,6 @@ class Function(HSMixin, Node):
             return False
         return self.name == other.name
 
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_function(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_function(self, *args, **kwargs)
-        
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         return '%s(%s)' % (self.name, ', '.join(c.as_string(encoding, kwargs)
@@ -586,12 +655,6 @@ class Constant(HSMixin, LeafNode):
         if not LeafNode.is_equivalent(self, other):
             return False
         return self.type == other.type and self.value == other.value
-    
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_constant(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_constant(self, *args, **kwargs)
     
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string (an unicode string is
@@ -667,12 +730,6 @@ class VariableRef(HSMixin, LeafNode):
             return False
         return self.name == other.name
     
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_variableref(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_variableref(self, *args, **kwargs)
-
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         return self.name
@@ -694,50 +751,6 @@ class VariableRef(HSMixin, LeafNode):
 
     def get_description(self):
         return self.variable.get_description()
-
-class KWNode(Node):
-    __slots__ = ()    
-    def as_string(self, encoding=None, kwargs=None):
-        return '%s %s' % (self.keyword,
-                          ', '.join(child.as_string(encoding, kwargs)
-                                    for child in self.children))
-
-    def __repr__(self):
-        return '%s %s' % (self.keyword,
-                          ', '.join(repr(child) for child in self.children))
-        
-class Group(KWNode): 
-    """a group (GROUPBY) node"""
-    __slots__ = ()
-    keyword = 'GROUPBY'
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_group(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_group(self, *args, **kwargs)
-
-    
-class Having(KWNode): 
-    """a having (HAVING) node"""
-    __slots__ = ()
-    keyword = 'HAVING'
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_having(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_having(self, *args, **kwargs)
-
-    
-class Sort(KWNode):
-    """a sort (ORDERBY) node"""
-    __slots__ = ()
-    keyword = 'ORDERBY'
-    
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_sort(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_sort(self, *args, **kwargs)
     
 
 class SortTerm(Node):
@@ -772,12 +785,6 @@ class SortTerm(Node):
             return '%r ASC' % self.term
         return '%r DESC' % self.term
     
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_sortterm(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_sortterm(self, *args, **kwargs)
-
     @property
     def term(self): 
         return self.children[0]
@@ -804,12 +811,6 @@ class ColumnAlias(object):
         if solution:
             return solution[self.name]
         return 'Any'    
-    
-    def accept(self, visitor, *args, **kwargs):
-        return visitor.visit_columnalias(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        return visitor.leave_columnalias(self, *args, **kwargs)
     
 #     def as_string(self, encoding=None, kwargs=None):
 #         return self.alias
@@ -869,18 +870,6 @@ class Variable(object):
     def __repr__(self):
         return '%s(%#X)' % (self.name, id(self))
     
-    def accept(self, visitor, *args, **kwargs):
-        """though variable are not actually tree nodes, they may be visited in
-        some cases
-        """
-        return visitor.visit_variable(self, *args, **kwargs)
-    
-    def leave(self, visitor, *args, **kwargs):
-        """though variable are not actually tree nodes, they may be visited in
-        some cases
-        """
-        return visitor.leave_variable(self, *args, **kwargs)
-    
     def set_scope(self, scopenode):
         if scopenode is self.stmt or self.stinfo['scope'] is None:
             self.stinfo['scope'] = scopenode
@@ -920,10 +909,9 @@ class Variable(object):
         """return the index of this variable in the selection if it's selected,
         else None
         """
-        for i, term in enumerate(self.stmt.selected_terms()):
-            for node in term.iget_nodes(VariableRef):
-                if node.variable is self:
-                    return i
+        if not self.stinfo['selected']:
+            return None
+        return iter(self.stinfo['selected']).next()
 
     @property
     def schema(self):
@@ -989,3 +977,6 @@ class Variable(object):
                 return rel
         return None
 
+build_visitor_stub((SubQuery, And, Or, Not, Exists, Relation,
+                    Comparison, MathExpression, Function, Constant,
+                    VariableRef, SortTerm, ColumnAlias, Variable))
