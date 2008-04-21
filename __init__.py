@@ -4,6 +4,7 @@
 :copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
+__docformat__ = "restructuredtext en"
 
 import sys
 import threading
@@ -50,7 +51,7 @@ class RQLHelper:
                 raise UsesReservedWord(etype)
         for rtype in schema.relations():
             rtype = str(rtype)
-            if is_keyword(rtype):# or rtype.lower() == 'is':
+            if is_keyword(rtype):
                 raise UsesReservedWord(rtype)
         self._checker.schema = schema
         self._annotator.schema = schema
@@ -93,24 +94,12 @@ class RQLHelper:
             from rql import nodes
             for select in rqlst.children:
                 self._simplify(select)
-                # deal with rewritten variable which are used in orderby
-                for vname in select.stinfo['rewritten']:
-                    try:
-                        var = rqlst.defined_vars.pop(vname)
-                    except KeyError:
-                        continue
-                    else:
-                        for vref in var.references():
-                            term = vref.parent
-                            while not isinstance(term, nodes.SortTerm):
-                                term = term.parent
-                            rqlst.remove_sort_term(term)
         return rqlst
         
     def _simplify(self, select):
         # recurse on subqueries first
-        for subquery in select.from_:
-            for select in subquery.children:
+        for subquery in select.with_:
+            for select in subquery.query.children:
                 self._simplify(select)
         for var in select.defined_vars.values():
             stinfo = var.stinfo
@@ -122,10 +111,25 @@ class RQLHelper:
                 rhs = uidrel.children[1].children[0]
                 #from rql.nodes import Constant
                 #assert isinstance(rhs, nodes.Constant), rhs
-                for varref in var.references():
-                    rel = varref.relation()
-                    #assert varref.parent
-                    if rel and (rel is uidrel or rel.is_types_restriction()):
+                for vref in var.references():
+                    rel = vref.relation()
+                    #assert vref.parent
+                    if rel is None:
+                        term = vref
+                        while not term.parent is select:
+                            term = term.parent
+                        if term in select.selection:
+                            rhs = rhs.copy(select)
+                            rhs.uid = True
+                            vconsts.append(rhs)
+                            if vref is term:
+                                select.selection[select.selection.index(vref)] = rhs
+                                rhs.parent = select
+                            else:
+                                vref.parent.replace(vref, rhs)
+                        else:
+                            select.remove(term)
+                    elif rel is uidrel or rel.is_types_restriction():
                         # drop this relation
                         rel.parent.remove(rel)
                     else:
@@ -137,9 +141,9 @@ class RQLHelper:
 #                         # substitute rhs
 #                         if rel and uidrel._not:
 #                             rel._not = rel._not or uidrel._not
-                        varref.parent.replace(varref, rhs)
+                        vref.parent.replace(vref, rhs)
                 del select.defined_vars[var.name]
-        if select.stinfo['rewritten']:
+        if select.stinfo['rewritten'] and select.solutions:
             select.clean_solutions()
         
     def compare(self, rqlstring1, rqlstring2):

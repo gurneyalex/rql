@@ -128,10 +128,9 @@ class ETypeResolver:
                 (var,), '%s == %r' % (var, etype)))
         for relation in node.main_relations:
             self._visit(relation, constraints)
-        restriction = node.get_restriction()
-        if restriction is not None:
-            # get constraints from the restriction subtree
-            self._visit(restriction, constraints)
+        # get constraints from the restriction subtree
+        if node.where is not None:
+            self._visit(node.where, constraints)
         self.solve(node, domains, constraints)
         
     visit_delete = visit_insert
@@ -144,21 +143,20 @@ class ETypeResolver:
         constraints = []
         for relation in node.main_relations:
             self._visit(relation, constraints)
-        restriction = node.get_restriction()
-        if restriction is not None:
-            # get constraints from the restriction subtree
-            self._visit(restriction, constraints)
+        # get constraints from the restriction subtree
+        if node.where is not None:
+            self._visit(node.where, constraints)
         self.solve(node, domains, constraints)
         
     def visit_select(self, node):
         if not (node.defined_vars or node.aliases):
             node.set_possible_types([{}])
             return
-        for subquery in node.from_: # resolve subqueries first
-            self.visit_union(subquery)
+        for subquery in node.with_: # resolve subqueries first
+            self.visit_union(subquery.query)
         domains = self._init_stmt(node)
         for ca in node.aliases.itervalues():
-            etypes = set(stmt.selected[ca.colnum].get_type(sol, self.kwargs)
+            etypes = set(stmt.selection[ca.colnum].get_type(sol, self.kwargs)
                          for stmt in ca.query.children for sol in stmt.solutions)
             domains[ca.name] = fd.FiniteDomain(etypes)
         constraints = []
@@ -170,11 +168,10 @@ class ETypeResolver:
                 uidtype = self.uid_func(consts[0].eval(self.kwargs))
                 for const in consts:
                     const.uidtype = uidtype
-        restriction = node.get_restriction()
-        if not restriction is None:
-            # get constraints from the restriction subtree
-            self._visit(restriction, constraints)
-        elif not node.from_:
+        # get constraints from the restriction subtree
+        if node.where is not None:
+            self._visit(node.where, constraints)
+        elif not node.with_:
             varnames = [v.name for v in node.get_selected_variables()]
             if varnames:
                 # add constraint on real relation types if no restriction
@@ -474,7 +471,7 @@ class UnifyingETypeResolver:
 
     def visit_select(self, node):
         sols = self.visit_children(node)
-        for n in node.selected:
+        for n in node.selection:
             sols2 = n.accept(self)
             for s in sols2:
                 del s['type']

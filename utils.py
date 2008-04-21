@@ -1,8 +1,10 @@
 """Miscellaneous utilities for rql
 
-Copyright (c) 2003-2007 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
-http://www.logilab.fr/ -- mailto:contact@logilab.fr
+:organization: Logilab
+:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
+__docformat__ = "restructuredtext en"
 
 from rql._exceptions import BadRQLQuery
 
@@ -31,10 +33,11 @@ def rqlvar_maker(stop=None, index=0, defined=None):
         yield var
 
 KEYWORDS = set(('INSERT', 'SET', 'DELETE',
+                'UNION', 'WITH', 'BEING',
                 'WHERE', 'AND', 'OR', 'NOT'
                 'IN', 'LIKE',
                 'TRUE', 'FALSE', 'NULL', 'TODAY',
-                'GROUPBY', 'ORDERBY', 'ASC', 'DESC',
+                'GROUPBY', 'HAVING', 'ORDERBY', 'ASC', 'DESC',
                 'LIMIT', 'OFFSET'))
     
 
@@ -55,7 +58,6 @@ def iter_funcnode_variables(funcnode):
             yield term.variable.stinfo['attrvar'] or term
         except AttributeError, ex:
             yield term    
-
 
 def is_keyword(word):
     """return true if the given word is a RQL keyword"""
@@ -98,6 +100,13 @@ def uquote(value):
 
 # Visitor #####################################################################
 
+_accept = 'lambda self, visitor, *args, **kwargs: visitor.visit_%s(self, *args, **kwargs)' 
+_leave = 'lambda self, visitor, *args, **kwargs: visitor.leave_%s(self, *args, **kwargs)' 
+def build_visitor_stub(classes):
+    for cls in classes:
+        cls.accept = eval(_accept % (cls.__name__.lower()))
+        cls.leave = eval(_leave % (cls.__name__.lower()))        
+
 class RQLVisitorHandler:
     """handler providing a dummy implementation of all callbacks necessary
     to visit a RQL syntax tree
@@ -109,17 +118,12 @@ class RQLVisitorHandler:
         pass
     def visit_delete(self, delete):
         pass
-    def visit_update(self, update):
+    def visit_set(self, update):
         pass
     
-    def visit_group(self, group):
-        pass
-    def visit_sort(self, sort):
+    def visit_select(self, selection):
         pass
     def visit_sortterm(self, sortterm):
-        pass
-
-    def visit_select(self, selection):
         pass
     
     def visit_and(self, et):

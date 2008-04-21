@@ -3,14 +3,50 @@
 :organization: Logilab
 :copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
+
+
+Select statement grammar
+------------------------
+
+query = <squery> | <union>
+
+union = (<squery>) UNION (<squery>) [UNION (<squery>)]*
+
+squery = Any <selection>
+        [GROUPBY <variables>]
+        [ORDERBY <sortterms>]
+        [WHERE <restriction>]
+        [HAVING <aggregat restriction>]
+        [WITH <subquery> [,<subquery]*]
+
+subquery = <variables> BEING (<query>)
+
+variables = <variable> [, <variable>]*
+
+
+Abbreviations in this code
+--------------------------
+
+rules:
+* rel -> relation
+* decl -> declaration
+* expr -> expression
+* restr -> restriction
+* var -> variable
+* func -> function
+* const -> constant
+* cmp -> comparison
+
+variables:
+* R -> syntax tree root
+* S -> select node
+* P -> parent node
+
 """
 
-
-from rql.stmts import Union, Select, Delete, Insert, Update
+from warnings import warn
+from rql.stmts import Union, Select, Delete, Insert, Set
 from rql.nodes import *
-
-_OR = OR
-_AND = AND
 
 
 def unquote(string):
@@ -38,9 +74,9 @@ class HerculeScanner(runtime.Scanner):
         ('INSERT', re.compile('(?i)INSERT')),
         ('UNION', re.compile('(?i)UNION')),
         ('DISTINCT', re.compile('(?i)DISTINCT')),
-        ('FROM', re.compile('(?i)FROM')),
+        ('WITH', re.compile('(?i)WITH')),
         ('WHERE', re.compile('(?i)WHERE')),
-        ('AS', re.compile('(?i)AS')),
+        ('BEING', re.compile('(?i)BEING')),
         ('OR', re.compile('(?i)OR')),
         ('AND', re.compile('(?i)AND')),
         ('NOT', re.compile('(?i)NOT')),
@@ -91,330 +127,330 @@ class Hercule(runtime.Parser):
             return _insert
         elif _token == 'SET':
             SET = self._scan('SET', context=_context)
-            update = self.update(Update(), _context)
+            update = self.update(Set(), _context)
             self._scan("';'", context=_context)
             return update
         else: # in ['r"\\("', 'DISTINCT', 'E_TYPE']
-            union = self.union(_context)
-            sort = self.sort(union, _context)
+            union = self.union(Union(), _context)
             limit_offset = self.limit_offset(union, _context)
             self._scan("';'", context=_context)
             return union
 
-    def _delete(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, '_delete', [V])
+    def _delete(self, R, _parent=None):
+        _context = self.Context(_parent, self._scanner, '_delete', [R])
         _token = self._peek('E_TYPE', 'VARIABLE', context=_context)
         if _token == 'VARIABLE':
-            rels_decl = self.rels_decl(V, _context)
-            restr = self.restr(V, _context)
-            return V
+            decl_rels = self.decl_rels(R, _context)
+            where = self.where(R, _context)
+            return R
         else: # == 'E_TYPE'
-            vars_decl = self.vars_decl(V, _context)
-            restr = self.restr(V, _context)
-            return V
+            decl_vars = self.decl_vars(R, _context)
+            where = self.where(R, _context)
+            return R
 
-    def _insert(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, '_insert', [V])
-        vars_decl = self.vars_decl(V, _context)
-        insert_rels = self.insert_rels(V, _context)
-        return V
+    def _insert(self, R, _parent=None):
+        _context = self.Context(_parent, self._scanner, '_insert', [R])
+        decl_vars = self.decl_vars(R, _context)
+        insert_rels = self.insert_rels(R, _context)
+        return R
 
-    def insert_rels(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'insert_rels', [V])
+    def insert_rels(self, R, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'insert_rels', [R])
         _token = self._peek('":"', "';'", context=_context)
         if _token == '":"':
             self._scan('":"', context=_context)
-            rels_decl = self.rels_decl(V, _context)
-            restr = self.restr(V, _context)
-            return V
+            decl_rels = self.decl_rels(R, _context)
+            where = self.where(R, _context)
+            return R
         else: # == "';'"
             pass
 
-    def update(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'update', [V])
-        rels_decl = self.rels_decl(V, _context)
-        restr = self.restr(V, _context)
-        return V
+    def update(self, R, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'update', [R])
+        decl_rels = self.decl_rels(R, _context)
+        where = self.where(R, _context)
+        return R
 
-    def union(self, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'union', [])
-        select = self.select(Select(), _context)
-        root = Union(); root.append(select)
-        while self._peek('UNION', 'r"\\)"', 'ORDERBY', "';'", 'LIMIT', 'OFFSET', context=_context) == 'UNION':
-            UNION = self._scan('UNION', context=_context)
-            select = self.select(Select(), _context)
-            root.append(select)
-        return root
-
-    def select(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'select', [V])
+    def union(self, R, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'union', [R])
         _token = self._peek('r"\\("', 'DISTINCT', 'E_TYPE', context=_context)
         if _token != 'r"\\("':
-            _select = self._select(V, _context)
-            return _select
+            select = self.select(Select(), _context)
+            R.append(select); return R
         else: # == 'r"\\("'
             self._scan('r"\\("', context=_context)
-            _select = self._select(V, _context)
+            select = self.select(Select(), _context)
             self._scan('r"\\)"', context=_context)
-            return _select
+            R.append(select)
+            while self._peek('UNION', 'r"\\)"', "';'", 'LIMIT', 'OFFSET', context=_context) == 'UNION':
+                UNION = self._scan('UNION', context=_context)
+                self._scan('r"\\("', context=_context)
+                select = self.select(Select(), _context)
+                self._scan('r"\\)"', context=_context)
+                R.append(select)
+            return R
 
-    def _select(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, '_select', [V])
+    def select(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'select', [S])
         _token = self._peek('DISTINCT', 'E_TYPE', context=_context)
         if _token == 'DISTINCT':
             DISTINCT = self._scan('DISTINCT', context=_context)
-            select_base = self.select_base(V, _context)
-            V.distinct = True ; return V
+            select_ = self.select_(S, _context)
+            S.distinct = True ; return S
         else: # == 'E_TYPE'
-            select_base = self.select_base(V, _context)
-            return V
+            select_ = self.select_(S, _context)
+            return S
 
-    def select_base(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'select_base', [V])
+    def select_(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'select_', [S])
         E_TYPE = self._scan('E_TYPE', context=_context)
-        selected_terms = self.selected_terms(V, _context)
-        select_from = self.select_from(V, _context)
-        restr = self.restr(V, _context)
-        group = self.group(V, _context)
-        having = self.having(V, _context)
-        V.set_statement_type(E_TYPE) ; return V
+        selection = self.selection(S, _context)
+        groupby = self.groupby(S, _context)
+        orderby = self.orderby(S, _context)
+        where = self.where(S, _context)
+        having = self.having(S, _context)
+        with_ = self.with_(S, _context)
+        dgroupby = self.dgroupby(S, _context)
+        dorderby = self.dorderby(S, _context)
+        S.set_statement_type(E_TYPE); return S
 
-    def select_from(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'select_from', [V])
-        _token = self._peek('FROM', 'WHERE', "','", 'GROUPBY', 'HAVING', "';'", 'r"\\)"', 'UNION', 'ORDERBY', 'LIMIT', 'OFFSET', context=_context)
-        if _token == 'FROM':
-            FROM = self._scan('FROM', context=_context)
-            subqueries = self.subqueries(V, _context)
-        else:
-            pass
-
-    def subqueries(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'subqueries', [V])
-        subquery = self.subquery(V, _context)
-        while self._peek("','", 'WHERE', 'GROUPBY', 'HAVING', "';'", 'r"\\)"', 'UNION', 'ORDERBY', 'LIMIT', 'OFFSET', context=_context) == "','":
+    def selection(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'selection', [S])
+        expr_add = self.expr_add(S, _context)
+        S.append_selected(expr_add)
+        while self._peek("','", 'GROUPBY', 'ORDERBY', 'WHERE', 'HAVING', 'WITH', "';'", 'r"\\)"', 'LIMIT', 'OFFSET', context=_context) == "','":
             self._scan("','", context=_context)
-            subquery = self.subquery(V, _context)
+            expr_add = self.expr_add(S, _context)
+            S.append_selected(expr_add)
 
-    def subquery(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'subquery', [V])
-        self._scan('r"\\("', context=_context)
-        union = self.union(_context)
-        self._scan('r"\\)"', context=_context)
-        AS = self._scan('AS', context=_context)
-        aliases = self.aliases(_context)
-        V.add_subquery(union, aliases)
+    def dorderby(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'dorderby', [S])
+        orderby = self.orderby(S, _context)
+        if orderby: warn('ORDERBY is now before WHERE clause')
 
-    def aliases(self, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'aliases', [])
-        _token = self._peek('VARIABLE', 'r"\\("', context=_context)
-        if _token == 'VARIABLE':
-            VARIABLE = self._scan('VARIABLE', context=_context)
-            return [VARIABLE]
-        else: # == 'r"\\("'
-            self._scan('r"\\("', context=_context)
-            VARIABLE = self._scan('VARIABLE', context=_context)
-            while self._peek('r"\\)"', "','", context=_context) == "','":
-                variables = [VARIABLE]
-                self._scan("','", context=_context)
-                VARIABLE = self._scan('VARIABLE', context=_context)
-                variables.append(VARIABLE)
-            self._scan('r"\\)"', context=_context)
-            return variables
+    def dgroupby(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'dgroupby', [S])
+        groupby = self.groupby(S, _context)
+        if groupby: warn('GROUPBY is now before WHERE clause')
 
-    def selected_terms(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'selected_terms', [V])
-        added_expr = self.added_expr(V, _context)
-        while self._peek("','", 'r"\\)"', 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'FROM', 'WHERE', 'GROUPBY', 'QMARK', 'HAVING', "';'", 'LIMIT', 'OFFSET', 'UNION', 'AND', 'ORDERBY', 'OR', context=_context) == "','":
-            V.append_selected(added_expr)
-            self._scan("','", context=_context)
-            added_expr = self.added_expr(V, _context)
-        V.append_selected(added_expr)
-
-    def group(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'group', [V])
-        _token = self._peek('GROUPBY', 'HAVING', 'r"\\)"', 'UNION', 'ORDERBY', "';'", 'LIMIT', 'OFFSET', context=_context)
+    def groupby(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'groupby', [S])
+        _token = self._peek('GROUPBY', 'ORDERBY', 'WHERE', 'HAVING', 'WITH', "';'", 'r"\\)"', 'LIMIT', 'OFFSET', context=_context)
         if _token == 'GROUPBY':
             GROUPBY = self._scan('GROUPBY', context=_context)
-            G = Group()
-            var = self.var(V, _context)
-            while self._peek("','", 'R_TYPE', 'QMARK', 'HAVING', 'WHERE', '":"', 'MUL_OP', 'GROUPBY', "';'", 'r"\\)"', 'ADD_OP', 'UNION', 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'FROM', 'ORDERBY', 'LIMIT', 'OFFSET', 'AND', 'OR', context=_context) == "','":
-                G.append(var)
-                self._scan("','", context=_context)
-                var = self.var(V, _context)
-            G.append(var) ; V.append(G)
-        else:
+            variables = self.variables(S, _context)
+            S.set_groupby(variables); return True
+        elif 1:
             pass
+        else:
+            raise runtime.SyntaxError(_token[0], 'Could not match groupby')
 
-    def having(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'having', [V])
-        _token = self._peek('HAVING', 'r"\\)"', 'UNION', 'ORDERBY', "';'", 'LIMIT', 'OFFSET', context=_context)
+    def having(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'having', [S])
+        _token = self._peek('HAVING', 'WITH', 'GROUPBY', 'ORDERBY', 'WHERE', "';'", 'r"\\)"', 'LIMIT', 'OFFSET', context=_context)
         if _token == 'HAVING':
             HAVING = self._scan('HAVING', context=_context)
-            G = Having()
-            cmp_expr = self.cmp_expr(V, _context)
-            while self._peek("','", 'r"\\)"', 'UNION', 'ORDERBY', "';'", 'LIMIT', 'OFFSET', context=_context) == "','":
-                G.append(cmp_expr)
+            nodes = []
+            expr_cmp = self.expr_cmp(S, _context)
+            nodes.append(expr_cmp)
+            while self._peek("','", 'WITH', 'GROUPBY', 'ORDERBY', 'WHERE', 'HAVING', "';'", 'r"\\)"', 'LIMIT', 'OFFSET', context=_context) == "','":
                 self._scan("','", context=_context)
-                cmp_expr = self.cmp_expr(V, _context)
-            G.append(cmp_expr) ; V.append(G)
-        else: # in ['r"\\)"', 'UNION', 'ORDERBY', "';'", 'LIMIT', 'OFFSET']
+                expr_cmp = self.expr_cmp(S, _context)
+                nodes.append(expr_cmp)
+            S.set_having(nodes)
+        elif 1:
             pass
+        else:
+            raise runtime.SyntaxError(_token[0], 'Could not match having')
 
-    def cmp_expr(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'cmp_expr', [V])
-        added_expr = self.added_expr(V, _context)
-        c1 = added_expr
-        CMP_OP = self._scan('CMP_OP', context=_context)
-        cmp = Comparison(CMP_OP.upper(), c1);
-        added_expr = self.added_expr(V, _context)
-        cmp.append(added_expr); return cmp
-
-    def sort(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'sort', [V])
-        _token = self._peek('ORDERBY', "';'", 'LIMIT', 'OFFSET', context=_context)
+    def orderby(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'orderby', [S])
+        _token = self._peek('ORDERBY', 'WHERE', 'HAVING', 'WITH', "';'", 'GROUPBY', 'r"\\)"', 'LIMIT', 'OFFSET', context=_context)
         if _token == 'ORDERBY':
             ORDERBY = self._scan('ORDERBY', context=_context)
-            S = Sort(); V.set_sortterms(S)
-            sort_term = self.sort_term(V, _context)
-            while self._peek("','", "';'", 'LIMIT', 'OFFSET', context=_context) == "','":
-                S.append(sort_term)
+            nodes = []
+            sort_term = self.sort_term(S, _context)
+            nodes.append(sort_term)
+            while self._peek("','", 'WHERE', 'HAVING', 'WITH', "';'", 'GROUPBY', 'ORDERBY', 'r"\\)"', 'LIMIT', 'OFFSET', context=_context) == "','":
                 self._scan("','", context=_context)
-                sort_term = self.sort_term(V, _context)
-            S.append(sort_term)
-        else: # in ["';'", 'LIMIT', 'OFFSET']
+                sort_term = self.sort_term(S, _context)
+                nodes.append(sort_term)
+            S.set_orderby(nodes); return True
+        elif 1:
             pass
+        else:
+            raise runtime.SyntaxError(_token[0], 'Could not match orderby')
 
-    def sort_term(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'sort_term', [V])
-        added_expr = self.added_expr(V, _context)
+    def with_(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'with_', [S])
+        _token = self._peek('WITH', 'GROUPBY', 'ORDERBY', 'WHERE', 'HAVING', "';'", 'r"\\)"', 'LIMIT', 'OFFSET', context=_context)
+        if _token == 'WITH':
+            WITH = self._scan('WITH', context=_context)
+            nodes = []
+            subquery = self.subquery(S, _context)
+            nodes.append(subquery)
+            while self._peek("','", 'GROUPBY', 'ORDERBY', 'WHERE', 'HAVING', 'WITH', "';'", 'r"\\)"', 'LIMIT', 'OFFSET', context=_context) == "','":
+                self._scan("','", context=_context)
+                subquery = self.subquery(S, _context)
+                nodes.append(subquery)
+            S.set_with(nodes)
+        elif 1:
+            pass
+        else:
+            raise runtime.SyntaxError(_token[0], 'Could not match with_')
+
+    def subquery(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'subquery', [S])
+        variables = self.variables(S, _context)
+        node = SubQuery() ; node.set_aliases(variables)
+        BEING = self._scan('BEING', context=_context)
+        self._scan('r"\\("', context=_context)
+        union = self.union(Union(), _context)
+        self._scan('r"\\)"', context=_context)
+        node.set_query(union); return node
+
+    def expr_cmp(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'expr_cmp', [S])
+        expr_add = self.expr_add(S, _context)
+        c1 = expr_add
+        CMP_OP = self._scan('CMP_OP', context=_context)
+        cmp = Comparison(CMP_OP.upper(), c1)
+        expr_add = self.expr_add(S, _context)
+        cmp.append(expr_add); return cmp
+
+    def sort_term(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'sort_term', [S])
+        expr_add = self.expr_add(S, _context)
         sort_meth = self.sort_meth(_context)
-        return SortTerm(added_expr, sort_meth)
+        return SortTerm(expr_add, sort_meth)
 
     def sort_meth(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'sort_meth', [])
-        _token = self._peek('SORT_DESC', 'SORT_ASC', "','", "';'", 'LIMIT', 'OFFSET', context=_context)
+        _token = self._peek('SORT_DESC', 'SORT_ASC', "','", 'WHERE', 'HAVING', 'WITH', "';'", 'GROUPBY', 'ORDERBY', 'r"\\)"', 'LIMIT', 'OFFSET', context=_context)
         if _token == 'SORT_DESC':
             SORT_DESC = self._scan('SORT_DESC', context=_context)
             return 0
         elif _token == 'SORT_ASC':
             SORT_ASC = self._scan('SORT_ASC', context=_context)
             return 1
-        else: # in ["','", "';'", 'LIMIT', 'OFFSET']
+        else:
             return 1 # default to SORT_ASC
 
-    def limit_offset(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'limit_offset', [V])
-        limit = self.limit(V, _context)
-        offset = self.offset(V, _context)
+    def limit_offset(self, R, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'limit_offset', [R])
+        limit = self.limit(R, _context)
+        offset = self.offset(R, _context)
 
-    def limit(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'limit', [V])
+    def limit(self, R, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'limit', [R])
         _token = self._peek('LIMIT', 'OFFSET', "';'", context=_context)
         if _token == 'LIMIT':
             LIMIT = self._scan('LIMIT', context=_context)
             INT = self._scan('INT', context=_context)
-            V.set_limit(int(INT))
+            R.set_limit(int(INT))
         else: # in ['OFFSET', "';'"]
             pass
 
-    def offset(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'offset', [V])
+    def offset(self, R, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'offset', [R])
         _token = self._peek('OFFSET', "';'", context=_context)
         if _token == 'OFFSET':
             OFFSET = self._scan('OFFSET', context=_context)
             INT = self._scan('INT', context=_context)
-            V.set_offset(int(INT))
+            R.set_offset(int(INT))
         else: # == "';'"
             pass
 
-    def restr(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'restr', [V])
-        _token = self._peek('WHERE', 'GROUPBY', "';'", 'HAVING', 'r"\\)"', 'UNION', 'ORDERBY', 'LIMIT', 'OFFSET', context=_context)
+    def where(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'where', [S])
+        _token = self._peek('WHERE', 'HAVING', "';'", 'WITH', 'GROUPBY', 'ORDERBY', 'r"\\)"', 'LIMIT', 'OFFSET', context=_context)
         if _token == 'WHERE':
             WHERE = self._scan('WHERE', context=_context)
-            rels = self.rels(V, _context)
-            V.append(rels)
-        else:
+            restriction = self.restriction(S, _context)
+            S.set_where(restriction)
+        elif 1:
             pass
+        else:
+            raise runtime.SyntaxError(_token[0], 'Could not match where')
 
-    def rels(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'rels', [V])
-        ored_rels = self.ored_rels(V, _context)
-        lhs = ored_rels
-        while self._peek("','", 'r"\\)"', 'GROUPBY', "';'", 'HAVING', 'UNION', 'ORDERBY', 'LIMIT', 'OFFSET', context=_context) == "','":
+    def restriction(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'restriction', [S])
+        rels_or = self.rels_or(S, _context)
+        node = rels_or
+        while self._peek("','", 'r"\\)"', 'HAVING', "';'", 'WITH', 'GROUPBY', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', context=_context) == "','":
             self._scan("','", context=_context)
-            ored_rels = self.ored_rels(V, _context)
-            lhs = AND(lhs, ored_rels)
-        return lhs
+            rels_or = self.rels_or(S, _context)
+            node = And(node, rels_or)
+        return node
 
-    def ored_rels(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'ored_rels', [V])
-        anded_rels = self.anded_rels(V, _context)
-        lhs = anded_rels
-        while self._peek('OR', "','", 'r"\\)"', 'GROUPBY', "';'", 'HAVING', 'UNION', 'ORDERBY', 'LIMIT', 'OFFSET', context=_context) == 'OR':
+    def rels_or(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'rels_or', [S])
+        rels_and = self.rels_and(S, _context)
+        node = rels_and
+        while self._peek('OR', "','", 'r"\\)"', 'HAVING', "';'", 'WITH', 'GROUPBY', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', context=_context) == 'OR':
             OR = self._scan('OR', context=_context)
-            anded_rels = self.anded_rels(V, _context)
-            lhs = _OR(lhs,anded_rels)
-        return lhs
+            rels_and = self.rels_and(S, _context)
+            node = Or(node, rels_and)
+        return node
 
-    def anded_rels(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'anded_rels', [V])
-        not_rels = self.not_rels(V, _context)
-        lhs = not_rels
-        while self._peek('AND', 'OR', "','", 'r"\\)"', 'GROUPBY', "';'", 'HAVING', 'UNION', 'ORDERBY', 'LIMIT', 'OFFSET', context=_context) == 'AND':
+    def rels_and(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'rels_and', [S])
+        rels_not = self.rels_not(S, _context)
+        node = rels_not
+        while self._peek('AND', 'OR', "','", 'r"\\)"', 'HAVING', "';'", 'WITH', 'GROUPBY', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', context=_context) == 'AND':
             AND = self._scan('AND', context=_context)
-            not_rels = self.not_rels(V, _context)
-            lhs = _AND(lhs, not_rels)
-        return lhs
+            rels_not = self.rels_not(S, _context)
+            node = And(node, rels_not)
+        return node
 
-    def not_rels(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'not_rels', [V])
+    def rels_not(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'rels_not', [S])
         _token = self._peek('NOT', 'r"\\("', 'EXISTS', 'VARIABLE', context=_context)
         if _token == 'NOT':
             NOT = self._scan('NOT', context=_context)
-            rel = self.rel(V, _context)
-            not_ = Not(); not_.append(rel); return not_
+            rel = self.rel(S, _context)
+            node = Not(); node.append(rel); return node
         else: # in ['r"\\("', 'EXISTS', 'VARIABLE']
-            rel = self.rel(V, _context)
+            rel = self.rel(S, _context)
             return rel
 
-    def rel(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'rel', [V])
+    def rel(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'rel', [S])
         _token = self._peek('r"\\("', 'EXISTS', 'VARIABLE', context=_context)
         if _token != 'r"\\("':
-            base_rel = self.base_rel(V, _context)
-            return base_rel
+            rel_base = self.rel_base(S, _context)
+            return rel_base
         else: # == 'r"\\("'
             self._scan('r"\\("', context=_context)
-            rels = self.rels(V, _context)
+            restriction = self.restriction(S, _context)
             self._scan('r"\\)"', context=_context)
-            return rels
+            return restriction
 
-    def base_rel(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'base_rel', [V])
+    def rel_base(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'rel_base', [S])
         _token = self._peek('EXISTS', 'VARIABLE', context=_context)
         if _token == 'VARIABLE':
-            var = self.var(V, _context)
-            opt_left = self.opt_left(V, _context)
-            rtype = self.rtype(V, _context)
+            var = self.var(S, _context)
+            opt_left = self.opt_left(S, _context)
+            rtype = self.rtype(_context)
             rtype.append(var) ; rtype.set_optional(opt_left)
-            expr = self.expr(V, _context)
-            opt_right = self.opt_right(V, _context)
+            expr = self.expr(S, _context)
+            opt_right = self.opt_right(S, _context)
             rtype.append(expr) ; rtype.set_optional(opt_right) ; return rtype
         else: # == 'EXISTS'
             EXISTS = self._scan('EXISTS', context=_context)
             self._scan('r"\\("', context=_context)
-            rels = self.rels(V, _context)
+            restriction = self.restriction(S, _context)
             self._scan('r"\\)"', context=_context)
-            return Exists(rels)
+            return Exists(restriction)
 
-    def rtype(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'rtype', [V])
+    def rtype(self, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'rtype', [])
         R_TYPE = self._scan('R_TYPE', context=_context)
         return Relation(R_TYPE)
 
-    def opt_left(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'opt_left', [V])
+    def opt_left(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'opt_left', [S])
         _token = self._peek('QMARK', 'R_TYPE', context=_context)
         if _token == 'QMARK':
             QMARK = self._scan('QMARK', context=_context)
@@ -422,118 +458,129 @@ class Hercule(runtime.Parser):
         else: # == 'R_TYPE'
             pass
 
-    def opt_right(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'opt_right', [V])
-        _token = self._peek('QMARK', 'AND', 'OR', "','", 'r"\\)"', 'GROUPBY', "';'", 'HAVING', 'UNION', 'ORDERBY', 'LIMIT', 'OFFSET', context=_context)
+    def opt_right(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'opt_right', [S])
+        _token = self._peek('QMARK', 'AND', 'OR', "','", 'r"\\)"', 'HAVING', "';'", 'WITH', 'GROUPBY', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', context=_context)
         if _token == 'QMARK':
             QMARK = self._scan('QMARK', context=_context)
             return 'right'
         else:
             pass
 
-    def vars_decl(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'vars_decl', [V])
+    def variables(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'variables', [S])
+        vars = []
+        var = self.var(S, _context)
+        vars.append(var)
+        while self._peek("','", 'BEING', 'ORDERBY', 'WHERE', 'HAVING', 'WITH', "';'", 'GROUPBY', 'r"\\)"', 'LIMIT', 'OFFSET', context=_context) == "','":
+            self._scan("','", context=_context)
+            var = self.var(S, _context)
+            vars.append(var)
+        return vars
+
+    def decl_vars(self, R, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'decl_vars', [R])
         E_TYPE = self._scan('E_TYPE', context=_context)
-        var = self.var(V, _context)
-        while self._peek("','", 'R_TYPE', 'QMARK', 'WHERE', '":"', 'GROUPBY', "';'", 'MUL_OP', 'HAVING', 'ADD_OP', 'r"\\)"', 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'UNION', 'FROM', 'ORDERBY', 'LIMIT', 'OFFSET', 'AND', 'OR', context=_context) == "','":
-            V.add_main_variable(E_TYPE, var)
+        var = self.var(R, _context)
+        while self._peek("','", 'R_TYPE', 'QMARK', 'WHERE', '":"', 'HAVING', "';'", 'MUL_OP', 'BEING', 'WITH', 'GROUPBY', 'ORDERBY', 'ADD_OP', 'r"\\)"', 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'LIMIT', 'OFFSET', 'AND', 'OR', context=_context) == "','":
+            R.add_main_variable(E_TYPE, var)
             self._scan("','", context=_context)
             E_TYPE = self._scan('E_TYPE', context=_context)
-            var = self.var(V, _context)
-        V.add_main_variable(E_TYPE, var)
+            var = self.var(R, _context)
+        R.add_main_variable(E_TYPE, var)
 
-    def rels_decl(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'rels_decl', [V])
-        simple_rel = self.simple_rel(V, _context)
-        while self._peek("','", 'WHERE', 'GROUPBY', "';'", 'HAVING', 'r"\\)"', 'UNION', 'ORDERBY', 'LIMIT', 'OFFSET', context=_context) == "','":
-            V.add_main_relation(simple_rel)
+    def decl_rels(self, R, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'decl_rels', [R])
+        simple_rel = self.simple_rel(R, _context)
+        while self._peek("','", 'WHERE', 'HAVING', "';'", 'WITH', 'GROUPBY', 'ORDERBY', 'r"\\)"', 'LIMIT', 'OFFSET', context=_context) == "','":
+            R.add_main_relation(simple_rel)
             self._scan("','", context=_context)
-            simple_rel = self.simple_rel(V, _context)
-        V.add_main_relation(simple_rel)
+            simple_rel = self.simple_rel(R, _context)
+        R.add_main_relation(simple_rel)
 
-    def simple_rel(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'simple_rel', [V])
-        var = self.var(V, _context)
+    def simple_rel(self, R, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'simple_rel', [R])
+        var = self.var(R, _context)
         R_TYPE = self._scan('R_TYPE', context=_context)
         e = Relation(R_TYPE) ; e.append(var)
-        added_expr = self.added_expr(V, _context)
-        e.append(Comparison('=', added_expr)) ; return e
+        expr_add = self.expr_add(R, _context)
+        e.append(Comparison('=', expr_add)) ; return e
 
-    def expr(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'expr', [V])
+    def expr(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'expr', [S])
         _token = self._peek('CMP_OP', 'r"\\("', 'NULL', 'DATE', 'DATETIME', 'TRUE', 'FALSE', 'FLOAT', 'INT', 'STRING', 'SUBSTITUTE', 'VARIABLE', 'E_TYPE', 'FUNCTION', context=_context)
         if _token == 'CMP_OP':
             CMP_OP = self._scan('CMP_OP', context=_context)
-            added_expr = self.added_expr(V, _context)
-            return Comparison(CMP_OP.upper(), added_expr)
+            expr_add = self.expr_add(S, _context)
+            return Comparison(CMP_OP.upper(), expr_add)
         else:
-            added_expr = self.added_expr(V, _context)
-            return Comparison('=', added_expr)
+            expr_add = self.expr_add(S, _context)
+            return Comparison('=', expr_add)
 
-    def added_expr(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'added_expr', [V])
-        muled_expr = self.muled_expr(V, _context)
-        lhs = muled_expr
-        while self._peek('ADD_OP', "','", 'r"\\)"', 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'FROM', 'QMARK', 'WHERE', 'GROUPBY', 'HAVING', "';'", 'LIMIT', 'OFFSET', 'AND', 'UNION', 'OR', 'ORDERBY', context=_context) == 'ADD_OP':
+    def expr_add(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'expr_add', [S])
+        expr_mul = self.expr_mul(S, _context)
+        node = expr_mul
+        while self._peek('ADD_OP', 'r"\\)"', "','", 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'GROUPBY', 'QMARK', 'ORDERBY', 'WHERE', 'HAVING', 'WITH', "';'", 'AND', 'LIMIT', 'OFFSET', 'OR', context=_context) == 'ADD_OP':
             ADD_OP = self._scan('ADD_OP', context=_context)
-            muled_expr = self.muled_expr(V, _context)
-            lhs = MathExpression( ADD_OP, lhs, muled_expr )
-        return lhs
+            expr_mul = self.expr_mul(S, _context)
+            node = MathExpression( ADD_OP, node, expr_mul )
+        return node
 
-    def muled_expr(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'muled_expr', [V])
-        base_expr = self.base_expr(V, _context)
-        lhs = base_expr
-        while self._peek('MUL_OP', 'ADD_OP', "','", 'r"\\)"', 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'FROM', 'QMARK', 'WHERE', 'GROUPBY', 'HAVING', "';'", 'LIMIT', 'OFFSET', 'AND', 'UNION', 'OR', 'ORDERBY', context=_context) == 'MUL_OP':
+    def expr_mul(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'expr_mul', [S])
+        expr_base = self.expr_base(S, _context)
+        node = expr_base
+        while self._peek('MUL_OP', 'ADD_OP', 'r"\\)"', "','", 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'GROUPBY', 'QMARK', 'ORDERBY', 'WHERE', 'HAVING', 'WITH', "';'", 'AND', 'LIMIT', 'OFFSET', 'OR', context=_context) == 'MUL_OP':
             MUL_OP = self._scan('MUL_OP', context=_context)
-            base_expr = self.base_expr(V, _context)
-            lhs = MathExpression( MUL_OP, lhs, base_expr)
-        return lhs
+            expr_base = self.expr_base(S, _context)
+            node = MathExpression( MUL_OP, node, expr_base)
+        return node
 
-    def base_expr(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'base_expr', [V])
+    def expr_base(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'expr_base', [S])
         _token = self._peek('r"\\("', 'NULL', 'DATE', 'DATETIME', 'TRUE', 'FALSE', 'FLOAT', 'INT', 'STRING', 'SUBSTITUTE', 'VARIABLE', 'E_TYPE', 'FUNCTION', context=_context)
         if _token not in ['r"\\("', 'VARIABLE', 'E_TYPE', 'FUNCTION']:
             const = self.const(_context)
             return const
         elif _token == 'VARIABLE':
-            var = self.var(V, _context)
+            var = self.var(S, _context)
             return var
         elif _token == 'E_TYPE':
-            etype = self.etype(V, _context)
+            etype = self.etype(S, _context)
             return etype
         elif _token == 'FUNCTION':
-            func = self.func(V, _context)
+            func = self.func(S, _context)
             return func
         else: # == 'r"\\("'
             self._scan('r"\\("', context=_context)
-            added_expr = self.added_expr(V, _context)
+            expr_add = self.expr_add(S, _context)
             self._scan('r"\\)"', context=_context)
-            return added_expr
+            return expr_add
 
-    def func(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'func', [V])
+    def func(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'func', [S])
         FUNCTION = self._scan('FUNCTION', context=_context)
         self._scan('r"\\("', context=_context)
         F = Function(FUNCTION)
-        added_expr = self.added_expr(V, _context)
-        while self._peek("','", 'r"\\)"', 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'FROM', 'QMARK', 'WHERE', 'GROUPBY', 'HAVING', "';'", 'LIMIT', 'OFFSET', 'AND', 'UNION', 'OR', 'ORDERBY', context=_context) == "','":
-            F.append(added_expr)
+        expr_add = self.expr_add(S, _context)
+        while self._peek("','", 'r"\\)"', 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'GROUPBY', 'QMARK', 'ORDERBY', 'WHERE', 'HAVING', 'WITH', "';'", 'AND', 'LIMIT', 'OFFSET', 'OR', context=_context) == "','":
+            F.append(expr_add)
             self._scan("','", context=_context)
-            added_expr = self.added_expr(V, _context)
-        F.append(added_expr)
+            expr_add = self.expr_add(S, _context)
+        F.append(expr_add)
         self._scan('r"\\)"', context=_context)
         return F
 
-    def var(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'var', [V])
+    def var(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'var', [S])
         VARIABLE = self._scan('VARIABLE', context=_context)
-        return VariableRef(V.get_variable(VARIABLE))
+        return VariableRef(S.get_variable(VARIABLE))
 
-    def etype(self, V, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'etype', [V])
+    def etype(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'etype', [S])
         E_TYPE = self._scan('E_TYPE', context=_context)
-        return V.get_etype(E_TYPE)
+        return S.get_etype(E_TYPE)
 
     def const(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'const', [])

@@ -18,23 +18,20 @@ BAD_QUERIES = (
     
     'Any UPPER(Y) WHERE X name "toto"',
 
-    'Any C where C located P, P eid %(x)s ORDERBY N', #15066
+    'Any C ORDERBY N where C located P, P eid %(x)s', #15066
 
 #    'Any COUNT(X),P WHERE X concerns P', #9726
-    'Any X, MAX(COUNT(B)) WHERE B concerns X GROUPBY X;',
+    'Any X, MAX(COUNT(B)) GROUPBY X WHERE B concerns X;',
 
-    'Any X WHERE X nom "toto" UNION Any X,F WHERE X firstname F;',
+    '(Any X WHERE X nom "toto") UNION (Any X,F WHERE X firstname F);',
 
-    'Any Y WHERE X eid 12, X concerns Y UNION Any Y WHERE X eid 13, X located Y ORDERBY X',
-    
-    'Any X, X/Z FROM (Any SUM(X) WHERE X is Person) AS Y WHERE X is Person;',
+    'Any X, X/Z WHERE X is Person; WITH Y BEING (Any SUM(X) WHERE X is Person)',
     )
 
 OK_QUERIES = (
-    'Any N,COUNT(X) WHERE X name N GROUPBY N'
+    '(Any N,COUNT(X) GROUPBY N WHERE X name N)'
     ' UNION '
-    'Any N,COUNT(X) WHERE X firstname N GROUPBY N'
-    ' ORDERBY 2',
+    '(Any N,COUNT(X) GROUPBY N WHERE X firstname N)',
     )
 
 class CheckClassTest(TestCase):
@@ -76,13 +73,14 @@ class CheckClassTest(TestCase):
              'Any X WHERE 12 work_for X'),
             ('Any X WHERE X work_for Y, Y eid IN (12)',
              'Any X WHERE X work_for 12'),
-            ('Any X WHERE X work_for Y, Y eid IN (12) ORDERBY Y',
+            ('Any X ORDERBY Y WHERE X work_for Y, Y eid IN (12)',
              'Any X WHERE X work_for 12'),
             ('Any X WHERE X eid 12',
              'Any 12'),
             ('Any X WHERE X is Person, X eid 12',
              'Any 12'),
-            ('Any X,Y WHERE X eid 0, Y eid 1, X work_for Y', 'Any 0,1 WHERE 0 work_for 1'),
+            ('Any X,Y WHERE X eid 0, Y eid 1, X work_for Y',
+             'Any 0,1 WHERE 0 work_for 1'),
 # no more supported, use outerjoin explicitly
 #            ('Any X,Y WHERE X work_for Y OR NOT X work_for Y', 'Any X,Y WHERE X? work_for Y?'),
 #            ('Any X,Y WHERE NOT X work_for Y OR X work_for Y', 'Any X,Y WHERE X? work_for Y?'),
@@ -90,13 +88,19 @@ class CheckClassTest(TestCase):
             ("DISTINCT Any P WHERE P connait S OR S connait P, S name 'chouette'",
              "DISTINCT Any P WHERE P connait S, S name 'chouette'"),
             # queries that should not be rewritten
-            ('DELETE Person X WHERE X eid 12', 'DELETE Person X WHERE X eid 12'),
-            ('Any X WHERE X work_for Y, Y eid IN (12, 13)', 'Any X WHERE X work_for Y, Y eid IN(12, 13)'),
-            ('Any X WHERE X work_for Y, NOT Y eid 12', 'Any X WHERE X work_for Y, NOT Y eid 12'),
-            ('Any X WHERE NOT X eid 12', 'Any X WHERE NOT X eid 12'),
-            ('Any N WHERE X eid 12, X name N', 'Any N WHERE X eid 12, X name N'),
+            ('DELETE Person X WHERE X eid 12',
+             'DELETE Person X WHERE X eid 12'),
+            ('Any X WHERE X work_for Y, Y eid IN (12, 13)',
+             'Any X WHERE X work_for Y, Y eid IN(12, 13)'),
+            ('Any X WHERE X work_for Y, NOT Y eid 12',
+             'Any X WHERE X work_for Y, NOT Y eid 12'),
+            ('Any X WHERE NOT X eid 12',
+             'Any X WHERE NOT X eid 12'),
+            ('Any N WHERE X eid 12, X name N',
+             'Any N WHERE X eid 12, X name N'),
 
-            ('Any X WHERE X eid > 12', 'Any X WHERE X eid > 12'),
+            ('Any X WHERE X eid > 12',
+             'Any X WHERE X eid > 12'),
             
             ('Any X WHERE X eid 12, X connait P?, X work_for Y',
              'Any X WHERE X eid 12, X connait P?, X work_for Y'),
@@ -111,11 +115,11 @@ class CheckClassTest(TestCase):
             ('Any X WHERE X eid 12, EXISTS(X name "hop" OR X work_for Y?)',
              "Any 12 WHERE EXISTS((A name 'hop') OR (A work_for Y?), 12 identity A)"),
             
-            ('Any X WHERE X eid 12 UNION Any X WHERE X eid 13 ORDERBY X',
+            ('(Any X WHERE X eid 12) UNION (Any X ORDERBY X WHERE X eid 13)',
              'Any 12 UNION Any 13'),
 
-            ('Any X FROM (Any X WHERE X eid 12) AS X',
-             'Any X FROM (Any 12) AS X'),
+            ('Any X WITH X BEING (Any X WHERE X eid 12)',
+             'Any X WITH X BEING (Any 12)'),
             ):
             yield self._test_rewrite, rql, expected
 
@@ -185,13 +189,13 @@ class AnnotateTest(TestCase):
         self.assertEquals(len(C.stinfo['relations']), 2)
 
     def test_subquery_annotation(self):
-        rqlst = self.parse('Any X FROM (Any X WHERE C is Company, EXISTS(X work_for C)) AS X').children[0]
-        C = rqlst.from_[0].children[0].defined_vars['C']
+        rqlst = self.parse('Any X WITH X BEING (Any X WHERE C is Company, EXISTS(X work_for C))').children[0]
+        C = rqlst.with_[0].query.children[0].defined_vars['C']
         self.failIf(C.scope is rqlst, C.scope)
         self.assertEquals(len(C.stinfo['relations']), 1)
-        rqlst = self.parse('Any X,ET FROM (Any X, ET WHERE C is ET, EXISTS(X work_for C)) AS (X,ET)').children[0]
-        C = rqlst.from_[0].children[0].defined_vars['C']
-        self.failUnless(C.scope is rqlst.from_[0].children[0], C.scope)
+        rqlst = self.parse('Any X,ET WITH X,ET BEING (Any X, ET WHERE C is ET, EXISTS(X work_for C))').children[0]
+        C = rqlst.with_[0].query.children[0].defined_vars['C']
+        self.failUnless(C.scope is rqlst.with_[0].query.children[0], C.scope)
         self.assertEquals(len(C.stinfo['relations']), 2)
         
 if __name__ == '__main__':

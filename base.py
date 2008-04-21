@@ -14,6 +14,10 @@ class BaseNode(object):
     def __str__(self):
         return self.as_string(encoding='utf-8')
 
+    def as_string(self, encoding=None, kwargs=None):
+        """return the tree as an encoded rql string"""
+        raise NotImplementedError()
+
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node
 
@@ -88,6 +92,16 @@ class BaseNode(object):
         if not path:
             return self
         return self.children[path[0]].go_to_index_path(path[1:])
+    
+    def copy(self, stmt):
+        """create and return a copy of this node and its descendant
+
+        stmt is the root node, which should be use to get new variables
+        """
+        new = self.__class__(*self.initargs(stmt))
+        for child in self.children:
+            new.append(child.copy(stmt))
+        return new
 
         
 class Node(BaseNode):
@@ -119,16 +133,7 @@ class Node(BaseNode):
         self.children.pop(i)
         self.children.insert(i, new_child)
         new_child.parent = self
-    
-    def copy(self, stmt):
-        """create and return a copy of this node and its descendant
 
-        stmt is the root node, which should be use to get new variables
-        """
-        new = self.__class__(*self.initargs(stmt))
-        for child in self.children:
-            new.append(child.copy(stmt))
-        return new
 
 class BinaryNode(Node):
     __slots__ = ()
@@ -167,5 +172,4 @@ class LeafNode(BaseNode):
         stmt is the root node, which should be use to get new variables
         """
         return self.__class__(*self.initargs(stmt))
-    
     

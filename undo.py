@@ -8,6 +8,7 @@
 __docformat__ = "restructuredtext en"
 
 from rql.nodes import VariableRef, Variable, BinaryNode
+from rql.stmts import Select
 
 class SelectionManager:
     """manage the operation stacks"""
@@ -124,14 +125,20 @@ class RemoveNodeOperation(NodeOperation):
     def __init__(self, node):
         NodeOperation.__init__(self, node)
         self.node_parent = node.parent
-        self.index = node.parent.children.index(node)
+        if isinstance(self.node_parent, Select):
+            assert self.node is self.node_parent.where
+        else:
+            self.index = node.parent.children.index(node)
         # XXX FIXME : find a better way to do that
         # needed when removing a BinaryNode's child
         self.binary_remove = isinstance(self.node_parent, BinaryNode)
         if self.binary_remove:
             self.gd_parent = self.node_parent.parent
-            self.parent_index = self.gd_parent.children.index(self.node_parent)
-            
+            if isinstance(self.gd_parent, Select):
+                assert self.node_parent is self.gd_parent.where
+            else:
+                self.parent_index = self.gd_parent.children.index(self.node_parent)
+                
     def undo(self, selection):
         """undo the operation on the selection"""
         if self.binary_remove:
@@ -142,8 +149,13 @@ class RemoveNodeOperation(NodeOperation):
             # 'node_parent'. We must Reparent it manually !
             node_sibling = self.node_parent.children[0]
             node_sibling.parent = self.node_parent
-            self.node_parent.insert(self.index, self.node) 
-            self.gd_parent.children[self.parent_index] = self.node_parent
+            self.node_parent.insert(self.index, self.node)
+            if isinstance(self.gd_parent, Select):
+                self.gd_parent.where = self.node_parent
+            else:
+                self.gd_parent.children[self.parent_index] = self.node_parent
+        elif isinstance(self.node_parent, Select):
+            self.node_parent.where = self.node
         else:
             self.node_parent.insert(self.index, self.node)
         # register reference from the removed node
@@ -155,14 +167,14 @@ class AddSortOperation(NodeOperation):
 
     def undo(self, selection):
         """undo the operation on the selection"""
-        selection.remove_sort_term(self.node)
+        self.stmt.remove_sort_term(self.node)
     
 class RemoveSortOperation(NodeOperation):
-    """defines how to undo 'add sort'"""
+    """defines how to undo 'remove sort'"""
 
     def undo(self, selection):
         """undo the operation on the selection"""
-        selection.add_sort_term(self.node)
+        self.stmt.add_sort_term(self.node)
     
 class AddGroupOperation(NodeOperation):
     """defines how to undo 'add group'"""
@@ -170,6 +182,13 @@ class AddGroupOperation(NodeOperation):
     def undo(self, selection):
         """undo the operation on the selection"""
         self.stmt.remove_group_var(self.node)
+    
+class RemoveGroupOperation(NodeOperation):
+    """defines how to undo 'remove group'"""
+
+    def undo(self, selection):
+        """undo the operation on the selection"""
+        self.stmt.add_group_var(self.node)
 
 # misc operations #############################################################
 
