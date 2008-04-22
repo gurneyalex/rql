@@ -47,8 +47,8 @@ variables:
 from warnings import warn
 from rql.stmts import Union, Select, Delete, Insert, Set
 from rql.nodes import *
-
-
+def warn(*args):
+    raise Exception()
 def unquote(string):
     """Remove quotes from a string."""
     if string.startswith('"'):

@@ -343,7 +343,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         elif copy_solutions and self.solutions is not None:
             new.solutions = deepcopy(self.solutions)
         if self.with_:
-            new.set_with([sq.copy(new) for sq in self.with_])
+            new.set_with([sq.copy(new) for sq in self.with_], check=False)
         for child in self.selection:
             new.append_selected(child.copy(new))
         if self.groupby:
@@ -393,29 +393,37 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             node.parent = self
             
     def set_with(self, terms, check=True):
-        self.with_ = terms
+        self.with_ = []
         for node in terms:
-            node.parent = self
-            if check and len(node.aliases) != len(node.query.children[0].selection):
-                raise BadRQLQuery('Should have the same number of aliases than '
-                                  'selected terms in sub-query')
-            for i, alias in enumerate(node.aliases):
-                alias = alias.name
-                if alias in self.aliases:
-                    raise BadRQLQuery('Duplicated alias %s' % alias)
-                self.aliases[alias] = nodes.ColumnAlias(alias, i, node.query)
-                # alias may already have been used as a regular variable, replace it
-                if alias in self.defined_vars:
-                    for vref in self.defined_vars.pop(alias).references():
-                        vref.variable = self.aliases[alias]
-
-
-    def get_variable(self, name):
+            self.add_subquery(node, check)
+            
+    def add_subquery(self, node, check=True):
+        assert node.query
+        node.parent = self
+        self.with_.append(node)
+        if check and len(node.aliases) != len(node.query.children[0].selection):
+            raise BadRQLQuery('Should have the same number of aliases than '
+                              'selected terms in sub-query')
+        for i, alias in enumerate(node.aliases):
+            alias = alias.name
+            if check and alias in self.aliases:
+                raise BadRQLQuery('Duplicated alias %s' % alias)
+            ca = self.get_variable(alias, i)
+            ca.query = node.query
+            
+    def get_variable(self, name, colnum=None):
         """get a variable instance from its name
         
         the variable is created if it doesn't exist yet
         """
         if name in self.aliases:
+            return self.aliases[name]
+        if colnum is not None: # take care, may be 0
+            self.aliases[name] = nodes.ColumnAlias(name, colnum)
+            # alias may already have been used as a regular variable, replace it
+            if name in self.defined_vars:
+                for vref in self.defined_vars.pop(name).references():
+                    vref.variable = self.aliases[name]
             return self.aliases[name]
         return super(Select, self).get_variable(name)
     
@@ -548,7 +556,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         """add var in 'orderby' constraints
         asc is a boolean indicating the group order (ascendent or descendent)
         """
-        if self.groupby is None:
+        if not self.groupby:
             self.groupby = []
         vref = nodes.variable_ref(var)
         vref.register_reference()
@@ -578,7 +586,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         self.add_sort_term(term)
         
     def add_sort_term(self, term):
-        if self.orderby is None:
+        if not self.orderby:
             self.orderby = []
         self.orderby.append(term)
         term.parent = self
@@ -608,8 +616,12 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             self.orderby = None
 
     def select_only_variables(self):
-        self.selection = [vref for term in self.selection
-                         for vref in term.iget_nodes(nodes.VariableRef)]
+        selection = []
+        for term in self.selection:
+            for vref in term.iget_nodes(nodes.VariableRef):
+                if not vref in selection:
+                    selection.append(vref)
+        self.selection = selection
 
     
 class Delete(Statement, ScopeNode):
