@@ -135,7 +135,7 @@ class ETypeResolver:
         
     visit_delete = visit_insert
     
-    def visit_update(self, node):
+    def visit_set(self, node):
         if not node.defined_vars:
             node.set_possible_types([{}])
             return

@@ -39,6 +39,7 @@ class RQLSTChecker(object):
         errors = []
         self._visit(node, errors)
         if errors:
+            print node
             raise BadRQLQuery('%s\n** %s' % (node, '\n** '.join(errors)))
         #if node.TYPE == 'select' and \
         #       not node.defined_vars and not node.get_restriction():
@@ -133,7 +134,6 @@ class RQLSTChecker(object):
         
     def visit_set(self, update, errors):
         self._visit_selectedterm(update, errors)
-        assert len(update.children) <= 1                
     def leave_set(self, node, errors):
         pass                
 

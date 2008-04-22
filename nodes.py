@@ -247,6 +247,12 @@ class EditableMixIn(object):
 class SubQuery(BaseNode):
     """WITH clause"""
     __slots__ = ('aliases', 'query')
+    def __init__(self, aliases=None, query=None):
+        if aliases is not None:
+            self.set_aliases(aliases)
+        if query is not None:
+            self.set_query(query)
+            
     def set_aliases(self, aliases):
         self.aliases = aliases
         for node in aliases:
@@ -257,9 +263,8 @@ class SubQuery(BaseNode):
         node.parent = self
 
     def copy(self, stmt):
-        self.set_aliases([v.copy(stmt) for v in self.aliases])
-        self.set_query(self.query.copy())
-        
+        return SubQuery([v.copy(stmt) for v in self.aliases], self.query.copy())
+    
     @property
     def children(self):
         return self.aliases + [self.query]
@@ -331,6 +336,10 @@ class Exists(EditableMixIn, BaseNode):
         if restriction is not None:
             self.set_where(restriction)
 
+    def copy(self, stmt):
+        new = self.query.copy(stmt)
+        return Exists(new)
+    
     @property
     def children(self):
         return (self.query,)
@@ -352,6 +361,11 @@ class Exists(EditableMixIn, BaseNode):
     @property
     def where(self):
         return self.query
+    
+    def replace(self, oldnode, newnode):
+        assert oldnode is self.query
+        self.query = newnode
+        newnode.parent = self
 
     @property
     def scope(self):
@@ -721,7 +735,10 @@ class VariableRef(HSMixin, LeafNode):
 
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node"""
-        newvar = stmt.get_variable(self.name)
+        if isinstance(self.variable, ColumnAlias):
+            newvar = stmt.get_variable(self.name, self.variable.colnum)
+        else:
+            newvar = stmt.get_variable(self.name)
         newvar.init_copy(self.variable)
         return (newvar,)
 

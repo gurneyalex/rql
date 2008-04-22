@@ -146,8 +146,6 @@ class AnalyzerClassTest(TestCase):
             if DEBUG:
                 print rql
             node = self.helper.parse(rql)
-            print rql
-            print node
             self.assertRaises(TypeResolverException,
                               self.helper.compute_solutions, node, debug=DEBUG)
         
@@ -270,12 +268,6 @@ class AnalyzerClassTest(TestCase):
         sols = sorted(node.children[0].solutions)
         self.assertEqual(sols, [{'E2': 'Person', 'E1': 'String'}])
 
-    def test_insert_1(self):
-        node = self.helper.parse('INSERT Person X : X name "toto", X work_for Y WHERE Y name "logilab"')
-        self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.solutions)
-        self.assertEqual(sols, [{'X': 'Person', 'Y': 'Company'}])
-
     def test_relation_eid(self):
         node = self.helper.parse('Any E2 WHERE E2 work_for E1, E2 eid 2')
         self.helper.compute_solutions(node, debug=DEBUG)
@@ -348,6 +340,25 @@ class AnalyzerClassTest(TestCase):
         self.assertEqual(node.children[0].with_[0].query.children[0].solutions, [{'X': 'Person'}])
         self.assertEqual(node.children[0].solutions, [{'X': 'Person', 'Y': 'Person',
                                                        'L': 'Address'}])
+
+    def test_insert(self):
+        node = self.helper.parse('INSERT Person X : X name "toto", X work_for Y WHERE Y name "logilab"')
+        self.helper.compute_solutions(node, debug=DEBUG)
+        sols = sorted(node.solutions)
+        self.assertEqual(sols, [{'X': 'Person', 'Y': 'Company'}])
+
+    def test_delete(self):
+        node = self.helper.parse('DELETE Person X WHERE X name "toto", X work_for Y')
+        self.helper.compute_solutions(node, debug=DEBUG)
+        sols = sorted(node.solutions)
+        self.assertEqual(sols, [{'X': 'Person', 'Y': 'Company'}])
+
+    def test_set(self):
+        node = self.helper.parse('SET X name "toto", X work_for Y WHERE Y name "logilab"')
+        self.helper.compute_solutions(node, debug=DEBUG)
+        sols = sorted(node.solutions)
+        self.assertEqual(sols, [{'X': 'Person', 'Y': 'Company'}])
+
         
     def test_nongrer_not_u_ownedby_u(self):
         node = self.helper.parse('Any U WHERE NOT U owned_by U')

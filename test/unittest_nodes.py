@@ -238,6 +238,9 @@ class NodesTest(TestCase):
         tree = self._parse("Any X WHERE X name 1.0 LIMIT 10 OFFSET 10")
         self.assertEqual(tree.limit, 10)
         self.assertEqual(tree.offset, 10)
+
+    def test_exists(self):
+        tree = self._simpleparse("Any X,N WHERE X is Person, X name N, EXISTS(X work_for Y)")
         
     def test_copy(self):
         tree = self._parse("Any X,LOWER(Y) GROUPBY N ORDERBY N WHERE X is Person, X name N, X date >= TODAY")
@@ -254,7 +257,7 @@ class NodesTest(TestCase):
         annotator.annotate(tree)
         self.assertEquals(tree.defined_vars['X'].selected_index(), 0)
         self.assertEquals(tree.defined_vars['N'].selected_index(), None)
-            
+        
     # insertion tests #########################################################
 
     def test_insert_base_1(self):
