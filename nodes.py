@@ -287,10 +287,10 @@ class And(BinaryNode):
     def __repr__(self):
         return '%s AND %s' % (repr(self.children[0]), repr(self.children[1]))
     
-    def ored_rel(self, _fromnode=None):
-        return self.parent.ored_rel(_fromnode or self)
-    def neged_rel(self, _fromnode=None):
-        return self.parent.neged_rel(_fromnode or self)
+    def ored(self, _fromnode=None):
+        return self.parent.ored(_fromnode or self)
+    def neged(self, _fromnode=None):
+        return self.parent.neged(_fromnode or self)
 
     
 class Or(BinaryNode):
@@ -304,10 +304,10 @@ class Or(BinaryNode):
     def __repr__(self):
         return '%s OR %s' % (repr(self.children[0]), repr(self.children[1]))
     
-    def ored_rel(self, _fromnode=None):
+    def ored(self, _fromnode=None):
         return self
-    def neged_rel(self, _fromnode=None):
-        return self.parent.neged_rel(_fromnode or self)
+    def neged(self, _fromnode=None):
+        return self.parent.neged(_fromnode or self)
 
 
 class Not(Node):
@@ -322,9 +322,9 @@ class Not(Node):
     def __repr__(self, encoding=None, kwargs=None):
         return 'NOT (%s)' % repr(self.children[0])
     
-    def ored_rel(self, _fromnode=None):
-        return self.parent.ored_rel(_fromnode or self)
-    def neged_rel(self, _fromnode=None):
+    def ored(self, _fromnode=None):
+        return self.parent.ored(_fromnode or self)
+    def neged(self, _fromnode=None):
         return self
 
 
@@ -371,14 +371,16 @@ class Exists(EditableMixIn, BaseNode):
     def scope(self):
         return self
     
-    def ored_rel(self, _fromnode=None):
-        if _fromnode: # stop here
+    def ored(self, _fromnode=None):
+        if _fromnode is not None: # stop here
             return False
-        return self.parent.ored_rel(_fromnode or self)
-    def neged_rel(self, _fromnode=None):
-        if _fromnode: # stop here
+        return self.parent.ored(self)
+    def neged(self, _fromnode=None, strict=False):
+        if _fromnode is not None: # stop here
             return False
-        return self.parent.neged_rel(_fromnode or self)
+        if strict:
+            return isinstance(self.parent, Not)
+        return self.parent.neged(self)
 
     
 class Relation(Node):
@@ -439,12 +441,12 @@ class Relation(Node):
         """return the parent relation where self occurs or None"""
         return self
     
-    def ored_rel(self, _fromnode=None):
-        return self.parent.ored_rel(_fromnode or self)
-    def neged_rel(self, _fromnode=None, strict=False):
+    def ored(self, _fromnode=None):
+        return self.parent.ored(_fromnode or self)
+    def neged(self, _fromnode=None, strict=False):
         if strict:
             return isinstance(self.parent, Not)
-        return self.parent.neged_rel(_fromnode or self)
+        return self.parent.neged(_fromnode or self)
 
     def is_types_restriction(self):
         if self.r_type != 'is':

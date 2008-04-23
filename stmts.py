@@ -131,9 +131,9 @@ class Statement(object):
     def scope(self):
         return self
     
-    def ored_rel(self, _fromnode=None):
+    def ored(self, _fromnode=None):
         return None
-    def neged_rel(self, _fromnode=None):
+    def neged(self, _fromnode=None, strict=False):
         return None
 
     def check_references(self):
