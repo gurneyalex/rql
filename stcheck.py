@@ -193,7 +193,7 @@ class RQLSTChecker(object):
         pass
     
     def visit_relation(self, relation, errors):
-        if relation.optional and relation.neged_rel():
+        if relation.optional and relation.neged():
                 errors.append("can use optional relation under NOT (%s)"
                               % relation.as_string())
         # special case "X identity Y"
