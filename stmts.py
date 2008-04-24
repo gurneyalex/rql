@@ -591,9 +591,11 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         if self.should_register_op:
             from rql.undo import RemoveGroupOperation
             self.undo_manager.add_operation(RemoveGroupOperation(vref))
-        if not self.groupby:
-            self.groupby = None
 
+    def remove_groups(self):
+        for vref in self.groupby:
+            self.remove_group_var(vref)
+            
     def add_sort_var(self, var, asc=True):
         """add var in 'orderby' constraints
         asc is a boolean indicating the sort order (ascendent or descendent)
@@ -630,8 +632,6 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         for vref in term.iget_nodes(nodes.VariableRef):
             vref.unregister_reference()
         self.orderby.remove(term)
-        if not self.orderby:
-            self.orderby = None
 
     def select_only_variables(self):
         selection = []
