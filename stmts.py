@@ -109,7 +109,8 @@ class Statement(object):
 
     # default values for optional instance attributes, set on the instance when
     # used
-    schema = None    # ISchema
+    schema = None     # ISchema
+    annotated = False # set by the annotator
     
 #     def __init__(self):
 #         Node.__init__(self)
@@ -204,6 +205,23 @@ class Union(Statement, Node):
         return new
 
     # union specific methods ##################################################
+
+    def locate_subquery(self, col, etype, kwargs=None):
+        if len(self.children) == 1:
+            return self.children[0]
+        try:
+            return self._subq_cache[(col, etype)]
+        except AttributeError:
+            self._subq_cache = {}
+        except KeyError:
+            pass
+        for select in self.children:
+            term = select.selection[col]
+            for i, solution in enumerate(select.solutions):
+                if term.get_type(solution, kwargs) == etype:
+                    self._subq_cache[(col, etype)] = select
+                    return select
+        raise Exception('internal error, %s not found on col %s' % (etype, col))
     
     def set_limit(self, limit):
         if limit is not None and (not isinstance(limit, (int, long)) or limit <= 0):
