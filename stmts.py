@@ -205,23 +205,32 @@ class Union(Statement, Node):
         return new
 
     # union specific methods ##################################################
+    
+    def _locate_subquery(self, col, etype, kwargs):
+        if len(self.children) == 1 and not self.children[0].with_:
+            return self.children[0]
+        for select in self.children:
+            term = select.selection[col]
+            try:
+                if term.name in select.aliases:
+                    union = select.aliases[term.name].query
+                    return union._locate_subquery(col, etype, kwargs)
+            except AttributeError:
+                pass
+            for i, solution in enumerate(select.solutions):
+                if term.get_type(solution, kwargs) == etype:
+                    return select
+        raise Exception('internal error, %s not found on col %s' % (etype, col))
 
     def locate_subquery(self, col, etype, kwargs=None):
-        if len(self.children) == 1:
-            return self.children[0]
         try:
             return self._subq_cache[(col, etype)]
         except AttributeError:
             self._subq_cache = {}
         except KeyError:
             pass
-        for select in self.children:
-            term = select.selection[col]
-            for i, solution in enumerate(select.solutions):
-                if term.get_type(solution, kwargs) == etype:
-                    self._subq_cache[(col, etype)] = select
-                    return select
-        raise Exception('internal error, %s not found on col %s' % (etype, col))
+        self._subq_cache[(col, etype)] = self._locate_subquery(col, etype, kwargs)
+        return self._subq_cache[(col, etype)]
     
     def set_limit(self, limit):
         if limit is not None and (not isinstance(limit, (int, long)) or limit <= 0):
