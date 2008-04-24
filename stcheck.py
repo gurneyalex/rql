@@ -282,18 +282,9 @@ class RQLSTAnnotator(object):
     def annotate(self, node):
         #assert not node.annotated
         node.accept(self)
-        #node.annotated = True
-
-    visit_insert = visit_delete = visit_set = lambda s,n: None
-    
-    def visit_union(self, node):
-        for select in node.children:
-            self.visit_select(select)
-            
-    def visit_select(self, node):
-        if node.with_ is not None:
-            for subquery in node.with_:
-                self.visit_union(subquery.query)
+        node.annotated = True
+        
+    def _visit_stmt(self, node):
         for i, term in enumerate(node.selection):
             for func in term.iget_nodes(Function):
                 if func.descr().aggregat:
@@ -305,6 +296,18 @@ class RQLSTAnnotator(object):
                 vref.variable.set_scope(node)
         if node.where is not None:
             node.where.accept(self, node)
+
+    visit_insert = visit_delete = visit_set = _visit_stmt
+    
+    def visit_union(self, node):
+        for select in node.children:
+            self.visit_select(select)
+            
+    def visit_select(self, node):
+        if node.with_ is not None:
+            for subquery in node.with_:
+                self.visit_union(subquery.query)
+        self._visit_stmt(node)
             
     def rewrite_shared_optional(self, exists, var):
         """if variable is shared across multiple scopes, need some tree
