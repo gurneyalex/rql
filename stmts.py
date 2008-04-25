@@ -490,6 +490,14 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
                 yield node
 
     # construction helper methods #############################################
+    
+    def save_state(self):
+        """save the current tree"""
+        self.parent.save_state()
+
+    def recover(self):
+        """reverts the tree as it was when save_state() was last called"""
+        self.parent.recover()
 
     def append_selected(self, term):
         if isinstance(term, nodes.Constant) and term.type == 'etype':
