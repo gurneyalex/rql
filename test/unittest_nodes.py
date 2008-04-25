@@ -376,11 +376,12 @@ class NodesTest(TestCase):
         tree = parse("Any N,COUNT(X),NOW-D GROUPBY N WHERE X name N, X creation_date D;")
         annotator.annotate(tree)
         tree.schema = schema
-        self.assertEqual(tree.get_description(), [['name', 'COUNT(name)', 'creation_date']])
-        self.assertEqual(tree.where.selected[0].get_type(), 'Any')
-        self.assertEqual(tree.where.selected[1].get_type(), 'Int')
-        self.assertEqual(tree.where.defined_vars['D'].get_type({'D': 'Datetime'}), 'Datetime')
-        self.assertEqual(tree.where.selected[2].get_type({'D': 'Datetime'}), 'Interval')
+        self.assertEqual(tree.get_description(), [['name', 'COUNT(Any)', 'creation_date']])
+        select = tree.children[0]
+        self.assertEqual(select.selection[0].get_type(), 'Any')
+        self.assertEqual(select.selection[1].get_type(), 'Int')
+        self.assertEqual(select.defined_vars['D'].get_type({'D': 'Datetime'}), 'Datetime')
+        self.assertEqual(select.selection[2].get_type({'D': 'Datetime'}), 'Interval')
 
     def test_repr_encoding(self):
         tree = parse(u'Any N where NOT N has_text "bidüle"')

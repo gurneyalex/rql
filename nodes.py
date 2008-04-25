@@ -968,7 +968,7 @@ class Variable(object):
                 if self.name == rel.children[0].name:
                     etype = str(rel.children[1].children[0].value)
                 else:
-                    etype = 'Eetype' # XXX ginco specific
+                    etype = 'EEType' # XXX ginco specific
                 continue
             if schema is not None:
                 rschema = schema.rschema(rel.r_type)

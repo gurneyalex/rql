@@ -3,6 +3,8 @@ from logilab.common.testlib import TestCase, unittest_main
 from rql import RQLHelper, TypeResolverException
 from rql.analyze import UnifyingETypeResolver, ETypeResolver
 
+FINAL_ETYPES = ('String', 'Boolean', 'Int', 'Float', 'Date', 'Datetime')
+
 class ERSchema:
 
     def __cmp__(self, other):
@@ -38,14 +40,14 @@ class RelationSchema(ERSchema):
         return self.obj_types
 
     def is_final(self):
-        return self.obj_types[0] in ('String', 'Boolean', 'Int', 'Float', 'Date')
+        return self.obj_types[0] in FINAL_ETYPES
 
 class EntitySchema(ERSchema):
     def __init__(self, type):
         self.type = type
 
     def is_final(self):
-        return self.type in ('String', 'Boolean', 'Int', 'Float', 'Date')
+        return self.type in FINAL_ETYPES
     
 class DummySchema:
     _types = {}
