@@ -39,7 +39,6 @@ class RQLSTChecker(object):
         errors = []
         self._visit(node, errors)
         if errors:
-            print node
             raise BadRQLQuery('%s\n** %s' % (node, '\n** '.join(errors)))
         #if node.TYPE == 'select' and \
         #       not node.defined_vars and not node.get_restriction():
@@ -155,6 +154,16 @@ class RQLSTChecker(object):
             for select in sortterm.root.children:
                 if len(select.selection) < term.value:
                     errors.append('order column out of bound %s' % term.value)
+        else:
+            stmt = term.stmt
+            for tvref in term.iget_nodes(VariableRef):
+                for vref in tvref.variable.references():
+                    if vref.relation() or vref in stmt.selection:
+                        break
+                else:
+                    msg = 'sort variable %s is not referenced any where else'
+                    errors.append(msg % tvref.name)
+                    
     def leave_sortterm(self, node, errors):
         pass
     
@@ -193,6 +202,8 @@ class RQLSTChecker(object):
         pass
     
     def visit_relation(self, relation, errors):
+        if not relation.r_type in self.schema:
+            errors.append('unknown relation %s' % relation.r_type)
         if relation.optional and relation.neged():
                 errors.append("can use optional relation under NOT (%s)"
                               % relation.as_string())
@@ -260,9 +271,13 @@ class RQLSTChecker(object):
 
     def visit_constant(self, constant, errors):
         assert len(constant.children)==0
-        if constant.type == 'etype' and constant.relation().r_type != 'is':
-            msg ='using an entity type in only allowed with "is" relation'
-            errors.append(msg)
+        if constant.type == 'etype':
+            if constant.relation().r_type != 'is':
+                msg ='using an entity type in only allowed with "is" relation'
+                errors.append(msg)
+            if not constant.value in self.schema:
+                errors.append('unknown entity type %s' % constant.value)
+                
     def leave_constant(self, node, errors):
         pass 
 
