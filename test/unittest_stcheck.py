@@ -15,6 +15,10 @@ BAD_QUERIES = (
     'Any X WHERE X name nofunction(Y)',
     
     'Any Y WHERE X name "toto"',
+
+    'Any X WHERE X noattr "toto"',
+    
+    'Any X WHERE X is NonExistant',
     
     'Any UPPER(Y) WHERE X name "toto"',
 
@@ -153,9 +157,9 @@ class CopyTest(TestCase):
         stmt = root.children[0]
         self.assertEquals(stmt.defined_vars['U'].valuable_references(), 3)
         copy = stmts.Select()
-        copy.append_selected(stmt.selected[0].copy(copy))
-        copy.append_selected(stmt.selected[1].copy(copy))
-        copy.append(stmt.get_restriction().copy(copy))
+        copy.append_selected(stmt.selection[0].copy(copy))
+        copy.append_selected(stmt.selection[1].copy(copy))
+        copy.set_where(stmt.where.copy(copy))
         newroot = stmts.Union()
         newroot.append(copy)
         self.annotate(newroot)
