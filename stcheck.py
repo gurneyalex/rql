@@ -156,7 +156,7 @@ class RQLSTChecker(object):
                     errors.append('order column out of bound %s' % term.value)
         else:
             stmt = term.stmt
-            for tvref in term.iget_nodes(VariableRef):
+            for tvref in variable_refs(term):
                 for vref in tvref.variable.references():
                     if vref.relation() or vref in stmt.selection:
                         break
