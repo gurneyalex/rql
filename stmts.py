@@ -32,7 +32,7 @@ def _check_references(defined, varrefs):
 
 
 class ScopeNode(BaseNode):
-    solutions = None # list of possibles solutions for used variables
+    solutions = ()   # list of possibles solutions for used variables
     _varmaker = None # variable names generator, built when necessary
     where = None     # where clause node
     
@@ -53,7 +53,7 @@ class ScopeNode(BaseNode):
             new.schema = self.schema
         if solutions is not None:
             new.solutions = solutions
-        elif copy_solutions and self.solutions is not None:
+        elif copy_solutions and self.solutions:
             new.solutions = deepcopy(self.solutions)
         return new
 
@@ -386,11 +386,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         return 'Any ' + ' '.join(s)
                                       
     def copy(self, copy_solutions=True, solutions=None):
-        new = Select()
-        if solutions is not None:
-            new.solutions = solutions
-        elif copy_solutions and self.solutions is not None:
-            new.solutions = deepcopy(self.solutions)
+        new = ScopeNode.copy(self, copy_solutions, solutions)
         if self.with_:
             new.set_with([sq.copy(new) for sq in self.with_], check=False)
         for child in self.selection:
