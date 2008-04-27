@@ -62,8 +62,9 @@ class CheckClassTest(TestCase):
             yield self.parse, rql
         
     def _test_rewrite(self, rql, expected):
-        self.assertEquals(self.simplify(self.parse(rql)).as_string(),
-                          expected)
+        rqlst = self.parse(rql)
+        self.simplify(rqlst)
+        self.assertEquals(rqlst.as_string(), expected)
         
     def test_rewrite(self):
         for rql, expected in (
@@ -134,6 +135,13 @@ class CheckClassTest(TestCase):
 ##         self.annotate(rqlst)
 ##         self.assertEquals(rqlst.as_string(), 'Any X WHERE X eid 12')
 
+    def test_simplified_as_string(self):
+        rqlst = self.parse('Any X WHERE X eid 12')
+        self.simplify(rqlst)
+        self.assertEquals(rqlst.as_string(), 'Any 12')
+        self.assertEquals(rqlst.as_string(unsimplified=True), 'Any X WHERE X eid 12')
+        self.assertEquals(rqlst.as_string(), 'Any 12')
+        
 class CopyTest(TestCase):
     
     def setUp(self):
@@ -173,7 +181,6 @@ class AnnotateTest(TestCase):
     def setUp(self):
         helper = RQLHelper(DummySchema(), None, {'eid': 'uid'})
         self.parse = helper.parse
-        self.simplify = helper.simplify
 
 #     def test_simplified(self):
 #         rqlst = self.parse('Any L WHERE 5 name L')

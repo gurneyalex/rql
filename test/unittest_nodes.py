@@ -29,6 +29,7 @@ class EtypeFromPyobjTC(TestCase):
         self.assertEquals(nodes.etype_from_pyobj('hop'), 'String')
         self.assertEquals(nodes.etype_from_pyobj(u'hop'), 'String')
 
+
 class NodesTest(TestCase):
     def _parse(self, rql, normrql=None):
         tree = parse(rql + ';')

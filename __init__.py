@@ -94,7 +94,6 @@ class RQLHelper:
             from rql import nodes
             for select in rqlst.children:
                 self._simplify(select)
-        return rqlst
         
     def _simplify(self, select):
         # recurse on subqueries first

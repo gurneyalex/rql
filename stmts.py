@@ -184,9 +184,10 @@ class Union(Statement, Node):
             s.append('OFFSET %s' % self.offset)
         return ' '.join(s)                             
     
-    def as_string(self, encoding=None, kwargs=None):
+    def as_string(self, encoding=None, kwargs=None, unsimplified=False):
         """return the tree as an encoded rql string"""
-        s = [select.as_string(encoding, kwargs) for select in self.children]
+        s = [select.as_string(encoding, kwargs, unsimplified)
+             for select in self.children]
         s = [' UNION '.join(s)]
         if self.limit is not None:
             s.append('LIMIT %s' % self.limit)
@@ -338,12 +339,21 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
     def __repr__(self):
         return self.as_string(userepr=True)
     
-    def as_string(self, encoding=None, kwargs=None, userepr=False):
+    def as_string(self, encoding=None, kwargs=None, unsimplified=False,
+                  userepr=False):
         """return the tree as an encoded rql string"""
         if userepr:
             as_string = repr
         else:
             as_string = lambda x: x.as_string(encoding, kwargs)
+        restriction = []
+        if unsimplified and self.stinfo['rewritten']:
+            vvalues = {}
+            for vname, consts in self.stinfo['rewritten'].iteritems():
+                vvalues[vname] = consts[0].value
+                restriction.append('%s eid %s' % (vname, consts[0].value))
+                for const in consts:
+                    const.value = vname
         s = [','.join(as_string(term) for term in self.selection)]
         if self.groupby:
             s.append('GROUPBY ' + ','.join(as_string(term)
@@ -351,8 +361,10 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         if self.orderby:
             s.append('ORDERBY ' + ','.join(as_string(term)
                                            for term in self.orderby))
-        if self.where:
-            s.append('WHERE ' + as_string(self.where))
+        if self.where is not None:
+            restriction.append(as_string(self.where))
+        if restriction:
+            s.append('WHERE ' + ', '.join(restriction))
         if self.having:
             s.append('HAVING ' + ','.join(as_string(term)
                                            for term in self.having))
@@ -361,6 +373,11 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
                                         for term in self.with_))
         if self.distinct:
             return 'DISTINCT Any ' + ' '.join(s)
+        # restore rewritten constant values
+        if unsimplified and self.stinfo['rewritten']:
+            for vname, consts in self.stinfo['rewritten'].iteritems():
+                for const in consts:
+                    const.value = vvalues[vname]
         return 'Any ' + ' '.join(s)
                                       
     def copy(self, copy_solutions=True, solutions=None):
@@ -712,7 +729,7 @@ class Delete(Statement, ScopeNode):
             result.append(repr(self.where))
         return ' '.join(result)
 
-    def as_string(self, encoding=None, kwargs=None):
+    def as_string(self, encoding=None, kwargs=None, unsimplified=False):
         """return the tree as an encoded rql string"""
         result = ['DELETE']
         if self.main_variables:
@@ -796,7 +813,7 @@ insertion variable'
             result.append('WHERE ' + repr(self.where))
         return ' '.join(result)
 
-    def as_string(self, encoding=None, kwargs=None):
+    def as_string(self, encoding=None, kwargs=None, unsimplified=False):
         """return the tree as an encoded rql string"""
         result = ['INSERT']
         result.append(', '.join(['%s %s' % (etype, var)
@@ -856,7 +873,7 @@ class Set(Statement, ScopeNode):
             result.append('WHERE ' + repr(self.where))
         return ' '.join(result)
 
-    def as_string(self, encoding=None, kwargs=None):
+    def as_string(self, encoding=None, kwargs=None, unsimplified=False):
         """return the tree as an encoded rql string"""
         result = ['SET']
         result.append(', '.join(rel.as_string(encoding, kwargs)
