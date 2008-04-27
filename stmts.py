@@ -349,11 +349,16 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         restriction = []
         if unsimplified and self.stinfo['rewritten']:
             vvalues = {}
+            # hact to avoid actually replacing introduced const node:
+            # replace const value by variable value and set constant type to Int
+            # to avoid quoting
             for vname, consts in self.stinfo['rewritten'].iteritems():
-                vvalues[vname] = consts[0].value
-                restriction.append('%s eid %s' % (vname, consts[0].value))
+                eid = consts[0].eval(kwargs)
+                vvalues[vname] = (consts[0].type, eid)
+                restriction.append('%s eid %s' % (vname, eid))
                 for const in consts:
                     const.value = vname
+                    const.type = 'Int'
         s = [','.join(as_string(term) for term in self.selection)]
         if self.groupby:
             s.append('GROUPBY ' + ','.join(as_string(term)
@@ -377,7 +382,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         if unsimplified and self.stinfo['rewritten']:
             for vname, consts in self.stinfo['rewritten'].iteritems():
                 for const in consts:
-                    const.value = vvalues[vname]
+                    const.type, const.value = vvalues[vname]
         return 'Any ' + ' '.join(s)
                                       
     def copy(self, copy_solutions=True, solutions=None):
