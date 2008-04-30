@@ -17,21 +17,32 @@ def decompose_b26(index, table=UPPERCASE):
         return table[mod]
     return decompose_b26(div-1) + table[mod]
 
-def rqlvar_maker(stop=None, index=0, defined=None):
+class rqlvar_maker(object):
     """yields consistent RQL variable names
     
     :param stop: optional argument to stop iteration after the Nth variable
                  default is None which means 'never stop'
     :param defined: optional dict of already defined vars
     """
-    index = index
-    while stop is None or index < stop:
-        var = decompose_b26(index)
-        index += 1
-        if defined is not None and var in defined:
-            continue
-        yield var
-
+    # NOTE: written a an iterator class instead of a simple generator to be
+    #       picklable
+    def __init__(self, stop=None, index=0, defined=None):
+        self.index = index
+        self.stop = stop
+        self.defined = defined
+        
+    def __iter__(self):
+        return self
+    
+    def next(self):
+        while self.stop is None or self.index < self.stop:
+            var = decompose_b26(self.index)
+            self.index += 1
+            if self.defined is not None and var in self.defined:
+                continue
+            return var
+        raise StopIteration()
+    
 KEYWORDS = set(('INSERT', 'SET', 'DELETE',
                 'UNION', 'WITH', 'BEING',
                 'WHERE', 'AND', 'OR', 'NOT'
