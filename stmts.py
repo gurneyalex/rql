@@ -353,9 +353,9 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             # replace const value by variable value and set constant type to Int
             # to avoid quoting
             for vname, consts in self.stinfo['rewritten'].iteritems():
-                eid = consts[0].eval(kwargs)
-                vvalues[vname] = (consts[0].type, eid)
-                restriction.append('%s eid %s' % (vname, eid))
+                sconst = consts[0]
+                vvalues[vname] = (sconst.type, sconst.value)
+                restriction.append('%s eid %s' % (vname, sconst.eval(kwargs)))
                 for const in consts:
                     const.value = vname
                     const.type = 'Int'

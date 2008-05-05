@@ -127,6 +127,7 @@ class RQLHelper:
                             else:
                                 vref.parent.replace(vref, rhs)
                         else:
+                            # remove from groupby/orderby
                             select.remove(term)
                     elif rel is uidrel or rel.is_types_restriction():
                         # drop this relation
