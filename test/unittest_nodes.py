@@ -2,7 +2,7 @@
 
 from logilab.common.testlib import TestCase, unittest_main
 
-from rql import nodes, stmts, parse, BadRQLQuery
+from rql import nodes, stmts, parse, BadRQLQuery, RQLHelper
 
 from unittest_analyze import DummySchema
 schema = DummySchema()
@@ -384,9 +384,19 @@ class NodesTest(TestCase):
         self.assertEqual(select.defined_vars['D'].get_type({'D': 'Datetime'}), 'Datetime')
         self.assertEqual(select.selection[2].get_type({'D': 'Datetime'}), 'Interval')
 
+    def test_get_description_simplified(self):
+        helper = RQLHelper(DummySchema(), None, {'eid': 'uid'})
+        tree = helper.parse('Any X,R,D WHERE X eid 2, X work_for R, R creation_date D')        
+        select = tree.children[0]
+        self.assertEqual(tree.get_description(), [['work_for', 'work_for', 'creation_date']])
+        helper.simplify(tree)
+        # None since const.uid_type is used while solutions have not been computed
+        self.assertEqual(tree.get_description(), [[None, 'work_for', 'creation_date']])
+        
     def test_repr_encoding(self):
         tree = parse(u'Any N where NOT N has_text "bidüle"')
         repr(tree)
+
 
 class GetNodesFunctionTest(TestCase):
     def test_known_values_1(self):
