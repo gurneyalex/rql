@@ -978,7 +978,8 @@ class Variable(object):
                     result = rel.r_type
                     break
             result = rel.r_type
-            if self.name != rel.children[0].name:
+            # use getattr since variable may have been rewritten
+            if not self.name != getattr(rel.children[0], 'name', None):
                 # priority to relation where variable is on the rhs
                 break
         return result or etype
