@@ -854,8 +854,7 @@ class Variable(object):
             # main scope for this variable
             'scope': None,
             # link to VariableReference objects in the syntax tree
-            # it must be a list to keep order
-            'references': [],
+            'references': set(),
             # relations where this variable is used on the lhs/rhs
             'relations': set(),
             'rhsrelations': set(),
@@ -901,17 +900,13 @@ class Variable(object):
         if not self.stinfo['possibletypes']:
             self.stinfo['possibletypes'].update(old.stinfo['possibletypes'])
         
-    def register_reference(self, varref):
+    def register_reference(self, vref):
         """add a reference to this variable"""
-        assert not [v for v in self.stinfo['references'] if v is varref]
-        self.stinfo['references'].append(varref)
+        self.stinfo['references'].add(vref)
         
-    def unregister_reference(self, varref):
+    def unregister_reference(self, vref):
         """remove a reference to this variable"""
-        for i, _varref in enumerate(self.stinfo['references']):
-            if varref is _varref:
-                del self.stinfo['references'][i]
-                break
+        self.stinfo['references'].remove(vref)
 
     def references(self):
         """return all references on this variable"""
