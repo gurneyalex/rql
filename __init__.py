@@ -14,7 +14,7 @@ from rql._exceptions import *
 
 #REQUIRED_TYPES = ['String', 'Float', 'Int', 'Boolean', 'Date']
 
-class RQLHelper:
+class RQLHelper(object):
     """Helper class for RQL handling
 
     give access to methods for :

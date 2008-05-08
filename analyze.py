@@ -15,7 +15,7 @@ from rql import TypeResolverException, nodes
 from pprint import pprint
 
 
-class ETypeResolver:
+class ETypeResolver(object):
     """resolve variables types according to the schema
 
     CSP modelisation :
@@ -340,6 +340,7 @@ def feature_unify(f1, f2):
     raise UnifyError
 
 def deepcopy(s):
+    # XXX seen and memo do not appear to be useful
     r = {}
     memo = {}
     for k, v in s.items():
@@ -410,7 +411,7 @@ BASE_TYPES_MAP = {
 
 
 
-class UnifyingETypeResolver:
+class UnifyingETypeResolver(object):
     """resolve variables types according to the schema
 
     CSP modelisation :
@@ -436,7 +437,7 @@ class UnifyingETypeResolver:
         self._types = [eschema.type for eschema in self.schema.entities()
                        if not eschema.is_final()]
 
-    def visit(self, node, uid_func_mapping=None, kwargs=None, debug=False):
+    def visit(self, node, uid_func_mapping=None, kwargs=None):
 #        print "QUERY", node
         if uid_func_mapping:
             self.uid_func_mapping=uid_func_mapping
@@ -494,7 +495,6 @@ class UnifyingETypeResolver:
 
     def visit_relation(self, relation ):
         r_type = relation.r_type
-#        print "Relation", r_type
         lhs, rhs = relation.get_parts()
         expr_sols = rhs.accept(self)
         if r_type == 'is' and not isinstance(relation.parent, nodes.Not):
@@ -514,18 +514,15 @@ class UnifyingETypeResolver:
                 
         
         r_schema = self.schema.relation_schema(r_type)
-#        print "Schema", r_schema
         l = []
         typ = [None]
-        vlhs = [{'type' : typ, lhs.name : typ }]
         for from_type, to_types in r_schema.association_types():
             for to_type in to_types:
                 # a little base type pre-unification
                 to_type = BASE_TYPES_MAP.get(to_type,to_type)
-                s = {
-                    'type' : [to_type],
-                    lhs.name : [from_type],
-                    }
+                s = {'type' : [to_type],
+                     lhs.name : [from_type],
+                     }
                 l.append(s)
         sols = unify_sols( l, expr_sols )
         for s in sols:
@@ -540,12 +537,12 @@ class UnifyingETypeResolver:
 
     def visit_function(self, function):
         # XXX : todo function typing
-        return [{ 'type':[None]}]
+        return [{'type':[None]}]
 
     def visit_variableref(self, variableref):
         var = variableref.name
         typ = [None]
-        sols = [{ 'type' : typ, var : typ }]
+        sols = [{'type': typ, var: typ}]
         return sols
 
     def visit_constant(self, constant):

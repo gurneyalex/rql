@@ -6,9 +6,6 @@
 """
 __docformat__ = "restructuredtext en"
 
-from rql._exceptions import BadRQLQuery
-
-
 UPPERCASE = u'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 def decompose_b26(index, table=UPPERCASE):
     """return a letter (base-26) decomposition of index"""
@@ -118,7 +115,7 @@ def build_visitor_stub(classes):
         cls.accept = eval(_accept % (cls.__name__.lower()))
         cls.leave = eval(_leave % (cls.__name__.lower()))        
 
-class RQLVisitorHandler:
+class RQLVisitorHandler(object):
     """handler providing a dummy implementation of all callbacks necessary
     to visit a RQL syntax tree
     """
