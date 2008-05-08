@@ -10,7 +10,7 @@ Standards-Version: 3.7.3
 Package: python-rql
 Architecture: all
 XB-Python-Version: ${python:Versions}
-Depends: ${python:Depends}, python-egenix-mxdatetime, python-logilab-common (>= 0.16.1-1), python-constraint (>= 0.3.0-5), yapps2-runtime
+Depends: ${python:Depends}, python-egenix-mxdatetime, python-logilab-common (>= 0.31.0-1), python-constraint (>= 0.3.0-5), yapps2-runtime
 Replaces: python2.3-rql, python2.4-rql
 Conflicts: python2.3-rql, python2.4-rql
 Description: relationship query language (RQL) utilities [dummy package]
