@@ -4,22 +4,19 @@ from rql import RQLHelper
 from unittest_analyze import RelationSchema, EntitySchema, DummySchema as BaseSchema
 
 class DummySchema(BaseSchema):
-    _types = BaseSchema._types
-    
-    for type in ['Note',]:
-        _types[type] = EntitySchema(type)
 
-    _relations = BaseSchema._relations
-    
-    _relations['a_faire_par'] = RelationSchema( ( ('Note', ('Person',)),
-                                                  )
-                                                )
-    _relations['creation_date'] = RelationSchema( ( ('Note', ('Date',)),
-                                                  )
-                                                )
-    _relations['nom'] = _relations['name']
-    _relations['prenom'] = _relations['firstname']
-    
+    def __init__(self):
+        super(DummySchema, self).__init__()
+        for etype in ['Note',]:
+            self._types[etype] = EntitySchema(etype)
+        relations = [('a_faire_par', (('Note', ('Person',)),)),
+                     ('creation_date', (('Note', ('Date',)),)),
+                     ]
+        for rel_name, rel_ent in relations:
+            self._relations[rel_name] = RelationSchema(rel_ent)
+        self._relations['nom'] = self._relations['name']
+        self._relations['prenom'] = self._relations['firstname']
+
 class RQLCompareClassTest(TestCase):
     """ Compare RQL strings """
     
