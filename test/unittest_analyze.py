@@ -1,11 +1,10 @@
 from logilab.common.testlib import TestCase, unittest_main
 
 from rql import RQLHelper, TypeResolverException
-from rql.analyze import UnifyingETypeResolver, ETypeResolver
 
 FINAL_ETYPES = ('String', 'Boolean', 'Int', 'Float', 'Date', 'Datetime')
 
-class ERSchema:
+class ERSchema(object):
 
     def __cmp__(self, other):
         other = getattr(other, 'type', other)
@@ -49,59 +48,62 @@ class EntitySchema(ERSchema):
     def is_final(self):
         return self.type in FINAL_ETYPES
     
-class DummySchema:
-    _types = {}
-    for type in ['String', 'Boolean', 'Int', 'Float', 'Date',
-                 'Eetype', 'Person', 'Company', 'Address']:
-        _types[type] = EntitySchema(type)
-        
-    _relations = {
-        'eid' : RelationSchema( ( ('Person', ('Int',) ),
-                                  ('Company', ('Int',) ),
-                                  ('Address', ('Int',) ),
-                                  ('Eetype', ('Int',) ),
-                                  )
-                                ),
-        'creation_date' : RelationSchema( ( ('Person', ('Datetime',) ),
-                                            ('Company', ('Datetime',) ),
-                                            ('Address', ('Datetime',) ),
-                                            ('Eetype', ('Datetime',) ),
-                                            )
-                                ),
-        'name' : RelationSchema( ( ('Person', ('String',) ),
-                                  ('Company', ('String',) ),
-                                  )
-                                ),
-        'firstname' : RelationSchema( ( ('Person', ('String',) ),
-                                       )
-                                ),
-        'work_for' : RelationSchema( ( ('Person', ('Company',) ),
+class DummySchema(object):
+
+    def __init__(self):
+        self._types = {}
+        for etype in ['String', 'Boolean', 'Int', 'Float', 'Date',
+                     'Eetype', 'Person', 'Company', 'Address']:
+            self._types[etype] = EntitySchema(etype)
+
+        self._relations = {
+            'eid' : RelationSchema( ( ('Person', ('Int',) ),
+                                      ('Company', ('Int',) ),
+                                      ('Address', ('Int',) ),
+                                      ('Eetype', ('Int',) ),
                                       )
                                     ),
-        'is' : RelationSchema( ( ('Person', ('Eetype',) ),
-                                 ('Company', ('Eetype',) ),
-                                 ('Address', ('Eetype',) ),
-                                 )
-                               ),
-        'connait' : RelationSchema( (('Person', ('Person',) ),
-                                     ),
-                                    symetric=True),
-        'located' : RelationSchema( ( ('Person', ('Address',) ),
-                                     ('Company', ('Address',) ),
+            'creation_date' : RelationSchema( ( ('Person', ('Datetime',) ),
+                                                ('Company', ('Datetime',) ),
+                                                ('Address', ('Datetime',) ),
+                                                ('Eetype', ('Datetime',) ),
+                                                )
+                                    ),
+            'name' : RelationSchema( ( ('Person', ('String',) ),
+                                      ('Company', ('String',) ),
+                                      )
+                                    ),
+            'firstname' : RelationSchema( ( ('Person', ('String',) ),
+                                           )
+                                    ),
+            'work_for' : RelationSchema( ( ('Person', ('Company',) ),
+                                          )
+                                        ),
+            'is' : RelationSchema( ( ('Person', ('Eetype',) ),
+                                     ('Company', ('Eetype',) ),
+                                     ('Address', ('Eetype',) ),
                                      )
                                    ),
-        'owned_by' : RelationSchema( ( ('Person', ('Person',) ),
-                                       ('Company', ('Person',) ),
-                                       ('Eetype', ('Person',) ),
-                                       )
-                                     ),
-        'identity' : RelationSchema( ( ('Person', ('Person',) ),
-                                       ('Company', ('Company',) ),
-                                       ('Address', ('Address',) ),
-                                       ('Eetype', ('Eetype',) ),
-                                  )
-                                ),
-        }
+            'connait' : RelationSchema( (('Person', ('Person',) ),
+                                         ),
+                                        symetric=True),
+            'located' : RelationSchema( ( ('Person', ('Address',) ),
+                                         ('Company', ('Address',) ),
+                                         )
+                                       ),
+            'owned_by' : RelationSchema( ( ('Person', ('Person',) ),
+                                           ('Company', ('Person',) ),
+                                           ('Eetype', ('Person',) ),
+                                           )
+                                         ),
+            'identity' : RelationSchema( ( ('Person', ('Person',) ),
+                                           ('Company', ('Company',) ),
+                                           ('Address', ('Address',) ),
+                                           ('Eetype', ('Eetype',) ),
+                                      )
+                                    ),
+            }
+        
     def entities(self):
         return self._types.values()
         
