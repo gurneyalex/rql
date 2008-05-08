@@ -1,4 +1,5 @@
-
+# -*- coding: utf-8 -*-
+# Copyrigth 2000-2008 Logilab S.A. - Paris, France - http://www.logilab.fr <contact@logilab.fr>
 
 """
 x in (A,B,C,D)
@@ -20,7 +21,9 @@ V in Set : sols = (V:Set)
 
 """
 
-def intersect_sol( s1, s2 ):
+import bisect
+
+def intersect_sol(s1, s2):
     sol = s1.copy()
     sol.update(s2)
     
@@ -29,14 +32,18 @@ def intersect_sol( s1, s2 ):
             return {}
     return sol
 
-def empty_sol( s ):
+def empty_sol(s):
     for set in s.values():
         if not set:
             return False
 
 
 class SolBase(object):
-    def and_sols(self, sols1, sols2 ):
+
+    def __init__(self):
+        raise NotImplementedError('override in derived classes')
+    
+    def and_sols(self, sols1, sols2):
         sols = []
         for s1 in sols1:
             for s2 in sols2:
@@ -45,7 +52,7 @@ class SolBase(object):
                     sols.append( s )
         return sols
 
-    def or_sols(self, sols1, sols2 ):
+    def or_sols(self, sols1, sols2):
         sols = sols1[:]
         for s in sols2:
             if s not in sols:
@@ -53,7 +60,7 @@ class SolBase(object):
         return sols
         
 
-    def __and__(self, x ):
+    def __and__(self, x):
         return SolAnd(self,x)
 
     def __or__(self, x):
@@ -62,9 +69,8 @@ class SolBase(object):
     def __invert__(self):
         return SolNot(self)
 
-    def __call__(self,domains):
+    def __call__(self, domains):
         return self.sols(domains)
-
 
     def variables(self, upd=None):
         """Returns a dict whose keys are variables used
@@ -74,12 +80,12 @@ class SolBase(object):
         raise NotImplementedError
 
 class SolNot(SolBase):
-    def __init__(self,s):
+    
+    def __init__(self, s):
         self.sol = s
 
-    def sols(self,domains):
+    def sols(self, domains):
         return self.sol.not_sols(domains)
-
 
     def __str__(self):
         return "not ("+str(self.sol)+")"
@@ -87,10 +93,10 @@ class SolNot(SolBase):
     def variables(self, upd=None):
         return self.sol.variables(upd)
 
-import bisect
 
 class SolAnd(SolBase):
-    def __init__(self, s1, s2 ):
+
+    def __init__(self, s1, s2):
         self.sol = []
         self.cost= []
         # optimize (a and b) and c into and(a,b,c)
@@ -106,21 +112,21 @@ class SolAnd(SolBase):
         else:
             self.insert(s2)
 
-    def insert(self,sol):
+    def insert(self, sol):
         N = len(sol.variables())
         idx = bisect.bisect_left(self.cost,N)
         self.cost.insert(idx, N)
         self.sol.insert(idx, sol)
         
-    def sols(self,domains):
+    def sols(self, domains):
         sols = self.sol[0](domains)
         for s in self.sol[1:]:
-#            domains = restrain(domains,sols)
+            # domains = restrain(domains,sols)
             S = s(domains)
             sols = self.and_sols( sols, S )
         return sols
 
-    def not_sols(self,domains):
+    def not_sols(self, domains):
         sols1 = self.s1.not_sols(domains)
         sols2 = self.s2.not_sols(domains)
         return self.or_sols(sols1,sols2)
@@ -137,16 +143,17 @@ class SolAnd(SolBase):
         return upd
 
 class SolOr(SolBase):
-    def __init__(self, s1, s2 ):
+    
+    def __init__(self, s1, s2):
         self.s1 = s1
         self.s2 = s2
 
-    def sols(self,domains):
+    def sols(self, domains):
         sols1 = self.s1.sols(domains)
         sols2 = self.s2.sols(domains)
         return self.or_sols( sols1, sols2 )
 
-    def not_sols(self,domains):
+    def not_sols(self, domains):
         sols1 = self.s1.not_sols(domains)
         sols2 = self.s2.not_sols(domains)
         return self.and_sols(sols1,sols2)
@@ -163,6 +170,7 @@ class SolOr(SolBase):
 
 class SolRelation(SolBase):
     """Boolean relation between variables"""
+    
     def __init__(self, *variables):
         self._variables = list(variables)
 
@@ -176,7 +184,8 @@ class SolRelation(SolBase):
 
 class SolVar(SolRelation):
     """Simple unary relation True if var in set"""
-    def __init__(self,V,s):
+    
+    def __init__(self, V, s):
         self.var = V
         self.set = s
 
@@ -186,10 +195,10 @@ class SolVar(SolRelation):
         upd[self.var] = 0
         return upd
 
-    def sols(self,domains):        
+    def sols(self, domains):        
         return [ { self.var : v } for v in self.set if v in domains[self.var] ]
 
-    def not_sols(self,domains):
+    def not_sols(self, domains):
         return [ { self.var : v } for v in domains[self.var] if v not in self.set ]
 
     def __str__(self):
@@ -200,7 +209,8 @@ class SolVar(SolRelation):
 
 class SolEq(SolRelation):
     """Simple equality between variables"""
-    def sols(self,domains):
+    
+    def sols(self, domains):
         d = {}
         # intersect domains
         for var in self._variables:
@@ -218,7 +228,7 @@ class SolEq(SolRelation):
                 result.append( r )
         return result
 
-    def not_sols(self,domains):
+    def not_sols(self, domains):
         raise NotImplementedError
     
     def __str__(self):
@@ -228,12 +238,13 @@ class SolEq(SolRelation):
         if isinstance(v, SolVar):
             self._variables.append(v)
         elif isinstance(v, SolEq):
-            self._variables+=v._variables
+            self._variables += v._variables
         else:
             raise RuntimeError("Invalid model")
         return self
         
 if __name__ == "__main__":
+    # XXX turn this into a test or remove
     D = {
         'x' : range(5),
         'y' : range(6),

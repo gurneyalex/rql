@@ -46,7 +46,7 @@ def sort(canon_dict):
 class SkipChildren(Exception):
     """signal indicating to ignore the current child"""
 
-class RQLCanonizer:
+class RQLCanonizer(object):
     """build a dictionnary which represents a RQL syntax tree
     """
     
@@ -171,12 +171,14 @@ class RQLCanonizer:
         
     def visit_constant(self, constante, canon):
         """do nothing for this node type"""
-    
-    
+
+    def visit_union(self, *args):
+        raise NotImplementedError('union comparison not implemented')
+
 
 def make_lhs_reminder(lhs, canon):
-    """return a reminder for a relation's left hand side (i.e a VariableRef
-    object)
+    """return a reminder for a relation's left hand side
+    (i.e a VariableRef object)
     """
     try:
         lhs = canon['all_variables'][lhs.variable][0]
@@ -185,8 +187,8 @@ def make_lhs_reminder(lhs, canon):
     return ('=', lhs)
 
 def make_rhs_reminder(rhs, canon):
-    """return a reminder for a relation's right hand side (i.e a Comparison
-    object)
+    """return a reminder for a relation's right hand side
+    (i.e a Comparison object)
     """
     child = rhs.children[0]
     try:

@@ -10,7 +10,7 @@ __docformat__ = "restructuredtext en"
 from rql.nodes import VariableRef, Variable, BinaryNode
 from rql.stmts import Select
 
-class SelectionManager:
+class SelectionManager(object):
     """manage the operation stacks"""
     
     def __init__(self, selection):
@@ -46,7 +46,7 @@ class SelectionManager:
         """flush the current operations"""
         self.op_list = []
 
-class NodeOperation:
+class NodeOperation(object):
     """abstract class for node manipulation operations"""
     def __init__(self, node):
         self.node = node
@@ -100,7 +100,7 @@ class AddNodeOperation(NodeOperation):
         """undo the operation on the selection"""
         selection.remove_node(self.node)
 
-class ReplaceNodeOperation:
+class ReplaceNodeOperation(object):
     """defines how to undo 'replace node'"""
     def __init__(self, old_node, new_node):
         self.old_node = old_node
@@ -192,7 +192,7 @@ class RemoveGroupOperation(NodeOperation):
 
 # misc operations #############################################################
 
-class ChangeValueOperation:    
+class ChangeValueOperation(object):
     def __init__(self, previous_value, node=None):
         self.value = previous_value
         self.node = node
