@@ -1,9 +1,11 @@
 ChangeLog for RQL
 =================
 
- --
+2008-05-08 -- 0.18.0
     * UNION support
     * HAVING support
+    * GROUPBY and ORDERBY moved *before* WHERE
+    * code cleanup, fixes and refactorings
 
 2008-03-26  --  0.17.2
     * fix a bug in get_solutions,possible_types should be reseted first
