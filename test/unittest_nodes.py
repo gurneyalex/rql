@@ -143,6 +143,17 @@ class NodesTest(TestCase):
         tree.recover()
         tree.check_references()
         self.assertEquals(tree.as_string(), 'Any X GROUPBY X')
+
+    def test_select_remove_groups(self):
+        tree = self._parse('Any X,Y GROUPBY X,Y')
+        tree.save_state()
+        select = tree.children[0]
+        select.remove_groups()
+        tree.check_references()
+        self.assertEquals(tree.as_string(), 'Any X,Y')
+        tree.recover()
+        tree.check_references()
+        self.assertEquals(tree.as_string(), 'Any X,Y GROUPBY X,Y')
                              
     def test_select_base_1(self):
         tree = self._parse("Any X WHERE X is Person")
