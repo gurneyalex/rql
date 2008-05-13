@@ -1,6 +1,9 @@
 ChangeLog for RQL
 =================
 
+2008-05-12 -- 0.18.1
+    * bugfix in remove_groups and remove_sort_terms
+	
 2008-05-08 -- 0.18.0
     * UNION support
     * HAVING support
