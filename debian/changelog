@@ -1,3 +1,9 @@
+rql (0.18.1-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Nicolas Chauvat <Nicolas.Chauvat@logilab.fr>  Tue, 13 May 2008 18:59:41 +0200
+
 rql (0.18.0-1) unstable; urgency=low
 
   * new upstream release
