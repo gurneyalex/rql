@@ -628,7 +628,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             self.undo_manager.add_operation(RemoveGroupOperation(vref))
 
     def remove_groups(self):
-        for vref in self.groupby:
+        for vref in self.groupby[:]:
             self.remove_group_var(vref)
             
     def add_sort_var(self, var, asc=True):
@@ -656,7 +656,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
 
     def remove_sort_terms(self):
         if self.orderby:
-            for term in self.orderby:
+            for term in self.orderby[:]:
                 self.remove_sort_term(term)
         
     def remove_sort_term(self, term):
