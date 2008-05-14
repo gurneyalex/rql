@@ -171,24 +171,31 @@ class AddSortOperation(NodeOperation):
     
 class RemoveSortOperation(NodeOperation):
     """defines how to undo 'remove sort'"""
+    def __init__(self, node):
+        NodeOperation.__init__(self, node)
+        self.index = self.stmt.orderby.index(self.node)
 
     def undo(self, selection):
         """undo the operation on the selection"""
-        self.stmt.add_sort_term(self.node)
+        self.stmt.add_sort_term(self.node, self.index)
     
 class AddGroupOperation(NodeOperation):
     """defines how to undo 'add group'"""
-
+    
     def undo(self, selection):
         """undo the operation on the selection"""
         self.stmt.remove_group_var(self.node)
     
 class RemoveGroupOperation(NodeOperation):
     """defines how to undo 'remove group'"""
-
+    
+    def __init__(self, node):
+        NodeOperation.__init__(self, node)
+        self.index = self.stmt.groupby.index(self.node)
+        
     def undo(self, selection):
         """undo the operation on the selection"""
-        self.stmt.add_group_var(self.node)
+        self.stmt.add_group_var(self.node, self.index)
 
 # misc operations #############################################################
 
