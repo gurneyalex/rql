@@ -605,7 +605,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             from rql.undo import SelectVarOperation
             self.undo_manager.add_operation(SelectVarOperation(term))
 
-    def add_group_var(self, var):
+    def add_group_var(self, var, index=None):
         """add var in 'orderby' constraints
         asc is a boolean indicating the group order (ascendent or descendent)
         """
@@ -613,7 +613,10 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             self.groupby = []
         vref = nodes.variable_ref(var)
         vref.register_reference()
-        self.groupby.append(vref)
+        if index is None:
+            self.groupby.append(vref)
+        else:
+            self.groupby.insert(index, vref)
         vref.parent = self
         if self.should_register_op:
             from rql.undo import AddGroupOperation
@@ -621,11 +624,11 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
 
     def remove_group_var(self, vref):
         """remove the group variable and the group node if necessary"""
-        vref.unregister_reference()
-        self.groupby.remove(vref)
         if self.should_register_op:
             from rql.undo import RemoveGroupOperation
             self.undo_manager.add_operation(RemoveGroupOperation(vref))
+        vref.unregister_reference()
+        self.groupby.remove(vref)
 
     def remove_groups(self):
         for vref in self.groupby[:]:
@@ -640,10 +643,13 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         term = nodes.SortTerm(vref, asc)
         self.add_sort_term(term)
         
-    def add_sort_term(self, term):
+    def add_sort_term(self, term, index=None):
         if not self.orderby:
             self.orderby = []
-        self.orderby.append(term)
+        if index is None:
+            self.orderby.append(term)
+        else:
+            self.orderby.insert(index, term)
         term.parent = self
         for vref in term.iget_nodes(nodes.VariableRef):
             try:

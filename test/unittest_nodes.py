@@ -97,15 +97,15 @@ class NodesTest(TestCase):
         self.assertEquals(tree.as_string(), 'Any X')
 
     def test_select_remove_sort_terms(self):
-        tree = self._parse('Any X ORDERBY X')
+        tree = self._parse('Any X,Y ORDERBY X,Y')
         tree.save_state()
         select = tree.children[0]
         select.remove_sort_terms()
         tree.check_references()
-        self.assertEquals(tree.as_string(), 'Any X')
+        self.assertEquals(tree.as_string(), 'Any X,Y')
         tree.recover()
         tree.check_references()
-        self.assertEquals(tree.as_string(), 'Any X ORDERBY X')
+        self.assertEquals(tree.as_string(), 'Any X,Y ORDERBY X,Y')
 
     def test_select_set_distinct(self):
         tree = self._parse('DISTINCT Any X')
@@ -154,7 +154,7 @@ class NodesTest(TestCase):
         tree.recover()
         tree.check_references()
         self.assertEquals(tree.as_string(), 'Any X,Y GROUPBY X,Y')
-                             
+
     def test_select_base_1(self):
         tree = self._parse("Any X WHERE X is Person")
         self.assertIsInstance(tree, stmts.Union)
