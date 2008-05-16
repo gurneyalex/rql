@@ -1,3 +1,6 @@
+Idées sur la canonisation
+=========================
+
 from ginco.rql.node_lib import Variable
 
 def sort(canon_dict):
@@ -5,10 +8,17 @@ def sort(canon_dict):
     for l in canon_dict['restriction'].values():
         l.sort()
 
--------------------------------------------------------------------------------
-Any N, N2 where N is Note, N2 is Note, N ecrit_par P1, P1 nom 'jphc', N2 ecrit_par P2, P2 nom 'ocy' ;
-Any Y, X  where X is Note, Y is Note,  X ecrit_par P1, P1 nom 'ocy',  Y ecrit_par P2,  P2 nom 'jphc' ;
+Exemple 1
+---------
 
+Formules équivalentes
+`````````````````````
+
+  Any N, N2 where N is Note, N2 is Note, N ecrit_par P1, P1 nom 'jphc', N2 ecrit_par P2, P2 nom 'ocy' ;
+  Any Y, X  where X is Note, Y is Note,  X ecrit_par P1, P1 nom 'ocy',  Y ecrit_par P2,  P2 nom 'jphc' ;
+
+Forme canonique
+```````````````
 
 N = Variable('N')
 N2 = Variable('N2')
@@ -53,11 +63,17 @@ sort(canon2)
 
 canon2 == canon1
 
+Exemple 2
+---------
 
+Formules équivalentes
+`````````````````````
 
--------------------------------------------------------------------------------
-Note N WHERE N ecrit_le D, N ecrit_par P, P nom 'jphc', D day > (today-10);
-Note K WHERE K ecrit_le D, K ecrit_par Y, D day > (today-10), Y nom 'jphc';
+  Note N WHERE N ecrit_le D, N ecrit_par P, P nom 'jphc', D day > (today-10);
+  Note K WHERE K ecrit_le D, K ecrit_par Y, D day > (today-10), Y nom 'jphc';
+
+Forme canonique
+```````````````
 
 N = Variable('N')
 D = Variable('D')
@@ -99,11 +115,17 @@ sort(canon2)
 canon1 == canon2
 
 
+Exemple 3
+---------
 
--------------------------------------------------------------------------------
-Note N WHERE N ecrit_le D, D day > (today -10), N ecrit_par P, P nom 'jphc' or P nom 'ludal';
-Note K WHERE K ecrit_le D, K ecrit_par Y, D day > (today -10), Y nom in ('jphc', 'ludal');
+Formules équivalentes
+`````````````````````
 
+  Note N WHERE N ecrit_le D, D day > (today -10), N ecrit_par P, P nom 'jphc' or P nom 'ludal';
+  Note K WHERE K ecrit_le D, K ecrit_par Y, D day > (today -10), Y nom in ('jphc', 'ludal');
+
+Forme canonique
+```````````````
 
 N = Variable('N')
 D = Variable('D')
@@ -146,30 +168,25 @@ canon1 == canon2
 
 
 
+Problèmes
+---------
 
-*******************************************************************************
-NE MARCHE PAS:
+.1 Les paires de formules suivantes sont considérées comme identiques par
+   l'algorithme ci-dessus alors qu'elles ne le sont pas:
 
-* les expressions RQL
 Note N WHERE N ecrit_le D, D day > (today -10), N ecrit_par P, P nom 'jphc' or P nom 'ludal';
-et
 Note N WHERE N ecrit_le D, D day > (today -10), N ecrit_par P, P nom 'jphc', P nom 'ludal';
 
-
 Note N WHERE N ecrit_le D, D day > (today -10), N ecrit_par P, P nom 'jphc' or P prenom 'ludal';
-et
 Note N WHERE N ecrit_le D, D day > (today -10), N ecrit_par P, P nom 'jphc', P prenom 'ludal';
 
-seront considérées comme identiques avec ce modèle.
+donne comme restriction:
 
-
--->
  'restriction' : {'is' :        [(K, 'Note')],
                   'day':        [(D, '> (today-10)')],
                   'ecrit_le' :  [(K, D)],
                   'ecrit_par' : [(K, Y)],
-                  'nom_nom' :       [(Y, 'jphc', Y, 'ludal')]
+                  'nom_nom' :   [(Y, 'jphc', Y, 'ludal')]
                  }
 
-* risque de collision dans les noms de variables non sélectionnées (un
-  exemple ?).
+.2 risque de collision dans les noms de variables non sélectionnées (un exemple ?).

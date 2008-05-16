@@ -1,8 +1,10 @@
+.. -*- coding: utf-8 -*-
+
 =================================================
-Spécification "Relation Query Language" (Hercule)
+SpÃ©cification "Relation Query Language" (Hercule)
 =================================================
 
-:Author: Sylvain Thénault
+:Author: Sylvain ThÃ©nault
 :Organization: Logilab
 :Version: $Revision: 1.10 $
 :Date: $Date: 2004-05-18 15:04:13 $
@@ -18,9 +20,9 @@ Objectifs de RQL
 ----------------
 
 L'objectif est d'avoir un langage mettant l'accent sur le parcours de
-relations. A ce titre les attributs seront donc considérés comme des cas
-particuliers de relations (au niveau de l'implémentation, l'utilisateur du
-langage ne devant quasiment pas voir de différence entre un attribut et une
+relations. A ce titre les attributs seront donc considÃ©rÃ©s comme des cas
+particuliers de relations (au niveau de l'implÃ©mentation, l'utilisateur du
+langage ne devant quasiment pas voir de diffÃ©rence entre un attribut et une
 relation).
 
 
@@ -29,45 +31,45 @@ Comparaison avec des langages existants
 
 SQL
 ```
-RQL s'inspire des fonctionnalités de SQL mais se veut à un plus haut niveau
-(l'implémentation actuelle de RQL génère du SQL). Pour cela il se limite au
+RQL s'inspire des fonctionnalitÃ©s de SQL mais se veut Ã  un plus haut niveau
+(l'implÃ©mentation actuelle de RQL gÃ©nÃ¨re du SQL). Pour cela il se limite au
 parcours de relations et introduit des variables. L'utilisateur n'a pas besoin
-de connaitre le modèle SQL sous-jacent, mais uniquement le schéma Erudi
-définissant l'application.
+de connaitre le modÃ¨le SQL sous-jacent, mais uniquement le schÃ©ma Erudi
+dÃ©finissant l'application.
 
 Versa
 `````
-Faudrait que je regarde plus en détail, mais voilà déja quelques idées pour
-l'instant...  Versa_ est le langage ressemblant le plus à ce que nous voulions
-faire, mais le modèle de donnée sous-jacent étant du RDF, il y a un certain
+Faudrait que je regarde plus en dÃ©tail, mais voilÃ¢ dÃ©ja quelques idÃ©es pour
+l'instant...  Versa_ est le langage ressemblant le plus Ã  ce que nous voulions
+faire, mais le modÃ¨le de donnÃ©e sous-jacent Ã©tant du RDF, il y a un certain
 nombre de choses tels que les namespaces ou la manipulation des types RDF qui
-ne nous intéressent pas. Niveau fonctionnalité, Versa_ est très complet
-notamment grâce à de nombreuses fonctions de conversion et de manipulations
-des types de base, dont il faudra peut-être s'inspirer à un moment ou à
-l'autre.  Enfin, La syntaxe est un peu ésotérique.
+ne nous intÃ©ressent pas. Niveau fonctionnalitÃ©, Versa_ est trÃ¨s complet
+notamment grÃ¢ce Ã  de nombreuses fonctions de conversion et de manipulations
+des types de base, dont il faudra peut-Ãªtre s'inspirer Ã  un moment ou Ã 
+l'autre.  Enfin, La syntaxe est un peu Ã©sotÃ©rique.
 
 Voir aussi
 ``````````
 RDFQL_
 
 
-Les différents types de requêtes
+Les diffÃ©rents types de requÃªtes
 --------------------------------
 
 Recherche
-  Ce type de requête permet d'extraire des entités ou des attributs d'entités.
+  Ce type de requÃªte permet d'extraire des entitÃ©s ou des attributs d'entitÃ©s.
 
-Insertion d'entités
-  Ce type de requête permet d'insérer de nouvelles entités dans la base. On
-  permettra également la création directe de relations sur les entités
-  nouvellement créées.
+Insertion d'entitÃ©s
+  Ce type de requÃªte permet d'insÃ©rer de nouvelles entitÃ©s dans la base. On
+  permettra Ã©galement la crÃ©ation directe de relations sur les entitÃ©s
+  nouvellement crÃ©Ã©es.
 
-Mise à jour d'entités, création de relations
-  Ce type de requête permet de mettre à jours des entités existantes dans la base,
-  ou de créer des relations entres des entités existantes.
+Mise Ã  jour d'entitÃ©s, crÃ©ation de relations
+  Ce type de requÃªte permet de mettre Ã  jours des entitÃ©s existantes dans la base,
+  ou de crÃ©er des relations entres des entitÃ©s existantes.
 
-Suppression d'entités ou de relation
-  Ce type de requête permet de supprimer des entités et relations existantes dans
+Suppression d'entitÃ©s ou de relation
+  Ce type de requÃªte permet de supprimer des entitÃ©s et relations existantes dans
   la base.
 
 
@@ -86,104 +88,104 @@ Recherche
        Any X WHERE 
        X eid 53 
 
-- *recherche des documents de type bande dessinée, appartenant à syt et disponible*
+- *recherche des documents de type bande dessinÃ©e, appartenant Ã  syt et disponible*
   ::
 
        Document X WHERE 
-       X occurence_of F, F class C, C name 'Bande dessinée',
+       X occurence_of F, F class C, C name 'Bande dessinÃ©e',
        X owned_by U, U login 'syt',
        X available true
 
-- *recherche des personnes travaillant pour eurocopter intêressé par la formation*
+- *recherche des personnes travaillant pour eurocopter intÃ©ressÃ© par la formation*
   ::
 
        Personne P WHERE
        P travaille_pour S, S nom 'Eurocopter',
        P interesse_par T, T nom 'formation'
 
-- *recherche des notes de moins de 10 jours écrite par jphc ou ocy*
+- *recherche des notes de moins de 10 jours Ã©crites par jphc ou ocy*
   ::
 
        Note N WHERE
        N ecrit_le D, D day > (today -10), 
        N ecrit_par P, P nom 'jphc' or P nom 'ocy'
 
-- *recherche des personnes interessées par la formation ou habitant à Paris*
+- *recherche des personnes intÃ©ressÃ©es par la formation ou habitant Ã  Paris*
   ::
 
        Personne P WHERE
        (P interesse_par T, T nom 'formation') or
        (P ville 'Paris')
 
-- *Le nom et le prénom de toutes les personnes, triés*
+- *Le nom et le prÃ©nom de toutes les personnes*
   ::
 
        Any N, P WHERE
        X is Personne, X nom N, X prenom P
 
-  On remarquera que la selection de plusieurs entités force généralement
-  l'utilisation de "Any", car la spécification de type s'applique sinon
-  à toutes les variables séléctionnées. On aurait pu écrire ici 
+  On remarquera que la selection de plusieurs entitÃ©s force gÃ©nÃ©ralement
+  l'utilisation de "Any", car la spÃ©cification de type s'applique sinon
+  Ã  toutes les variables sÃ©lÃ©ctionnÃ©es. On aurait pu Ã©crire ici 
   ::
 
        String N, P WHERE
        X is Personne, X nom N, X prenom P
 
 
-Insertion d'entités
+Insertion d'entitÃ©s
 -------------------
 
-- *insertion d'une nouvelle personne nommée 'bidule'*
+- *insertion d'une nouvelle personne nommÃ©e 'bidule'*
   ::
 
        INSERT Personne X: X nom 'bidule'
 
-- *insertion d'une nouvelle personne nommée 'bidule', d'une autre nommée 'chouette' et d'une relation 'ami' entre eux*
+- *insertion d'une nouvelle personne nommÃ©e 'bidule', d'une autre nommÃ©e 'chouette' et d'une relation 'ami' entre eux*
   ::
 
        INSERT Personne X, Personne Y: X nom 'bidule', Y nom 'chouette', X ami Y
 
-- *insertion d'une nouvelle personne nommée 'bidule' et d'une relation 'ami' avec une personne existante nommée 'chouette'*
+- *insertion d'une nouvelle personne nommÃ©e 'bidule' et d'une relation 'ami' avec une personne existante nommÃ©e 'chouette'*
   ::
 
        INSERT Personne X: X nom 'bidule', X ami Y WHERE Y nom 'chouette'
 
 
-Mise à jour d'entités, création de relations
+Mise Ã  jour d'entitÃ©s, crÃ©ation de relations
 --------------------------------------------
 
-- *renommage de la personne nommée 'bidule' en 'toto', avec modification du prénom*
+- *renommage de la personne nommÃ©e 'bidule' en 'toto', avec modification du prÃ©nom*
   ::
 
        SET X nom 'toto', X prenom 'original' WHERE X is Person, X nom 'bidule'
 
-- *insertion d'une relation de type 'connait' entre les objets reliés par la relation de type 'ami'*
+- *insertion d'une relation de type 'connait' entre les objets reliÃ©s par la relation de type 'ami'*
   ::
 
        SET X know Y WHERE X ami Y
 
 
-Suppression d'entités ou de relations
+Suppression d'entitÃ©s ou de relations
 -------------------------------------
 
-- *supression de la personne nommé 'toto'*
+- *supression de la personne nommÃ© 'toto'*
   ::
 
        DELETE Person X WHERE X nom 'toto'
 
-- *suppression de toutes les relations de type 'ami' partant de la personne nommée 'toto'*
+- *suppression de toutes les relations de type 'ami' partant de la personne nommÃ©e 'toto'*
   ::
 
        DELETE X ami Y WHERE X is Person, X nom 'toto'
 
 
 
-Définition du langage
+DÃ©finition du langage
 =====================
 
-Mots clés réservés
+Mots clÃ©s rÃ©servÃ©s
 ------------------
-Les mots clés ne sont pas sensibles à la casse. 
+Les mots clÃ©s ne sont pas sensibles Ã  la casse. 
 
 ::
 
@@ -197,55 +199,58 @@ Les mots clés ne sont pas sensibles à la casse.
 Typage
 ------
 
-Au niveau de RQL, on ne fait pas de distinction entre entités et attributs. La
-valeur d'un attribut est considérée comme une entité d'un type particulier (voir
-ci-dessous), lié à une (vrai) entité par une relation du nom de l'attribut.
+Au niveau de RQL, on ne fait pas de distinction entre entitÃ©s et attributs. La
+valeur d'un attribut est considÃ©rÃ©e comme une entitÃ© d'un type particulier (voir
+ci-dessous), liÃ© Ã  une (vraie) entitÃ© par une relation du nom de l'attribut.
 
-Il existe un type spécial **Any**, revenant à ne pas spécifier de type.
+Il existe un type spÃ©cial **Any**, revenant Ã  ne pas spÃ©cifier de type.
 
-On peut contraindre les types possibles pour une variable à l'aide de la
-relation spéciale **is**.
+On peut contraindre les types possibles pour une variable Ã  l'aide de la
+relation spÃ©ciale **is**.
 
-Le(s) type(s) possible(s) pour chaque variable est déduit du schema en
-fonction des contraintes exprimées ci-dessus et à l'aide des relations entre
+Le(s) type(s) possible(s) pour chaque variable est dÃ©duit du schema en
+fonction des contraintes exprimÃ©es ci-dessus et Ã  l'aide des relations entre
 chaque variable.
 
 Types de bases
 ``````````````
 
-Les types de bases supportés sont les chaines (entre doubles ou simples quotes),
-les nombres entiers ou flottant (le séparateur étant le '.'), les dates et les
-booléens. On s'attend donc à recevoir un schéma dans lequel les types String,
-Int, Float, Date et Boolean sont définis.
+Les types de bases supportÃ©s sont les chaines (entre doubles ou simples quotes),
+les nombres entiers ou flottant (le sÃ©parateur Ã©tant le '.'), les dates et les
+boolÃ©ens. On s'attend donc Ã  recevoir un schÃ©ma dans lequel les types String,
+Int, Float, Date et Boolean sont dÃ©finis.
 
 
-Opérateurs
+OpÃ©rateurs
 ----------
 
-Opérateurs logiques
+OpÃ©rateurs logiques
 ```````````````````
 ::
 
     AND, OR, ','
 
-"," est équivalent à "AND" mais avec la plus petite priorité parmi les
-opérateurs logiques (voir `Priorité des opérateurs`_).
+"," est Ã©quivalent Ã  "AND" mais avec la plus petite prioritÃ© parmi les
+opÃ©rateurs logiques (voir `PrioritÃ© des opÃ©rateurs`_).
 
-Opérateurs mathématiques
+OpÃ©rateurs mathÃ©matiques
 ````````````````````````
 ::
 
     +, -, *, /
 
-Opérateurs de comparaison
+OpÃ©rateurs de comparaison
 `````````````````````````
 ::
 
     <, <=, >=, >, ~=, IN, LIKE
 
-"LIKE" est équivalent à "~="
+"LIKE" est Ã©quivalent Ã  "~="
 
-Priorité des opérateurs
+XXX nico: A truc <> 'titi' ne serait-il pas plus pratique que NOT A
+truc 'titi' ?
+
+PrioritÃ© des opÃ©rateurs
 ```````````````````````
 
 1. '*', '/'
@@ -262,7 +267,7 @@ Priorité des opérateurs
 Fonctions
 ---------
 
-Fonctions d'aggrégat
+Fonctions d'aggrÃ©gat
 ````````````````````
 ::
 
@@ -277,9 +282,9 @@ Fonctions sur les chaines
 
 Grammaire BNF
 -------------
-Les éléments terminaux sont en majuscules, les non-terminaux en minuscule. La
-valeur des éléments terminaux (entre quotes) correspond à une expression
-régulière Python.
+Les Ã©lÃ©ments terminaux sont en majuscules, les non-terminaux en minuscule. La
+valeur des Ã©lÃ©ments terminaux (entre quotes) correspond Ã  une expression
+rÃ©guliÃ¨re Python.
 :: 
 
     statement ::= (select | delete | insert | update) ';'
@@ -358,44 +363,41 @@ Remarques
 Tri et groupes
 ``````````````
 
-- pour les requêtes groupées (i.e. avec une clause GROUPBY), toutes les
-  variables sélectionnée doivent être groupées
-
-- pour les requête ordonnées (i.e. avec une clause ORDERBY), toutes les
-  variables ordonnéees doivent être sélectionnées XXX plus vrai, non ?
+- pour les requÃªtes groupÃ©es (i.e. avec une clause GROUPBY), toutes les
+  variables sÃ©lectionnÃ©es doivent Ãªtre groupÃ©es
 
 - pour grouper ou/et trier sur les attributs on peut faire : "X,L user U, U
   login L GROUPBY L,X ORDERBY L"
 
-- si la méthode de tri (SORT_METHOD) n'est pas précisé, alors le tri est
+- si la mÃ©thode de tri (SORT_METHOD) n'est pas prÃ©cisÃ©e, alors le tri est
   ascendant.
 
-Négation
+NÃ©gation
 ````````
 
-une requête du type "Document X where not X owned_by U" revient à dire "les
-documents n'ayant pas de relation 'owned_by'". La variable U ne doit être
-utilisée à aucun autre endroit.
+Une requÃªte du type "Document X where not X owned_by U" revient Ã  dire "les
+documents n'ayant pas de relation 'owned_by'". La variable U ne doit Ãªtre
+utilisÃ©e Ã  aucun autre endroit.
 
 
 
-Implémentation
+ImplÃ©mentation
 ==============
 
-Représentation interne (arbre syntaxique)
+ReprÃ©sentation interne (arbre syntaxique)
 -----------------------------------------
 
-L'arbre de recherche ne contient pas les variables sélectionnées (i.e. on n'y 
+L'arbre de recherche ne contient pas les variables sÃ©lectionnÃ©es (i.e. on n'y 
 trouve que ce qui suit le "WHERE").
 
-L'arbre d'insertion ne contient pas les variables insérée ni les relations 
-définies sur ces variables (i.e. on n'y trouve que ce qui suit le
+L'arbre d'insertion ne contient pas les variables insÃ©rÃ©es ni les relations 
+dÃ©finies sur ces variables (i.e. on n'y trouve que ce qui suit le
 "WHERE").
 
-L'arbre de suppression ne contient pas les variables ou relations supprimées 
+L'arbre de suppression ne contient pas les variables ou relations supprimÃ©es 
 (i.e. on n'y trouve que ce qui suit le "WHERE").
 
-L'arbre de màj ne contient pas les variables ou relations mises à jour
+L'arbre de mise Ã  jour ne contient pas les variables ou relations mises Ã  jour
 (i.e. on n'y trouve que ce qui suit le "WHERE").
 
 ::
@@ -428,11 +430,11 @@ L'arbre de màj ne contient pas les variables ou relations mises à jour
 Remarques
 ---------
 
-- l'implémentation actuelle ne supporte pas de lier deux relations ayant comme
-  type de relation 'is' avec un OR. Je ne pense pas que la négation ne
-  soit supportée non plus sur ce type de relation (à confirmer).
+- l'implÃ©mentation actuelle ne supporte pas de lier deux relations ayant comme
+  type de relation 'is' avec un OR. Je ne pense pas que la nÃ©gation ne
+  soit supportÃ©e non plus sur ce type de relation (Ã  confirmer).
 
-- les relations définissant les variables doivent être à gauche de celles les
+- les relations dÃ©finissant les variables doivent Ãªtre Ã  gauche de celles les
   utilisant. Par exemple ::
 
     Point P where P abs X, P ord Y, P value X+Y
@@ -459,17 +461,17 @@ Il manque pour l'instant:
 
 et certainement d'autres choses...
 
-Un inconvénient est que pour utiliser ce langage il faut bien connaitre le
-schéma utilisé (avec les vrais noms de relations et d'entités, pas ceux affichés
-dans l'interface utilisateur). D'un autre coté, on peut pas vraiment contourner
+Un inconvÃ©nient est que pour utiliser ce langage il faut bien connaitre le
+schÃ©ma utilisÃ© (avec les vrais noms de relations et d'entitÃ©s, pas ceux affichÃ©s
+dans l'interface utilisateur). D'un autre cotÃ©, on peut pas vraiment contourner
 cela, et c'est le boulot d'une interface utilisateur de cacher le RQL.
 
 
-A réfléchir
------------
+Sujets de rÃ©flexion
+-------------------
 
-Il serait pratique de pouvoir exprimer dans le schéma des correspondances de
-relations::
+Il serait pratique de pouvoir exprimer dans le schema des correspondances de
+relations (rÃ¨gles non rÃ©cursives)::
 
     Document class Type <-> Document occurence_of Fiche class Type
     Fiche class Type    <-> Fiche collection Collection class Type
@@ -477,13 +479,13 @@ relations::
 Ainsi 1. devient::
 
     Document X where 
-    X class C, C name 'Bande dessinée',
+    X class C, C name 'Bande dessinÃ©e',
     X owned_by U, U login 'syt',
     X available true
 
-Je ne suis cependant pas sûr qu'il faille gérer ça au niveau de RQL...
+Je ne suis cependant pas sÃ»r qu'il faille gÃ©rer Ã§a au niveau de RQL...
 
-Il faudrait aussi une relation spéciale 'anonyme'.
+Il faudrait aussi une relation spÃ©ciale 'anonyme'.
 
 
 

@@ -1,3 +1,5 @@
+.. -*- coding: utf-8 -*-
+
 ============================================
 Tutoriel "Relation Query Language" (Hercule)
 ============================================
@@ -9,8 +11,8 @@ Apprenons RQL par la pratique...
 
 Schema
 ------
-Nous supposerons dans la suite de ce document que le schéma de
-l'application Erudi est le suivant. Les différentes entités
+Nous supposerons dans la suite de ce document que le schÃ©ma de
+l'application est le suivant. Les diffÃ©rentes entitÃ©s
 disponibles sont :
 
 :Personne:
@@ -69,15 +71,15 @@ Et les relations entre elles:
 	Societe concerne_par Affaire
 
 
-Toutes les entités ont un attribut supplémentaire 'eid', permettant
-d'identifier chaque instance de manière unique.
+Toutes les entitÃ©s ont un attribut supplÃ©mentaire 'eid', permettant
+d'identifier chaque instance de maniÃ¨re unique.
 
-De plus si les métadonnées sont utilisées, vous disposez pour chaque
-type d'entité des relations "creation_date", "modification_date" dont
-l'objet est une entité de type Dates (il y a un "s" pour ne pas avoir
+De plus si les mÃ©tadonnÃ©es sont utilisÃ©es, vous disposez pour chaque
+type d'entitÃ© des relations "creation_date", "modification_date" dont
+l'objet est une entitÃ© de type Dates (il y a un "s" pour ne pas avoir
 de conflit avec le type de base "date"), ainsi que de la relation
-"owned_by" dont l'objet est une entité de type Euser. Les schemas
-standards de ces types d'entités sont les suivants :
+"owned_by" dont l'objet est une entitÃ© de type Euser. Les schemas
+standards de ces types d'entitÃ©s sont les suivants :
 
 :Dates:
 
@@ -99,7 +101,7 @@ standards de ces types d'entités sont les suivants :
 	web    	  varchar(128)
 	birthday  date
 
-Enfin, il existe la relation spéciale "is" permettant de spécifier le
+Enfin, il existe la relation spÃ©ciale "is" permettant de spÃ©cifier le
 type d'une variable. 
 
 
@@ -114,14 +116,14 @@ L'essentiel
    Any X WHERE X is Personne ;
 
 
-.1 *La societé nommé Logilab*
+.1 *La societÃ© nommÃ© Logilab*
 
 ::
 
    Societe S WHERE S nom 'Logilab' ;
 
 
-.2 *Tous les objets ayant un attribut nom commençant par 'Log'*
+.2 *Tous les objets ayant un attribut nom commenÃ§ant par 'Log'*
 
 ::
 
@@ -129,11 +131,11 @@ L'essentiel
    ou 
    Any S WHERE S nom ~= 'Log%' ;
 
-Cette requête peut renvoyer des objets de type personne et de type
-société.
+Cette requÃªte peut renvoyer des objets de type personne et de type
+sociÃ©tÃ©.
 
 
-.3 *Toutes les personnes travaillant pour la société nommé Logilab*
+.3 *Toutes les personnes travaillant pour la sociÃ©tÃ© nommÃ© Logilab*
    
 ::
    Personne P WHERE P travaille_pour S, S nom "Logilab" ;
@@ -142,11 +144,11 @@ société.
    ou
    Personne P WHERE P travaille_pour "Logilab" ;
 
-La dernière forme fonctionne car "nom" est le premier attribut des
-entités de type "Société"
+La derniÃ¨re forme fonctionne car "nom" est le premier attribut des
+entitÃ©s de type "SociÃ©tÃ©" XXX nico: toujours vrai ?
 
 
-.4 *Les societés nommées Caesium ou Logilab*
+.4 *Les societÃ©s nommÃ©es Caesium ou Logilab*
 
 ::
 
@@ -155,7 +157,7 @@ entités de type "Société"
    Societe S WHERE S nom 'Logilab' OR S nom 'Caesium' ;
 
 
-.5 *Toutes les societés sauf celles nommées Caesium ou Logilab*
+.5 *Toutes les societÃ©s sauf celles nommÃ©es Caesium ou Logilab*
 
 ::
 
@@ -164,49 +166,49 @@ entités de type "Société"
    Societe S WHERE NOT S nom 'Logilab' AND NOT S nom 'Caesium' ;
 
 
-.6 *Les objets évalués par la note d'identifiant 43*
+.6 *Les objets Ã©valuÃ©s par la note d'identifiant 43*
 
 ::
 
    Any X WHERE X evaluee_par N, N eid 43 ;
 
 
-.7 *Toutes les personnes triés par date de naissance dans l'ordre antechronologique*
+.7 *Toutes les personnes triÃ©s par date de naissance dans l'ordre antechronologique*
 
 ::
    
    Any X WHERE X is Personne, X datenaiss D ORDERBY D DESC ;
 
 
-.8 *Toutes les personnes groupées par leur société*
+.8 *Toutes les personnes groupÃ©es par leur sociÃ©tÃ©*
 
 ::
    
    Personne X WHERE X travaille_pour S GROUPBY S,X ;
 
-On note qu'il faut définir une variable pour s'en servir pour le
-groupage. De plus les variables séléctionnée doivent être groupée
-(mais les variables groupées ne doivent pas forcément être sélectionnées).
+On note qu'il faut dÃ©finir une variable pour s'en servir pour le
+groupage. De plus les variables sÃ©lÃ©ctionnÃ©es doivent Ãªtre groupÃ©es
+(mais les variables groupÃ©es ne doivent pas forcÃ©ment Ãªtre sÃ©lectionnÃ©es).
 
-
+XXX nico: c'est peu utile comme requÃªte
    
-Exemples avancés
+Exemples avancÃ©s
 ----------------
-.0 *Toutes les personnes dont le champ nom n'est pas spécifié (i.e NULL)*
+.0 *Toutes les personnes dont le champ nom n'est pas spÃ©cifiÃ© (i.e NULL)*
 
 ::
 
    Personne P WHERE P nom NULL ;
 
 
-.1 *Toutes les personnes ne travaillant pour aucune société*
+.1 *Toutes les personnes qui ne travaillent pour aucune sociÃ©tÃ©*
 
 ::
 
    Personne P WHERE NOT p travaille_pour S ;
 
 
-.2 *Toutes les sociétés où la personne nommée toto ne travaille pas*
+.2 *Toutes les sociÃ©tÃ©s oÃ¹ la personne nommÃ©e toto ne travaille pas*
 
 ::
 
@@ -215,14 +217,14 @@ Exemples avancés
    Societe S WHERE NOT 'toto' travaille_pour S ;
 
 
-.3 *Toutes les entités ayant été modifiées entre aujourd'hui et hier*
+.3 *Toutes les entitÃ©s ayant Ã©tÃ© modifiÃ©es entre aujourd'hui et hier*
 
 ::
 
    Any X WHERE X modification_date <= today, X modification_date >= today - 1
 
 
-.4 *Toutes les notes n'ayant pas de type et à effectuer dans les 7 jours, triées par date*
+.4 *Toutes les notes n'ayant pas de type et Ã  effectuer dans les 7 jours, triÃ©es par date*
 
 ::
 
