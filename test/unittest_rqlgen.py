@@ -1,8 +1,7 @@
-""" Copyright (c) 2000-2003 LOGILAB S.A. (Paris, FRANCE).
- http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
-
-__revision__ = "$Id: unittest_rqlgen.py,v 1.3 2005-02-22 09:37:30 syt Exp $"
+Copyright (c) 2000-2008 LOGILAB S.A. (Paris, FRANCE).
+http://www.logilab.fr/ -- mailto:contact@logilab.fr
+"""
 
 from logilab.common.testlib import TestCase, DocTest, unittest_main
 
