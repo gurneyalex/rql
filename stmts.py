@@ -252,10 +252,13 @@ class Union(Statement, Node):
     # recoverable modification methods ########################################
     
     @property
-    @cached
     def undo_manager(self):
-        from rql.undo import SelectionManager
-        return SelectionManager(self)
+        try:
+            return self._undo_manager
+        except AttributeError:
+            from rql.undo import SelectionManager
+            self._undo_manager = SelectionManager(self)
+            return self._undo_manager
 
     @property
     def should_register_op(self):
@@ -342,6 +345,8 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
     def as_string(self, encoding=None, kwargs=None, unsimplified=False,
                   userepr=False):
         """return the tree as an encoded rql string"""
+        # XXX unsimplified no more necessary, it has been introduced for
+        #     ginco's web ui but there is no more simplified trees there!
         if userepr:
             as_string = repr
         else:
