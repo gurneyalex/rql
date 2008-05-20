@@ -849,12 +849,15 @@ class Variable(object):
         # reference to the selection
         self.stmt = None
         # used to collect some global information about the syntax tree
-        # most of them will be filled by the annotator
         self.stinfo = {
-            # main scope for this variable
-            'scope': None,
             # link to VariableReference objects in the syntax tree
             'references': set(),
+            }
+
+    def prepare_annotation(self):
+        self.stinfo.update({
+            # main scope for this variable
+            'scope': None,
             # relations where this variable is used on the lhs/rhs
             'relations': set(),
             'rhsrelations': set(),
@@ -877,10 +880,8 @@ class Variable(object):
             'attrvars': set(),
             # constant node linked to an uid variable if any
             'constnode': None,
-            # possible types for this variable according to constraints in the tree
-            'possibletypes': set()
-            }
-    
+            })
+
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         return self.name
@@ -897,8 +898,8 @@ class Variable(object):
 
     def init_copy(self, old):
         # should copy variable's possibletypes on copy
-        if not self.stinfo['possibletypes']:
-            self.stinfo['possibletypes'].update(old.stinfo['possibletypes'])
+        if not self.stinfo.get('possibletypes'):
+            self.stinfo['possibletypes'] = old.stinfo.get('possibletypes')
         
     def register_reference(self, vref):
         """add a reference to this variable"""

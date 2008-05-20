@@ -302,6 +302,8 @@ class RQLSTAnnotator(object):
         node.annotated = True
         
     def _visit_stmt(self, node):
+        for var in node.defined_vars.itervalues():
+            var.prepare_annotation()
         for i, term in enumerate(node.selection):
             for func in term.iget_nodes(Function):
                 if func.descr().aggregat:
