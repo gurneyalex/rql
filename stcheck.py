@@ -202,8 +202,6 @@ class RQLSTChecker(object):
         pass
     
     def visit_relation(self, relation, errors):
-        if not relation.r_type in self.schema:
-            errors.append('unknown relation %s' % relation.r_type)
         if relation.optional and relation.neged():
                 errors.append("can use optional relation under NOT (%s)"
                               % relation.as_string())
@@ -212,13 +210,17 @@ class RQLSTChecker(object):
             lhs, rhs = relation.children
             assert not isinstance(relation.parent, Not)
             assert rhs.operator == '='
-        # special case "C is NULL"
-        elif relation.r_type == 'is' and relation.children[1].operator == 'IS':
-            lhs, rhs = relation.children
-            assert isinstance(lhs, VariableRef), lhs
-            assert isinstance(rhs.children[0], Constant)
-            assert rhs.operator == 'IS', rhs.operator
-            assert rhs.children[0].type == None
+        elif relation.r_type == 'is':
+            # special case "C is NULL"
+            if relation.children[1].operator == 'IS':
+                lhs, rhs = relation.children
+                assert isinstance(lhs, VariableRef), lhs
+                assert isinstance(rhs.children[0], Constant)
+                assert rhs.operator == 'IS', rhs.operator
+                assert rhs.children[0].type == None
+        elif not relation.r_type in self.schema:
+            errors.append('unknown relation %s' % relation.r_type)
+        
     def leave_relation(self, relation, errors):
         pass
         #assert isinstance(lhs, VariableRef), '%s: %s' % (lhs.__class__,
