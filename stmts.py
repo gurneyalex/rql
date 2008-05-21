@@ -250,7 +250,9 @@ class Union(Statement, Node):
         self.offset = offset
 
     # recoverable modification methods ########################################
-    
+
+    # don't use @cached: we want to be able to disable it while this must still
+    # be cached
     @property
     def undo_manager(self):
         try:
