@@ -335,6 +335,7 @@ class RQLSTAnnotator(object):
         if var.scope is var.stmt:
             # allocate a new variable
             newvar = var.stmt.make_variable()
+            newvar.prepare_annotation()
             for vref in var.references():
                 if vref.scope is exists:
                     rel = vref.relation()
