@@ -367,6 +367,9 @@ class RQLSTAnnotator(object):
                             continue
             # shared references
             newvar.stinfo['constnode'] = var.stinfo['constnode']
+            newvar.stinfo['possibletypes'] = var.stinfo['possibletypes']
+            for sol in newvar.stmt.solutions:
+                sol[newvar.name] = sol[var.name]
             rel = exists.add_relation(var, 'identity', newvar)
             # we have to force visit of the introduced relation
             self.visit_relation(rel, exists)

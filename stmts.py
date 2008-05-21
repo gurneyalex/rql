@@ -102,7 +102,10 @@ class ScopeNode(BaseNode):
             var.stinfo['possibletypes'] = set()
             for solution in solutions:
                 var.stinfo['possibletypes'].add(solution[var.name])
-
+        # for debugging
+        #for sol in solutions:
+        #    for vname in sol:
+        #        assert vname in self.defined_vars or vname in self.aliases
         
 class Statement(object):
     """base class for statement nodes"""
