@@ -907,7 +907,11 @@ class Variable(object):
         
     def unregister_reference(self, vref):
         """remove a reference to this variable"""
-        self.stinfo['references'].remove(vref)
+        try:
+            self.stinfo['references'].remove(vref)
+        except KeyError:
+            # this may occur on hairy undoing
+            pass
 
     def references(self):
         """return all references on this variable"""
