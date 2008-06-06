@@ -964,11 +964,12 @@ class Variable(object):
         result = None
         schema = self.schema
         for rel in chain(self.stinfo['typerels'], self.stinfo['relations']):
-            if rel.r_type == 'is':
-                if self.name == rel.children[0].name:
+            if rel.is_types_restriction():
+                try:
                     etype = str(rel.children[1].children[0].value)
-                else:
-                    etype = 'EEType' # XXX ginco specific
+                except AttributeError:
+                    # "IN" Function node
+                    pass
                 continue
             if schema is not None:
                 rschema = schema.rschema(rel.r_type)
