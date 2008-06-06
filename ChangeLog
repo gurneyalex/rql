@@ -1,10 +1,18 @@
 ChangeLog for RQL
 =================
 
-2008-05-12 -- 0.18.1
+2008-06-06  --  0.18.2
+    * remove group/sort undoing fix
+    * set stinfo['possibletypes'] and update solution dictionnary for variable
+     inserted for new identity relation
+    * error resilient unregister_reference
+    * init variable annotation information on annotation, not variable
+     instanciation
+	
+2008-05-12  --  0.18.1
     * bugfix in remove_groups and remove_sort_terms
 	
-2008-05-08 -- 0.18.0
+2008-05-08  --  0.18.0
     * UNION support
     * HAVING support
     * GROUPBY and ORDERBY moved *before* WHERE
