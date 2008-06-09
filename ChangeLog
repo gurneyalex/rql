@@ -4,10 +4,10 @@ ChangeLog for RQL
 2008-06-06  --  0.18.2
     * remove group/sort undoing fix
     * set stinfo['possibletypes'] and update solution dictionnary for variable
-     inserted for new identity relation
+      inserted for new identity relation
     * error resilient unregister_reference
     * init variable annotation information on annotation, not variable
-     instanciation
+      instanciation
 	
 2008-05-12  --  0.18.1
     * bugfix in remove_groups and remove_sort_terms
