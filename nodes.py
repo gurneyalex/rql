@@ -155,7 +155,7 @@ class EditableMixIn(object):
     
     def add_type_restriction(self, var, etype):
         """builds a restriction node to express : variable is etype"""
-        if isinstance(etype, (set, tuple, list)):
+        if isinstance(etype, (set, frozenset, tuple, list, dict)):
             if len(etype) > 1:
                 rel = make_relation(var, 'is', ('IN',), Function, operator='=')
                 infunc = rel.children[1].children[0]
