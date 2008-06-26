@@ -107,133 +107,134 @@ type d'une variable.
 
 L'essentiel
 -----------
-.0 *Toutes les personnes*
+1. *Toutes les personnes*
 
-::
+   ::
+      
+      Personne X ;
+      ou
+      Any X WHERE X is Personne ;
+
+
+2. *La societé nommé Logilab*
+
+   ::
+
+      Societe S WHERE S nom 'Logilab' ;
+
+
+3. *Tous les objets ayant un attribut nom commençant par 'Log'*
+
+   ::
+
+      Any S WHERE S nom LIKE 'Log%' ;
+      ou 
+      Any S WHERE S nom ~= 'Log%' ;
+
+   Cette requête peut renvoyer des objets de type personne et de type
+   société.
+
+
+4. *Toutes les personnes travaillant pour la société nommé Logilab*
    
-   Personne X ;
-   ou
-   Any X WHERE X is Personne ;
+   ::
+
+      Personne P WHERE P travaille_pour S, S nom "Logilab" ;
+      ou
+      Personne P WHERE P travaille_pour S AND S nom "Logilab" ;
+      ou
+      Personne P WHERE P travaille_pour "Logilab" ;
+
+   La dernière forme fonctionne car "nom" est le premier attribut des
+   entités de type "Société" XXX nico: toujours vrai ?
 
 
-.1 *La societé nommé Logilab*
+5. *Les societés nommées Caesium ou Logilab*
 
-::
+   ::
 
-   Societe S WHERE S nom 'Logilab' ;
-
-
-.2 *Tous les objets ayant un attribut nom commençant par 'Log'*
-
-::
-
-   Any S WHERE S nom LIKE 'Log%' ;
-   ou 
-   Any S WHERE S nom ~= 'Log%' ;
-
-Cette requête peut renvoyer des objets de type personne et de type
-société.
+      Societe S WHERE S nom IN ('Logilab','Caesium') ;
+      ou
+      Societe S WHERE S nom 'Logilab' OR S nom 'Caesium' ;
 
 
-.3 *Toutes les personnes travaillant pour la société nommé Logilab*
-   
-::
-   Personne P WHERE P travaille_pour S, S nom "Logilab" ;
-   ou
-   Personne P WHERE P travaille_pour S AND S nom "Logilab" ;
-   ou
-   Personne P WHERE P travaille_pour "Logilab" ;
+6. *Toutes les societés sauf celles nommées Caesium ou Logilab*
 
-La dernière forme fonctionne car "nom" est le premier attribut des
-entités de type "Société" XXX nico: toujours vrai ?
+   ::
+
+      Societe S WHERE NOT S nom IN ('Logilab','Caesium') ;
+      ou
+      Societe S WHERE NOT S nom 'Logilab' AND NOT S nom 'Caesium' ;
 
 
-.4 *Les societés nommées Caesium ou Logilab*
+7. *Les objets évalués par la note d'identifiant 43*
 
-::
+   ::
 
-   Societe S WHERE S nom IN ('Logilab','Caesium') ;
-   ou
-   Societe S WHERE S nom 'Logilab' OR S nom 'Caesium' ;
+      Any X WHERE X evaluee_par N, N eid 43 ;
 
 
-.5 *Toutes les societés sauf celles nommées Caesium ou Logilab*
+8. *Toutes les personnes triés par date de naissance dans l'ordre antechronologique*
 
-::
-
-   Societe S WHERE NOT S nom IN ('Logilab','Caesium') ;
-   ou
-   Societe S WHERE NOT S nom 'Logilab' AND NOT S nom 'Caesium' ;
+   ::
+      
+      Any X WHERE X is Personne, X datenaiss D ORDERBY D DESC ;
 
 
-.6 *Les objets évalués par la note d'identifiant 43*
+9. *Toutes les personnes groupées par leur société*
 
-::
+   ::
+      
+      Personne X WHERE X travaille_pour S GROUPBY S,X ;
 
-   Any X WHERE X evaluee_par N, N eid 43 ;
-
-
-.7 *Toutes les personnes triés par date de naissance dans l'ordre antechronologique*
-
-::
-   
-   Any X WHERE X is Personne, X datenaiss D ORDERBY D DESC ;
-
-
-.8 *Toutes les personnes groupées par leur société*
-
-::
-   
-   Personne X WHERE X travaille_pour S GROUPBY S,X ;
-
-On note qu'il faut définir une variable pour s'en servir pour le
-groupage. De plus les variables séléctionnées doivent être groupées
-(mais les variables groupées ne doivent pas forcément être sélectionnées).
+   On note qu'il faut définir une variable pour s'en servir pour le
+   groupage. De plus les variables séléctionnées doivent être groupées
+   (mais les variables groupées ne doivent pas forcément être sélectionnées).
 
 XXX nico: c'est peu utile comme requête
    
 Exemples avancés
 ----------------
-.0 *Toutes les personnes dont le champ nom n'est pas spécifié (i.e NULL)*
+1. *Toutes les personnes dont le champ nom n'est pas spécifié (i.e NULL)*
 
-::
+   ::
 
-   Personne P WHERE P nom NULL ;
-
-
-.1 *Toutes les personnes qui ne travaillent pour aucune société*
-
-::
-
-   Personne P WHERE NOT p travaille_pour S ;
+      Personne P WHERE P nom NULL ;
 
 
-.2 *Toutes les sociétés où la personne nommée toto ne travaille pas*
+2. *Toutes les personnes qui ne travaillent pour aucune société*
 
-::
+   ::
 
-   Societe S WHERE NOT P travaille_pour S , P nom 'toto' ;
-   ou
-   Societe S WHERE NOT 'toto' travaille_pour S ;
+      Personne P WHERE NOT p travaille_pour S ;
 
 
-.3 *Toutes les entités ayant été modifiées entre aujourd'hui et hier*
+3. *Toutes les sociétés où la personne nommée toto ne travaille pas*
 
-::
+   ::
 
-   Any X WHERE X modification_date <= today, X modification_date >= today - 1
-
-
-.4 *Toutes les notes n'ayant pas de type et à effectuer dans les 7 jours, triées par date*
-
-::
-
-   Any N, D where N is Note, N type NULL, N diem D, N diem >= today,
-   N diem < today + 7 ORDERBY D
+      Societe S WHERE NOT P travaille_pour S , P nom 'toto' ;
+      ou
+      Societe S WHERE NOT 'toto' travaille_pour S ;
 
 
-.5 *Les personnes ayant un homonyme (sans doublons)*
+4. *Toutes les entités ayant été modifiées entre aujourd'hui et hier*
 
-::
+   ::
 
-   Personne X,Y where X nom NX, Y nom NX, X eid XE, Y eid > XE
+      Any X WHERE X modification_date <= today, X modification_date >= today - 1
+
+
+5. *Toutes les notes n'ayant pas de type et à effectuer dans les 7 jours, triées par date*
+
+   ::
+
+      Any N, D where N is Note, N type NULL, N diem D, N diem >= today,
+      N diem < today + 7 ORDERBY D
+
+
+6. *Les personnes ayant un homonyme (sans doublons)*
+
+   ::
+
+      Personne X,Y where X nom NX, Y nom NX, X eid XE, Y eid > XE
