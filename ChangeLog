@@ -1,6 +1,9 @@
 ChangeLog for RQL
 =================
 
+2008-07-04  --  0.18.3
+    * fix add_type_restriction to support frozenset and dict of types
+
 2008-06-06  --  0.18.2
     * remove group/sort undoing fix
     * set stinfo['possibletypes'] and update solution dictionnary for variable
