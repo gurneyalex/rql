@@ -269,7 +269,13 @@ class NodesTest(TestCase):
         annotator.annotate(tree)
         self.assertEquals(tree.defined_vars['X'].selected_index(), 0)
         self.assertEquals(tree.defined_vars['N'].selected_index(), None)
-        
+
+    def test_get_variable_variables(self):
+        dummy = self._simpleparse("Any X")
+        dummy.solutions = [{'A': 'String', 'B': 'EUser', 'C': 'EGroup'},
+                           {'A': 'String', 'B': 'Personne', 'C': 'EGroup'},
+                           {'A': 'String', 'B': 'EUser', 'C': 'Societe'}]
+        self.assertEquals(dummy.get_variable_variables(), set(['B', 'C']))
     # insertion tests #########################################################
 
     def test_insert_base_1(self):
