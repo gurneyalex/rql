@@ -209,6 +209,16 @@ class Union(Statement, Node):
         return new
 
     # union specific methods ##################################################
+
+    def get_variable_variables(self):
+        """return the set of variable names which take different type according
+        to the solutions
+        """
+        change = set()
+        values = {}
+        for select in self.children:
+            change.update(select.get_variable_variables(values))
+        return change
     
     def _locate_subquery(self, col, etype, kwargs):
         if len(self.children) == 1 and not self.children[0].with_:
@@ -501,13 +511,23 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
                 if not asol in newsolutions:
                     newsolutions.append(asol)
             self.solutions = newsolutions
+
+    def get_variable_variables(self, _values=None):
+        """return the set of variable names which take different type according
+        to the solutions
+        """
+        change = set()
+        if _values is None:
+            _values = {}
+        for solution in self.solutions:
+            for vname, etype in solution.iteritems():
+                if not vname in _values:
+                    _values[vname] = etype
+                elif _values[vname] != etype:
+                    change.add(vname)
+        return change
     
     # quick accessors #########################################################
-
-#     def subquery_aliases(self, subquery):
-#         aliases = [ca for ca in self.aliases.itervalues() if ca.query is subquery]
-#         aliases.sort(key=lambda x: x.colnum)
-#         return aliases
         
     def get_selected_variables(self):
         """returns all selected variables, including those used in aggregate
