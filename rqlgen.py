@@ -1,40 +1,41 @@
-"""Generation of RQL string
+"""Generation of RQL strings.
 
-Copyright (c) 2003-2004 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
-http://www.logilab.fr/ -- mailto:contact@logilab.fr
+:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
+:license: General Public License version 2 - http://www.gnu.org/licenses
 """
+__docformat__ = "restructuredtext en"
 
 NOT = 1
 
-
 class RQLGenerator(object):
     """
-    Helper class to generate RQL strings
+    Helper class to generate RQL strings.
     """
-
 
     def select(self, etype, nupplets=(), groups=(), sorts=()) :
         """
-        return a RQL selection query
-        
-        * type is the desired entity's type (maybe 'Any')
-        * nupplets is a list of 4-uples
-            (subject, relation, object, not)
-          where :
-           * <subject> and <object> maybe a string designing a variable or a
-             constant. The special variable X represents the searched set of
-             entities
-           * <relation> is the statement axis
-           * <not> is a boolean indicating it should be a negative statement
-             (0 -> positive statement, 1 -> negative statement). You may omit
-             this parameter, it default to 0.
-        * groups is a list of variables to use in groups
-        * sorts is a list of sort term. A sort term is a string designing a
-          variable and optionnaly the sort order ('ASC' or 'DESC'). If the
-          sort order is omitted default to 'ASC'
+        Return a RQL selection query.
 
+        :Parameters:
+         * `etype`: the desired entity type (can be 'Any')
+         
+         * `nupplets`: a list of 4-uples (subject, relation, object, not).
+           <subject> and <object> may be a string representing a variable
+           or a constant. The special variable X represents the searched set
+           of entities.
+           <relation> is the statement axis.
+           <not> is a boolean indicating it should be a negative statement
+           (0 -> positive statement, 1 -> negative statement). You may omit
+           this parameter, it default to 0.
+              
+         * `groups`: a list of variables to use in groups
+         
+         * `sorts`: a list of sort term. A sort term is a string designing a
+           variable and optionnaly the sort order ('ASC' or 'DESC'). If the
+           sort order is omitted default to 'ASC'
 
-        examples :
+        Example:
         
         >>> s = RQLGenerator()
         >>> s.select('Any', (('X', 'eid', 14),) )
@@ -57,21 +58,19 @@ class RQLGenerator(object):
 
                 
     def where(self, nupplets):
-        """ return a where statement
-        
-        * nupplets is a list of 4-uples
-            (subject, relation, object, not)
-          where :
-           * <subject> and <object> maybe a string designing a variable or a
-             constant. The special variable X represents the searched set of
-             entities
-           * <relation> is the statement axis
-           * <not> is a boolean indicating it should be a negative statement
-             (0 -> positive statement, 1 -> negative statement). You may omit
-             this parameter, it default to 0.
+        """Return a WHERE statement.
 
+        :Parameters:
+         * `nupplets`: a list of 4-uples (subject, relation, object, not)
+           <subject> and <object> maybe a string designing a variable or a
+           constant. The special variable X represents the searched set of
+           entities
+           <relation> is the statement axis
+           <not> is a boolean indicating it should be a negative statement
+           (0 -> positive statement, 1 -> negative statement). You may omit
+           this parameter, it default to 0.
 
-        examples :
+        Example:
                      
         >>> s = RQLGenerator()
         >>> s.where( (('X', 'eid', 14),) )
@@ -95,12 +94,11 @@ class RQLGenerator(object):
 
         
     def groupby(self, groups):
-        """ return a group by statement
+        """Return a GROUPBY statement.
         
-        * groups is a list of variables to use in groups
+        :param groups: a list of variables to use in groups
 
-
-        example :
+        Example:
         
         >>> s = RQLGenerator()
         >>> s.groupby(('F', 'S'))
@@ -110,14 +108,14 @@ class RQLGenerator(object):
 
     
     def sortby(self, sorts):
-        """ return a sort by statement
+        """Return a SORTBY statement.
         
-        * sorts is a list of sort term. A sort term is a string designing a
+        :param sorts: a list of sort term. A sort term is a string designing a
           variable and optionnaly the sort order ('ASC' or 'DESC'). If the
           sort order is omitted default to 'ASC'
 
 
-        example :
+        Example:
 
         >>> s = RQLGenerator()
         >>> s.sortby(('F ASC', 'S DESC'))
@@ -127,13 +125,13 @@ class RQLGenerator(object):
 
 
     def insert(self, etype, attributes):
-        """ returns an insert statement
+        """Return an INSERT statement.
 
-        * etype is the entity type to insert
+        :Parameters:
+         * `etype`: the entity type to insert
+         * `attributes`: a list of tuples (attr_name, attr_value)
 
-        * attributes is a list of tuples (attr_name, attr_value)
-
-        example :
+        Example:
 
         >>> s = RQLGenerator()
         >>> s.insert('Person', (('firstname', "Clark"), ('lastname', "Kent")))
@@ -145,13 +143,13 @@ class RQLGenerator(object):
 
 
     def delete(self, etype, attributes):
-        """ returns a delete statement
+        """Return a DELETE statement.
 
-        * etype is the entity type to delete
+        :Parameters:
+         * `etype`: the entity type to delete
+         * `attributes`: a list of tuples (attr_name, attr_value)
 
-        * attributes is a list of tuples (attr_name, attr_value)
-
-        example :
+        Example:
 
         >>> s = RQLGenerator()
         >>> s.delete('Person', (('firstname', "Clark"), ('lastname', "Kent")))
@@ -163,17 +161,16 @@ class RQLGenerator(object):
 
 
     def update(self, etype, old_descr, new_descr):
-        """ returns a set statement
+        """Return a SET statement.
 
-        * etype is the entity type to update
+        :Parameters:
+         * `etype`: the entity type to update
+         * `old_descr`: a list of tuples (attr_name, attr_value)
+           that identifies the entity to update
+         * `new_descr`: a list of tuples (attr_name, attr_value)
+           that defines the attributes to update
 
-        * old_descr is a list of tuples (attr_name, attr_value)
-          that identifies the entity to update
-
-        * new_descr is a list of tuples (attr_name, attr_value)
-          that defines the attributes to update
-
-        example :
+        Example:
 
         >>> s = RQLGenerator()
         >>> s.update('Person', (('firstname', "Clark"), ('lastname', "Kent")),

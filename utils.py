@@ -1,21 +1,21 @@
-"""Miscellaneous utilities for rql
+"""Miscellaneous utilities for RQL.
 
-:organization: Logilab
 :copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
+:license: General Public License version 2 - http://www.gnu.org/licenses
 """
 __docformat__ = "restructuredtext en"
 
 UPPERCASE = u'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 def decompose_b26(index, table=UPPERCASE):
-    """return a letter (base-26) decomposition of index"""
+    """Return a letter (base-26) decomposition of index."""
     div, mod = divmod(index, 26)
     if div == 0:
         return table[mod]
     return decompose_b26(div-1) + table[mod]
 
 class rqlvar_maker(object):
-    """yields consistent RQL variable names
+    """Yields consistent RQL variable names.
     
     :param stop: optional argument to stop iteration after the Nth variable
                  default is None which means 'never stop'
@@ -68,7 +68,7 @@ def iter_funcnode_variables(funcnode):
             yield term    
 
 def is_keyword(word):
-    """return true if the given word is a RQL keyword"""
+    """Return true if the given word is a RQL keyword."""
     return word.upper() in KEYWORDS
 
 FUNCTIONS = _GenericAdvFuncHelper.FUNCTIONS.copy()
@@ -83,11 +83,11 @@ def register_function(funcdef):
         db_register_function(driver, funcdef)
     
 def function_description(funcname):
-    """return the description (`FunctionDescription`) for a RQL function"""
+    """Return the description (`FunctionDescription`) for a RQL function."""
     return FUNCTIONS[funcname.upper()]
 
 def quote(value):
-    """quote a string value"""
+    """Quote a string value."""
     res = ['"']
     for char in value:
         if char == '"':
@@ -97,7 +97,7 @@ def quote(value):
     return ''.join(res)
 
 def uquote(value):
-    """quote a unicode string value"""
+    """Quote a unicode string value."""
     res = ['"']
     for char in value:
         if char == u'"':
@@ -116,8 +116,8 @@ def build_visitor_stub(classes):
         cls.leave = eval(_leave % (cls.__name__.lower()))        
 
 class RQLVisitorHandler(object):
-    """handler providing a dummy implementation of all callbacks necessary
-    to visit a RQL syntax tree
+    """Handler providing a dummy implementation of all callbacks necessary
+    to visit a RQL syntax tree.
     """
     
     def visit_union(self, union):

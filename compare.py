@@ -1,20 +1,24 @@
-""" Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE).
- http://www.logilab.fr/ -- mailto:contact@logilab.fr
+"""Comparing syntax trees.
+
+:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
+:license: General Public License version 2 - http://www.gnu.org/licenses
 """
+__docformat__ = "restructuredtext en"
+
 
 from rql.nodes import VariableRef, Variable, Function, Relation, Comparison
 
 def compare_tree(request1, request2):
-    """compares 2 RQL requests
+    """Compares 2 RQL requests.
 
-    Returns true if both requests would return the same results
-    Returns false otherwise
+    :rtype: bool
+    :return: True if both requests would return the same results.
     """
     return make_canon_dict(request1) == make_canon_dict(request2)
 
 def make_canon_dict(rql_tree, verbose=0):
-    """returns a canonical representation of the request as a dictionnary
-    """
+    """Return a canonical representation of the request as a dictionnary."""
     allvars = {}
     canon = {
         'all_variables' : allvars,
@@ -36,19 +40,17 @@ def make_canon_dict(rql_tree, verbose=0):
     return canon
 
 def sort(canon_dict):
-    """remove the all_variables entry and sort other entries in place"""
+    """Remove the all_variables entry and sort other entries in place."""
     del canon_dict['all_variables']
     canon_dict['selection'].sort()
     for values in canon_dict['restriction'].values():
         values.sort()
         
-
 class SkipChildren(Exception):
-    """signal indicating to ignore the current child"""
+    """Signal indicating to ignore the current child."""
 
 class RQLCanonizer(object):
-    """build a dictionnary which represents a RQL syntax tree
-    """
+    """Build a dictionnary which represents a RQL syntax tree."""
     
     def visit(self, node, canon):
         try:
@@ -177,8 +179,8 @@ class RQLCanonizer(object):
 
 
 def make_lhs_reminder(lhs, canon):
-    """return a reminder for a relation's left hand side
-    (i.e a VariableRef object)
+    """Return a reminder for a relation's left hand side
+    (i.e a VariableRef object).
     """
     try:
         lhs = canon['all_variables'][lhs.variable][0]
@@ -187,8 +189,8 @@ def make_lhs_reminder(lhs, canon):
     return ('=', lhs)
 
 def make_rhs_reminder(rhs, canon):
-    """return a reminder for a relation's right hand side
-    (i.e a Comparison object)
+    """Return a reminder for a relation's right hand side
+    (i.e a Comparison object).
     """
     child = rhs.children[0]
     try:

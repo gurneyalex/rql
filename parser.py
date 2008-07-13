@@ -1,12 +1,12 @@
-"""yapps input grammar for RQL.
+"""Yapps input grammar for RQL.
 
-:organization: Logilab
 :copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
+:license: General Public License version 2 - http://www.gnu.org/licenses
 
 
 Select statement grammar
-------------------------
+========================
 
 query = <squery> | <union>
 
@@ -25,24 +25,24 @@ variables = <variable> [, <variable>]*
 
 
 Abbreviations in this code
---------------------------
+==========================
 
 rules:
-* rel -> relation
-* decl -> declaration
-* expr -> expression
-* restr -> restriction
-* var -> variable
-* func -> function
-* const -> constant
-* cmp -> comparison
+ * rel -> relation
+ * decl -> declaration
+ * expr -> expression
+ * restr -> restriction
+ * var -> variable
+ * func -> function
+ * const -> constant
+ * cmp -> comparison
 
 variables:
-* R -> syntax tree root
-* S -> select node
-* P -> parent node
-
+ * R -> syntax tree root
+ * S -> select node
+ * P -> parent node
 """
+__docformat__ = 'restructuredtext en'
 
 from warnings import warn
 from rql.stmts import Union, Select, Delete, Insert, Set
