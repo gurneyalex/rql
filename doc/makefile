@@ -3,7 +3,6 @@ MKHTML_OPT=--doctype book --param division.toc.section.depth=1  --target html --
 
 SRC=.
 
-
 all: specifications_fr.html tutoriel_fr.html epydoc
 
 
@@ -15,8 +14,8 @@ tutoriel_fr.html :${SRC}/tutoriel_fr.txt
 
 
 epydoc:
-	epydoc --html -v --graph all --no-private --exclude="__pkginfo__" --exclude="setup" -n "RQL Module" ../
+	epydoc --html -o apidoc -v --graph all --no-private --exclude="__pkginfo__" --exclude="setup" -n "RQL Module" ../
 
 clean:
 	rm -f *.html
-	rm -rf html
+	rm -rf apidoc

@@ -1,8 +1,8 @@
-"""Analyze of the RQL syntax tree to get possible types for rql variables
+"""Analyze of the RQL syntax tree to get possible types for RQL variables.
 
-:organization: Logilab
-:copyright: 2004-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
+:license: General Public License version 2 - http://www.gnu.org/licenses
 """
 __docformat__ = "restructuredtext en"
 
@@ -16,32 +16,32 @@ from pprint import pprint
 
 
 class ETypeResolver(object):
-    """resolve variables types according to the schema
-
-    CSP modelisation :
+    """Resolve variables types according to the schema.
     
-      variable    <-> RQL variable
-      domains     <-> different entity's types defined in the schema
-      constraints <-> relations between (RQL) variables
+    CSP modelisation:
+     * variable    <-> RQL variable
+     * domains     <-> different entity's types defined in the schema
+     * constraints <-> relations between (RQL) variables
     """
     
     def __init__(self, schema, uid_func_mapping=None):
         """
-        * `schema` is an instance implemeting ISchema to describe entities and
-          relations
-        * `uid_func_mapping` is a dictionary with as key a string designing an
-          attribute used as Unique IDentifiant and with associated value a
-          method that maybe used to get an entity's type given the value of
-          the attribute
+        :Parameters:
+         * `schema`: an object describing entities and relations that implements
+           the ISchema interface.
+         * `uid_func_mapping`: a dictionary where keys are strings representing an
+           attribute used as a Unique IDentifier and values are methods that
+           accept attribute values and return entity's types.
+           [mapping from relation to function taking rhs value as argument
+           and returning an entity type].
         """
         self.set_schema(schema)
-        # mapping from relation to function taking rhs value as argument
-        # and returning an entity type
-        self.uid_func_mapping = uid_func_mapping or {}
-        if uid_func_mapping:
-            self.uid_func = uid_func_mapping.values()[0]
-        else:
+        if uid_func_mapping is None:
+            self.uid_func_mapping = {}
             self.uid_func = None
+        else:
+            self.uid_func_mapping = uid_func_mapping
+            self.uid_func = uid_func_mapping.values()[0]
             
     def set_schema(self, schema):
         self.schema = schema
@@ -69,7 +69,7 @@ class ETypeResolver(object):
         node.set_possible_types(sols)
 
     def _visit(self, node, constraints=None):
-        """recurse among the tree"""
+        """Recurse down the tree."""
         func = getattr(self, 'visit_%s' % node.__class__.__name__.lower())
         if constraints is None:
             func(node)
@@ -291,13 +291,10 @@ class ETypeResolver(object):
     def visit_exists(self, exists, constraints):
         pass
 
-
 # ==========================================================
 
-
-
 class UnifyError(Exception):
-    """raised when unification produces an error"""
+    """Raised when unification produces an error."""
 
 # XXX: C'est l'algo de NlpTools, on peut le simplifier
 # bcp car on n'a que des traits de type { x: [v1], y:[v2] }
@@ -366,17 +363,19 @@ def unify_sols( sols1, sols2 ):
 #    print "Result", sols
     return sols
 
-def feature_get( dct, n ):
+def feature_get(dct, n):
     """Simplified version of feature_set for a feature
-    set containing no subfeatures"""
+    set containing no subfeatures.
+    """
     v = dct[n]
     while type(v)==list:
         v=v[0]
     return v
 
-def feature_set( dct, n, val ):
+def feature_set(dct, n, val):
     """Simplified version of feature_set for a feature
-    set containing no subfeatures"""
+    set containing no subfeatures.
+    """
     v = dct[n]
     if type(v)!=list:
         dct[n] = val
@@ -412,13 +411,12 @@ BASE_TYPES_MAP = {
 
 
 class UnifyingETypeResolver(object):
-    """resolve variables types according to the schema
+    """Resolve variables types according to the schema.
 
-    CSP modelisation :
-    
-      variable    <-> RQL variable
-      domains     <-> different entity's types defined in the schema
-      constraints <-> relations between (RQL) variables
+    CSP modelisation:
+     * variable    <-> RQL variable
+     * domains     <-> different entity's types defined in the schema
+     * constraints <-> relations between (RQL) variables
     """
     
     def __init__(self, schema, uid_func_mapping=None):

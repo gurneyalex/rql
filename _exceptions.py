@@ -1,28 +1,28 @@
-"""
- Copyright (c) 2004-2007 LOGILAB S.A. (Paris, FRANCE).
- http://www.logilab.fr/ -- mailto:contact@logilab.fr
+"""Exceptions used in the RQL package.
 
- defines exception used in the rql package
+:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
+:license: General Public License version 2 - http://www.gnu.org/licenses
 """
+__docformat__ = "restructuredtext en"
 
 class RQLException(Exception):
-    """base exception for exceptions of the rql module"""
-
+    """Base exception for exceptions of the rql module."""
 
 class MissingType(RQLException):
-    """raised when there is some expected type missing from a schema"""
+    """Raised when there is some expected type missing from a schema."""
 
 class UsesReservedWord(RQLException):
-    """raised when the schema uses a reserved word as type or relation"""
+    """Raised when the schema uses a reserved word as type or relation."""
 
 class RQLSyntaxError(RQLException):
-    """raised when there is a syntax error in the rql string"""
+    """Raised when there is a syntax error in the rql string."""
 
 class TypeResolverException(RQLException):
-    """raised when we are unable to guess variables'type"""
+    """Raised when we are unable to guess variables' type."""
 
 class BadRQLQuery(RQLException):
-    """raised when there is a no sense in the rql query"""
+    """Raised when there is a no sense in the rql query."""
     
 class CoercionError(RQLException):
-    """failed to infer type of a math expression"""
+    """Failed to infer type of a math expression."""

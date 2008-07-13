@@ -1,12 +1,12 @@
-"""base classes for rql syntax tree nodes
+"""Base classes for RQL syntax tree nodes.
 
-NOTE: used of __slots__ since applications may create a large number of nodes
-      and we want this (an memory usage) as cheapiest as possible
+Note: this module uses __slots__ to limit memory usage.
       
-:organization: Logilab
 :copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
+:license: General Public License version 2 - http://www.gnu.org/licenses
 """
+__docformat__ = "restructuredtext en"
 
 class BaseNode(object):
     __slots__ = ('parent',)
@@ -15,11 +15,11 @@ class BaseNode(object):
         return self.as_string(encoding='utf-8')
 
     def as_string(self, encoding=None, kwargs=None):
-        """return the tree as an encoded rql string"""
+        """Return the tree as an encoded rql string."""
         raise NotImplementedError()
 
     def initargs(self, stmt):
-        """return list of arguments to give to __init__ to clone this node
+        """Return list of arguments to give to __init__ to clone this node.
 
         I don't use __getinitargs__ because I'm not sure it should interfer with
         copy/pickle
@@ -28,7 +28,7 @@ class BaseNode(object):
     
     @property
     def root(self):
-        """return the root node of the tree"""
+        """Return the root node of the tree."""
         return self.parent.root
     
     @property
@@ -40,10 +40,12 @@ class BaseNode(object):
         return self.parent.scope
 
     def get_nodes(self, klass):
-        """return the list of nodes of a given class in the subtree
+        """Return the list of nodes of a given class in the subtree.
 
         :type klass: a node class (Relation, Constant, etc.)
         :param klass: the class of nodes to return
+
+        :rtype: list
         """
         stack = [self]
         result = []
@@ -56,10 +58,12 @@ class BaseNode(object):
         return result
 
     def iget_nodes(self, klass):
-        """return an iterator over nodes of a given class in the subtree
+        """Return an iterator over nodes of a given class in the subtree.
 
         :type klass: a node class (Relation, Constant, etc.)
         :param klass: the class of nodes to return
+
+        :rtype: iterator
         """
         stack = [self]
         while stack:
@@ -94,7 +98,7 @@ class BaseNode(object):
         return self.children[path[0]].go_to_index_path(path[1:])
     
     def copy(self, stmt):
-        """create and return a copy of this node and its descendant
+        """Create and return a copy of this node and its descendant.
 
         stmt is the root node, which should be use to get new variables
         """
@@ -105,7 +109,7 @@ class BaseNode(object):
 
         
 class Node(BaseNode):
-    """class for nodes of the tree which may have children (almost all...)"""
+    """Class for nodes of the tree which may have children (almost all...)"""
     __slots__ = ('children',)
     
     def __init__(self) :
@@ -146,20 +150,17 @@ class BinaryNode(Node):
             self.append(rhs)
             
     def remove(self, child):
-        """remove the child and replace this node with the other child
-        """
+        """Remove the child and replace this node with the other child."""
         self.children.remove(child)
         self.parent.replace(self, self.children[0])
 
     def get_parts(self):
-        """
-        return the left hand side and the right hand side of this node
-        """
+        """Return the left hand side and the right hand side of this node."""
         return self.children[0], self.children[1]
 
 
 class LeafNode(BaseNode):
-    """class optimized for leaf nodes"""
+    """Class optimized for leaf nodes."""
     __slots__ = ()
 
     @property
@@ -167,9 +168,9 @@ class LeafNode(BaseNode):
         return ()
     
     def copy(self, stmt):
-        """create and return a copy of this node and its descendant
+        """Create and return a copy of this node and its descendant.
 
-        stmt is the root node, which should be use to get new variables
+        stmt is the root node, which should be use to get new variables.
         """
         return self.__class__(*self.initargs(stmt))
     

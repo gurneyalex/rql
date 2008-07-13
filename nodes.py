@@ -1,10 +1,11 @@
-"""This module defines all the nodes we can find in a RQL Syntax tree, except
+"""RQL syntax tree nodes.
+
+This module defines all the nodes we can find in a RQL Syntax tree, except
 root nodes, defined in the `stmts` module.
 
-
-:organization: Logilab
 :copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
+:license: General Public License version 2 - http://www.gnu.org/licenses
 """
 __docformat__ = "restructuredtext en"
 
@@ -538,7 +539,7 @@ class Comparison(HSMixin, Node):
     
 
 class MathExpression(HSMixin, BinaryNode):
-    """+, -, *, /"""
+    """Operators plus, minus, multiply, divide."""
     __slots__ = ('operator',)
 
     def __init__(self, operator, lhs=None, rhs=None):
@@ -986,9 +987,10 @@ class Variable(object):
         return result or etype
     
     def main_relation(self):
-        """return the relation where this variable is used in the rhs
-        (useful for case where this is a final variable and we are
-         interested in the entity to which it belongs)
+        """Return the relation where this variable is used in the rhs.
+
+        It is useful for cases where this variable is final and we are
+        looking for the entity to which it belongs.
         """
         for ref in self.references():
             rel = ref.relation()

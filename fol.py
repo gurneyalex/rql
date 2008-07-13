@@ -1,16 +1,19 @@
 # -*- coding: utf-8 -*-
-# Copyrigth 2000-2008 Logilab S.A. - Paris, France - http://www.logilab.fr <contact@logilab.fr>
+"""FOL.
 
-"""
-x in (A,B,C,D)
-y in (A,B,C)
-(x == A and y == B) or (x == B and y == C)
+:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
+:license: General Public License version 2 - http://www.gnu.org/licenses
 
-sols = (v1:Set1,v2:Set2,...)
+Example:
+ x in (A,B,C,D)
+ y in (A,B,C)
+ (x == A and y == B) or (x == B and y == C)
 
-sola(v1,v2) | solb(v2,v3) = (v1:Set1,v2:Set2a|Set2b,v3:Set3)
-sola(v1,v2) & solb(v2,v3) = (v1:Set1,v2:Set2a&Set2b,v3:Set3)
+ sols = (v1:Set1,v2:Set2,...)
 
+ sola(v1,v2) | solb(v2,v3) = (v1:Set1,v2:Set2a|Set2b,v3:Set3)
+ sola(v1,v2) & solb(v2,v3) = (v1:Set1,v2:Set2a&Set2b,v3:Set3)
 
 
 N1 or N2 : sols = [ s1 for s1 in N1.sols() ] + [ s2 for s2 in N2.sols() ]
@@ -18,8 +21,8 @@ N1 or N2 : sols = [ s1 for s1 in N1.sols() ] + [ s2 for s2 in N2.sols() ]
 N1 and N2 : sols = [ s1&s2 for s1 in N1.sols() for s2 in N2.sols() if s1&s2 not empty ]
 
 V in Set : sols = (V:Set)
-
 """
+__docformat__ = "restructuredtext en"
 
 import bisect
 
@@ -74,7 +77,7 @@ class SolBase(object):
 
     def variables(self, upd=None):
         """Returns a dict whose keys are variables used
-        by this formula. if upd is provided it is used
+        by this formula. if `upd` is provided it is used
         instead of an empty dict and it keeps already existing
         variables intact"""
         raise NotImplementedError
@@ -169,7 +172,7 @@ class SolOr(SolBase):
         return upd
 
 class SolRelation(SolBase):
-    """Boolean relation between variables"""
+    """Boolean relation between variables."""
     
     def __init__(self, *variables):
         self._variables = list(variables)
@@ -183,7 +186,7 @@ class SolRelation(SolBase):
 
 
 class SolVar(SolRelation):
-    """Simple unary relation True if var in set"""
+    """Simple unary relation True if var in set."""
     
     def __init__(self, V, s):
         self.var = V
@@ -208,7 +211,7 @@ class SolVar(SolRelation):
         return SolEq(self, v)
 
 class SolEq(SolRelation):
-    """Simple equality between variables"""
+    """Simple equality between variables."""
     
     def sols(self, domains):
         d = {}
@@ -244,7 +247,7 @@ class SolEq(SolRelation):
         return self
         
 if __name__ == "__main__":
-    # XXX turn this into a test or remove
+    # FIXME XXX turn this into a test or remove
     D = {
         'x' : range(5),
         'y' : range(6),
