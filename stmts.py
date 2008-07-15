@@ -196,9 +196,9 @@ class Union(Statement, Node):
     def __repr__(self):
         return ' '.join('\nUNION\n'.join(repr(select) for select in self.children))
     
-    def as_string(self, encoding=None, kwargs=None, unsimplified=False):
+    def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
-        return ' UNION '.join(select.as_string(encoding, kwargs, unsimplified)
+        return ' UNION '.join(select.as_string(encoding, kwargs)
                               for select in self.children)
             
     def copy(self, copy_children=True):
@@ -345,28 +345,12 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
     def __repr__(self):
         return self.as_string(userepr=True)
     
-    def as_string(self, encoding=None, kwargs=None, unsimplified=False,
-                  userepr=False):
+    def as_string(self, encoding=None, kwargs=None, userepr=False):
         """return the tree as an encoded rql string"""
-        # XXX unsimplified no more necessary, it has been introduced for
-        #     ginco's web ui but there is no more simplified trees there!
         if userepr:
             as_string = repr
         else:
             as_string = lambda x: x.as_string(encoding, kwargs)
-        restriction = []
-        if unsimplified and self.stinfo['rewritten']:
-            vvalues = {}
-            # hact to avoid actually replacing introduced const node:
-            # replace const value by variable value and set constant type to Int
-            # to avoid quoting
-            for vname, consts in self.stinfo['rewritten'].iteritems():
-                sconst = consts[0]
-                vvalues[vname] = (sconst.type, sconst.value)
-                restriction.append('%s eid %s' % (vname, sconst.eval(kwargs)))
-                for const in consts:
-                    const.value = vname
-                    const.type = 'Int'
         s = [','.join(as_string(term) for term in self.selection)]
         if self.groupby:
             s.append('GROUPBY ' + ','.join(as_string(term)
@@ -379,9 +363,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         if self.offset:
             s.append('OFFSET %s' % self.offset)
         if self.where is not None:
-            restriction.append(as_string(self.where))
-        if restriction:
-            s.append('WHERE ' + ', '.join(restriction))
+            s.append('WHERE ' + ', '.join(as_string(self.where)))
         if self.having:
             s.append('HAVING ' + ','.join(as_string(term)
                                            for term in self.having))
@@ -390,11 +372,6 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
                                         for term in self.with_))
         if self.distinct:
             return 'DISTINCT Any ' + ' '.join(s)
-        # restore rewritten constant values
-        if unsimplified and self.stinfo['rewritten']:
-            for vname, consts in self.stinfo['rewritten'].iteritems():
-                for const in consts:
-                    const.type, const.value = vvalues[vname]
         return 'Any ' + ' '.join(s)
                                       
     def copy(self, copy_solutions=True, solutions=None):
@@ -494,11 +471,13 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         if name in self.aliases:
             return self.aliases[name]
         if colnum is not None: # take care, may be 0
-            self.aliases[name] = nodes.ColumnAlias(name, colnum)
+            self.aliases[name] = calias = nodes.ColumnAlias(name, colnum)
             # alias may already have been used as a regular variable, replace it
             if name in self.defined_vars:
-                for vref in self.defined_vars.pop(name).references():
-                    vref.variable = self.aliases[name]
+                var = self.defined_vars.pop(name)
+                calias.stinfo['references'] = var.stinfo['references']
+                for vref in var.references():
+                    vref.variable = calias
             return self.aliases[name]
         return super(Select, self).get_variable(name)
     
@@ -776,7 +755,7 @@ class Delete(Statement, ScopeNode):
             result.append(repr(self.where))
         return ' '.join(result)
 
-    def as_string(self, encoding=None, kwargs=None, unsimplified=False):
+    def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         result = ['DELETE']
         if self.main_variables:
@@ -860,7 +839,7 @@ insertion variable'
             result.append('WHERE ' + repr(self.where))
         return ' '.join(result)
 
-    def as_string(self, encoding=None, kwargs=None, unsimplified=False):
+    def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         result = ['INSERT']
         result.append(', '.join(['%s %s' % (etype, var)
@@ -920,7 +899,7 @@ class Set(Statement, ScopeNode):
             result.append('WHERE ' + repr(self.where))
         return ' '.join(result)
 
-    def as_string(self, encoding=None, kwargs=None, unsimplified=False):
+    def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         result = ['SET']
         result.append(', '.join(rel.as_string(encoding, kwargs)
