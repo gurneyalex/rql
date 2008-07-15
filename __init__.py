@@ -5,6 +5,7 @@
 :license: General Public License version 2 - http://www.gnu.org/licenses
 """
 __docformat__ = "restructuredtext en"
+
 from rql.__pkginfo__ import version as __version__
 
 import sys
@@ -153,6 +154,7 @@ class RQLHelper(object):
         from rql.compare import compare_tree
         return compare_tree(self.parse(rqlstring1), self.parse(rqlstring2))
 
+
 def copy_uid_node(select, node, vconsts):
     node = node.copy(select)
     node.uid = True
@@ -174,7 +176,7 @@ def parse(rqlstring, print_errors=True):
         return parser.goal()
     except SyntaxError, ex:
         if not print_errors:
-            raise RQLSyntaxError('%s\n%s' % (rqlstring, ex.msg))
+            raise RQLSyntaxError('%s\n%s' % (rqlstring, ex.msg)), None, sys.exc_info()[-1]
         # try to get error message from yapps
         try:
             out = sys.stdout
@@ -183,13 +185,13 @@ def parse(rqlstring, print_errors=True):
                 print_error(ex, parser._scanner)
             finally:
                 sys.stdout = out
-            raise RQLSyntaxError(stream.getvalue())
-        except ImportError:
+            raise RQLSyntaxError(stream.getvalue()), None, sys.exc_info()[-1]
+        except ImportError: # duh?
             sys.stdout = out
             raise RQLSyntaxError('Syntax Error', ex.msg, 'on line',
-                                 1 + pinput.count('\n', 0, ex.pos))            
+                                 1 + pinput.count('\n', 0, ex.pos)), None, sys.exc_info()[-1]
     except NoMoreTokens:
         msg = 'Could not complete parsing; stopped around here: \n%s'
-        raise RQLSyntaxError(msg  % parser._scanner)
+        raise RQLSyntaxError(msg  % parser._scanner), None, sys.exc_info()[-1]
 
 pyparse = parse

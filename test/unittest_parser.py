@@ -49,11 +49,11 @@ SPEC_QUERIES = (
     "Personne P WHERE P travaille_pour S, S nom 'Eurocopter', P interesse_par T, T nom 'formation';",
     "Note N WHERE N ecrit_le D, D day > (today -10), N ecrit_par P, P nom 'jphc' or P nom 'ocy';",
     "Personne P WHERE (P interesse_par T, T nom 'formation') or (P ville 'Paris');",
-    "Any X where X is Person, X firstname 'Anne', X surname S ORDERBY S DESC;",
+    "Any X ORDERBY S DESC WHERE X is Person, X firstname 'Anne', X surname S;",
     # limit / offset
-    "Personne P WHERE P nom N LIMIT 100;",
-    "Personne P WHERE P nom N LIMIT 100 OFFSET 200;",
-    'Any X WHERE X is Person OFFSET 6;',
+    "Personne P LIMIT 100 WHERE P nom N;",
+    "Personne P LIMIT 100 OFFSET 200 WHERE P nom N;",
+    'Any X OFFSET 6 WHERE X is Person;',
     # optional relation support (left|right outer join)
     'Any X,Y,A WHERE X? concerns Y, Y title A;',
     'Any X,Y,A WHERE X concerns Y?, Y title A;',
@@ -69,15 +69,15 @@ SPEC_QUERIES = (
 
     # some additional cases
     'INSERT Person X : X name "bidule", Y workfor X WHERE Y name "logilab";',
-    'DISTINCT Any X,A,B,C,D WHERE P eid 41, X concerns P, P is Project, X is Story,X title A,X state B,X priority C,X cost D ORDERBY A ASC;',
+    'DISTINCT Any X,A,B,C,D ORDERBY A ASC WHERE P eid 41, X concerns P, P is Project, X is Story,X title A,X state B,X priority C,X cost D;',
     'Any X WHERE X has_text "2.12.0";',
-    'Any X,A,B,C,D WHERE X concerns 41,X title A,X state B,X priority C,X cost D ORDERBY A ASC;',
+    'Any X,A,B,C,D ORDERBY A ASC WHERE X concerns 41,X title A,X state B,X priority C,X cost D;',
 
-    "Any X, COUNT(B) where B concerns X GROUPBY X ORDERBY 1;",
+    "Any X, COUNT(B) GROUPBY X ORDERBY 1 where B concerns X;",
     
     "Any X, COUNT(B) GROUPBY X ORDERBY 1 WHERE B concerns X HAVING COUNT(B) > 2;",
     
-    'Any X, MAX(COUNT(B)) WHERE B concerns X GROUPBY X;', # syntaxically correct
+    'Any X, MAX(COUNT(B)) GROUPBY X WHERE B concerns X;', # syntaxically correct
 
     'Any X WHERE X eid > 12;',
     'DELETE Any X WHERE X eid > 12;',
@@ -85,7 +85,7 @@ SPEC_QUERIES = (
 #    'Any X WHERE 5 in_state X;',
     '(Any X WHERE X eid > 12) UNION (Any X WHERE X eid < 23);',
     '(Any X WHERE X nom "toto") UNION (Any X WHERE X firstname "toto");',
-    '(Any X WHERE X nom "toto" GROUPBY X) UNION (Any X WHERE X firstname "toto" GROUPBY X ORDERBY X);',
+    '(Any X GROUPBY X WHERE X nom "toto") UNION (Any X GROUPBY X ORDERBY X WHERE X firstname "toto");',
 
     'Any X, X/Y WHERE X is Person WITH Y BEING (Any SUM(X) WHERE X is Person);',
     'Any Y, COUNT(X) GROUPBY Y WHERE X bla Y WITH Y BEING ((Person X) UNION (Document X));',

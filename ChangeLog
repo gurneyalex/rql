@@ -1,6 +1,14 @@
 ChangeLog for RQL
 =================
 
+ --
+   * grammar changes: LIMIT / OFFSET should now be before the WHERE clause,
+     though bw compat will be kept for some time
+   * when simplifying constant uid nodes, don't remove them from group terms if
+     there is a HAVING clause
+   * new get_variable_variables on Union and Select nodes
+  
+	
 2008-07-04  --  0.18.3
     * fix add_type_restriction to support frozenset and dict of types
 

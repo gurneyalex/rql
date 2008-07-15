@@ -15,6 +15,7 @@ union = (<squery>) UNION (<squery>) [UNION (<squery>)]*
 squery = Any <selection>
         [GROUPBY <variables>]
         [ORDERBY <sortterms>]
+        [LIMIT <nb> OFFSET <nb>]
         [WHERE <restriction>]
         [HAVING <aggregat restriction>]
         [WITH <subquery> [,<subquery]*]
@@ -112,7 +113,7 @@ rule goal: DELETE _delete<<Delete()>> ';'             {{ return _delete }}
  
          | SET update<<Set()>> ';'                    {{ return update }}
 
-         | union<<Union()>> limit_offset<<union>> ';' {{ return union }}
+         | union<<Union()>> ';'                       {{ return union }}
 
 # Deletion  ###################################################################
 
@@ -151,12 +152,14 @@ rule select<<S>>: DISTINCT select_<<S>>  {{ S.distinct = True ; return S }}
 rule select_<<S>>: E_TYPE selection<<S>> 
                    groupby<<S>>
                    orderby<<S>>
+                   limit_offset<<S>>
                    where<<S>>
                    having<<S>>
                    with_<<S>>
                    dgroupby<<S>>
-                   dorderby<<S>>          {{ S.set_statement_type(E_TYPE); return S }}
-            
+                   dorderby<<S>>      
+                   dlimit_offset<<S>>    {{ S.set_statement_type(E_TYPE); return S }}
+        
 rule selection<<S>>: expr_add<<S>>        {{ S.append_selected(expr_add) }}
                      (  ',' expr_add<<S>> {{ S.append_selected(expr_add) }}
                      )*                  
@@ -168,6 +171,7 @@ rule selection<<S>>: expr_add<<S>>        {{ S.append_selected(expr_add) }}
 # to remove in rql 1.0
 rule dorderby<<S>>: orderby<<S>> {{ if orderby: warn('ORDERBY is now before WHERE clause') }}
 rule dgroupby<<S>>: groupby<<S>> {{ if groupby: warn('GROUPBY is now before WHERE clause') }}
+rule dlimit_offset<<S>>: limit_offset<<S>> {{ if limit_offset: warn('LIMIT/OFFSET are now before WHERE clause') }}
 
 rule groupby<<S>>: GROUPBY variables<<S>> {{ S.set_groupby(variables); return True }}
                  |
@@ -211,12 +215,12 @@ rule sort_meth: SORT_DESC {{ return 0 }}
 
 # Limit and offset ############################################################
 
-rule limit_offset<<R>> :  limit<<R>> offset<<R>>
+rule limit_offset<<R>> :  limit<<R>> offset<<R>> {{ return limit or offset }}
 		  
-rule limit<<R>> : LIMIT INT {{ R.set_limit(int(INT)) }} 
+rule limit<<R>> : LIMIT INT {{ R.set_limit(int(INT)); return True }} 
                 |
 
-rule offset<<R>> : OFFSET INT {{ R.set_offset(int(INT)) }}
+rule offset<<R>> : OFFSET INT {{ R.set_offset(int(INT)); return True }}
   		         | 
 
 

@@ -215,21 +215,14 @@ class SetOffsetOperation(ChangeValueOperation):
         
     def undo(self, selection):
         """undo the operation on the selection"""
-        selection.offset = self.value
+        self.node.offset = self.value
 
 class SetLimitOperation(ChangeValueOperation):
     """Defines how to undo 'set_limit'."""
         
     def undo(self, selection):
         """undo the operation on the selection"""
-        selection.limit = self.value
-
-class ChangeOptionalOperation(ChangeValueOperation):
-    """Defines how to undo 'set_optional'."""
-        
-    def undo(self, selection):
-        """undo the operation on the selection"""
-        selection.offset = self.value
+        self.node.limit = self.value
 
 class SetOptionalOperation(ChangeValueOperation):
     """Defines how to undo 'set_limit'."""
