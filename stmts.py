@@ -165,17 +165,21 @@ class Union(Statement, Node):
     def __init__(self):
         Node.__init__(self)
 
-    @property
-    def offset(self):
+    def _get_offset(self):
         warn('offset is now a Select node attribute', DeprecationWarning,
              stacklevel=2)
         return self.children[-1].offset
-
-    @property
-    def limit(self):
+    def _set_offset(self, offset):
+        self.children[-1].offset = offset
+    offset = property(_get_offset, _set_offset)
+        
+    def _get_limit(self):
         warn('limit is now a Select node attribute', DeprecationWarning,
              stacklevel=2)
         return self.children[-1].limit
+    def _set_limit(self, limit):
+        self.children[-1].limit = limit
+    limit = property(_get_limit, _set_limit)
     
     @property 
     def root(self):
