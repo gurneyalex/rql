@@ -94,7 +94,7 @@ class RQLHelper(object):
             from rql import nodes
             for select in rqlst.children:
                 self._simplify(select)
-        
+
     def _simplify(self, select):
         # recurse on subqueries first
         for subquery in select.with_:
@@ -118,29 +118,27 @@ class RQLHelper(object):
                         while not term.parent is select:
                             term = term.parent
                         if term in select.selection:
-                            rhs = rhs.copy(select)
-                            rhs.uid = True
-                            vconsts.append(rhs)
+                            rhs = copy_uid_node(select, rhs, vconsts)
                             if vref is term:
                                 select.selection[select.selection.index(vref)] = rhs
                                 rhs.parent = select
                             else:
                                 vref.parent.replace(vref, rhs)
-                        else:
-                            # remove from groupby/orderby
+                        elif term in select.orderby:
+                            # remove from orderby
                             select.remove(term)
+                        elif not select.having:
+                            # remove from groupby if no HAVING clause
+                            select.remove(term)
+                        else:
+                            rhs = copy_uid_node(select, rhs, vconsts)
+                            select.groupby[select.groupby.index(vref)] = rhs
+                            rhs.parent = select                            
                     elif rel is uidrel or rel.is_types_restriction():
                         # drop this relation
                         rel.parent.remove(rel)
                     else:
-                        rhs = rhs.copy(select)
-                        rhs.uid = True
-                        # should have been set by the analyzer
-                        #assert rhs.uidtype , (select, rhs, id(rhs))
-                        vconsts.append(rhs)
-#                         # substitute rhs
-#                         if rel and uidrel._not:
-#                             rel._not = rel._not or uidrel._not
+                        rhs = copy_uid_node(select, rhs, vconsts)
                         vref.parent.replace(vref, rhs)
                 del select.defined_vars[var.name]
         if select.stinfo['rewritten'] and select.solutions:
@@ -154,6 +152,12 @@ class RQLHelper(object):
         """
         from rql.compare import compare_tree
         return compare_tree(self.parse(rqlstring1), self.parse(rqlstring2))
+
+def copy_uid_node(select, node, vconsts):
+    node = node.copy(select)
+    node.uid = True
+    vconsts.append(node)
+    return node
 
         
 def parse(rqlstring, print_errors=True): 

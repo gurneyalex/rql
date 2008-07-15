@@ -464,6 +464,7 @@ class RQLSTAnnotator(object):
             if vref is rhs.children[0] and rschema.is_final():
                 update_attrvars(var, relation, lhs)
 
+
 def update_attrvars(var, relation, lhs):
     lhsvar = getattr(lhs, 'variable', None)
     var.stinfo['attrvars'].add( (lhsvar, relation.r_type) )
