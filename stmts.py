@@ -10,6 +10,7 @@ defined in the nodes module
 __docformat__ = "restructuredtext en"
 
 from copy import deepcopy
+from warnings import warn
 
 from logilab.common.decorators import cached
 
@@ -163,10 +164,19 @@ class Union(Statement, Node):
 
     def __init__(self):
         Node.__init__(self)
-        # limit / offset
-        self.limit = None
-        self.offset = 0
-            
+
+    @property
+    def offset(self):
+        warn('offset is now a Select node attribute', DeprecationWarning,
+             stacklevel=2)
+        return self.children[-1].offset
+
+    @property
+    def limit(self):
+        warn('limit is now a Select node attribute', DeprecationWarning,
+             stacklevel=2)
+        return self.children[-1].limit
+    
     @property 
     def root(self):
         """return the root node of the tree"""
@@ -180,24 +190,12 @@ class Union(Statement, Node):
     # repr / as_string / copy #################################################
     
     def __repr__(self):
-        s = [repr(select) for select in self.children]
-        s = ['\nUNION\n'.join(s)]
-        if self.limit is not None:
-            s.append('LIMIT %s' % self.limit)
-        if self.offset:
-            s.append('OFFSET %s' % self.offset)
-        return ' '.join(s)                             
+        return ' '.join('\nUNION\n'.join(repr(select) for select in self.children))
     
     def as_string(self, encoding=None, kwargs=None, unsimplified=False):
         """return the tree as an encoded rql string"""
-        s = [select.as_string(encoding, kwargs, unsimplified)
-             for select in self.children]
-        s = [' UNION '.join(s)]
-        if self.limit is not None:
-            s.append('LIMIT %s' % self.limit)
-        if self.offset:
-            s.append('OFFSET %s' % self.offset)
-        return ' '.join(s)                              
+        return ' UNION '.join(select.as_string(encoding, kwargs, unsimplified)
+                              for select in self.children)
             
     def copy(self, copy_children=True):
         new = Union()
@@ -205,8 +203,6 @@ class Union(Statement, Node):
             for child in self.children:
                 new.append(child.copy())
                 assert new.children[-1].parent is new
-        new.limit = self.limit
-        new.offset = self.offset
         return new
 
     # union specific methods ##################################################
@@ -246,22 +242,6 @@ class Union(Statement, Node):
             pass
         self._subq_cache[(col, etype)] = self._locate_subquery(col, etype, kwargs)
         return self._subq_cache[(col, etype)]
-    
-    def set_limit(self, limit):
-        if limit is not None and (not isinstance(limit, (int, long)) or limit <= 0):
-            raise BadRQLQuery('bad limit %s' % limit)
-        if self.should_register_op and limit != self.limit:
-            from rql.undo import SetLimitOperation
-            self.undo_manager.add_operation(SetLimitOperation(self.limit))
-        self.limit = limit
-
-    def set_offset(self, offset):
-        if offset is not None and (not isinstance(offset, (int, long)) or offset < 0):
-            raise BadRQLQuery('bad offset %s' % offset)
-        if self.should_register_op and offset != self.offset:
-            from rql.undo import SetOffsetOperation
-            self.undo_manager.add_operation(SetOffsetOperation(self.offset))
-        self.offset = offset
 
     # recoverable modification methods ########################################
 
@@ -304,6 +284,9 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
     """
     parent = None
     distinct = False
+    # limit / offset
+    limit = None
+    offset = 0
     # select clauses
     groupby = ()
     orderby = ()
@@ -387,6 +370,10 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         if self.orderby:
             s.append('ORDERBY ' + ','.join(as_string(term)
                                            for term in self.orderby))
+        if self.limit is not None:
+            s.append('LIMIT %s' % self.limit)
+        if self.offset:
+            s.append('OFFSET %s' % self.offset)
         if self.where is not None:
             restriction.append(as_string(self.where))
         if restriction:
@@ -421,6 +408,8 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         if self.having:
             new.set_having([sq.copy(new) for sq in self.having])
         new.distinct = self.distinct
+        new.limit = self.limit
+        new.offset = self.offset
         return new
     
     # select specific methods #################################################
@@ -442,6 +431,22 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             from rql.undo import SetDistinctOperation
             self.undo_manager.add_operation(SetDistinctOperation(self.distinct, self))
         self.distinct = value
+    
+    def set_limit(self, limit):
+        if limit is not None and (not isinstance(limit, (int, long)) or limit <= 0):
+            raise BadRQLQuery('bad limit %s' % limit)
+        if self.should_register_op and limit != self.limit:
+            from rql.undo import SetLimitOperation
+            self.undo_manager.add_operation(SetLimitOperation(self.limit, self))
+        self.limit = limit
+
+    def set_offset(self, offset):
+        if offset is not None and (not isinstance(offset, (int, long)) or offset < 0):
+            raise BadRQLQuery('bad offset %s' % offset)
+        if self.should_register_op and offset != self.offset:
+            from rql.undo import SetOffsetOperation
+            self.undo_manager.add_operation(SetOffsetOperation(self.offset, self))
+        self.offset = offset
     
     def set_orderby(self, terms):
         self.orderby = terms

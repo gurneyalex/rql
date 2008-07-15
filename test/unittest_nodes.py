@@ -60,8 +60,8 @@ class NodesTest(TestCase):
     
     # selection tests #########################################################
 
-    def test_union_set_limit(self):
-        tree = self._parse("Any X WHERE X is Person")
+    def test_select_set_limit(self):
+        tree = self._simpleparse("Any X WHERE X is Person")
         self.assertEquals(tree.limit, None)
         self.assertRaises(BadRQLQuery, tree.set_limit, 0)
         self.assertRaises(BadRQLQuery, tree.set_limit, -1)
@@ -72,8 +72,8 @@ class NodesTest(TestCase):
         tree.recover()
         self.assertEquals(tree.limit, None)
         
-    def test_union_set_offset(self):
-        tree = self._parse("Any X WHERE X is Person")
+    def test_select_set_offset(self):
+        tree = self._simpleparse("Any X WHERE X is Person")
         self.assertRaises(BadRQLQuery, tree.set_offset, -1)
         self.assertRaises(BadRQLQuery, tree.set_offset, '1')
         self.assertEquals(tree.offset, 0)
@@ -158,9 +158,9 @@ class NodesTest(TestCase):
     def test_select_base_1(self):
         tree = self._parse("Any X WHERE X is Person")
         self.assertIsInstance(tree, stmts.Union)
-        self.assertEqual(tree.limit, None)
-        self.assertEqual(tree.offset, 0)
         select = tree.children[0]
+        self.assertEqual(select.limit, None)
+        self.assertEqual(select.offset, 0)
         self.assertIsInstance(select, stmts.Select)
         self.assertEqual(select.distinct, False)
         self.assertEqual(len(select.children), 2)
@@ -247,9 +247,10 @@ class NodesTest(TestCase):
         self.assertEqual(group[0].name, 'N')
 
     def test_select_limit_offset(self):
-        tree = self._parse("Any X WHERE X name 1.0 LIMIT 10 OFFSET 10")
-        self.assertEqual(tree.limit, 10)
-        self.assertEqual(tree.offset, 10)
+        tree = self._parse("Any X LIMIT 10 OFFSET 10 WHERE X name 1.0")
+        select = tree.children[0]
+        self.assertEqual(select.limit, 10)
+        self.assertEqual(select.offset, 10)
 
     def test_exists(self):
         tree = self._simpleparse("Any X,N WHERE X is Person, X name N, EXISTS(X work_for Y)")
