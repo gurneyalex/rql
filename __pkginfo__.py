@@ -1,9 +1,11 @@
 # pylint: disable-msg=W0622
-# Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE).
-# http://www.logilab.fr/ -- mailto:contact@logilab.fr
+"""RQL packaging information.
+
+:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
+:license: General Public License version 2 - http://www.gnu.org/licenses
 """
-rql packaging information
-"""
+__docformat__ = "restructuredtext en"
 
 modname = "rql"
 numversion = (0, 18, 3)
