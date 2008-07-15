@@ -1,10 +1,11 @@
-"""RQL implementation independant library.
+"""RQL library (implementation independant).
 
-:organization: Logilab
 :copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
+:license: General Public License version 2 - http://www.gnu.org/licenses
 """
 __docformat__ = "restructuredtext en"
+from rql.__pkginfo__ import version as __version__
 
 import sys
 import threading
@@ -58,7 +59,7 @@ class RQLHelper(object):
         self._analyser.set_schema(schema)
 
     def parse(self, rqlstring, annotate=True):
-        """return a syntax tree from an sql string"""
+        """Return a syntax tree created from a RQL string."""
         rqlst = parse(rqlstring, False)
         self._checker.check(rqlst)
         if annotate:
@@ -71,10 +72,10 @@ class RQLHelper(object):
 
     def compute_solutions(self, rqlst, uid_func_mapping=None, kwargs=None,
                           debug=False):
-        """set solutions for variables of the syntax tree
+        """Set solutions for variables of the syntax tree.
 
-        each solution is a dictionary with variable's name as key and
-        variable's type as value
+        Each solution is a dictionary with variable's name as key and
+        variable's type as value.
         """
         self._analyser_lock.acquire()
         try:
@@ -84,10 +85,10 @@ class RQLHelper(object):
             self._analyser_lock.release()
     
     def simplify(self, rqlst):
-        """simplify rqlst by rewritten non final variable associated to a const
+        """Simplify `rqlst` by rewriting non-final variables associated to a const
         node (if annotator say we can...)
 
-        The tree is modified in-place
+        The tree is modified in-place.
         """
         #print 'simplify', rqlst.as_string(encoding='UTF8')
         if rqlst.TYPE == 'select':
@@ -145,10 +146,9 @@ class RQLHelper(object):
             select.clean_solutions()
         
     def compare(self, rqlstring1, rqlstring2):
-        """compares 2 RQL requests
+        """Compare 2 RQL requests.
         
-        returns true if both requests would return the same results
-        returns false otherwise
+        Return True if both requests would return the same results.
         """
         from rql.compare import compare_tree
         return compare_tree(self.parse(rqlstring1), self.parse(rqlstring2))
@@ -161,7 +161,7 @@ def copy_uid_node(select, node, vconsts):
 
         
 def parse(rqlstring, print_errors=True): 
-    """return a syntax tree from an sql string"""   
+    """Return a syntax tree created from a RQL string."""   
     from yapps.runtime import print_error, SyntaxError, NoMoreTokens
     from rql.parser import Hercule, HerculeScanner
     # make sure rql string ends with a semi-colon

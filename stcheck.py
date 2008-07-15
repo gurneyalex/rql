@@ -1,8 +1,8 @@
-"""RQL Syntax tree annotator
+"""RQL Syntax tree annotator.
 
-:organization: Logilab
 :copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
+:license: General Public License version 2 - http://www.gnu.org/licenses
 """
 __docformat__ = "restructuredtext en"
 
@@ -16,19 +16,19 @@ from rql.stmts import Union
 
 
 class GoTo(Exception):
-    """exception used to control the visit of the tree"""
+    """Exception used to control the visit of the tree."""
     def __init__(self, node):
         self.node = node
         
 
 class RQLSTChecker(object):
-    """ check a RQL syntax tree for errors not detected on parsing and
+    """Check a RQL syntax tree for errors not detected on parsing.
 
     Some simple rewriting of the tree may be done too:
     * if a OR is used on a symetric relation
     * IN function with a single child
     
-    use assertions for internal error but specific `BadRQLQuery ` exception for
+    use assertions for internal error but specific `BadRQLQuery` exception for
     errors due to a bad rql input
     """
 
@@ -286,7 +286,7 @@ class RQLSTChecker(object):
 
             
 class RQLSTAnnotator(object):
-    """ annotate RQL syntax tree to ease further code generation from it.
+    """Annotate RQL syntax tree to ease further code generation from it.
     
     If an optional variable is shared among multiple scopes, it's rewritten to
     use identity relation.
