@@ -194,7 +194,7 @@ class Union(Statement, Node):
     # repr / as_string / copy #################################################
     
     def __repr__(self):
-        return ' '.join('\nUNION\n'.join(repr(select) for select in self.children))
+        return '\nUNION\n'.join(repr(select) for select in self.children)
     
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
@@ -363,7 +363,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         if self.offset:
             s.append('OFFSET %s' % self.offset)
         if self.where is not None:
-            s.append('WHERE ' + ', '.join(as_string(self.where)))
+            s.append('WHERE ' + as_string(self.where))
         if self.having:
             s.append('HAVING ' + ','.join(as_string(term)
                                            for term in self.having))
