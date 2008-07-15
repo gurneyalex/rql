@@ -735,48 +735,75 @@ class SortTerm(Node):
 
 
 ###############################################################################
+    
+class Referenceable(object):
+    __slots__ = ('name', 'stinfo')
+        
+    def __init__(self, name):
+        self.name = name.strip().encode()
+        # used to collect some global information about the syntax tree
+        self.stinfo = {
+            # link to VariableReference objects in the syntax tree
+            'references': set(),
+            }
 
-class ColumnAlias(object):
-    __slots__ = ('name', 'colnum', 'query',
-                 '_q_sql') # XXX ginco specific
-    def __init__(self, alias, colnum, query=None):
-        self.name = alias.encode()
-        self.colnum = int(colnum)
-        self.query = query
+    def as_string(self, encoding=None, kwargs=None):
+        """return the tree as an encoded rql string"""
+        return self.name
         
     def register_reference(self, vref):
-        pass
-    def init_copy(self, old):
-        pass
+        """add a reference to this variable"""
+        self.stinfo['references'].add(vref)
+        
+    def unregister_reference(self, vref):
+        """remove a reference to this variable"""
+        try:
+            self.stinfo['references'].remove(vref)
+        except KeyError:
+            # this may occur on hairy undoing
+            pass
+
+    def references(self):
+        """return all references on this variable"""
+        return tuple(self.stinfo['references'])
+
+    
+class ColumnAlias(Referenceable):
+    __slots__ = ('colnum', 'query',
+                 '_q_sql') # XXX ginco specific
+    def __init__(self, alias, colnum, query=None):
+        super(ColumnAlias, self).__init__(alias)
+        self.colnum = int(colnum)
+        self.query = query
+    
+    def __repr__(self):
+        return 'alias %s(%#X)' % (self.name, id(self))
     
     def get_type(self, solution=None, kwargs=None):
         """return entity type of this object, 'Any' if not found"""
         if solution:
             return solution[self.name]
         return 'Any'    
+
+    # Variable compatibility
+    def init_copy(self, old):
+        pass
+
     
-#     def as_string(self, encoding=None, kwargs=None):
-#         return self.alias
-    
-class Variable(object):
+class Variable(Referenceable):
     """
     a variable definition, should not be directly added to the syntax tree (use
     VariableRef instead)
     
     collects information about a variable use in a syntax tree
     """
-    __slots__ = ('name', 'stmt', 'stinfo',
+    __slots__ = ('stmt',
                  '_q_invariant', '_q_sql', '_q_sqltable') # XXX ginco specific
         
     def __init__(self, name):
-        self.name = name.strip().encode()
+        super(Variable, self).__init__(name)
         # reference to the selection
         self.stmt = None
-        # used to collect some global information about the syntax tree
-        self.stinfo = {
-            # link to VariableReference objects in the syntax tree
-            'references': set(),
-            }
 
     def prepare_annotation(self):
         self.stinfo.update({
@@ -805,10 +832,6 @@ class Variable(object):
             # constant node linked to an uid variable if any
             'constnode': None,
             })
-
-    def as_string(self, encoding=None, kwargs=None):
-        """return the tree as an encoded rql string"""
-        return self.name
     
     def __repr__(self):
         return '%s(%#X)' % (self.name, id(self))
@@ -824,22 +847,6 @@ class Variable(object):
         # should copy variable's possibletypes on copy
         if not self.stinfo.get('possibletypes'):
             self.stinfo['possibletypes'] = old.stinfo.get('possibletypes')
-        
-    def register_reference(self, vref):
-        """add a reference to this variable"""
-        self.stinfo['references'].add(vref)
-        
-    def unregister_reference(self, vref):
-        """remove a reference to this variable"""
-        try:
-            self.stinfo['references'].remove(vref)
-        except KeyError:
-            # this may occur on hairy undoing
-            pass
-
-    def references(self):
-        """return all references on this variable"""
-        return tuple(self.stinfo['references'])
     
     def valuable_references(self):
         """return the number of "valuable" references :

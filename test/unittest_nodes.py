@@ -389,6 +389,18 @@ class NodesTest(TestCase):
         tree = parse(u"Any X WHERE X creation_date TODAY")
         self.assertEquals(tree.as_string(), 'Any X WHERE X creation_date TODAY')
         
+    # sub-queries tests #######################################################
+    
+    def test_subq_colalias_compat(self):
+        tree = parse('Any X ORDERBY N WHERE X creation_date <NOW WITH X,N BEING ('
+                     '(Any X,N WHERE X firstname N) UNION (Any X,N WHERE X name N, X is Company))')
+        select = tree.children[0]
+        select.save_state()
+        select.remove_sort_term(select.orderby[0])
+        select.recover()
+        self.assertEquals(len(select.get_variable('X').references()), 3)
+        self.assertEquals(len(select.get_variable('N').references()), 2)
+        
     # non regression tests ####################################################
     
     def test_get_description_and_get_type(self):
