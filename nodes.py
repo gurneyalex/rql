@@ -767,48 +767,8 @@ class Referenceable(object):
         """return all references on this variable"""
         return tuple(self.stinfo['references'])
 
-    
-class ColumnAlias(Referenceable):
-    __slots__ = ('colnum', 'query',
-                 '_q_sql', '_q_sqltable') # XXX ginco specific
-    def __init__(self, alias, colnum, query=None):
-        super(ColumnAlias, self).__init__(alias)
-        self.colnum = int(colnum)
-        self.query = query
-    
-    def __repr__(self):
-        return 'alias %s(%#X)' % (self.name, id(self))
-    
-    def get_type(self, solution=None, kwargs=None):
-        """return entity type of this object, 'Any' if not found"""
-        if solution:
-            return solution[self.name]
-        return 'Any'    
-
-    # Variable compatibility
-    def init_copy(self, old):
-        pass
-
-    
-class Variable(Referenceable):
-    """
-    a variable definition, should not be directly added to the syntax tree (use
-    VariableRef instead)
-    
-    collects information about a variable use in a syntax tree
-    """
-    __slots__ = ('stmt',
-                 '_q_invariant', '_q_sql', '_q_sqltable') # XXX ginco specific
-        
-    def __init__(self, name):
-        super(Variable, self).__init__(name)
-        # reference to the selection
-        self.stmt = None
-
     def prepare_annotation(self):
         self.stinfo.update({
-            # main scope for this variable
-            'scope': None,
             # relations where this variable is used on the lhs/rhs
             'relations': set(),
             'rhsrelations': set(),
@@ -833,8 +793,129 @@ class Variable(Referenceable):
             'constnode': None,
             })
     
+    def get_type(self, solution=None, kwargs=None):
+        """return entity type of this object, 'Any' if not found"""
+        if solution:
+            return solution[self.name]
+        for rel in self.stinfo['typerels']:
+            return str(rel.children[1].children[0].value)
+        schema = self.schema
+        if schema is not None:
+            for rel in self.stinfo['rhsrelations']:
+                try:
+                    lhstype = rel.children[0].get_type(solution, kwargs)
+                    return schema.eschema(lhstype).destination(rel.r_type)
+                except: # CoertionError, AssertionError :(
+                    pass
+        return 'Any'
+    
+    def get_description(self):
+        """return :
+        * the name of a relation where this variable is used as lhs,
+        * the entity type of this object if specified by a 'is' relation,
+        * 'Any' if nothing nicer has been found...
+
+        give priority to relation name
+        """
+        etype = 'Any'
+        rtype = None
+        schema = self.schema
+        for rel in chain(self.stinfo['typerels'], self.stinfo['relations']):
+            if rel.is_types_restriction():
+                try:
+                    etype = str(rel.children[1].children[0].value)
+                except AttributeError:
+                    # "IN" Function node
+                    pass
+                continue
+            if schema is not None:
+                rschema = schema.rschema(rel.r_type)
+                if rschema.is_final():
+                    if self.name == rel.children[0].name:
+                        continue # ignore
+                    rtype = rel.r_type
+                    break
+            else:
+                print 'NO SCHEMA', repr(self), repr(self.stmt.root)
+            rtype = rel.r_type
+            # use getattr since variable may have been rewritten
+            if not self.name != getattr(rel.children[0], 'name', None):
+                # priority to relation where variable is on the rhs
+                break
+        return rtype or etype
+
+    
+class ColumnAlias(Referenceable):
+    __slots__ = ('colnum', 'query',
+                 '_q_sql', '_q_sqltable') # XXX ginco specific
+    def __init__(self, alias, colnum, query=None):
+        super(ColumnAlias, self).__init__(alias)
+        self.colnum = int(colnum)
+        self.query = query
+    
+    def __repr__(self):
+        return 'alias %s(%#X)' % (self.name, id(self))
+
+    @property
+    def schema(self):
+        return self.query.root.schema
+    
+    def get_type(self, solution=None, kwargs=None):
+        """return entity type of this object, 'Any' if not found"""
+        vtype = super(ColumnAlias, self).get_type(solution, kwargs)
+        if vtype == 'Any':
+            for select in self.query.children:
+                vtype = select.selection[self.colnum].get_type(solution, kwargs)
+                if vtype != 'Any':
+                    return vtype
+        return vtype
+    
+    def get_description(self):
+        """return entity type of this object, 'Any' if not found"""
+        vtype = super(ColumnAlias, self).get_description()
+        if vtype == 'Any':
+            for select in self.query.children:
+                vtype = select.selection[self.colnum].get_description()
+                if vtype != 'Any':
+                    return vtype
+        return vtype
+
+    # Variable compatibility
+    def init_copy(self, old):
+        pass
+    
+    def set_scope(self, scopenode):
+        pass    
+    def get_scope(self):
+        return self.query
+    scope = property(get_scope, set_scope)
+
+    
+class Variable(Referenceable):
+    """
+    a variable definition, should not be directly added to the syntax tree (use
+    VariableRef instead)
+    
+    collects information about a variable use in a syntax tree
+    """
+    __slots__ = ('stmt',
+                 '_q_invariant', '_q_sql', '_q_sqltable') # XXX ginco specific
+        
+    def __init__(self, name):
+        super(Variable, self).__init__(name)
+        # reference to the selection
+        self.stmt = None
+        
     def __repr__(self):
         return '%s(%#X)' % (self.name, id(self))
+
+    @property
+    def schema(self):
+        return self.stmt.root.schema
+    
+    def prepare_annotation(self):
+        super(Variable, self).prepare_annotation()
+        self.stinfo['scope'] = None
     
     def set_scope(self, scopenode):
         if scopenode is self.stmt or self.stinfo['scope'] is None:
@@ -862,59 +943,6 @@ class Variable(Referenceable):
         if not self.stinfo['selected']:
             return None
         return iter(self.stinfo['selected']).next()
-
-    @property
-    def schema(self):
-        return self.stmt.root.schema
-    
-    def get_type(self, solution=None, kwargs=None):
-        """return entity type of this object, 'Any' if not found"""
-        if solution:
-            return solution[self.name]
-        for rel in self.stinfo['typerels']:
-            return str(rel.children[1].children[0].value)
-        schema = self.schema
-        if schema is not None:
-            for rel in self.stinfo['rhsrelations']:
-                try:
-                    lhstype = rel.children[0].get_type(solution, kwargs)
-                    return schema.eschema(lhstype).destination(rel.r_type)
-                except: # CoertionError, AssertionError :(
-                    pass
-        return 'Any'
-    
-    def get_description(self):
-        """return :
-        * the name of a relation where this variable is used as lhs,
-        * the entity type of this object if specified by a 'is' relation,
-        * 'Any' if nothing nicer has been found...
-
-        give priority to relation name
-        """
-        etype = 'Any'
-        result = None
-        schema = self.schema
-        for rel in chain(self.stinfo['typerels'], self.stinfo['relations']):
-            if rel.is_types_restriction():
-                try:
-                    etype = str(rel.children[1].children[0].value)
-                except AttributeError:
-                    # "IN" Function node
-                    pass
-                continue
-            if schema is not None:
-                rschema = schema.rschema(rel.r_type)
-                if rschema.is_final():
-                    if self.name == rel.children[0].name:
-                        continue # ignore
-                    result = rel.r_type
-                    break
-            result = rel.r_type
-            # use getattr since variable may have been rewritten
-            if not self.name != getattr(rel.children[0], 'name', None):
-                # priority to relation where variable is on the rhs
-                break
-        return result or etype
     
     def main_relation(self):
         """Return the relation where this variable is used in the rhs.

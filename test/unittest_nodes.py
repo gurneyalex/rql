@@ -277,6 +277,7 @@ class NodesTest(TestCase):
                            {'A': 'String', 'B': 'Personne', 'C': 'EGroup'},
                            {'A': 'String', 'B': 'EUser', 'C': 'Societe'}]
         self.assertEquals(dummy.get_variable_variables(), set(['B', 'C']))
+        
     # insertion tests #########################################################
 
     def test_insert_base_1(self):
@@ -398,15 +399,25 @@ class NodesTest(TestCase):
         select.save_state()
         select.remove_sort_term(select.orderby[0])
         select.recover()
-        self.assertEquals(len(select.get_variable('X').references()), 3)
-        self.assertEquals(len(select.get_variable('N').references()), 2)
+        X = select.get_variable('X')
+        N = select.get_variable('N')
+        self.assertEquals(len(X.references()), 3)
+        self.assertEquals(len(N.references()), 2)
+        tree.schema = schema
+        annotator.annotate(tree)
+        # XXX how to choose
+        self.assertEquals(X.get_type(), 'Company')
+        self.assertEquals(X.get_type({'X': 'Personne'}), 'Personne')
+        #self.assertEquals(N.get_type(), 'String')
+        self.assertEquals(X.get_description(), 'Company')
+        self.assertEquals(N.get_description(), 'firstname') # XXX how to choose
         
     # non regression tests ####################################################
     
     def test_get_description_and_get_type(self):
         tree = parse("Any N,COUNT(X),NOW-D GROUPBY N WHERE X name N, X creation_date D;")
-        annotator.annotate(tree)
         tree.schema = schema
+        annotator.annotate(tree)
         self.assertEqual(tree.get_description(), [['name', 'COUNT(Any)', 'creation_date']])
         select = tree.children[0]
         self.assertEqual(select.selection[0].get_type(), 'Any')

@@ -198,8 +198,11 @@ class Union(Statement, Node):
     
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
-        return ' UNION '.join(select.as_string(encoding, kwargs)
-                              for select in self.children)
+        strings = [select.as_string(encoding, kwargs)
+                   for select in self.children]
+        if len(strings) == 1:
+            return strings[0]
+        return ' UNION '.join('(%s)' % part for part in strings)
             
     def copy(self, copy_children=True):
         new = Union()
