@@ -6,6 +6,7 @@
 """
 __docformat__ = "restructuredtext en"
 
+from itertools import chain
 from logilab.common.compat import any
 
 from rql._exceptions import BadRQLQuery
@@ -302,7 +303,8 @@ class RQLSTAnnotator(object):
         node.annotated = True
         
     def _visit_stmt(self, node):
-        for var in node.defined_vars.itervalues():
+        for var in chain(node.defined_vars.itervalues(),
+                         node.aliases.itervalues()):
             var.prepare_annotation()
         for i, term in enumerate(node.selection):
             for func in term.iget_nodes(Function):
@@ -310,7 +312,7 @@ class RQLSTAnnotator(object):
                     node.has_aggregat = True
                     break
             # register the selection column index
-            for vref in variable_refs(term):
+            for vref in term.iget_nodes(VariableRef):
                 vref.variable.stinfo['selected'].add(i)
                 vref.variable.set_scope(node)
         if node.where is not None:
@@ -326,6 +328,7 @@ class RQLSTAnnotator(object):
         if node.with_ is not None:
             for subquery in node.with_:
                 self.visit_union(subquery.query)
+                subquery.query.schema = node.root.schema
         self._visit_stmt(node)
             
     def rewrite_shared_optional(self, exists, var):
@@ -395,8 +398,6 @@ class RQLSTAnnotator(object):
         lhs, rhs = relation.get_parts()
         # may be a constant once rqlst has been simplified
         lhsvar = getattr(lhs, 'variable', None)
-        if not isinstance(lhsvar, Variable):
-            lhsvar = None
         if relation.is_types_restriction():
             assert rhs.operator == '='
             assert not relation.optional
@@ -456,7 +457,7 @@ class RQLSTAnnotator(object):
                     lhsvar.stinfo.setdefault(key, set()).add(relation)
             elif rschema.is_final() or rschema.inlined:
                 lhsvar.stinfo['blocsimplification'].add(relation)
-        for vref in variable_refs(rhs):
+        for vref in rhs.iget_nodes(VariableRef):
             var = vref.variable
             var.set_scope(scope)
             var.stinfo['relations'].add(relation)
