@@ -451,6 +451,8 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             
     def add_subquery(self, node, check=True):
         assert node.query
+        if not isinstance(self.with_, list):
+            self.with_ = []
         node.parent = self
         self.with_.append(node)
         if check and len(node.aliases) != len(node.query.children[0].selection):
