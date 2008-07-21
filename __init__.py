@@ -1,8 +1,16 @@
 """RQL library (implementation independant).
 
-:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
-:contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
-:license: General Public License version 2 - http://www.gnu.org/licenses
+:copyright:
+  2001-2008 `LOGILAB S.A. <http://www.logilab.fr>`_ (Paris, FRANCE),
+  all rights reserved.
+
+:contact:
+  http://www.logilab.org/project/rql --
+  mailto:python-projects@logilab.org
+
+:license:
+  `General Public License version 2
+  <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>`_
 """
 __docformat__ = "restructuredtext en"
 
