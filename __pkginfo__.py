@@ -8,7 +8,7 @@
 __docformat__ = "restructuredtext en"
 
 modname = "rql"
-numversion = (0, 18, 3)
+numversion = (0, 19, 0)
 version = '.'.join(str(num) for num in numversion)
 
 license = 'LCL'
