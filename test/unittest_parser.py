@@ -74,6 +74,9 @@ SPEC_QUERIES = (
     'Any X,A,B,C,D ORDERBY A ASC WHERE X concerns 41,X title A,X state B,X priority C,X cost D;',
 
     "Any X, COUNT(B) GROUPBY X ORDERBY 1 where B concerns X;",
+
+    "Any X ORDERBY RANDOM();",
+    "Any X ORDERBY F(1, 2);",
     
     "Any X, COUNT(B) GROUPBY X ORDERBY 1 WHERE B concerns X HAVING COUNT(B) > 2;",
     

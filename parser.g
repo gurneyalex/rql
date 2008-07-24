@@ -301,9 +301,10 @@ rule expr_base<<S>>: const                     {{ return const }}
 
 
 rule func<<S>>: FUNCTION r"\("        {{ F = Function(FUNCTION) }}
-                  expr_add<<S>> (     {{ F.append(expr_add) }}
-                    ',' expr_add<<S>>       
-                  )*                  {{ F.append(expr_add) }}
+                   ( expr_add<<S>> (     {{ F.append(expr_add) }}
+                      ',' expr_add<<S>>       
+                     )*                  {{ F.append(expr_add) }}
+                   )?
                 r"\)"                 {{ return F }} 
 
 
