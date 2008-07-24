@@ -571,12 +571,13 @@ class Hercule(runtime.Parser):
         FUNCTION = self._scan('FUNCTION', context=_context)
         self._scan('r"\\("', context=_context)
         F = Function(FUNCTION)
-        expr_add = self.expr_add(S, _context)
-        while self._peek("','", 'r"\\)"', 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'GROUPBY', 'QMARK', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', 'WITH', "';'", 'AND', 'OR', context=_context) == "','":
-            F.append(expr_add)
-            self._scan("','", context=_context)
+        if self._peek('r"\\)"', 'r"\\("', 'NULL', 'DATE', 'DATETIME', 'TRUE', 'FALSE', 'FLOAT', 'INT', 'STRING', 'SUBSTITUTE', 'VARIABLE', 'E_TYPE', 'FUNCTION', context=_context) != 'r"\\)"':
             expr_add = self.expr_add(S, _context)
-        F.append(expr_add)
+            while self._peek("','", 'r"\\)"', 'CMP_OP', 'SORT_DESC', 'SORT_ASC', 'GROUPBY', 'QMARK', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', 'WITH', "';'", 'AND', 'OR', context=_context) == "','":
+                F.append(expr_add)
+                self._scan("','", context=_context)
+                expr_add = self.expr_add(S, _context)
+            F.append(expr_add)
         self._scan('r"\\)"', context=_context)
         return F
 
