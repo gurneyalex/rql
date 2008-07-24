@@ -135,13 +135,6 @@ class CheckClassTest(TestCase):
 ##         self.annotate(rqlst)
 ##         self.assertEquals(rqlst.as_string(), 'Any X WHERE X eid 12')
 
-    def test_simplified_as_string(self):
-        rqlst = self.parse('Any X WHERE X eid 12')
-        self.simplify(rqlst)
-        self.assertEquals(rqlst.as_string(), 'Any 12')
-        self.assertEquals(rqlst.as_string(unsimplified=True), 'Any X WHERE X eid 12')
-        self.assertEquals(rqlst.as_string(), 'Any 12')
-        
 class CopyTest(TestCase):
     
     def setUp(self):
