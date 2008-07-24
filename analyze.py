@@ -6,6 +6,7 @@
 """
 __docformat__ = "restructuredtext en"
 
+from cStringIO import StringIO
 import warnings
 warnings.filterwarnings(action='ignore', module='logilab.constraint.propagation')
 
@@ -51,7 +52,7 @@ class ETypeResolver(object):
         
     def solve(self, node, domains, constraints):
         # debug info
-        if self.debug > 1:
+        if True and self.debug > 1:
             print "- AN1 -"+'-'*80
             print node
             print "DOMAINS:"
@@ -59,13 +60,19 @@ class ETypeResolver(object):
             print "CONSTRAINTS:"
             pprint(constraints)
         # solve the problem and check there is at least one solution
+        solve_debug = StringIO()
+        def printer(*msgs):
+            solve_debug.write(' '.join(str(msg) for msg in msgs))
+            solve_debug.write('\n')
+        
         r = Repository(domains.keys(), domains, constraints)
-        solver = Solver()
-        sols = solver.solve(r, verbose=0)
+        solver = Solver(printer=printer)
+        sols = solver.solve(r, verbose=True)
         if not sols:
             rql = node.as_string('utf8', self.kwargs)
             raise TypeResolverException(
-                'Unable to resolve variables types in "%s"!!' % (rql))
+                'Unable to resolve variables types in "%s"!!\n%s' % (rql,
+                    solve_debug.getvalue()))
         node.set_possible_types(sols)
 
     def _visit(self, node, constraints=None):
