@@ -121,7 +121,7 @@ class CheckClassTest(TestCase):
              "Any 12 WHERE EXISTS((A name 'hop') OR (A work_for Y?), 12 identity A)"),
             
             ('(Any X WHERE X eid 12) UNION (Any X ORDERBY X WHERE X eid 13)',
-             'Any 12 UNION Any 13'),
+             '(Any 12) UNION (Any 13)'),
 
             ('Any X WITH X BEING (Any X WHERE X eid 12)',
              'Any X WITH X BEING (Any 12)'),
