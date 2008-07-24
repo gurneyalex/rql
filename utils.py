@@ -50,7 +50,7 @@ KEYWORDS = set(('INSERT', 'SET', 'DELETE',
     
 
 from logilab.common.adbh import _GenericAdvFuncHelper, FunctionDescr, \
-    register_function as db_register_function
+    auto_register_function
 
 def st_description(cls, funcnode):
     return '%s(%s)' % (cls.name,
@@ -58,7 +58,6 @@ def st_description(cls, funcnode):
                                  for child in iter_funcnode_variables(funcnode)))
 
 FunctionDescr.st_description = classmethod(st_description)
-FunctionDescr.supported_backends = ()
 
 def iter_funcnode_variables(funcnode):
     for term in funcnode.children:
@@ -79,8 +78,7 @@ def register_function(funcdef):
     assert not funcdef.name in FUNCTIONS, \
            '%s is already registered' % funcdef.name
     FUNCTIONS[funcdef.name] = funcdef
-    for driver in  funcdef.supported_backends:
-        db_register_function(driver, funcdef)
+    auto_register_function(funcdef)
     
 def function_description(funcname):
     """Return the description (`FunctionDescription`) for a RQL function."""
