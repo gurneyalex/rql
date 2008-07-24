@@ -228,17 +228,20 @@ class Hercule(runtime.Parser):
     def dorderby(self, S, _parent=None):
         _context = self.Context(_parent, self._scanner, 'dorderby', [S])
         orderby = self.orderby(S, _context)
-        if orderby: warn('ORDERBY is now before WHERE clause')
+        if orderby:
+            warn('ORDERBY is now before WHERE clause', stacklevel=14)
 
     def dgroupby(self, S, _parent=None):
         _context = self.Context(_parent, self._scanner, 'dgroupby', [S])
         groupby = self.groupby(S, _context)
-        if groupby: warn('GROUPBY is now before WHERE clause')
+        if groupby:
+            warn('GROUPBY is now before WHERE clause', stacklevel=14)
 
     def dlimit_offset(self, S, _parent=None):
         _context = self.Context(_parent, self._scanner, 'dlimit_offset', [S])
         limit_offset = self.limit_offset(S, _context)
-        if limit_offset: warn('LIMIT/OFFSET are now before WHERE clause')
+        if limit_offset:
+            warn('LIMIT/OFFSET are now before WHERE clause', stacklevel=14)
 
     def groupby(self, S, _parent=None):
         _context = self.Context(_parent, self._scanner, 'groupby', [S])
