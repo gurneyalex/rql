@@ -52,7 +52,7 @@ class ETypeResolver(object):
         
     def solve(self, node, domains, constraints):
         # debug info
-        if True and self.debug > 1:
+        if self.debug > 1:
             print "- AN1 -"+'-'*80
             print node
             print "DOMAINS:"
