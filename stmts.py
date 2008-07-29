@@ -32,6 +32,17 @@ def _check_references(defined, varrefs):
             raise AssertionError('vref %r is not referenced' % vref)
     return True
 
+def wrap_query(union):
+    """return a new rqlst root containing the given union as a subquery"""
+    newroot = Union()
+    select = Select()
+    newroot.append(select)
+    for i in xrange(len(union.children[0].selection)):
+        select.append_selected(nodes.VariableRef(select.make_variable()))
+    aliases = [nodes.VariableRef(select.get_variable(avar.name, i))
+               for i, avar in enumerate(select.selection)]
+    select.add_subquery(nodes.SubQuery(aliases, union), check=False)
+    return newroot
 
 class ScopeNode(BaseNode):
     solutions = ()   # list of possibles solutions for used variables
@@ -89,7 +100,7 @@ class ScopeNode(BaseNode):
             name =  self._varmaker.next()
         return name
         
-    def make_variable(self, etype=None):
+    def make_variable(self):
         """create a new variable with an unique name for this tree"""
         var = self.get_variable(self.allocate_varname())
         if self.should_register_op:
@@ -169,17 +180,31 @@ class Union(Statement, Node):
         warn('offset is now a Select node attribute', DeprecationWarning,
              stacklevel=2)
         return self.children[-1].offset
-    def _set_offset(self, offset):
-        self.children[-1].offset = offset
-    offset = property(_get_offset, _set_offset)
+    def set_offset(self, offset):
+        if len(self.children) == 1:
+            self.children[-1].set_offset(offset)
+            return self
+        # we have to introduce a new root
+        # XXX not undoable since a new root has to be introduced
+        union = wrap_query(self)
+        union.children[0].set_offset(offset)
+        return union
+    offset = property(_get_offset, set_offset)
         
     def _get_limit(self):
         warn('limit is now a Select node attribute', DeprecationWarning,
              stacklevel=2)
         return self.children[-1].limit
-    def _set_limit(self, limit):
-        self.children[-1].limit = limit
-    limit = property(_get_limit, _set_limit)
+    def set_limit(self, limit):
+        if len(self.children) == 1:
+            self.children[-1].set_limit(limit)
+            return self
+        # we have to introduce a new root
+        # XXX not undoable since a new root has to be introduced
+        union = wrap_query(self)
+        union.children[0].set_limit(limit)
+        return union
+    limit = property(_get_limit, set_limit)
     
     @property 
     def root(self):
