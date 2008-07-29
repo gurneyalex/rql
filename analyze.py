@@ -60,19 +60,23 @@ class ETypeResolver(object):
             print "CONSTRAINTS:"
             pprint(constraints)
         # solve the problem and check there is at least one solution
-        solve_debug = StringIO()
-        def printer(*msgs):
-            solve_debug.write(' '.join(str(msg) for msg in msgs))
-            solve_debug.write('\n')
+        kwargs = {}
+        if True or self.debug: # capture solver output
+            solve_debug = StringIO()
+            def printer(*msgs):
+                solve_debug.write(' '.join(str(msg) for msg in msgs))
+                solve_debug.write('\n')
+            kwargs['printer'] = printer
         
         r = Repository(domains.keys(), domains, constraints)
-        solver = Solver(printer=printer)
-        sols = solver.solve(r, verbose=True)
+        solver = Solver(**kwargs)
+        sols = solver.solve(r, verbose=(True or self.debug))
         if not sols:
             rql = node.as_string('utf8', self.kwargs)
-            raise TypeResolverException(
-                'Unable to resolve variables types in "%s"!!\n%s' % (rql,
-                    solve_debug.getvalue()))
+            ex_msg = 'Unable to resolve variables types in "%s"!!' % (rql,)
+            if True or self.debug:
+                ex_msg += '\n%s' % (solve_debug.getvalue(),)
+            raise TypeResolverException(ex_msg)
         node.set_possible_types(sols)
 
     def _visit(self, node, constraints=None):
