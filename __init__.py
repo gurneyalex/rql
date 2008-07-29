@@ -89,7 +89,7 @@ class RQLHelper(object):
         self._analyser_lock.acquire()
         try:
             self._analyser.visit(rqlst, uid_func_mapping, kwargs,
-                                             debug)
+                                 debug)
         finally:
             self._analyser_lock.release()
     

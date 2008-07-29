@@ -60,6 +60,45 @@ class NodesTest(TestCase):
     
     # selection tests #########################################################
 
+    def test_union_set_limit_1(self):
+        tree = self._parse("Any X WHERE X is Person")
+        select = tree.children[0]
+        self.assertRaises(BadRQLQuery, tree.set_limit, 0)
+        self.assertRaises(BadRQLQuery, tree.set_limit, -1)
+        self.assertRaises(BadRQLQuery, tree.set_limit, '1')
+        tree.save_state()
+        tree = tree.set_limit(10)
+        self.assertEquals(select.limit, 10)
+        tree.recover()
+        self.assertEquals(select.limit, None)
+
+    def test_union_set_limit_2(self):
+        # not undoable set_limit since a new root has to be introduced
+        tree = self._parse("(Any X WHERE X is Person) UNION (Any X WHERE X is Company)")
+        tree = tree.set_limit(10)
+        select = tree.children[0]
+        self.assertEquals(tree.as_string(), 'Any A LIMIT 10 WITH A BEING ((Any X WHERE X is Person) UNION (Any X WHERE X is Company))')
+        self.assertEquals(select.limit, 10)
+
+    def test_union_set_offset_1(self):
+        tree = self._parse("Any X WHERE X is Person")
+        select = tree.children[0]
+        self.assertRaises(BadRQLQuery, tree.set_offset, -1)
+        self.assertRaises(BadRQLQuery, tree.set_offset, '1')
+        tree.save_state()
+        tree = tree.set_offset(10)
+        self.assertEquals(select.offset, 10)
+        tree.recover()
+        self.assertEquals(select.offset, 0)
+
+    def test_union_set_offset_2(self):
+        # not undoable set_offset since a new root has to be introduced
+        tree = self._parse("(Any X WHERE X is Person) UNION (Any X WHERE X is Company)")
+        tree = tree.set_offset(10)
+        select = tree.children[0]
+        self.assertEquals(tree.as_string(), 'Any A OFFSET 10 WITH A BEING ((Any X WHERE X is Person) UNION (Any X WHERE X is Company))')
+        self.assertEquals(select.offset, 10)
+
     def test_select_set_limit(self):
         tree = self._simpleparse("Any X WHERE X is Person")
         self.assertEquals(tree.limit, None)
