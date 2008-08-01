@@ -331,6 +331,11 @@ class RQLSTAnnotator(object):
                 self.visit_union(subquery.query)
                 subquery.query.schema = node.root.schema
         self._visit_stmt(node)
+        if node.having:
+            # if there is a having clause, bloc simplification of variables used in GROUPBY
+            for term in node.groupby:
+                for vref in term.iget_nodes(VariableRef):
+                    vref.variable.stinfo['blocsimplification'].add(term)
             
     def rewrite_shared_optional(self, exists, var):
         """if variable is shared across multiple scopes, need some tree

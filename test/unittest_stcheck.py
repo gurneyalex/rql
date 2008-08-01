@@ -125,6 +125,9 @@ class CheckClassTest(TestCase):
 
             ('Any X WITH X BEING (Any X WHERE X eid 12)',
              'Any X WITH X BEING (Any 12)'),
+
+            ('Any X GROUPBY X WHERE X eid 12, X connait Y HAVING COUNT(Y) > 10',
+             'Any X GROUPBY X WHERE X eid 12, X connait Y HAVING COUNT(Y) > 10')
             ):
             yield self._test_rewrite, rql, expected
 
