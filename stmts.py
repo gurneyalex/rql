@@ -32,17 +32,6 @@ def _check_references(defined, varrefs):
             raise AssertionError('vref %r is not referenced' % vref)
     return True
 
-def wrap_query(union):
-    """return a new rqlst root containing the given union as a subquery"""
-    newroot = Union()
-    select = Select()
-    newroot.append(select)
-    for i in xrange(len(union.children[0].selection)):
-        select.append_selected(nodes.VariableRef(select.make_variable()))
-    aliases = [nodes.VariableRef(select.get_variable(avar.name, i))
-               for i, avar in enumerate(select.selection)]
-    select.add_subquery(nodes.SubQuery(aliases, union), check=False)
-    return newroot
 
 class ScopeNode(BaseNode):
     solutions = ()   # list of possibles solutions for used variables
@@ -173,8 +162,19 @@ class Union(Statement, Node):
     undoing = False  # used to prevent from memorizing when undoing !
     memorizing = 0   # recoverable modification attributes
 
-    def __init__(self):
-        Node.__init__(self)
+    def wrap_selects(self):
+        """return a new rqlst root containing the given union as a subquery"""
+        child = Union()
+        for select in self.children[:]:
+            child.append(select)
+            self.remove_select(select)
+        newselect = Select()
+        aliases = [nodes.VariableRef(newselect.make_variable())
+                   for i in xrange(len(select.selection))]
+        newselect.add_subquery(nodes.SubQuery(aliases, child), check=False)
+        for vref in aliases:
+            newselect.append_selected(nodes.VariableRef(vref.variable))
+        self.append_select(newselect)
 
     def _get_offset(self):
         warn('offset is now a Select node attribute', DeprecationWarning,
@@ -186,9 +186,8 @@ class Union(Statement, Node):
             return self
         # we have to introduce a new root
         # XXX not undoable since a new root has to be introduced
-        union = wrap_query(self)
-        union.children[0].set_offset(offset)
-        return union
+        self.wrap_selects()
+        self.children[0].set_offset(offset)
     offset = property(_get_offset, set_offset)
         
     def _get_limit(self):
@@ -199,11 +198,8 @@ class Union(Statement, Node):
         if len(self.children) == 1:
             self.children[-1].set_limit(limit)
             return self
-        # we have to introduce a new root
-        # XXX not undoable since a new root has to be introduced
-        union = wrap_query(self)
-        union.children[0].set_limit(limit)
-        return union
+        self.wrap_selects()
+        self.children[0].set_limit(limit)
     limit = property(_get_limit, set_limit)
     
     @property 
@@ -309,7 +305,20 @@ class Union(Statement, Node):
             select.check_references()
         return True
 
+    def append_select(self, select):
+        if self.should_register_op:
+            from rql.undo import AppendSelectOperation
+            self.undo_manager.add_operation(AppendSelectOperation(self, select))
+        self.children.append(select)
 
+    def remove_select(self, select):
+        idx = self.children.index(select)
+        if self.should_register_op:
+            from rql.undo import RemoveSelectOperation
+            self.undo_manager.add_operation(RemoveSelectOperation(self, select, idx))
+        self.children.pop(idx)
+
+        
 class Select(Statement, nodes.EditableMixIn, ScopeNode):
     """the select node is the base statement of the syntax tree for selection
     statement, always child of a UNION root.
