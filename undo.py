@@ -233,7 +233,29 @@ class SetOptionalOperation(ChangeValueOperation):
     def undo(self, selection):
         """undo the operation on the selection"""
         self.rel.optional = self.value
-    
+
+# Union operations ############################################################
+
+class AppendSelectOperation(object):
+    """Defines how to undo append_select()."""
+    def __init__(self, union, select):
+        self.union = union
+        self.select = select
+
+    def undo(self, selection):
+        """undo the operation on the union's children"""
+        self.union.children.remove(self.select)
+        
+class RemoveSelectOperation(AppendSelectOperation):
+    """Defines how to undo append_select()."""
+    def __init__(self, union, select, origindex):
+        AppendSelectOperation.__init__(self, union, select)
+        self.origindex = origindex
+
+    def undo(self, selection):
+        """undo the operation on the union's children"""
+        self.union.children.insert(self.origindex, self.select)
+
 __all__ = ('SelectionManager', 'MakeVarOperation', 'UndefineVarOperation',
            'SelectVarOperation', 'UnselectVarOperation', 'AddNodeOperation',
            'ReplaceNodeOperation', 'RemoveNodeOperation', 
