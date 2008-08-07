@@ -1,203 +1,334 @@
 ChangeLog for RQL
 =================
 
- --
-   * should not simplify variables used in the GROUPBY clause when there is a
+2008-08-07  --  0.19.1
+    * should not simplify variables used in the GROUPBY clause when there is a
      HAVING clause
 
-2008-07-22 -- 0.19.0
-   * grammar changes: LIMIT / OFFSET should now be before the WHERE clause,
+    * implements set_limit / set_offset on UNION nodes
+
+
+
+2008-07-22  --  0.19.0
+    * grammar changes: LIMIT / OFFSET should now be before the WHERE clause,
      though bw compat will be kept for some time
-   * when simplifying constant uid nodes, don't remove them from group terms if
+
+    * when simplifying constant uid nodes, don't remove them from group terms if
      there is a HAVING clause
-   * new get_variable_variables on Union and Select nodes
-  
-	
+
+    * new get_variable_variables on Union and Select nodes
+
+
+
 2008-07-04  --  0.18.3
     * fix add_type_restriction to support frozenset and dict of types
 
+
+
 2008-06-06  --  0.18.2
     * remove group/sort undoing fix
+
     * set stinfo['possibletypes'] and update solution dictionnary for variable
       inserted for new identity relation
+
     * error resilient unregister_reference
+
     * init variable annotation information on annotation, not variable
       instanciation
-	
+
+
+
 2008-05-12  --  0.18.1
     * bugfix in remove_groups and remove_sort_terms
-	
+
+
+
 2008-05-08  --  0.18.0
     * UNION support
+
     * HAVING support
+
     * GROUPBY and ORDERBY moved *before* WHERE
+
     * code cleanup, fixes and refactorings
+
+
 
 2008-03-26  --  0.17.2
     * fix a bug in get_solutions,possible_types should be reseted first
+
     * some documentation update
-	
+
+
+
 2008-03-12  --  0.17.1
     * method to add group variable with undoing support
+
     * fix remove_sort_term
-	
+
+
+
 2008-02-27  --  0.17.0
     * use bool values for Boolean constants, None for NULL constant
+
     * allow one char relation names
+
     * allow multiple capitalized characters in entity types
-	
+
+
+
 2008-02-15  --  0.16.0
     * understand "C is NULL"
+
     * allow multiple annotation
+
     * fix stinfo['possibletypes']
-	
+
+
+
 2008-01-25  --  0.15.4
     * better add_type_restriction methods
+
     * nicer error message in stcheck
+
     * fix some buggy assertion in editextensions
-	
+
+
+
 2008-01-17  --  0.15.3
     * only put valuable relations in uidrels
+
     * always put an operator node as rhs children of a Relation
+
     * fix rewrite-shared_optional to correctly update stinfo
+
     * new index_path / go_to_index_path methodes
+
+
 
 2008-01-14  --  0.15.2
     * fix nested aggregat checking
+
     * fix a bug in Relation.__repr__
+
     * fix should_register_op which was expected to be a property
+
     * support for undoing limit/offset change
-	
+
+
+
 2008-01-07  --  0.15.1
     * ensure some attributes are encoded strings
-	
+
+
+
 2007-12-11  --  0.15.0
     * cleanup, optimizations, some api changes
-	
+
+
+
 2007-11-26  --  0.14.0
     * Node.get_type take kwargs as second argument to better guess the type of
       constants
+
     * new attrvars stinfo
+
     * new scope attribute on other nodes than Variable
+
     * thread safety for the RQLHleper
-	
+
+
+
 2007-10-29  --  0.13.0
     * use lgc.adbh module
+
+
 
 2007-10-23  --  0.12.0
     * add ILIKE comparison operator, '~=' operator is now aliased to ILIKE
       instead of LIKE
+
     * variable scope handling
-	
+
+
+
 2007-06-04  --  0.11.3
     * as_string w/ kwargs fix
+
     * get_description fix on Variable, enhancement on Function by delegating
       to the function's description
 
+
+
 2007-05-23  --  0.11.2
     * fix as_string bug for NOW/TODAY constants which may cause coercion bugs
+
     * as_string with now encoding specified will (hum, probably) return an
       unicode string
 
+
+
 2007-05-14  --  0.11.1
     * Sortterm.var -> Sortterm.term
+
     * fix function name normalization
+
     * make remove_node available without having to import editextensions
+
+
 
 2007-04-05  --  0.11.0
     * EXISTS support
+
     * proper get_type/get_description api, try to coerce math expression
       in get_type
+
     * some edition api cleanup
+
 
 
 2007-03-08  --  0.10.2
     * fix #17887: analyzis error on "Any U WHERE NOT U owned_by U"
+
     * fix #17907: annotation foire potentiellement sur arbre simplifié
+
+
 
 2007-02-09  --  0.10.1
     * fix rewriting bug: variable used in an optional relation can't be
       rewritten 
+
     * new 'main_relation' method on variable
+
+
 
 2007-02-02  --  0.10.0
     * allow variable as rhs of 'is' relation
+
     * can use Any as type specification in DELETE queries (eg DELETE Any X)
+
     * fix type inference when non '=' operator on uid relation
 
-	
+
+
 2006-11-15  --  0.9.1
     * fix Variable.selected_index()
+
     * do not raise bad rql query on non selected sorted variable in
       distinct query since this is supported by erudi's rql engine
-	
+
+
+
 2006-11-14  --  0.9.0
     * proper full/right/left outer join support
+
     * removed a buggy assertion in stcheck on aggregat function
+
     * new .selected_index method on Variable
-	
+
+
+
 2006-10-31  --  0.8.1
     * fix SortTerm implementation
+
     * fix a NameError in set_offset/set_limit and regenerate parser to
       use those methods
+
     * stinfo['references'] is now a list since order is important
-	
+
+
+
 2006-10-27  --  0.8.0
     * fix grammar for negative integer :/
+
     * simplify generated subtree for IN(onechildren)
+
     * stcheck is now doing full annotation and additional constant variable
       rewriting
+
     * do not include yapps anymore
+
     * removed broken C parser
+
     * fixes to follow yams api changes
+
     * editextensions fixes
+
+
 
 2006-10-08  --  0.7.2
     * add missing as_string method on groups and sorts
+
     * detect that queries like "Any C where C suivi_par P, P eid %(x)s ORDERBY N"
       are incorrect (N isn't defined)
-	
+
+
+
 2006-09-22  --  0.7.1
     * fix as_string bugs
+
     * fix a bug in stcheck to detect bad queries when aggregat/transform
       functions are used
-	
+
+
+
 2006-09-05  --  0.7.0
     * new method on variable to get the name of relations where it's used
+
     * new function into utils to register known registered procedures
+
     * fixed grammar to allow "_" into function name
+
+
 
 2006-06-08  --  0.6.0
     * new add method on statement
 
+
+
 2006-05-21  --  0.5.2
     * fixed syntax tree copy, just call stmt.copy() to have a
       full deep copy
+
     * support for substitute on uid relation in the type analyzer
       (this implies to give the kwargs dictionary of the query to the 
       analyzer)
 
-	
+
+
 2006-03-28  --  0.4.2
     * fixed a bug when a variable is related to itself
+
     * allow numbers in variable and entity types
+
     * C parser (disabled by default)
+
+
 
 2006-02-10  --  0.4.1
     * fix set_distinct so that previous distinct attribute is correctly undoed
       if necessary
+
     * remove a false assertion in remove_selected
+
     * remove unnecessary OR from the tree when used with a symetric relation
-	
+
+
+
 2006-01-23  --  0.4.0
     * fix Constant's type when NOW is used
+
     * allow function in ORDERBY expression
+
     * refactor some edit extensions
+
 
 
 2005-07-26  --  0.3.1
     * close #9629, "Any E WHERE P is Project, P eid E"  foire
+
     * fix bug with IN() used in update queries
+
 
 
 2005-07-06  --  0.3.0
@@ -205,10 +336,15 @@ ChangeLog for RQL
       up analyzing
 
 
+
 2005-06-16  --  0.2.0
     * minor evolutions
+
     * added Cpp parser module (not yet activated)
+
     * minor performance improvement
+
+
 
 2004-09-23  --  0.1.2
     * minor evolutions
@@ -216,5 +352,9 @@ ChangeLog for RQL
     * bugfixes with constant management (TODAY, etc.)
 
 
+
 2004-06-10  --  0.1.1
     * minor evolutions
+
+
+
