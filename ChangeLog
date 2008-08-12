@@ -5,6 +5,8 @@ ChangeLog for RQL
     * fix undoing of add_relation and variable name allocation on query using
       some subquery
     * add missing selected_index() method on ColumnAlias
+    * set_possible_types() propagate to sub-queries since some additional
+      type constraints may be set in the outer query
 	
 2008-08-07  --  0.19.1
     * should not simplify variables used in the GROUPBY clause when there is a

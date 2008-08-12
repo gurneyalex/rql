@@ -18,7 +18,8 @@ from rql import BadRQLQuery, CoercionError, nodes
 from rql.base import BaseNode, Node
 from rql.utils import rqlvar_maker, build_visitor_stub
 
-            
+_MARKER = object()
+
 def _check_references(defined, varrefs):
     refs = {}
     for var in defined.values():
@@ -99,7 +100,7 @@ class ScopeNode(BaseNode):
             self.undo_manager.add_operation(MakeVarOperation(var))
         return var
     
-    def set_possible_types(self, solutions):
+    def set_possible_types(self, solutions, kwargs=_MARKER):
         self.solutions = solutions
         defined = self.defined_vars
         for var in defined.itervalues():
@@ -443,7 +444,26 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         return new
     
     # select specific methods #################################################
-
+    
+    def set_possible_types(self, solutions, kwargs=_MARKER):
+        super(Select, self).set_possible_types(solutions, kwargs)
+        for ca in self.aliases.itervalues():
+            ca.stinfo['possibletypes'] = capt = set()
+            for solution in solutions:
+                capt.add(solution[ca.name])
+            if kwargs is _MARKER:
+                continue
+            # propagage to subqueries in case we're introducing additional
+            # type constraints
+            for stmt in ca.query.children[:]:
+                term = stmt.selection[ca.colnum]
+                sols = [sol for sol in stmt.solutions
+                        if term.get_type(sol, kwargs) in capt]
+                if not sols:
+                    ca.query.remove_select(stmt)
+                else:
+                    stmt.set_possible_types(sols)
+                                  
     def set_statement_type(self, etype):
         """set the statement type for this selection
         this method must be called last (i.e. once selected variables has been
