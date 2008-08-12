@@ -108,6 +108,17 @@ class NodesTest(TestCase):
         tree.recover()
         self.assertEquals(tree.as_string(), '(Any X WHERE X is Person) UNION (Any X WHERE X is Company)')
 
+    def test_union_undo_add_rel(self):
+        tree = self._parse("Any A WITH A BEING ((Any X WHERE X is Person) UNION (Any X WHERE X is Company))")
+        tree.save_state()
+        select = tree.children[0]
+        var = select.make_variable()
+        mainvar = select.selection[0].variable
+        select.add_relation(mainvar, 'name', var)
+        self.assertEquals(tree.as_string(), 'Any A WHERE A name B WITH A BEING ((Any X WHERE X is Person) UNION (Any X WHERE X is Company))')
+        tree.recover()
+        self.assertEquals(tree.as_string(), 'Any A WITH A BEING ((Any X WHERE X is Person) UNION (Any X WHERE X is Company))')
+
     def test_select_set_limit(self):
         tree = self._simpleparse("Any X WHERE X is Person")
         self.assertEquals(tree.limit, None)
