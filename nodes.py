@@ -844,6 +844,14 @@ class Referenceable(object):
                 break
         return rtype or etype
 
+    def selected_index(self):
+        """return the index of this variable in the selection if it's selected,
+        else None
+        """
+        if not self.stinfo['selected']:
+            return None
+        return iter(self.stinfo['selected']).next()
+
     
 class ColumnAlias(Referenceable):
     __slots__ = ('colnum', 'query',
@@ -889,7 +897,7 @@ class ColumnAlias(Referenceable):
     def get_scope(self):
         return self.query
     scope = property(get_scope, set_scope)
-
+    
     
 class Variable(Referenceable):
     """
@@ -936,14 +944,6 @@ class Variable(Referenceable):
         stinfo = self.stinfo
         return len(stinfo['selected']) + len(stinfo['relations'])
 
-    def selected_index(self):
-        """return the index of this variable in the selection if it's selected,
-        else None
-        """
-        if not self.stinfo['selected']:
-            return None
-        return iter(self.stinfo['selected']).next()
-    
     def main_relation(self):
         """Return the relation where this variable is used in the rhs.
 

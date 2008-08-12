@@ -469,8 +469,10 @@ class NodesTest(TestCase):
         self.assertEquals(X.get_type({'X': 'Personne'}), 'Personne')
         #self.assertEquals(N.get_type(), 'String')
         self.assertEquals(X.get_description(), 'Company')
-        self.assertEquals(N.get_description(), 'firstname') # XXX how to choose
-        
+        self.assertEquals(N.get_description(), 'firstname') # XXX how to choose 
+        self.assertEquals(X.selected_index(), 0)
+        self.assertEquals(N.selected_index(), None)
+       
     # non regression tests ####################################################
     
     def test_get_description_and_get_type(self):
