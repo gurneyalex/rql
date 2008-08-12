@@ -77,7 +77,7 @@ class ETypeResolver(object):
             if True or self.debug:
                 ex_msg += '\n%s' % (solve_debug.getvalue(),)
             raise TypeResolverException(ex_msg)
-        node.set_possible_types(sols)
+        node.set_possible_types(sols, self.kwargs)
 
     def _visit(self, node, constraints=None):
         """Recurse down the tree."""
@@ -191,7 +191,7 @@ class ETypeResolver(object):
                 constraints.append(fd.make_expression(varnames, '%s in %s ' % (
                     '=='.join(varnames), types)))
         self.solve(node, domains, constraints)
-    
+                
     def visit_relation(self, relation, constraints):
         """extract constraints for an relation according to it's  type"""
         rtype = relation.r_type
