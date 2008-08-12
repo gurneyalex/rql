@@ -23,10 +23,11 @@ class rqlvar_maker(object):
     """
     # NOTE: written a an iterator class instead of a simple generator to be
     #       picklable
-    def __init__(self, stop=None, index=0, defined=None):
+    def __init__(self, stop=None, index=0, defined=None, aliases=None):
         self.index = index
         self.stop = stop
         self.defined = defined
+        self.aliases = aliases
         
     def __iter__(self):
         return self
@@ -36,6 +37,8 @@ class rqlvar_maker(object):
             var = decompose_b26(self.index)
             self.index += 1
             if self.defined is not None and var in self.defined:
+                continue
+            if self.aliases is not None and var in self.aliases:
                 continue
             return var
         raise StopIteration()

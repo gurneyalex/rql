@@ -20,6 +20,8 @@ from rql.utils import rqlvar_maker, build_visitor_stub
 
             
 def _check_references(defined, varrefs):
+    print 'check defined', defined
+    print 'vrefs', varrefs
     refs = {}
     for var in defined.values():
         for vref in var.references():
@@ -29,7 +31,7 @@ def _check_references(defined, varrefs):
             refs[id(vref)] = 1
     for vref in varrefs:
         if not refs.has_key(id(vref)):
-            raise AssertionError('vref %r is not referenced' % vref)
+            raise AssertionError('vref %r is not referenced (%r)' % (vref, vref.stmt))
     return True
 
 
@@ -83,7 +85,9 @@ class ScopeNode(BaseNode):
     def allocate_varname(self):
         """return an yet undefined variable name"""
         if self._varmaker is None:
-            self._varmaker = rqlvar_maker(defined=self.defined_vars)
+            self._varmaker = rqlvar_maker(defined=self.defined_vars,
+                                          # XXX only on Select node
+                                          aliases=getattr(self, 'aliases', None))
         name =  self._varmaker.next()
         while name in self.defined_vars:
             name =  self._varmaker.next()
@@ -108,6 +112,21 @@ class ScopeNode(BaseNode):
         #for sol in solutions:
         #    for vname in sol:
         #        assert vname in self.defined_vars or vname in self.aliases
+
+    def check_references(self):
+        """test function"""
+        print 'check references of', repr(self)
+        defined = self.defined_vars.copy()
+        defined.update(self.aliases)
+        varrefs = [vref for vref in self.get_nodes(nodes.VariableRef) if vref.stmt is self]
+        try:
+            _check_references(defined, varrefs)
+        except:
+            print repr(self)
+            raise
+        for subq in self.with_:
+            subq.query.check_references()
+        return True
         
 class Statement(object):
     """base class for statement nodes"""
@@ -141,15 +160,6 @@ class Statement(object):
         return None
     def neged(self, _fromnode=None, strict=False):
         return None
-
-    def check_references(self):
-        """test function"""
-        varrefs = self.get_nodes(nodes.VariableRef)
-        try:
-            return _check_references(self.defined_vars, varrefs)
-        except:
-            print repr(self)
-            raise
 
 
 class Union(Statement, Node):
