@@ -20,8 +20,6 @@ from rql.utils import rqlvar_maker, build_visitor_stub
 
             
 def _check_references(defined, varrefs):
-    print 'check defined', defined
-    print 'vrefs', varrefs
     refs = {}
     for var in defined.values():
         for vref in var.references():
@@ -115,17 +113,21 @@ class ScopeNode(BaseNode):
 
     def check_references(self):
         """test function"""
-        print 'check references of', repr(self)
         defined = self.defined_vars.copy()
-        defined.update(self.aliases)
+        try:
+            defined = self.aliases.copy()
+        except AttributeError:
+            defined = self.defined_vars
+        else:
+            defined.update(self.defined_vars)
+            for subq in self.with_:
+                subq.query.check_references()
         varrefs = [vref for vref in self.get_nodes(nodes.VariableRef) if vref.stmt is self]
         try:
             _check_references(defined, varrefs)
         except:
             print repr(self)
             raise
-        for subq in self.with_:
-            subq.query.check_references()
         return True
         
 class Statement(object):
