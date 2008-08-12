@@ -97,7 +97,7 @@ class AddNodeOperation(NodeOperation):
 
     def undo(self, selection):
         """undo the operation on the selection"""
-        selection.remove_node(self.node)
+        self.stmt.remove_node(self.node)
 
 class ReplaceNodeOperation(object):
     """Defines how to undo 'replace node'."""
