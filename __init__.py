@@ -15,6 +15,7 @@
 __docformat__ = "restructuredtext en"
 
 from rql.__pkginfo__ import version as __version__
+from math import log
 
 import sys
 import threading
@@ -184,7 +185,19 @@ def parse(rqlstring, print_errors=True):
         return parser.goal()
     except SyntaxError, ex:
         if not print_errors:
-            raise RQLSyntaxError('%s\n%s' % (rqlstring, ex.msg)), None, sys.exc_info()[-1]
+            if ex.pos is not None:
+                multi_lines_rql = rqlstring.splitlines()
+                nb_lines = len(multi_lines_rql)
+                if nb_lines > 5:
+                    width = log(nb_lines, 10)+1
+                    template = " %%%ii: %%s" % width
+                    rqlstring = '\n'.join( template % (idx + 1, line) for idx, line in enumerate(multi_lines_rql))
+
+
+                msg = '%s\nat: %r\n%s' % (rqlstring, ex.pos,  ex.msg)
+            else:
+                msg = '%s\n%s' % (rqlstring, ex.msg)
+            raise RQLSyntaxError(msg), None, sys.exc_info()[-1]
         # try to get error message from yapps
         try:
             out = sys.stdout
