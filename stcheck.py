@@ -419,10 +419,8 @@ class RQLSTAnnotator(object):
                     newvar = self.rewrite_shared_optional(exists, lhsvar)
                     if newvar is not None:
                         lhsvar = newvar
-                if relation.optional == 'right':
-                    lhsvar.stinfo['blocsimplification'].add(relation)
-                elif relation.optional == 'both':
-                    lhsvar.stinfo['blocsimplification'].add(relation)
+                lhsvar.stinfo['blocsimplification'].add(relation)
+                if relation.optional == 'both':
                     lhsvar.stinfo['optrelations'].add(relation)
                 elif relation.optional == 'left':
                     lhsvar.stinfo['optrelations'].add(relation)
@@ -432,13 +430,11 @@ class RQLSTAnnotator(object):
                     newvar = self.rewrite_shared_optional(exists, rhsvar)
                     if newvar is not None:
                         rhsvar = newvar
+                rhsvar.stinfo['blocsimplification'].add(relation)
                 if relation.optional == 'right':
                     rhsvar.stinfo['optrelations'].add(relation)
                 elif relation.optional == 'both':
-                    rhsvar.stinfo['blocsimplification'].add(relation)
                     rhsvar.stinfo['optrelations'].add(relation)
-                elif relation.optional == 'left':
-                    rhsvar.stinfo['blocsimplification'].add(relation)
             except AttributeError:
                 # may have been rewritten as well
                 pass
