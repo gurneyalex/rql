@@ -220,7 +220,7 @@ class RQLSTChecker(object):
                 assert rhs.operator == 'IS', rhs.operator
                 assert rhs.children[0].type == None
         elif not relation.r_type in self.schema:
-            errors.append('unknown relation %s' % relation.r_type)
+            errors.append('unknown relation `%s`' % relation.r_type)
         
     def leave_relation(self, relation, errors):
         pass
