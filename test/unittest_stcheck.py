@@ -127,7 +127,11 @@ class CheckClassTest(TestCase):
              'Any X WITH X BEING (Any 12)'),
 
             ('Any X GROUPBY X WHERE X eid 12, X connait Y HAVING COUNT(Y) > 10',
-             'Any X GROUPBY X WHERE X eid 12, X connait Y HAVING COUNT(Y) > 10')
+             'Any X GROUPBY X WHERE X eid 12, X connait Y HAVING COUNT(Y) > 10'),
+
+            # A eid 12 can be removed since the type analyzer checked its existence
+            ('Any X WHERE A eid 12, X connait Y',
+             'Any X WHERE X connait Y'),
             ):
             yield self._test_rewrite, rql, expected
 

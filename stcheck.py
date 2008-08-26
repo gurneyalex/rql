@@ -275,7 +275,7 @@ class RQLSTChecker(object):
     def visit_constant(self, constant, errors):
         assert len(constant.children)==0
         if constant.type == 'etype':
-            if constant.relation().r_type != 'is':
+            if constant.relation().r_type not in ('is', 'instance_of'):
                 msg ='using an entity type in only allowed with "is" relation'
                 errors.append(msg)
             if not constant.value in self.schema:
@@ -330,6 +330,7 @@ class RQLSTAnnotator(object):
             for subquery in node.with_:
                 self.visit_union(subquery.query)
                 subquery.query.schema = node.root.schema
+        node.has_aggregat = False
         self._visit_stmt(node)
         if node.having:
             # if there is a having clause, bloc simplification of variables used in GROUPBY
