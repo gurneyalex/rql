@@ -197,27 +197,30 @@ class ETypeResolver(object):
         rtype = relation.r_type
         lhs, rhs = relation.get_parts()
         if relation.is_types_restriction():
-            types = [c.value for c in rhs.iget_nodes(nodes.Constant)
-                     if c.type == 'etype']
+            etypes = set(c.value for c in rhs.iget_nodes(nodes.Constant)
+                         if c.type == 'etype')
+            if relation.r_type == 'instance_of':
+                for etype in tuple(etypes):
+                    for specialization in self.schema.eschema(etype).specialized_by():
+                        etypes.add(specialization.type)
             if isinstance(relation.parent, nodes.Not):
-                not_types = [t for t in self._nonfinal_domain if not t in types]
-                types = not_types
+                etypes = frozenset(t for t in self._nonfinal_domain if not t in etypes)
             constraints.append(fd.make_expression(
-                (lhs.name,), '%s in %s ' % (lhs.name, types)))
+                (lhs.name,), '%s in %r' % (lhs.name, etypes)))
             return
         elif rtype in self.uid_func_mapping:
             if isinstance(relation.parent, nodes.Not) or relation.operator() != '=':
                 # non final entity types
-                types = self._nonfinal_domain
+                etypes = self._nonfinal_domain
             else:
-                types = self._uid_node_types(rhs)
-            if types:
+                etypes = self._uid_node_types(rhs)
+            if etypes:
                 constraints.append(fd.make_expression(
-                    (lhs.name,), '%s in %s ' % (lhs.name, types)))
+                    (lhs.name,), '%s in %s ' % (lhs.name, etypes)))
                 return
         if isinstance(rhs, nodes.Comparison):
             rhs = rhs.children[0]
-        rschema = self.schema.relation_schema(rtype)
+        rschema = self.schema.rschema(rtype)
         if isinstance(lhs, nodes.Constant): # lhs is a constant node (simplified tree)
             if not isinstance(rhs, nodes.VariableRef):
                 return

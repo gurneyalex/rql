@@ -42,61 +42,83 @@ class RelationSchema(ERSchema):
         return self.obj_types[0] in FINAL_ETYPES
 
 class EntitySchema(ERSchema):
-    def __init__(self, type):
+    def __init__(self, type, specialized_by=None):
         self.type = type
+        self._specialized_by = specialized_by or ()
 
     def is_final(self):
         return self.type in FINAL_ETYPES
+    
+    def specialized_by(self):
+        return self._specialized_by
     
 class DummySchema(object):
 
     def __init__(self):
         self._types = {}
         for etype in ['String', 'Boolean', 'Int', 'Float', 'Date',
-                     'Eetype', 'Person', 'Company', 'Address']:
+                     'Eetype', 'Person', 'Company', 'Address', 'Student']:
             self._types[etype] = EntitySchema(etype)
-
+        self._types['Person']._specialized_by = [self._types['Student']]
         self._relations = {
             'eid' : RelationSchema( ( ('Person', ('Int',) ),
+                                      ('Student', ('Int',) ),
                                       ('Company', ('Int',) ),
                                       ('Address', ('Int',) ),
                                       ('Eetype', ('Int',) ),
                                       )
                                     ),
             'creation_date' : RelationSchema( ( ('Person', ('Datetime',) ),
+                                                ('Student', ('Datetime',) ),
                                                 ('Company', ('Datetime',) ),
                                                 ('Address', ('Datetime',) ),
                                                 ('Eetype', ('Datetime',) ),
                                                 )
                                     ),
             'name' : RelationSchema( ( ('Person', ('String',) ),
-                                      ('Company', ('String',) ),
+                                       ('Student', ('String',) ),
+                                       ('Company', ('String',) ),
                                       )
                                     ),
             'firstname' : RelationSchema( ( ('Person', ('String',) ),
+                                            ('Student', ('String',) ),
                                            )
                                     ),
             'work_for' : RelationSchema( ( ('Person', ('Company',) ),
-                                          )
+                                           ('Student', ('Company',) ),
+                                           )
                                         ),
             'is' : RelationSchema( ( ('Person', ('Eetype',) ),
+                                     ('Student', ('Eetype',) ),
                                      ('Company', ('Eetype',) ),
                                      ('Address', ('Eetype',) ),
                                      )
                                    ),
+            'instance_of' : RelationSchema( ( ('Person', ('Eetype',) ),
+                                              ('Student', ('Eetype',) ),
+                                              ('Company', ('Eetype',) ),
+                                              ('Address', ('Eetype',) ),
+                                              )
+                                            ),
             'connait' : RelationSchema( (('Person', ('Person',) ),
+                                         ('Student', ('Person',) ),
+                                         ('Student', ('Student',) ),
+                                         ('Person', ('Student',) ),
                                          ),
                                         symetric=True),
             'located' : RelationSchema( ( ('Person', ('Address',) ),
-                                         ('Company', ('Address',) ),
+                                          ('Student', ('Address',) ),
+                                          ('Company', ('Address',) ),
                                          )
                                        ),
             'owned_by' : RelationSchema( ( ('Person', ('Person',) ),
+                                           ('Student', ('Person',) ),
                                            ('Company', ('Person',) ),
                                            ('Eetype', ('Person',) ),
                                            )
                                          ),
             'identity' : RelationSchema( ( ('Person', ('Person',) ),
+                                           ('Student', ('Student',) ),
                                            ('Company', ('Company',) ),
                                            ('Address', ('Address',) ),
                                            ('Eetype', ('Eetype',) ),
@@ -119,9 +141,10 @@ class DummySchema(object):
     def __contains__(self, ertype):
         return self.has_entity(ertype) or self.has_relation(ertype)
     
-    def relation_schema(self, r_type):
+    def rschema(self, r_type):
         return self._relations[r_type]
-    rschema = relation_schema
+    def eschema(self, e_type):
+        return self._types[e_type]
         
         
 UNRESOLVABLE_QUERIES = (
@@ -132,7 +155,7 @@ UNRESOLVABLE_QUERIES = (
 
 DEBUG = 0
 ALL_SOLS = [{'X': 'Address'}, {'X': 'Company'},
-            {'X': 'Eetype'}, {'X': 'Person'}]
+            {'X': 'Eetype'}, {'X': 'Person'}, {'X': 'Student'}]
 
 
 class AnalyzerClassTest(TestCase):
@@ -160,7 +183,8 @@ class AnalyzerClassTest(TestCase):
         self.assertEqual(sols, [{'X': 'Address'},
                                 {'X': 'Company'},
                                 {'X': 'Eetype'},
-                                {'X': 'Person'}])
+                                {'X': 'Person'},
+                                {'X': 'Student'}])
         
     def test_base_2(self):
         node = self.helper.parse('Person X')
@@ -191,14 +215,33 @@ class AnalyzerClassTest(TestCase):
         node = self.helper.parse('Any X WHERE X name "Logilab"')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'X': 'Company'}, {'X': 'Person'}])
+        self.assertEqual(sols, [{'X': 'Company'}, {'X': 'Person'}, {'X': 'Student'}])
+        
+    def test_instance_of_1(self):
+        node = self.helper.parse('Any X WHERE X instance_of Person')
+        # check constant type of the is relation inserted
+        self.assertEqual(node.children[0].where.children[1].children[0].type,
+                         'etype')
+        self.helper.compute_solutions(node, debug=DEBUG)
+        sols = node.children[0].solutions
+        self.assertEqual(sols, [{'X': 'Person'}, {'X': 'Student'}])
+    
+    def test_instance_of_2(self):
+        node = self.helper.parse('Any X WHERE X instance_of Student')
+        # check constant type of the is relation inserted
+        self.assertEqual(node.children[0].where.children[1].children[0].type,
+                         'etype')
+        self.helper.compute_solutions(node, debug=DEBUG)
+        sols = node.children[0].solutions
+        self.assertEqual(sols, [{'X': 'Student'}])
     
     def test_is_query(self):
         node = self.helper.parse('Any T WHERE X name "logilab", X is T')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
         self.assertEqual(sols, [{'X': 'Company', 'T': 'Eetype'},
-                                {'X': 'Person', 'T': 'Eetype'}])
+                                {'X': 'Person', 'T': 'Eetype'},
+                                {'X': 'Student', 'T': 'Eetype'}])
 
     def test_is_query_const(self):
         node = self.helper.parse('Any X WHERE X is T, T eid 10')
@@ -206,7 +249,8 @@ class AnalyzerClassTest(TestCase):
         sols = sorted(node.children[0].solutions)
         self.assertEqual(sols, [{'X': 'Address', 'T': 'Eetype'},
                                 {'X': 'Company', 'T': 'Eetype'},
-                                {'X': 'Person', 'T': 'Eetype'}])
+                                {'X': 'Person', 'T': 'Eetype'},
+                                {'X': 'Student', 'T': 'Eetype'}])
 
     def test_not(self):
         node = self.helper.parse('Any X WHERE not X is Person')
@@ -232,7 +276,8 @@ class AnalyzerClassTest(TestCase):
         h.compute_solutions(node, uid_func_mapping, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
         self.assertEquals(sols, [{'X': 'Company', 'N': 'String'},
-                                {'X': 'Person', 'N': 'String'}])
+                                 {'X': 'Person', 'N': 'String'},
+                                 {'X': 'Student', 'N': 'String'}])
         # substitute as rhs of the uid relation
         node = h.parse('Any X WHERE X name %(company)s')
         h.compute_solutions(node, uid_func_mapping, {'company': 'Logilab'},
@@ -249,12 +294,12 @@ class AnalyzerClassTest(TestCase):
         uid_func_mapping = {'name': type_from_uid}
         node = h.parse('Any X WHERE NOT X name %(company)s')
         h.compute_solutions(node, uid_func_mapping, {'company': 'Logilab'},
-                        debug=DEBUG)
+                            debug=DEBUG)
         sols = sorted(node.children[0].solutions)
         self.assertEquals(sols, ALL_SOLS)
         node = h.parse('Any X WHERE X name > %(company)s')
         h.compute_solutions(node, uid_func_mapping, {'company': 'Logilab'},
-                        debug=DEBUG)
+                            debug=DEBUG)
         sols = sorted(node.children[0].solutions)
         self.assertEquals(sols, ALL_SOLS)
         
@@ -264,7 +309,8 @@ class AnalyzerClassTest(TestCase):
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
         self.assertEqual(sols, [{'X': 'Company', 'Z': 'String'},
-                                 {'X': 'Person', 'Z': 'String'}])
+                                {'X': 'Person', 'Z': 'String'},
+                                {'X': 'Student', 'Z': 'String'}])
 
     def test_var_name(self):
         node = self.helper.parse('Any E1 GROUPBY E1 WHERE E2 is Person, E2 name E1')
@@ -295,21 +341,26 @@ class AnalyzerClassTest(TestCase):
         node = self.helper.parse('Any P WHERE X eid 0, NOT X connait P')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'P': 'Person', 'X': 'Person'}])
+        self.assertEqual(sols, [{'P': 'Person', 'X': 'Person'},
+                                {'P': 'Student', 'X': 'Person'}])
         self.helper.simplify(node)
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'P': 'Person'}])
+        self.assertEqual(sols, [{'P': 'Person'}, {'P': 'Student'}])
         
     def test_union(self):
-        node = self.helper.parse('(Any P WHERE X eid 0, NOT X connait P) UNION (Any E1 WHERE E2 work_for E1, E2 eid 2)')
+        node = self.helper.parse('(Any P WHERE X eid 0, X is Person, NOT X connait P) UNION (Any E1 WHERE E2 work_for E1, E2 eid 2)')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'P': 'Person', 'X': 'Person'}], [{'E1': 'Company', 'E2': 'Person'}])
+        self.assertEqual(sols, [{'P': 'Person', 'X': 'Person'}, {'P': 'Student', 'X': 'Person'}])
+        sols = sorted(node.children[1].solutions)
+        self.assertEqual(sols, [{'E1': 'Company', 'E2': 'Person'}])
         self.helper.simplify(node)
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'P': 'Person'}], [{'E1': 'Company'}])
+        self.assertEqual(sols, [{'P': 'Person'}, {'P': 'Student'}],)
+        sols = sorted(node.children[1].solutions)
+        self.assertEqual(sols, [{'E1': 'Company'}])
         
     def test_exists(self):
         node = self.helper.parse("Any X WHERE X firstname 'lulu',"
@@ -317,6 +368,8 @@ class AnalyzerClassTest(TestCase):
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
         self.assertEqual(sols, [{'X': 'Person',
+                                 'U': 'Person'},
+                                {'X': 'Student',
                                  'U': 'Person'}])
 
     def test_subqueries_base(self):
@@ -377,7 +430,8 @@ class AnalyzerClassTest(TestCase):
         node = self.helper.parse('SET X name "toto", X work_for Y WHERE Y name "logilab"')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.solutions)
-        self.assertEqual(sols, [{'X': 'Person', 'Y': 'Company'}])
+        self.assertEqual(sols, [{'X': 'Person', 'Y': 'Company'},
+                                {'X': 'Student', 'Y': 'Company'}])
 
         
     def test_nongrer_not_u_ownedby_u(self):
