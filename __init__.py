@@ -117,7 +117,7 @@ class RQLHelper(object):
                 #assert len(stinfo['uidrels']) == 1, var
                 uidrel = stinfo['uidrels'].pop()
                 var = uidrel.children[0].variable
-                select.stinfo['rewritten'][var.name] = vconsts = []
+                vconsts = []
                 rhs = uidrel.children[1].children[0]
                 #from rql.nodes import Constant
                 #assert isinstance(rhs, nodes.Constant), rhs
@@ -152,6 +152,8 @@ class RQLHelper(object):
                         rhs = copy_uid_node(select, rhs, vconsts)
                         vref.parent.replace(vref, rhs)
                 del select.defined_vars[var.name]
+                if vconsts:
+                    select.stinfo['rewritten'][var.name] = vconsts
         if select.stinfo['rewritten'] and select.solutions:
             select.clean_solutions()
         
