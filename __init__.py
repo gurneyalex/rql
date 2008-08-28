@@ -52,6 +52,10 @@ class RQLHelper(object):
             from rql.analyze import ETypeResolver
             resolver_class = ETypeResolver
         self._analyser = resolver_class(schema, uid_func_mapping)
+        # IgnoreTypeRestriction analyser
+        from rql.analyze import ETypeResolverIgnoreTypeRestriction
+        self._itr_analyser_lock = threading.Lock()
+        self._itr_analyser = ETypeResolverIgnoreTypeRestriction(schema, uid_func_mapping)
         self.set_schema(schema)
 
     def set_schema(self, schema):
@@ -93,6 +97,19 @@ class RQLHelper(object):
                                  debug)
         finally:
             self._analyser_lock.release()
+            
+    def compute_all_solutions(self, rqlst, uid_func_mapping=None, kwargs=None,
+                          debug=False):
+        """compute syntaxe tree solutions with all types restriction (eg
+        is/instance_of relations) ignored
+        """
+        self._itr_analyser_lock.acquire()
+        try:
+            self._itr_analyser.visit(rqlst, uid_func_mapping, kwargs,
+                                 debug)
+        finally:
+            self._itr_analyser_lock.release()
+    
     
     def simplify(self, rqlst):
         """Simplify `rqlst` by rewriting non-final variables associated to a const

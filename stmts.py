@@ -100,13 +100,14 @@ class ScopeNode(BaseNode):
             self.undo_manager.add_operation(MakeVarOperation(var))
         return var
     
-    def set_possible_types(self, solutions, kwargs=_MARKER):
-        self.solutions = solutions
+    def set_possible_types(self, solutions, kwargs=_MARKER, key='possibletypes'):
+        if key == 'possibletypes':
+            self.solutions = solutions
         defined = self.defined_vars
         for var in defined.itervalues():
-            var.stinfo['possibletypes'] = set()
+            var.stinfo[key] = set()
             for solution in solutions:
-                var.stinfo['possibletypes'].add(solution[var.name])
+                var.stinfo[key].add(solution[var.name])
         # for debugging
         #for sol in solutions:
         #    for vname in sol:
@@ -445,10 +446,10 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
     
     # select specific methods #################################################
     
-    def set_possible_types(self, solutions, kwargs=_MARKER):
-        super(Select, self).set_possible_types(solutions, kwargs)
+    def set_possible_types(self, solutions, kwargs=_MARKER, key='possibletypes'):
+        super(Select, self).set_possible_types(solutions, kwargs, key)
         for ca in self.aliases.itervalues():
-            ca.stinfo['possibletypes'] = capt = set()
+            ca.stinfo[key] = capt = set()
             for solution in solutions:
                 capt.add(solution[ca.name])
             if kwargs is _MARKER:

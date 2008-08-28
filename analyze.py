@@ -24,6 +24,7 @@ class ETypeResolver(object):
      * domains     <-> different entity's types defined in the schema
      * constraints <-> relations between (RQL) variables
     """
+    var_solkey = 'possibletypes'
     
     def __init__(self, schema, uid_func_mapping=None):
         """
@@ -77,7 +78,7 @@ class ETypeResolver(object):
             if True or self.debug:
                 ex_msg += '\n%s' % (solve_debug.getvalue(),)
             raise TypeResolverException(ex_msg)
-        node.set_possible_types(sols, self.kwargs)
+        node.set_possible_types(sols, self.kwargs, self.var_solkey)
 
     def _visit(self, node, constraints=None):
         """Recurse down the tree."""
@@ -194,21 +195,12 @@ class ETypeResolver(object):
                 
     def visit_relation(self, relation, constraints):
         """extract constraints for an relation according to it's  type"""
+        if relation.is_types_restriction():
+            self.visit_type_restriction(relation, constraints)
+            return
         rtype = relation.r_type
         lhs, rhs = relation.get_parts()
-        if relation.is_types_restriction():
-            etypes = set(c.value for c in rhs.iget_nodes(nodes.Constant)
-                         if c.type == 'etype')
-            if relation.r_type == 'instance_of':
-                for etype in tuple(etypes):
-                    for specialization in self.schema.eschema(etype).specialized_by():
-                        etypes.add(specialization.type)
-            if isinstance(relation.parent, nodes.Not):
-                etypes = frozenset(t for t in self._nonfinal_domain if not t in etypes)
-            constraints.append(fd.make_expression(
-                (lhs.name,), '%s in %r' % (lhs.name, etypes)))
-            return
-        elif rtype in self.uid_func_mapping:
+        if rtype in self.uid_func_mapping:
             if isinstance(relation.parent, nodes.Not) or relation.operator() != '=':
                 # non final entity types
                 etypes = self._nonfinal_domain
@@ -284,6 +276,19 @@ class ETypeResolver(object):
                 constraints.append(fd.make_expression([lhsvar], cstr2))
         constraints.append(fd.make_expression(vars, cstr))
 
+    def visit_type_restriction(self, relation, constraints):
+        lhs, rhs = relation.get_parts()
+        etypes = set(c.value for c in rhs.iget_nodes(nodes.Constant)
+                     if c.type == 'etype')
+        if relation.r_type == 'instance_of':
+            for etype in tuple(etypes):
+                for specialization in self.schema.eschema(etype).specialized_by():
+                    etypes.add(specialization.type)
+        if relation.neged(strict=True):
+            etypes = frozenset(t for t in self._nonfinal_domain if not t in etypes)
+        constraints.append(fd.make_expression(
+            (lhs.name,), '%s in %r' % (lhs.name, etypes)))
+       
     def visit_and(self, et, constraints):
         pass
     def visit_or(self, ou, constraints):
@@ -305,6 +310,17 @@ class ETypeResolver(object):
     def visit_exists(self, exists, constraints):
         pass
 
+
+class ETypeResolverIgnoreTypeRestriction(ETypeResolver):
+    """same as ETypeResolver but ignore type restriction relation
+
+    results are stored in as the 'allpossibletypes' key in variable'stinfo
+    """
+    var_solkey = 'allpossibletypes'
+
+    def visit_type_restriction(self, relation, constraints):
+        pass
+    
 # ==========================================================
 
 class UnifyError(Exception):
