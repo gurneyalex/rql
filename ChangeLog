@@ -7,6 +7,8 @@ ChangeLog for RQL
     * add missing selected_index() method on ColumnAlias
     * set_possible_types() propagate to sub-queries since some additional
       type constraints may be set in the outer query
+    * new type resolver ignore type restrictions, used by erudi during syntax
+      tree annotation
 	
 2008-08-07  --  0.19.1
     * should not simplify variables used in the GROUPBY clause when there is a
