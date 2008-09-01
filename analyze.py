@@ -280,7 +280,7 @@ class ETypeResolver(object):
         lhs, rhs = relation.get_parts()
         etypes = set(c.value for c in rhs.iget_nodes(nodes.Constant)
                      if c.type == 'etype')
-        if relation.r_type == 'instance_of':
+        if relation.r_type == 'is_instance_of':
             for etype in tuple(etypes):
                 for specialization in self.schema.eschema(etype).specialized_by():
                     etypes.add(specialization.type)
