@@ -94,7 +94,7 @@ class DummySchema(object):
                                      ('Address', ('Eetype',) ),
                                      )
                                    ),
-            'instance_of' : RelationSchema( ( ('Person', ('Eetype',) ),
+            'is_instance_of' : RelationSchema( ( ('Person', ('Eetype',) ),
                                               ('Student', ('Eetype',) ),
                                               ('Company', ('Eetype',) ),
                                               ('Address', ('Eetype',) ),
@@ -217,8 +217,8 @@ class AnalyzerClassTest(TestCase):
         sols = sorted(node.children[0].solutions)
         self.assertEqual(sols, [{'X': 'Company'}, {'X': 'Person'}, {'X': 'Student'}])
         
-    def test_instance_of_1(self):
-        node = self.helper.parse('Any X WHERE X instance_of Person')
+    def test_is_instance_of_1(self):
+        node = self.helper.parse('Any X WHERE X is_instance_of Person')
         # check constant type of the is relation inserted
         self.assertEqual(node.children[0].where.children[1].children[0].type,
                          'etype')
@@ -226,8 +226,8 @@ class AnalyzerClassTest(TestCase):
         sols = node.children[0].solutions
         self.assertEqual(sols, [{'X': 'Person'}, {'X': 'Student'}])
     
-    def test_instance_of_2(self):
-        node = self.helper.parse('Any X WHERE X instance_of Student')
+    def test_is_instance_of_2(self):
+        node = self.helper.parse('Any X WHERE X is_instance_of Student')
         # check constant type of the is relation inserted
         self.assertEqual(node.children[0].where.children[1].children[0].type,
                          'etype')

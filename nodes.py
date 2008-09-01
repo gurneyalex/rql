@@ -373,7 +373,7 @@ class Relation(Node):
         return self.parent.neged(_fromnode or self)
 
     def is_types_restriction(self):
-        if self.r_type not in ('is', 'instance_of'):
+        if self.r_type not in ('is', 'is_instance_of'):
             return False
         rhs = self.children[1]
         if isinstance(rhs, Comparison):
