@@ -275,7 +275,7 @@ class RQLSTChecker(object):
     def visit_constant(self, constant, errors):
         assert len(constant.children)==0
         if constant.type == 'etype':
-            if constant.relation().r_type not in ('is', 'instance_of'):
+            if constant.relation().r_type not in ('is', 'is_instance_of'):
                 msg ='using an entity type in only allowed with "is" relation'
                 errors.append(msg)
             if not constant.value in self.schema:
