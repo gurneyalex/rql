@@ -209,7 +209,7 @@ class RQLSTChecker(object):
         # special case "X identity Y"
         if relation.r_type == 'identity':
             lhs, rhs = relation.children
-            assert not isinstance(relation.parent, Not)
+            #assert not isinstance(relation.parent, Not)
             assert rhs.operator == '='
         elif relation.r_type == 'is':
             # special case "C is NULL"
