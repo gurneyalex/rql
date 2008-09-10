@@ -30,6 +30,8 @@ BAD_QUERIES = (
     '(Any X WHERE X nom "toto") UNION (Any X,F WHERE X firstname F);',
 
     'Any X, X/Z WHERE X is Person; WITH Y BEING (Any SUM(X) WHERE X is Person)',
+
+    'Any X WHERE X name "Toto", P is Person',
     )
 
 OK_QUERIES = (
