@@ -112,7 +112,7 @@ class EditableMixIn(object):
         for varref in node.iget_nodes(VariableRef):
             varref.unregister_reference()
             #if not varref.variable.references():
-            #    del node.root().defined_vars[varref.name]
+            #    node.root.undefine_variable(varref.variable)
         if self.should_register_op:
             from rql.undo import RemoveNodeOperation
             self.undo_manager.add_operation(RemoveNodeOperation(node))
