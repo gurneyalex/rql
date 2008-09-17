@@ -38,6 +38,8 @@ OK_QUERIES = (
     '(Any N,COUNT(X) GROUPBY N WHERE X name N)'
     ' UNION '
     '(Any N,COUNT(X) GROUPBY N WHERE X firstname N)',
+
+    'DISTINCT Any X, MAX(Y) GROUPBY X WHERE X is Person, Y is Company'
     )
 
 class CheckClassTest(TestCase):
