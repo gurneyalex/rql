@@ -1,6 +1,12 @@
 ChangeLog for RQL
 =================
 
+ --
+    * is_instance_of support
+    * raise BadRQLQuery on queries like 'Any X WHERE X name Toto, P is Person'
+    * "NOT X identity Y" is now allowed
+    * do not add relation constraint on variables used in math expression
+	
 2008-08-29  --  0.19.2
     * fix undoing of add_relation and variable name allocation on query using
       some subquery
