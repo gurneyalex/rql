@@ -339,7 +339,7 @@ class RQLSTAnnotator(object):
                     vref.variable.stinfo['blocsimplification'].add(term)
         for var in node.defined_vars.itervalues():
             if not var.stinfo['relations'] and var.stinfo['typerels'] and not var.stinfo['selected']:
-                raise BadRQLQuery('unbound variable %s' % var.name)
+                raise BadRQLQuery('unbound variable %s (%s)' % (var.name, var.stmt.root))
             
     def rewrite_shared_optional(self, exists, var):
         """if variable is shared across multiple scopes, need some tree
