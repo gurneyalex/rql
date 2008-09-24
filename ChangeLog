@@ -1,7 +1,7 @@
 ChangeLog for RQL
 =================
 
- --
+2008-08-29  --  0.19.2
     * fix undoing of add_relation and variable name allocation on query using
       some subquery
     * add missing selected_index() method on ColumnAlias

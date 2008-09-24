@@ -252,11 +252,17 @@ class ETypeResolver(object):
             lhsvar = lhs.name
             rhsvars = []
             samevar = False
-            for v in rhs.iget_nodes(nodes.VariableRef):
-                if v.name == lhsvar:
-                    samevar = True
-                else:
-                    rhsvars.append(v.name)
+            if not isinstance(rhs, nodes.MathExpression):
+                # rhs type is the result of the math expression, not of
+                # individual variables, so don't add constraints on rhs
+                # variables
+                for v in rhs.iget_nodes(nodes.VariableRef):
+                    if v.name == lhsvar:
+                        samevar = True
+                    else:
+                        rhsvars.append(v.name)
+            else:
+                return
             if rhsvars:
                 s2 = '=='.join(rhsvars)
                 res = []

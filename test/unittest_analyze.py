@@ -124,6 +124,11 @@ class DummySchema(object):
                                            ('Eetype', ('Eetype',) ),
                                       )
                                     ),
+            'number' : RelationSchema( ( ('Person', ('Int',) ),
+                                         ('Student', ('Int',) ),
+                                         ('Company', ('Float',) ),
+                                      )
+                                    ),
             }
         
     def entities(self):
@@ -432,6 +437,13 @@ class AnalyzerClassTest(TestCase):
         sols = sorted(node.solutions)
         self.assertEqual(sols, [{'X': 'Person', 'Y': 'Company'},
                                 {'X': 'Student', 'Y': 'Company'}])
+
+    def test_set_mathexpr(self):
+        node = self.helper.parse('SET S number N/4 WHERE P work_for S, P number N')
+        self.helper.compute_solutions(node, debug=DEBUG)
+        sols = sorted(node.solutions)
+        self.assertEqual(sols, [{'P': 'Person', 'S': 'Company', 'N': 'Int'},
+                                {'P': 'Student', 'S': 'Company', 'N': 'Int'}])
 
         
     def test_nongrer_not_u_ownedby_u(self):
