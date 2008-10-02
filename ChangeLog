@@ -1,7 +1,7 @@
 ChangeLog for RQL
 =================
 
- --
+2008-09-24  --  0.20.0
     * is_instance_of support
     * raise BadRQLQuery on queries like 'Any X WHERE X name Toto, P is Person'
     * "NOT X identity Y" is now allowed

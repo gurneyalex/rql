@@ -147,7 +147,7 @@ class Statement(object):
 
     # navigation helper methods #############################################
     
-    @property 
+    @property
     def root(self):
         """return the root node of the tree"""
         return self
