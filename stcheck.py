@@ -8,6 +8,7 @@ __docformat__ = "restructuredtext en"
 
 from itertools import chain
 from logilab.common.compat import any
+from logilab.common.graph import has_path
 
 from rql._exceptions import BadRQLQuery
 from rql.utils import function_description
@@ -87,12 +88,9 @@ class RQLSTChecker(object):
         pass
     
     def visit_select(self, node, errors):
+        node.vargraph = {} # graph representing links between variable
         self._visit_selectedterm(node, errors)
-#         #XXX from should be added to children, no ?
-#         for subquery in node.from_:
-#             self.visit_union(subquery, errors)
-#         if node.sortterms:
-#             self._visit(node.sortterms, errors)            
+        
     def leave_select(self, node, errors):
         selected = node.selection
         # check selected variable are used in restriction
@@ -106,21 +104,43 @@ class RQLSTChecker(object):
                     errors.append('variable %s should be grouped' % var)
             for group in node.groupby:
                 self._check_selected(group, 'group', errors)
-#         # check that variables referenced in the given term are selected
-#         for term in node.orderby:
-#             for vref in term.iget_nodes(VariableRef):
-#                 # no stinfo yet, use references
-#                 try:
-#                     for ovref in node.defined_vars[vref.name].references():
-#                         rel = ovref.relation()
-#                         if rel is not None:
-#                             break
-#                     else:
-#                         msg = 'variable %s used in %s is not referenced by %s'
-#                         errors.append(msg % (vref.name, termtype, node.as_string()))
-#                 except KeyError:
-#                     msg = 'variable %s used in %s is not referenced by %s'
-#                     errors.append(msg % (vref.name, termtype, node.as_string()))
+        if node.distinct:
+            # check that variables referenced in the given term are reachable from
+            # a selected variable with only ?1 cardinalityselected
+            graph = node.vargraph
+            selectidx = frozenset(vref.name for term in selected for vref in term.iget_nodes(VariableRef))
+            schema = self.schema
+            for sortterm in node.orderby:
+                for vref in sortterm.term.iget_nodes(VariableRef):
+                    if vref.name in selectidx:
+                        continue
+                    for vname in selectidx:
+                        if self.has_unique_value_path(graph, vname, vref.name):
+                            break
+                    else:
+                        msg = ('can\'t sort on variable %s which is linked to a'
+                               ' variable in the selection but may have different'
+                               ' values for a resulting row')
+                        errors.append(msg % vref.name)
+
+    def has_unique_value_path(self, graph, fromvar, tovar):
+        path = has_path(graph, fromvar, tovar)
+        if path is None:
+            return False
+        for tovar in path:
+            try:
+                rtype = graph[(fromvar, tovar)]
+                cardidx = 0
+            except KeyError:
+                rtype = graph[(tovar, fromvar)]
+                cardidx = 1
+            rschema = self.schema.rschema(rtype)
+            for rdef in rschema.iter_rdefs():
+                if not rschema.rproperty(rdef[0], rdef[1], 'cardinality')[cardidx] in '?1':
+                    return False
+            fromvar = tovar
+        return True
+        
 
     def visit_insert(self, insert, errors):
         self._visit_selectedterm(insert, errors)
@@ -221,6 +241,16 @@ class RQLSTChecker(object):
                 assert rhs.children[0].type == None
         elif not relation.r_type in self.schema:
             errors.append('unknown relation `%s`' % relation.r_type)
+        try:
+            vargraph = relation.stmt.vargraph
+            rhsvarname = relation.children[1].children[0].variable.name
+            lhsvarname = relation.children[0].name
+        except AttributeError:
+            pass
+        else:
+            vargraph.setdefault(lhsvarname, []).append(rhsvarname)
+            vargraph.setdefault(rhsvarname, []).append(lhsvarname)
+            vargraph[(lhsvarname, rhsvarname)] = relation.r_type
         
     def leave_relation(self, relation, errors):
         pass
