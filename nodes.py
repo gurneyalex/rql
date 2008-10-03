@@ -152,7 +152,14 @@ class EditableMixIn(object):
 
     def add_eid_restriction(self, var, eid): 
         """builds a restriction node to express '<var> eid <eid>'"""
-        return self.add_restriction(make_relation(var, 'eid', (eid, 'Int'), Constant))
+        if isinstance(eid, (set, frozenset, tuple, list, dict)):
+            rel = make_relation(var, 'eid', ('IN',), Function, operator='=')
+            infunc = rel.children[1].children[0]
+            for eid_ in sorted(eid):
+                infunc.append(Constant(eid_, 'Int'))
+            return self.add_restriction(rel)
+        return self.add_restriction(make_relation(var, 'eid', (eid, 'Int'),
+                                                  Constant))
     
     def add_type_restriction(self, var, etype):
         """builds a restriction node to express : variable is etype"""

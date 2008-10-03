@@ -18,16 +18,25 @@ class ERSchema(object):
     
 
 class RelationSchema(ERSchema):
-    def __init__(self, assoc_types, symetric=False):
+    def __init__(self, assoc_types, symetric=False, card=None):
         self.assoc_types = assoc_types
         self.subj_types = [e_type[0] for e_type in assoc_types]
+        self.final = False
         d = {}
         for e_type, dest_types in assoc_types:
             for e_type in dest_types:
                 d[e_type] = 1
+                if e_type in ('Int', 'Datetime', 'String'):
+                    self.final = True
         self.obj_types = d.keys()
         self.symetric = symetric
         self.inlined = False
+        if card is None:
+            if self.final:
+                card = '?*'
+            else:
+                card = '**'
+        self.card = card
         
     def associations(self):
         return self.assoc_types
@@ -41,6 +50,15 @@ class RelationSchema(ERSchema):
     def is_final(self):
         return self.obj_types[0] in FINAL_ETYPES
 
+    def iter_rdefs(self):
+        for subjtype, dest_types in self.assoc_types:
+            for objtype in dest_types:
+                yield subjtype, objtype
+
+    def rproperty(self, subj, obj, rprop):
+        assert rprop == 'cardinality'
+        return self.card
+    
 class EntitySchema(ERSchema):
     def __init__(self, type, specialized_by=None):
         self.type = type
@@ -60,7 +78,7 @@ class DummySchema(object):
                      'Eetype', 'Person', 'Company', 'Address', 'Student']:
             self._types[etype] = EntitySchema(etype)
         self._types['Person']._specialized_by = [self._types['Student']]
-        self._relations = {
+        self._relations  = {
             'eid' : RelationSchema( ( ('Person', ('Int',) ),
                                       ('Student', ('Int',) ),
                                       ('Company', ('Int',) ),
@@ -86,8 +104,8 @@ class DummySchema(object):
                                     ),
             'work_for' : RelationSchema( ( ('Person', ('Company',) ),
                                            ('Student', ('Company',) ),
-                                           )
-                                        ),
+                                           ),
+                                         card='?*'),
             'is' : RelationSchema( ( ('Person', ('Eetype',) ),
                                      ('Student', ('Eetype',) ),
                                      ('Company', ('Eetype',) ),
@@ -130,7 +148,9 @@ class DummySchema(object):
                                       )
                                     ),
             }
-        
+        for rtype, rschema in self._relations.iteritems():
+            rschema.type = rtype
+            
     def entities(self):
         return self._types.values()
         
@@ -150,7 +170,6 @@ class DummySchema(object):
         return self._relations[r_type]
     def eschema(self, e_type):
         return self._types[e_type]
-        
         
 UNRESOLVABLE_QUERIES = (
     'Person X WHERE Y work_for X',

@@ -1,6 +1,10 @@
 ChangeLog for RQL
 =================
 
+--
+    * rql checker raise BadRQLQuery for inconsistent orderby on distinct query
+    * correctly restore .parent when undoing RemoveNodeOperation
+	
 2008-09-24  --  0.20.0
     * is_instance_of support
     * raise BadRQLQuery on queries like 'Any X WHERE X name Toto, P is Person'

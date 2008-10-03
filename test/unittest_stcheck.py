@@ -32,6 +32,10 @@ BAD_QUERIES = (
     'Any X, X/Z WHERE X is Person; WITH Y BEING (Any SUM(X) WHERE X is Person)',
 
     'Any X WHERE X name "Toto", P is Person',
+
+    # BAD QUERY cant sort on y
+    'DISTINCT Any X ORDERBY Y WHERE B work_for X, B name Y',
+    
     )
 
 OK_QUERIES = (
@@ -39,7 +43,16 @@ OK_QUERIES = (
     ' UNION '
     '(Any N,COUNT(X) GROUPBY N WHERE X firstname N)',
 
-    'DISTINCT Any X, MAX(Y) GROUPBY X WHERE X is Person, Y is Company'
+    'DISTINCT Any X, MAX(Y) GROUPBY X WHERE X is Person, Y is Company',
+
+    # sorting allowed since order variable reachable from a selected
+    # variable with only ?1 cardinality
+    'DISTINCT Any B ORDERBY Y WHERE B work_for X, B name Y',
+    'DISTINCT Any B ORDERBY Y WHERE B work_for X, X name Y',
+
+#    'DISTINCT Any X ORDERBY SN WHERE X in_state S, S name SN',
+    
+    
     )
 
 class CheckClassTest(TestCase):
