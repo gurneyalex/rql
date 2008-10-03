@@ -142,6 +142,14 @@ class EditableMixIn(object):
         """
         if ctype is None:
             ctype = etype_from_pyobj(value)
+        if isinstance(value, (set, frozenset, tuple, list, dict)):
+            if len(value) > 1:
+                rel = make_relation(var, rtype, ('IN',), Function, operator=operator)
+                infunc = rel.children[1].children[0]
+                for atype in sorted(value):
+                    infunc.append(Constant(atype, ctype))
+                return self.add_restriction(rel)
+            value = iter(value).next()
         return self.add_restriction(make_relation(var, rtype, (value, ctype),
                                                   Constant, operator))
         
@@ -152,25 +160,10 @@ class EditableMixIn(object):
 
     def add_eid_restriction(self, var, eid): 
         """builds a restriction node to express '<var> eid <eid>'"""
-        if isinstance(eid, (set, frozenset, tuple, list, dict)):
-            rel = make_relation(var, 'eid', ('IN',), Function, operator='=')
-            infunc = rel.children[1].children[0]
-            for eid_ in sorted(eid):
-                infunc.append(Constant(eid_, 'Int'))
-            return self.add_restriction(rel)
-        return self.add_restriction(make_relation(var, 'eid', (eid, 'Int'),
-                                                  Constant))
+        return self.add_constant_restriction(var, 'eid', eid, 'Int')
     
     def add_type_restriction(self, var, etype):
         """builds a restriction node to express : variable is etype"""
-        if isinstance(etype, (set, frozenset, tuple, list, dict)):
-            if len(etype) > 1:
-                rel = make_relation(var, 'is', ('IN',), Function, operator='=')
-                infunc = rel.children[1].children[0]
-                for atype in sorted(etype):
-                    infunc.append(Constant(atype, 'etype'))
-                return self.add_restriction(rel)
-            etype = iter(etype).next() # may be a set
         return self.add_constant_restriction(var, 'is', etype, 'etype')
 
 # base RQL nodes ##############################################################
