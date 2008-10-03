@@ -337,6 +337,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
     """the select node is the base statement of the syntax tree for selection
     statement, always child of a UNION root.
     """
+    vargraph = None
     parent = None
     distinct = False
     # limit / offset
@@ -442,6 +443,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         new.distinct = self.distinct
         new.limit = self.limit
         new.offset = self.offset
+        new.vargraph = self.vargraph
         return new
     
     # select specific methods #################################################
