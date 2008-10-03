@@ -153,8 +153,10 @@ class RemoveNodeOperation(NodeOperation):
                 self.gd_parent.where = self.node_parent
             else:
                 self.gd_parent.children[self.parent_index] = self.node_parent
+                self.node_parent.parent = self.gd_parent
         elif isinstance(self.node_parent, Select):
             self.node_parent.where = self.node
+            self.node.parent = self.node_parent
         else:
             self.node_parent.insert(self.index, self.node)
         # register reference from the removed node
@@ -244,6 +246,7 @@ class AppendSelectOperation(object):
 
     def undo(self, selection):
         """undo the operation on the union's children"""
+        self.select.parent = self.union
         self.union.children.remove(self.select)
         
 class RemoveSelectOperation(AppendSelectOperation):
@@ -254,7 +257,7 @@ class RemoveSelectOperation(AppendSelectOperation):
 
     def undo(self, selection):
         """undo the operation on the union's children"""
-        self.union.children.insert(self.origindex, self.select)
+        self.union.insert(self.origindex, self.select)
 
 __all__ = ('SelectionManager', 'MakeVarOperation', 'UndefineVarOperation',
            'SelectVarOperation', 'UnselectVarOperation', 'AddNodeOperation',
