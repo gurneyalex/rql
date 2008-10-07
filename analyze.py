@@ -338,6 +338,12 @@ class ETypeResolverIgnoreTypeRestriction(ETypeResolver):
     def visit_type_restriction(self, relation, constraints):
         pass
     
+    def visit_not(self, et, constraints):
+        child = et.children[0]
+        if isinstance(child, nodes.Relation) and \
+           not self.schema.rschema(child.r_type).is_final():
+            return True
+    
 # ==========================================================
 
 class UnifyError(Exception):
