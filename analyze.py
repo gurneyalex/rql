@@ -87,9 +87,9 @@ class ETypeResolver(object):
         if constraints is None:
             func(node)
         else:
-            func(node, constraints)
-            for c in node.children:
-                self._visit(c, constraints)
+            if func(node, constraints) is None:
+                for c in node.children:
+                    self._visit(c, constraints)
 
     def _uid_node_types(self, valnode):
         types = set()
@@ -213,7 +213,7 @@ class ETypeResolver(object):
         """extract constraints for an relation according to it's  type"""
         if relation.is_types_restriction():
             self.visit_type_restriction(relation, constraints)
-            return
+            return True
         rtype = relation.r_type
         lhs, rhs = relation.get_parts()
         if rtype in self.uid_func_mapping:
@@ -228,27 +228,27 @@ class ETypeResolver(object):
                 else:
                     cstr = '%s in %s ' % (lhs.name, etypes)
                 constraints.append(fd.make_expression((lhs.name,), cstr))
-                return
+                return True
         if isinstance(rhs, nodes.Comparison):
             rhs = rhs.children[0]
         rschema = self.schema.rschema(rtype)
         if isinstance(lhs, nodes.Constant): # lhs is a constant node (simplified tree)
             if not isinstance(rhs, nodes.VariableRef):
-                return
+                return True
             var = rhs.name
             cstr = self._extract_constraint(var, lhs, rschema.objects)
             vars = (var,)
         elif isinstance(rhs, nodes.Constant) and not rschema.is_final():
             # rhs.type is None <-> NULL
             if not isinstance(lhs, nodes.VariableRef) or rhs.type is None:
-                return
+                return True
             var = lhs.name
             cstr = self._extract_constraint(var, rhs, rschema.subjects)
             vars = (var,)
         else:
             if not isinstance(lhs, nodes.VariableRef):
                 # XXX: check relation is valid
-                return
+                return True
             lhsvar = lhs.name
             rhsvars = []
             samevar = False
@@ -262,7 +262,7 @@ class ETypeResolver(object):
                     else:
                         rhsvars.append(v.name)
             else:
-                return
+                return True
             if rhsvars:
                 s2 = '=='.join(rhsvars)
                 res = []
@@ -291,7 +291,8 @@ class ETypeResolver(object):
                     cstr2 = '%s in %r' % (lhsvar, res)
                 constraints.append(fd.make_expression([lhsvar], cstr2))
         constraints.append(fd.make_expression(vars, cstr))
-
+        return True
+    
     def visit_type_restriction(self, relation, constraints):
         lhs, rhs = relation.get_parts()
         etypes = set(c.value for c in rhs.iget_nodes(nodes.Constant)
