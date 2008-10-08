@@ -215,8 +215,8 @@ class And(BinaryNode):
     def ored(self, traverse_scope=False, _fromnode=None):
         return self.parent.ored(traverse_scope, _fromnode or self)
     
-    def neged(self, _fromnode=None):
-        return self.parent.neged(_fromnode or self)
+    def neged(self, traverse_scope=False, _fromnode=None):
+        return self.parent.neged(traverse_scope, _fromnode or self)
 
     
 class Or(BinaryNode):
@@ -233,8 +233,8 @@ class Or(BinaryNode):
     def ored(self, traverse_scope=False, _fromnode=None):
         return self
     
-    def neged(self, _fromnode=None):
-        return self.parent.neged(_fromnode or self)
+    def neged(self, traverse_scope=False, _fromnode=None):
+        return self.parent.neged(traverse_scope, _fromnode or self)
 
 
 class Not(Node):
@@ -257,7 +257,7 @@ class Not(Node):
         # XXX consider traverse_scope ?
         return self.parent.ored(traverse_scope, _fromnode or self)
     
-    def neged(self, _fromnode=None, strict=False):
+    def neged(self, traverse_scope=False, _fromnode=None, strict=False):
         return self
 
 def parent_scope_property(attr):
@@ -320,12 +320,14 @@ class Exists(EditableMixIn, BaseNode):
             return self.parent.ored(traverse_scope, self)
         return self.parent.ored(traverse_scope, _fromnode)
     
-    def neged(self, _fromnode=None, strict=False):
-        if _fromnode is not None: # stop here
-            return False
-        if strict:
+    def neged(self, traverse_scope=False, _fromnode=None, strict=False):
+        if not traverse_scope:
+            if _fromnode is not None: # stop here
+                return False
+            return self.parent.neged(self)
+        elif strict:
             return isinstance(self.parent, Not)
-        return self.parent.neged(self)
+        return self.parent.neged(traverse_scope, _fromnode)
 
     
 class Relation(Node):
@@ -389,10 +391,10 @@ class Relation(Node):
     def ored(self, traverse_scope=False, _fromnode=None):
         return self.parent.ored(traverse_scope, _fromnode or self)
     
-    def neged(self, _fromnode=None, strict=False):
+    def neged(self, traverse_scope=False, _fromnode=None, strict=False):
         if strict:
             return isinstance(self.parent, Not)
-        return self.parent.neged(_fromnode or self)
+        return self.parent.neged(traverse_scope, _fromnode or self)
 
     def is_types_restriction(self):
         if self.r_type not in ('is', 'is_instance_of'):
