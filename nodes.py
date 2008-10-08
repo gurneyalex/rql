@@ -26,7 +26,8 @@ KEYWORD_MAP = {'NOW' : now,
 
 from rql import CoercionError
 from rql.base import BaseNode, Node, BinaryNode, LeafNode
-from rql.utils import function_description, quote, uquote, build_visitor_stub
+from rql.utils import (function_description, quote, uquote, build_visitor_stub,
+                       common_parent)
 
 CONSTANT_TYPES = frozenset((None, 'Date', 'Datetime', 'Boolean', 'Float', 'Int',
                             'String', 'Substitute', 'etype'))
@@ -949,11 +950,8 @@ class Variable(Referenceable):
     def set_scope(self, scopenode):
         if scopenode is self.stmt or self.stinfo['scope'] is None:
             self.stinfo['scope'] = scopenode
-        elif self.stinfo['scope'] is not self.stmt and scopenode is not self.stinfo['scope']:
-            # XXX get common parent scope if this assertion fail
-            assert scopenode.parent.scope is self.stinfo['scope'].parent.scope, \
-                   (scopenode.parent.scope, self.stinfo['scope'].parent.scope)
-            self.stinfo['scope'] = scopenode.parent.scope
+        elif not (self.stinfo['scope'] is self.stmt or scopenode is self.stinfo['scope']):
+            self.stinfo['scope'] = common_parent(self.stinfo['scope'], scopenode)
             
     def get_scope(self):
         return self.stinfo['scope']
@@ -984,6 +982,7 @@ class Variable(Referenceable):
             if rel.r_type != 'is' and self.name != rel.children[0].name:
                 return rel
         return None
+
 
 build_visitor_stub((SubQuery, And, Or, Not, Exists, Relation,
                     Comparison, MathExpression, Function, Constant,

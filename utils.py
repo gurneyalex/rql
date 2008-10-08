@@ -73,6 +73,25 @@ def is_keyword(word):
     """Return true if the given word is a RQL keyword."""
     return word.upper() in KEYWORDS
 
+def common_parent(node1, node2):
+    """return the first common parent between node1 and node2
+
+    algorithm :
+     1) index node1's parents
+     2) climb among node2's parents until we find a common parent
+    """
+    # index node1's parents
+    node1_parents = set()
+    while node1:
+        node1_parents.add(node1)
+        node1 = node1.parent
+    # climb among node2's parents until we find a common parent
+    while node2:
+        if node2 in node1_parents:
+            return node2
+        node2 = node2.parent
+    raise Exception('DUH!')
+    
 FUNCTIONS = _GenericAdvFuncHelper.FUNCTIONS.copy()
 
 def register_function(funcdef):
