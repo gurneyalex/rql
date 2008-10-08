@@ -160,7 +160,7 @@ class Statement(object):
     def scope(self):
         return self
     
-    def ored(self, _fromnode=None):
+    def ored(self, traverse_scope=False, _fromnode=None):
         return None
     def neged(self, _fromnode=None, strict=False):
         return None
@@ -241,6 +241,8 @@ class Union(Statement, Node):
             
     def copy(self, copy_children=True):
         new = Union()
+        if self.schema is not None:
+            new.schema = self.schema
         if copy_children:
             for child in self.children:
                 new.append(child.copy())

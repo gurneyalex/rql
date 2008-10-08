@@ -211,8 +211,9 @@ class And(BinaryNode):
     def __repr__(self):
         return '%s AND %s' % (repr(self.children[0]), repr(self.children[1]))
     
-    def ored(self, _fromnode=None):
-        return self.parent.ored(_fromnode or self)
+    def ored(self, traverse_scope=False, _fromnode=None):
+        return self.parent.ored(traverse_scope, _fromnode or self)
+    
     def neged(self, _fromnode=None):
         return self.parent.neged(_fromnode or self)
 
@@ -228,8 +229,9 @@ class Or(BinaryNode):
     def __repr__(self):
         return '%s OR %s' % (repr(self.children[0]), repr(self.children[1]))
     
-    def ored(self, _fromnode=None):
+    def ored(self, traverse_scope=False, _fromnode=None):
         return self
+    
     def neged(self, _fromnode=None):
         return self.parent.neged(_fromnode or self)
 
@@ -250,8 +252,10 @@ class Not(Node):
     def scope(self):
         return self
     
-    def ored(self, _fromnode=None):
-        return self.parent.ored(_fromnode or self)
+    def ored(self, traverse_scope=False, _fromnode=None):
+        # XXX consider traverse_scope ?
+        return self.parent.ored(traverse_scope, _fromnode or self)
+    
     def neged(self, _fromnode=None):
         return self
 
@@ -299,10 +303,13 @@ class Exists(EditableMixIn, BaseNode):
     def scope(self):
         return self
     
-    def ored(self, _fromnode=None):
-        if _fromnode is not None: # stop here
-            return False
-        return self.parent.ored(self)
+    def ored(self, traverse_scope=False, _fromnode=None):
+        if not traverse_scope:
+            if _fromnode is not None: # stop here
+                return False
+            return self.parent.ored(traverse_scope, self)
+        return self.parent.ored(traverse_scope, _fromnode)
+    
     def neged(self, _fromnode=None, strict=False):
         if _fromnode is not None: # stop here
             return False
@@ -369,8 +376,9 @@ class Relation(Node):
         """return the parent relation where self occurs or None"""
         return self
     
-    def ored(self, _fromnode=None):
-        return self.parent.ored(_fromnode or self)
+    def ored(self, traverse_scope=False, _fromnode=None):
+        return self.parent.ored(traverse_scope, _fromnode or self)
+    
     def neged(self, _fromnode=None, strict=False):
         if strict:
             return isinstance(self.parent, Not)
