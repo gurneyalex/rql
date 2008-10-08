@@ -162,6 +162,7 @@ class Statement(object):
     
     def ored(self, traverse_scope=False, _fromnode=None):
         return None
+    
     def neged(self, _fromnode=None, strict=False):
         return None
 

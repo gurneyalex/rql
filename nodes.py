@@ -949,6 +949,13 @@ class Variable(Referenceable):
     def set_scope(self, scopenode):
         if scopenode is self.stmt or self.stinfo['scope'] is None:
             self.stinfo['scope'] = scopenode
+        elif self.stinfo['scope'] is not self.stmt and scopenode is not self.stinfo['scope']:
+            # XXX get common parent scope if this assertion fail
+            assert scopenode.parent.scope is self.stinfo['scope'].parent.scope, \
+                   (scopenode.parent.scope, self.stinfo['scope'].parent.scope)
+            
+            self.stinfo['scope'] = scopenode.parent.scope
+            
     def get_scope(self):
         return self.stinfo['scope']
     scope = property(get_scope, set_scope)
