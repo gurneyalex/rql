@@ -775,6 +775,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         for term in self.selection:
             for vref in term.iget_nodes(nodes.VariableRef):
                 if not vref in selection:
+                    vref.parent = self
                     selection.append(vref)
         self.selection = selection
 
