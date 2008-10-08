@@ -256,7 +256,7 @@ class Not(Node):
         # XXX consider traverse_scope ?
         return self.parent.ored(traverse_scope, _fromnode or self)
     
-    def neged(self, _fromnode=None):
+    def neged(self, _fromnode=None, strict=False):
         return self
 
 def parent_scope_property(attr):
@@ -953,7 +953,6 @@ class Variable(Referenceable):
             # XXX get common parent scope if this assertion fail
             assert scopenode.parent.scope is self.stinfo['scope'].parent.scope, \
                    (scopenode.parent.scope, self.stinfo['scope'].parent.scope)
-            
             self.stinfo['scope'] = scopenode.parent.scope
             
     def get_scope(self):
