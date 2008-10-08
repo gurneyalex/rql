@@ -2,6 +2,7 @@ ChangeLog for RQL
 =================
 
 --
+    * consider NOT node as a new scope
     * rql checker raise BadRQLQuery for inconsistent orderby on distinct query
     * correctly restore .parent when undoing RemoveNodeOperation
 	

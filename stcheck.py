@@ -426,7 +426,7 @@ class RQLSTAnnotator(object):
         node.children[0].accept(self, node)
         
     def visit_not(self, node, scope):
-        node.children[0].accept(self, scope)
+        node.children[0].accept(self, node)
         
     def visit_and(self, node, scope):
         node.children[0].accept(self, scope)
