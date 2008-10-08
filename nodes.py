@@ -259,6 +259,15 @@ class Not(Node):
     def neged(self, _fromnode=None):
         return self
 
+def parent_scope_property(attr):
+    def _get_parent_attr(self, attr=attr):
+        return getattr(self.parent.scope, attr)
+    return property(_get_parent_attr)
+# editable compatibility
+for method in ('remove_node', 'add_restriction', 'add_constant_restriction',
+               'add_relation', 'add_eid_restriction', 'add_type_restriction'):
+    setattr(Not, method, parent_scope_property(method))
+
 
 class Exists(EditableMixIn, BaseNode):
     """EXISTS sub query"""
