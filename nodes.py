@@ -953,7 +953,7 @@ class Variable(Referenceable):
         if scopenode is self.stmt or self.stinfo['scope'] is None:
             self.stinfo['scope'] = scopenode
         elif not (self.stinfo['scope'] is self.stmt or scopenode is self.stinfo['scope']):
-            self.stinfo['scope'] = common_parent(self.stinfo['scope'], scopenode)
+            self.stinfo['scope'] = common_parent(self.stinfo['scope'], scopenode).scope
             
     def get_scope(self):
         return self.stinfo['scope']
