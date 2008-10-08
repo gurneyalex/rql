@@ -246,6 +246,10 @@ class Not(Node):
     def __repr__(self, encoding=None, kwargs=None):
         return 'NOT (%s)' % repr(self.children[0])
     
+    @property
+    def scope(self):
+        return self
+    
     def ored(self, _fromnode=None):
         return self.parent.ored(_fromnode or self)
     def neged(self, _fromnode=None):
