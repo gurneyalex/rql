@@ -277,7 +277,9 @@ class Exists(EditableMixIn, BaseNode):
     def __init__(self, restriction=None):
         if restriction is not None:
             self.set_where(restriction)
-
+        else:
+            self.query = None
+            
     def copy(self, stmt):
         new = self.query.copy(stmt)
         return Exists(new)
@@ -285,7 +287,12 @@ class Exists(EditableMixIn, BaseNode):
     @property
     def children(self):
         return (self.query,)
-    
+
+    def append(self, node):
+        assert self.query is None
+        self.query = node
+        node.parent = self
+        
     def is_equivalent(self, other):
         raise NotImplementedError
                     
