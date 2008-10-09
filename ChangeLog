@@ -1,26 +1,40 @@
 ChangeLog for RQL
 =================
 
---
+2008-10-09  --  0.20.1
     * introduce "sqlscope" where NOT node is considered as a new scope
+
     * rql checker raise BadRQLQuery for inconsistent orderby on distinct query
+
     * correctly restore .parent when undoing RemoveNodeOperation
-	
+
+
+
 2008-09-24  --  0.20.0
     * is_instance_of support
+
     * raise BadRQLQuery on queries like 'Any X WHERE X name Toto, P is Person'
+
     * "NOT X identity Y" is now allowed
+
     * do not add relation constraint on variables used in math expression
-	
+
+
+
 2008-08-29  --  0.19.2
     * fix undoing of add_relation and variable name allocation on query using
       some subquery
+
     * add missing selected_index() method on ColumnAlias
+
     * set_possible_types() propagate to sub-queries since some additional
       type constraints may be set in the outer query
+
     * new type resolver ignore type restrictions, used by erudi during syntax
       tree annotation
-	
+
+
+
 2008-08-07  --  0.19.1
     * should not simplify variables used in the GROUPBY clause when there is a
       HAVING clause
