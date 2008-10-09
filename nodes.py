@@ -250,7 +250,7 @@ class Not(Node):
         return 'NOT (%s)' % repr(self.children[0])
     
     @property
-    def scope(self):
+    def sqlscope(self):
         return self
     
     def ored(self, traverse_scope=False, _fromnode=None):
@@ -260,14 +260,14 @@ class Not(Node):
     def neged(self, traverse_scope=False, _fromnode=None, strict=False):
         return self
 
-def parent_scope_property(attr):
-    def _get_parent_attr(self, attr=attr):
-        return getattr(self.parent.scope, attr)
-    return property(_get_parent_attr)
-# editable compatibility
-for method in ('remove_node', 'add_restriction', 'add_constant_restriction',
-               'add_relation', 'add_eid_restriction', 'add_type_restriction'):
-    setattr(Not, method, parent_scope_property(method))
+# def parent_scope_property(attr):
+#     def _get_parent_attr(self, attr=attr):
+#         return getattr(self.parent.scope, attr)
+#     return property(_get_parent_attr)
+# # editable compatibility
+# for method in ('remove_node', 'add_restriction', 'add_constant_restriction',
+#                'add_relation', 'add_eid_restriction', 'add_type_restriction'):
+#     setattr(Not, method, parent_scope_property(method))
 
 
 class Exists(EditableMixIn, BaseNode):
@@ -312,6 +312,7 @@ class Exists(EditableMixIn, BaseNode):
     @property
     def scope(self):
         return self
+    sqlscope = scope
     
     def ored(self, traverse_scope=False, _fromnode=None):
         if not traverse_scope:
@@ -921,6 +922,8 @@ class ColumnAlias(Referenceable):
     def get_scope(self):
         return self.query
     scope = property(get_scope, set_scope)
+    sqlscope = scope
+    set_sqlscope = set_scope
     
     
 class Variable(Referenceable):
@@ -948,16 +951,25 @@ class Variable(Referenceable):
     def prepare_annotation(self):
         super(Variable, self).prepare_annotation()
         self.stinfo['scope'] = None
+        self.stinfo['sqlscope'] = None
+        
+    def _set_scope(self, key, scopenode):
+        if scopenode is self.stmt or self.stinfo[key] is None:
+            self.stinfo[key] = scopenode
+        elif not (self.stinfo[key] is self.stmt or scopenode is self.stinfo[key]):
+            self.stinfo[key] = common_parent(self.stinfo[key], scopenode).scope
     
     def set_scope(self, scopenode):
-        if scopenode is self.stmt or self.stinfo['scope'] is None:
-            self.stinfo['scope'] = scopenode
-        elif not (self.stinfo['scope'] is self.stmt or scopenode is self.stinfo['scope']):
-            self.stinfo['scope'] = common_parent(self.stinfo['scope'], scopenode).scope
-            
+        self._set_scope('scope', scopenode)            
     def get_scope(self):
         return self.stinfo['scope']
     scope = property(get_scope, set_scope)
+    
+    def set_sqlscope(self, sqlscopenode):
+        self._set_scope('sqlscope', sqlscopenode)            
+    def get_sqlscope(self):
+        return self.stinfo['sqlscope']
+    sqlscope = property(get_sqlscope, set_sqlscope)
 
     def init_copy(self, old):
         # should copy variable's possibletypes on copy

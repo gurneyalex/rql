@@ -159,6 +159,7 @@ class Statement(object):
     @property
     def scope(self):
         return self
+    sqlscope = scope
     
     def ored(self, traverse_scope=False, _fromnode=None):
         return None
