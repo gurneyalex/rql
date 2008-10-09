@@ -28,16 +28,27 @@ class BaseNode(object):
     
     @property
     def root(self):
-        """Return the root node of the tree."""
+        """Return the root node of the tree"""
         return self.parent.root
     
     @property
     def stmt(self):
+        """Return the Select node to which this node belong"""
         return self.parent.stmt
     
     @property
     def scope(self):
+        """Return the scope node to which this node belong (eg Select or Exists
+        node)
+        """
         return self.parent.scope
+    
+    @property
+    def sqlscope(self):
+        """Return the SQL scope node to which this node belong (eg Select,
+        Exists or Not node)
+        """
+        return self.parent.sqlscope
 
     def get_nodes(self, klass):
         """Return the list of nodes of a given class in the subtree.

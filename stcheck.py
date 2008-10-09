@@ -344,8 +344,9 @@ class RQLSTAnnotator(object):
             for vref in term.iget_nodes(VariableRef):
                 vref.variable.stinfo['selected'].add(i)
                 vref.variable.set_scope(node)
+                vref.variable.set_sqlscope(node)
         if node.where is not None:
-            node.where.accept(self, node)
+            node.where.accept(self, node, node)
 
     visit_insert = visit_delete = visit_set = _visit_stmt
     
@@ -416,24 +417,24 @@ class RQLSTAnnotator(object):
                     sol[newvar.name] = sol[var.name]
             rel = exists.add_relation(var, 'identity', newvar)
             # we have to force visit of the introduced relation
-            self.visit_relation(rel, exists)
+            self.visit_relation(rel, exists, exists)
             return newvar
         return None
 
     # tree nodes ##############################################################
     
-    def visit_exists(self, node, scope):
-        node.children[0].accept(self, node)
+    def visit_exists(self, node, scope, sqlscope):
+        node.children[0].accept(self, node, node)
         
-    def visit_not(self, node, scope):
-        node.children[0].accept(self, node)
+    def visit_not(self, node, scope, sqlscope):
+        node.children[0].accept(self, scope, node)
         
-    def visit_and(self, node, scope):
-        node.children[0].accept(self, scope)
-        node.children[1].accept(self, scope)
+    def visit_and(self, node, scope, sqlscope):
+        node.children[0].accept(self, scope, sqlscope)
+        node.children[1].accept(self, scope, sqlscope)
     visit_or = visit_and
         
-    def visit_relation(self, relation, scope):
+    def visit_relation(self, relation, scope, sqlscope):
         assert relation.parent, repr(relation)
         lhs, rhs = relation.get_parts()
         # may be a constant once rqlst has been simplified
@@ -479,6 +480,7 @@ class RQLSTAnnotator(object):
             raise BadRQLQuery('no relation %s' % rtype)
         if lhsvar is not None:
             lhsvar.set_scope(scope)
+            lhsvar.set_sqlscope(sqlscope)
             lhsvar.stinfo['relations'].add(relation)
             if rtype in self.special_relations:
                 key = '%srels' % self.special_relations[rtype]
@@ -496,6 +498,7 @@ class RQLSTAnnotator(object):
         for vref in rhs.iget_nodes(VariableRef):
             var = vref.variable
             var.set_scope(scope)
+            var.set_sqlscope(sqlscope)
             var.stinfo['relations'].add(relation)
             var.stinfo['rhsrelations'].add(relation)
             if vref is rhs.children[0] and rschema.is_final():
