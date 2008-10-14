@@ -103,7 +103,7 @@ class EditableMixIn(object):
         # root is None during parsing
         return root is not None and root.should_register_op
 
-    def remove_node(self, node):
+    def remove_node(self, node, undefine=False):
         """remove the given node from the tree
 
         USE THIS METHOD INSTEAD OF .remove to get correct variable references
@@ -112,8 +112,8 @@ class EditableMixIn(object):
         # unregister variable references in the removed subtree
         for varref in node.iget_nodes(VariableRef):
             varref.unregister_reference()
-            #if not varref.variable.references():
-            #    node.root.undefine_variable(varref.variable)
+            if undefine and not varref.variable.stinfo['references']:
+                node.stmt.undefine_variable(varref.variable)
         if self.should_register_op:
             from rql.undo import RemoveNodeOperation
             self.undo_manager.add_operation(RemoveNodeOperation(node))
