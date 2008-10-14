@@ -541,6 +541,12 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             ca = self.get_variable(alias, i)
             ca.query = node.query
             
+    def remove_subquery(self, node):
+        self.with_.remove(node)
+        node.parent = None
+        for i, alias in enumerate(node.aliases):
+            del self.aliases[alias.name]
+            
     def get_variable(self, name, colnum=None):
         """get a variable instance from its name
         
