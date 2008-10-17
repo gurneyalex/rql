@@ -1,6 +1,14 @@
 ChangeLog for RQL
 =================
 
+2008-10-17  --  0.20.2
+    * new remove_subquery method on Select node
+
+    * remove_node accepts a new 'undefine' argument (default to False for bw compat)
+     telling if it should undefine no more referenced variables
+
+
+
 2008-10-09  --  0.20.1
     * introduce "sqlscope" where NOT node is considered as a new scope
 
