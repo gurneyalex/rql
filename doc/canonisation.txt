@@ -1,4 +1,4 @@
-Idées sur la canonisation
+IdÃ©es sur la canonisation
 =========================
 
 from ginco.rql.node_lib import Variable
@@ -11,7 +11,7 @@ def sort(canon_dict):
 Exemple 1
 ---------
 
-Formules équivalentes
+Formules Ã©quivalentes
 `````````````````````
 
   Any N, N2 where N is Note, N2 is Note, N ecrit_par P1, P1 nom 'jphc', N2 ecrit_par P2, P2 nom 'ocy' ;
@@ -34,7 +34,7 @@ canon1 = {
                  }
 }
 
-N.name  = 'is_Note:ecrit_par:1' # 1 car c'est la première variable séléctionnée
+N.name  = 'is_Note:ecrit_par:1' # 1 car c'est la premiÃ¨re variable sÃ©lÃ©ctionnÃ©e
 N2.name = 'is_Note:ecrit_par:2' # deviner pourquoi 2 ...
 P1.name = 'ecrit_par_jphc'
 P2.name = 'ecrit_par_ocy'
@@ -66,7 +66,7 @@ canon2 == canon1
 Exemple 2
 ---------
 
-Formules équivalentes
+Formules Ã©quivalentes
 `````````````````````
 
   Note N WHERE N ecrit_le D, N ecrit_par P, P nom 'jphc', D day > (today-10);
@@ -118,7 +118,7 @@ canon1 == canon2
 Exemple 3
 ---------
 
-Formules équivalentes
+Formules Ã©quivalentes
 `````````````````````
 
   Note N WHERE N ecrit_le D, D day > (today -10), N ecrit_par P, P nom 'jphc' or P nom 'ludal';
@@ -168,10 +168,10 @@ canon1 == canon2
 
 
 
-Problèmes
+ProblÃ¨mes
 ---------
 
-.1 Les paires de formules suivantes sont considérées comme identiques par
+.1 Les paires de formules suivantes sont considÃ©rÃ©es comme identiques par
    l'algorithme ci-dessus alors qu'elles ne le sont pas:
 
 Note N WHERE N ecrit_le D, D day > (today -10), N ecrit_par P, P nom 'jphc' or P nom 'ludal';
@@ -189,4 +189,4 @@ donne comme restriction:
                   'nom_nom' :   [(Y, 'jphc', Y, 'ludal')]
                  }
 
-.2 risque de collision dans les noms de variables non sélectionnées (un exemple ?).
+.2 risque de collision dans les noms de variables non sÃ©lectionnÃ©es (un exemple ?).

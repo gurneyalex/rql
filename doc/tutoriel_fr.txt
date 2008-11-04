@@ -1,5 +1,7 @@
 .. -*- coding: utf-8 -*-
 
+.. _tutorielRQL:
+
 ============================================
 Tutoriel "Relation Query Language" (Hercule)
 ============================================
