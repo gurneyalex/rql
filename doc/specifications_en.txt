@@ -24,7 +24,7 @@ Comparison with existing languages
 ----------------------------------
 
 SQL
-`` `
+```
 RQL builds on the features of SQL but is at a higher level
 (the current implementation of RQL generates SQL). For that it is limited
 to the way of browsing relations and introduces variables. 
@@ -83,13 +83,13 @@ Search Query
 :entity type:
    Type of selected variables.
    The special type `Any` is equivalent to not specify a type.
-: restriction:
+:restriction:
    list of relations to go through whic follow the pattern
      `V1 relation V2 | <static value>`
-: orderterms:
+:orderterms:
    Definition of the selection order: variable or column number followed by
    sorting method ( `ASC`, `DESC`), ASC is the default.
-: note for grouped queries:
+:note for grouped queries:
    For grouped queries (e.g., a clause `GROUPBY`), all
    selected variables must be aggregated or grouped.
 
@@ -166,13 +166,13 @@ Caution, if a restriction is specified, the insertion is done for
 
 - *Insert a new person named 'foo', another called 'nice' and a 'friend' relation
   between them*
-   ::
+  ::
 
         INSERT Person X, Person Y: X name 'foo', Y name 'nice', X friend Y
 
 - *Insert a new person named 'foo' and a 'friend' relation with an existing 
   person called 'nice'*
-   ::
+  ::
 
         INSERT Person X: X name 'foo', X friend  Y WHERE name 'nice'
 
@@ -185,13 +185,13 @@ Caution, if a restriction is specified, the update is done *for
 each line results returned by the restriction*.
 
 - *Renaming of the person named 'foo' to 'bar' with the first name changed*
-   ::
+  ::
 
         SET X name 'bar', X first_name 'original' where X is Person X name 'foo'
 
 - *Insert a relation of type 'know' between objects linked by 
   the relation of type 'friend'*
-   ::
+  ::
 
         SET X know Y  WHERE X friend Y
 
@@ -205,12 +205,12 @@ Caution, if a restriction is specified, the deletion is made *for
 each line results returned by the restriction*.
 
 - *Deletion of the person named 'foo'*
-   ::
+  ::
 
         DELETE Person X WHERE X name 'foo'
 
 - *Removal of all relations of type 'friend' from the person named 'foo'*
-   ::
+  ::
 
         DELETE X friend Y WHERE X is Person, X name 'foo'
 
@@ -251,8 +251,8 @@ The possible type(s) for each variable is derived from the schema
 according to the constraints expressed above and thanks to the relations between
 each variable.
 
-Base types
-``````````
+Built-in types
+``````````````
 
 The base types supported are string (between double or single quotes),
 integers or floats (the separator is the'.'), dates and
@@ -263,7 +263,7 @@ Int, Float, Date and Boolean are defined.
 * `Int`, `Float` (separator being'.').
 * `Date`, `Datetime`, `Time` (literal: string YYYY/MM/DD [hh:mm] or keywords
    `TODAY` and `NOW`).
-* `Boolean` (keywords `TRUE` and `FALSE").
+* `Boolean` (keywords `TRUE` and `FALSE`).
 * `Keyword` NULL.
 
 
@@ -302,8 +302,9 @@ Comparison operators
      Any X WHERE X name LIKE '%lt'
 
 * The operator `IN` provides a list of possible values:
-::
-     Any X WHERE X name IN ( 'chauvat', 'fayolle', 'di mascio', 'thenault')
+  ::
+  
+    Any X WHERE X name IN ( 'chauvat', 'fayolle', 'di mascio', 'thenault')
 
 
 XXX nico: A trick <> 'bar' would not it be more convenient than NOT A
