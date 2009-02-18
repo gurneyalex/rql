@@ -198,8 +198,22 @@ class _or(_and):
 
 
 class DistributeVisitor(object):
+    """The purpose of this visitor is to distribute and's over
+    or's in the expression tree. For example if A and B is
+    represented as A*B and A or B as A+B we want to transform :
+    A*(B+C*(D+E)+A*B) into A*B+A*C*D+A*C*E+A*A*B
+    """
+    def __init__(self):
+        self.stack = []
     def visit_and(self, node):
-        pass
+        first = self.cond.pop(0)
+        if isinstance(first, _or):
+            distrib = _or.cond[:]
+        else:
+            distrib = [first]
+        while self.cond:
+            next = self.cond.pop(0)
+        
     def visit_or(self, node):
         pass
     def visit_true(self, node):
