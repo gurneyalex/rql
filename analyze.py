@@ -16,6 +16,251 @@ from rql import TypeResolverException, nodes
 from pprint import pprint
 
 
+class Constraints(object):
+    def __init__(self):
+        self.constraints = []
+        self.domains = {}
+        self.scons = []
+
+    def add_var(self, name, values):
+        self.domains[name] = fd.FiniteDomain(values)
+
+    def get_domains(self):
+        return self.domains
+
+    def get_constraints(self):
+        return self.constraints
+
+    def add_expr( self, vars, expr ):
+        self.constraints.append( fd.make_expression( vars, expr ) )
+        self.scons.append(expr)
+
+    def var_has_type(self, var, etype):
+        assert isinstance(etype, (str,unicode))
+        self.add_expr( (var,), '%s == %r' % (var, etype) )
+
+    def var_has_types(self, var, etypes):
+        etypes = tuple(etypes)
+        for t in etypes:
+            assert isinstance( t, (str,unicode))
+        if len(etypes) == 1:
+            cstr = '%s == "%s"' % (var, etypes[0])
+        else:
+            cstr = '%s in %s ' % (var, etypes)
+        self.add_expr( (var,), cstr)
+
+    def vars_have_types(self, varnames, types):
+        self.add_expr( varnames, '%s in %s' % ( '=='.join(varnames), types))
+
+    def or_and(self, equalities):
+        orred = set()
+        variables = set()
+        for orred_expr in equalities:
+            anded = set()
+            for vars, types in orred_expr:
+                types=tuple(types)
+                for t in types:
+                    assert isinstance(t, (str,unicode))
+                if len(types)==1:
+                    anded.add( '%s == "%s"' % ( '=='.join(vars), types[0]) )
+                else:
+                    anded.add( '%s in %s' % ( '=='.join(vars), types) )
+                for var in vars:
+                    variables.add(var)
+            orred.add( '(' + ' and '.join( list(anded) ) + ')' )
+        expr = " or ".join( list(orred) )
+        self.add_expr( tuple(variables), expr )
+
+
+class _eq(object):
+    def __init__(self, var, val):
+        self.var = var
+        self.val = val
+
+    def __str__(self):
+        return '%s == "%s"' % (self.var, self.val)
+
+    def get_vars(self, s):
+        s.add(self.var)
+
+    def simplify(self, doms):
+        dom = doms[self.var]
+        if self.val not in dom:
+            return -1
+        if len(dom)==1:
+            return 1
+        return 0
+        
+class _true(object):
+    def __str__(self):
+        return "True"
+    def get_vars(self, s):
+        pass
+    def simplify(self, doms):
+        return 1
+
+class _false(object):
+    def __str__(self):
+        return "False"
+    def get_vars(self, s):
+        pass
+    def simplify(self, doms):
+        return -1
+    
+class _eqv(object):
+    def __init__(self, vars):
+        self.vars = set(vars)
+    def __str__(self):
+        return '(' + " == ".join( str(t) for t in self.vars ) + ')'
+    def get_vars(self, s):
+        s+=self.vars
+    def simplify(self, doms):
+        return 0
+
+class _and(object):
+    def __init__(self):
+        self.cond = []
+    def add(self, expr):
+        self.cond.append( expr )
+    def __str__(self):
+        return '(' + " and ".join( str(t) for t in self.cond ) + ')'
+    def get_vars(self, s):
+        for t in self.cond:
+            t.get_vars(s)
+
+    def simplify(self, doms):
+        cd = []
+        for f in self.cond:
+            res = f.simplify(doms)
+            if res==-1:
+                # always false
+                self.cond = [ _false() ]
+                return -1
+            if res==1:
+                # always true don't keep it
+                continue
+            cd.append(f)
+        self.cond = cd
+        if not cd:
+            # all true
+            self.cond = [ _true() ]
+            return 1
+        return 0
+
+class _or(_and):
+    def __str__(self):
+        return '(' + " or ".join( str(t) for t in self.cond ) + ')'
+
+    def simplify(self, doms):
+        cd = []
+        for f in self.cond:
+            res = f.simplify(doms)
+            if res==1:
+                # always true
+                self.cond = [ _true() ]
+                return 1
+            if res==-1:
+                # always false don't keep it
+                continue
+            cd.append(f)
+        self.cond = cd
+        if not cd:
+            self.cond = [ _false() ]
+            return -1
+        return 0
+            
+
+class _Constraints(object):
+    def __init__(self):
+        self.constraints = []
+        self.op = _and()
+        self.domains = {}
+
+    def add_var(self, name, values):
+        self.domains[name] = set(values)
+
+    def get_domains(self):
+        self.simplify()
+        d = {}
+        for var, dom in self.domains.items():
+            print var, "==", dom
+            d[var] = fd.FiniteDomain(dom)
+        return d
+
+    def get_constraints(self):
+        self.simplify()
+        lst = []
+        for expr in self.op.cond:
+            constr = str(expr)
+            print constr
+            if isinstance(expr, _eq):
+                # taken into account bye simplify
+                continue
+            vrs = set()
+            expr.get_vars( vrs )
+            lst.append( fd.make_expression( tuple(vrs), constr ) )
+        print "----------"
+        return lst
+
+    def simplify(self):
+        print "EQN=", self.op
+        for op in self.op.cond:
+            if isinstance(op, _eqv):
+                s = self.domains[op.vars[0]]
+                for var in op.vars:
+                    s.intersection_update( self.domains[var] )
+                    self.domains[var] = s
+            if isinstance(op, _eq):
+                self.domains[op.var].intersection_update([op.val])
+        self.op.simplify(self.domains)
+
+    def and_eq( self, var, value ):
+        eq = _eq(var, value)
+        self.op.add(eq)
+
+    def equal_vars(self, varnames):
+        if len(varnames)>1:
+            self.op.add( _eqv(varnames) )
+
+    def var_has_type(self, var, etype):
+        self.and_eq( var, etype)
+
+    def var_has_types(self, var, etypes):
+        for t in etypes:
+            assert isinstance( t, (str,unicode))
+        if len(etypes) == 1:
+            self.and_eq( var, tuple(etypes)[0] )
+        else:
+            orred = _or()
+            for t in etypes:
+                orred.add( _eq(var, t) )
+            self.op.add( orred )
+
+    def vars_have_types(self, varnames, types):
+        self.equal_vars( varnames )
+        for var in varnames:
+            self.var_has_types( var, types )
+
+    def or_and(self, equalities):
+        orred = _or()
+        for orred_expr in equalities:
+            anded = _and()
+            for vars, types in orred_expr:
+                self.equal_vars( vars )
+                for t in types:
+                    assert isinstance(t, (str,unicode))
+                for var in vars:
+                    if len(types)==1:
+                        anded.add( _eq(var, types[0]) )
+                    else:
+                        or2 = _or()
+                        for t in types:
+                            or2.add( _eq(var, types[0]) )
+                        anded.add( or2 )
+            orred.add(anded)
+        self.op.add(orred)
+
+
 class ETypeResolver(object):
     """Resolve variables types according to the schema.
     
@@ -52,7 +297,7 @@ class ETypeResolver(object):
         self._nonfinal_domain = [str(etype) for etype in schema.entities()
                                  if not etype.is_final()]
         
-    def solve(self, node, domains, constraints):
+    def solve(self, node, constraints):
         # debug info
         if self.debug > 1:
             print "- AN1 -"+'-'*80
@@ -60,7 +305,8 @@ class ETypeResolver(object):
             print "DOMAINS:"
             pprint(domains)
             print "CONSTRAINTS:"
-            pprint(constraints)
+            pprint(constraints.scons)
+        domains = constraints.get_domains()
         # solve the problem and check there is at least one solution
         kwargs = {}
         if True or self.debug: # capture solver output
@@ -70,7 +316,7 @@ class ETypeResolver(object):
                 solve_debug.write('\n')
             kwargs['printer'] = printer
         
-        r = Repository(domains.keys(), domains, constraints)
+        r = Repository(domains.keys(), domains, constraints.get_constraints())
         solver = Solver(**kwargs)
         sols = solver.solve(r, verbose=(True or self.debug))
         if not sols:
@@ -104,15 +350,14 @@ class ETypeResolver(object):
         return types
 
     def _init_stmt(self, node):
-        # init variables for a visit
-        domains = {}
+        pb = Constraints()
         # set domain for the all variables
         for var in node.defined_vars.itervalues():
-            domains[var.name] = fd.FiniteDomain(self._base_domain)
+            pb.add_var( var.name, self._base_domain )
         # no variable short cut
-        return domains
+        return pb
 
-    def _extract_constraint(self, var, term, get_target_types):
+    def _extract_constraint(self, constraints, var, term, get_target_types):
         if self.uid_func:
             alltypes = set()
             for etype in self._uid_node_types(term):
@@ -120,12 +365,8 @@ class ETypeResolver(object):
                     alltypes.add(targettypes)
         else:
             alltypes = get_target_types()
-        if len(alltypes) == 1:
-            cstr = '%s == "%s"' % (var, iter(alltypes).next())
-        else:
-            cstr = '%s in (%s,)' % (
-                var, ','.join('"%s"' % t for t in alltypes))
-        return cstr
+
+        constraints.var_has_types( var, [ str(t) for t in alltypes] )
         
     def visit(self, node, uid_func_mapping=None, kwargs=None, debug=False):
         # FIXME: not thread safe
@@ -145,21 +386,19 @@ class ETypeResolver(object):
         if not node.defined_vars:
             node.set_possible_types([{}])
             return
-        domains = self._init_stmt(node)
-        constraints = []
+        constraints = self._init_stmt(node)
         for etype, variable in node.main_variables:
             if node.TYPE == 'delete' and etype == 'Any':
                 continue
             assert etype in self.schema, etype
             var = variable.name
-            constraints.append(fd.make_expression(
-                (var,), '%s == %r' % (var, etype)))
+            constraints.var_has_type( var, etype )
         for relation in node.main_relations:
             self._visit(relation, constraints)
         # get constraints from the restriction subtree
         if node.where is not None:
             self._visit(node.where, constraints)
-        self.solve(node, domains, constraints)
+        self.solve(node, constraints)
         
     visit_delete = visit_insert
     
@@ -167,14 +406,13 @@ class ETypeResolver(object):
         if not node.defined_vars:
             node.set_possible_types([{}])
             return
-        domains = self._init_stmt(node)
-        constraints = []
+        constraints = self._init_stmt(node)
         for relation in node.main_relations:
             self._visit(relation, constraints)
         # get constraints from the restriction subtree
         if node.where is not None:
             self._visit(node.where, constraints)
-        self.solve(node, domains, constraints)
+        self.solve(node, constraints)
         
     def visit_select(self, node):
         if not (node.defined_vars or node.aliases):
@@ -182,12 +420,11 @@ class ETypeResolver(object):
             return
         for subquery in node.with_: # resolve subqueries first
             self.visit_union(subquery.query)
-        domains = self._init_stmt(node)
+        constraints = self._init_stmt(node)
         for ca in node.aliases.itervalues():
             etypes = set(stmt.selection[ca.colnum].get_type(sol, self.kwargs)
                          for stmt in ca.query.children for sol in stmt.solutions)
-            domains[ca.name] = fd.FiniteDomain(etypes)
-        constraints = []
+            constraints.add_var( ca.name, etypes )
         if self.uid_func:
             # check rewritten uid const
             for consts in node.stinfo['rewritten'].values():
@@ -205,15 +442,15 @@ class ETypeResolver(object):
                 # add constraint on real relation types if no restriction
                 types = [eschema.type for eschema in self.schema.entities()
                          if not eschema.is_final()]
-                constraints.append(fd.make_expression(varnames, '%s in %s' % (
-                    '=='.join(varnames), types)))
-        self.solve(node, domains, constraints)
+                constraints.vars_have_types( varnames, types )
+        self.solve(node, constraints)
     
     def visit_relation(self, relation, constraints):
         """extract constraints for an relation according to it's  type"""
         if relation.is_types_restriction():
             self.visit_type_restriction(relation, constraints)
             return True
+        
         rtype = relation.r_type
         lhs, rhs = relation.get_parts()
         if rtype in self.uid_func_mapping:
@@ -223,28 +460,21 @@ class ETypeResolver(object):
             else:
                 etypes = self._uid_node_types(rhs)
             if etypes:
-                if len(etypes) == 1:
-                    cstr = '%s == "%s"' % (lhs.name, iter(etypes).next())
-                else:
-                    cstr = '%s in %s ' % (lhs.name, etypes)
-                constraints.append(fd.make_expression((lhs.name,), cstr))
+                constraints.var_has_types( lhs.name, etypes )
                 return True
         if isinstance(rhs, nodes.Comparison):
             rhs = rhs.children[0]
+        
         rschema = self.schema.rschema(rtype)
         if isinstance(lhs, nodes.Constant): # lhs is a constant node (simplified tree)
             if not isinstance(rhs, nodes.VariableRef):
                 return True
-            var = rhs.name
-            cstr = self._extract_constraint(var, lhs, rschema.objects)
-            vars = (var,)
+            self._extract_constraint(constraints, rhs.name, lhs, rschema.objects)
         elif isinstance(rhs, nodes.Constant) and not rschema.is_final():
             # rhs.type is None <-> NULL
             if not isinstance(lhs, nodes.VariableRef) or rhs.type is None:
                 return True
-            var = lhs.name
-            cstr = self._extract_constraint(var, rhs, rschema.subjects)
-            vars = (var,)
+            self._extract_constraint(constraints, lhs.name, rhs, rschema.subjects)
         else:
             if not isinstance(lhs, nodes.VariableRef):
                 # XXX: check relation is valid
@@ -267,30 +497,17 @@ class ETypeResolver(object):
                 s2 = '=='.join(rhsvars)
                 res = []
                 for fromtype, totypes in rschema.associations():
-                    if len(totypes) == 1:
-                        cstr = '(%s=="%s" and %s == "%s")' % (
-                            lhsvar, fromtype, s2, totypes[0])
-                    else:
-                        cstr = '(%s=="%s" and %s in  (%s,))' % (
-                            lhsvar, fromtype, s2, ','.join('"%s"' % t for t in totypes))
-                    res.append(cstr)
-                cstr = ' or '.join(res)
+                    res.append( [ ( [lhsvar], [str(fromtype)]), (rhsvars, [ str(t) for t in totypes]) ] )
+                constraints.or_and( res )
             else:
-                cstr = '%s in (%s,)' % (
-                    lhsvar, ','.join('"%s"' % t for t in rschema.subjects()))
-            vars = [lhsvar] + rhsvars
+                constraints.var_has_types( lhsvar, [ str(subj) for subj in rschema.subjects()] )
             if samevar:
                 res = []
                 for fromtype, totypes in rschema.associations():
                     if not fromtype in totypes:
                         continue
                     res.append(str(fromtype))
-                if len(res) == 1:
-                    cstr2 = '%s == "%s"' % (lhsvar, res[0])
-                else:
-                    cstr2 = '%s in %r' % (lhsvar, res)
-                constraints.append(fd.make_expression([lhsvar], cstr2))
-        constraints.append(fd.make_expression(vars, cstr))
+                constraints.var_has_types( lhsvar, res )
         return True
     
     def visit_type_restriction(self, relation, constraints):
@@ -303,8 +520,8 @@ class ETypeResolver(object):
                     etypes.add(specialization.type)
         if relation.neged(strict=True):
             etypes = frozenset(t for t in self._nonfinal_domain if not t in etypes)
-        constraints.append(fd.make_expression(
-            (lhs.name,), '%s in %r' % (lhs.name, etypes)))
+
+        constraints.var_has_types( lhs.name, [ str(t) for t in etypes ] )
        
     def visit_and(self, et, constraints):
         pass
@@ -343,292 +560,4 @@ class ETypeResolverIgnoreTypeRestriction(ETypeResolver):
         if isinstance(child, nodes.Relation) and \
            not self.schema.rschema(child.r_type).is_final():
             return True
-    
-# ==========================================================
 
-class UnifyError(Exception):
-    """Raised when unification produces an error."""
-
-# XXX: C'est l'algo de NlpTools, on peut le simplifier
-# bcp car on n'a que des traits de type { x: [v1], y:[v2] }
-# on peut en faire une version non destructive en traquant
-# les id() des listes (qui servent de pointeurs)
-# ensuite on peut enlever les deepcopy dans unify_sols
-def feature_unify(f1, f2):
-    f1_real = f1
-    while type(f1_real) == list:
-        f1 = f1_real
-        f1_real = f1_real[0]
-    f2_real = f2
-    while type(f2_real) == list:
-        f2 = f2_real
-        f2_real = f2_real[0]
-    if f1_real == None:
-        if type(f1) == list:
-            f1[0] = f2_real
-            return f1
-        return f2
-    if f2_real == None:
-        if type(f2) == list:
-            f2[0] = f1_real
-            return f2
-        return f1
-    if type(f1_real)!=dict and f1_real == f2_real:
-        if type(f1) == list:
-            f1[0] = f2_real
-            return f2
-        elif type(f2) == list:
-            f2[0] = f1_real
-            return f1
-        return f1
-    if type(f1_real) == dict and type(f2_real) == dict:
-        for k2, v2 in f2_real.items():
-            v1 = f1_real.get(k2, [None])
-            vv = feature_unify(v2, v1)
-            f1_real[k2] = vv
-        return f1_real
-    raise UnifyError
-
-def deepcopy(s):
-    # XXX seen and memo do not appear to be useful
-    r = {}
-    memo = {}
-    for k, v in s.items():
-        if type(v)==list:
-            seen = memo.setdefault(id(v),[v[0]])
-        r[k] = v
-    return r
-
-def unify_sols( sols1, sols2 ):
-    sols = []
-#    print "Unifying"
-#    print "Sols1", sols1
-#    print "Sols2", sols2
-    for s1 in sols1:
-        for s2 in sols2:
-            sa = deepcopy(s1)
-            sb = deepcopy(s2)
-            try:
-                s = feature_unify( sa, sb )
-                sols.append(s)
-            except UnifyError:
-                pass
-#    print "Result", sols
-    return sols
-
-def feature_get(dct, n):
-    """Simplified version of feature_set for a feature
-    set containing no subfeatures.
-    """
-    v = dct[n]
-    while type(v)==list:
-        v=v[0]
-    return v
-
-def feature_set(dct, n, val):
-    """Simplified version of feature_set for a feature
-    set containing no subfeatures.
-    """
-    v = dct[n]
-    if type(v)!=list:
-        dct[n] = val
-    while type(v[0])==list:
-        v=v[0]
-    v[0] = val
-
-
-def flatten_features( f ):
-    for k, v in f.items():
-        while type(v)==list:
-            v = v[0]
-        f[k] = v
-    return f
-
-def fprint( f ):
-    from NlpTools.grammar.unification import feature_pprint_text
-    feature_pprint_text(f)
-
-
-BASE_TYPES_MAP = {
-    'String' : 'String',
-    'Int' : 'Int',
-    'Float' : 'Float',
-    'Boolean' : 'Boolean',
-    'Date' : 'Datetime',
-    'Time' : 'Datetime',
-    'Datetime' : 'Datetime',
-    'Password' : 'String',
-    'Bytes' : 'Bytes',
-    }
-
-
-
-class UnifyingETypeResolver(object):
-    """Resolve variables types according to the schema.
-
-    CSP modelisation:
-     * variable    <-> RQL variable
-     * domains     <-> different entity's types defined in the schema
-     * constraints <-> relations between (RQL) variables
-    """
-    
-    def __init__(self, schema, uid_func_mapping=None):
-        # mapping from relation to function taking rhs value as argument
-        # and returning an entity type
-        self.uid_func_mapping = {}
-        if uid_func_mapping:
-            self.uid_func_mapping = uid_func_mapping
-        # default domain for a variable
-        self.set_schema(schema)
-
-    def set_schema(self, schema):
-        self.schema = schema
-        # default domain for a variable
-        self._base_domain = schema.entities()
-        self._types = [eschema.type for eschema in self.schema.entities()
-                       if not eschema.is_final()]
-
-    def visit(self, node, uid_func_mapping=None, kwargs=None):
-#        print "QUERY", node
-        if uid_func_mapping:
-            self.uid_func_mapping=uid_func_mapping
-        sols = node.accept(self)
-        # XXX: make sure sols are reported only once
-        sols = [flatten_features(f) for f in sols]
-        if not sols:
-            raise TypeResolverException(
-                'Unable to resolve variables types in "%s"!!'%node)
-        return sols
-    
-    def visit_children(self, node):
-        sols1 = [{}]
-        for n in node.children:
-            sols2 = n.accept(self)
-            sols1 = unify_sols( sols1, sols2 )
-        return sols1
-
-
-    def visit_insert_or_delete(self, node):
-        t = {}
-        for etype, variable in node.main_variables:
-            t[variable.name] = etype
-        sols = [t]
-        for relation in node.main_relations:
-            sols2 = relation.accept(self)
-            sols = unify_sols( sols, sols2 )
-        return sols
-            
-    def visit_delete(self, node):
-        return self.visit_insert_or_delete( node )
-
-    def visit_select(self, node):
-        sols = self.visit_children(node)
-        for n in node.selection:
-            sols2 = n.accept(self)
-            for s in sols2:
-                del s['type']
-            sols = unify_sols( sols, sols2 )
-
-        # add non-final types for non resolved vars
-        extra = []
-        for s in sols:
-            for k in s:
-                v = feature_get( s, k )
-                if v is None:
-                    for t in self._types:
-                        extra.append( { k : t } )
-        if extra:
-            sols = unify_sols( sols, extra )
-        return sols
-
-    def visit_insert(self, node ):
-        return self.visit_insert_or_delete( node )
-
-    def visit_relation(self, relation ):
-        r_type = relation.r_type
-        lhs, rhs = relation.get_parts()
-        expr_sols = rhs.accept(self)
-        if r_type == 'is' and not isinstance(relation.parent, nodes.Not):
-            for s in expr_sols:
-                typ = s['type']
-                s[lhs.name] = typ
-                del s['type']
-            return expr_sols
-        elif r_type == 'is' and isinstance(relation.parent, nodes.Not):
-            all_types = [ { lhs.name: t } for t in self._base_domain]
-            sols = []
-            not_types = [ s['type'] for s in expr_sols ]
-            for s in all_types:
-                if s[lhs.name] not in not_types:
-                    sols.append(s)
-            return sols
-                
-        
-        r_schema = self.schema.relation_schema(r_type)
-        l = []
-        typ = [None]
-        for from_type, to_types in r_schema.association_types():
-            for to_type in to_types:
-                # a little base type pre-unification
-                to_type = BASE_TYPES_MAP.get(to_type,to_type)
-                s = {'type' : [to_type],
-                     lhs.name : [from_type],
-                     }
-                l.append(s)
-        sols = unify_sols( l, expr_sols )
-        for s in sols:
-            del s['type']
-        return sols
-
-    def visit_comparison(self, comparison):
-        if len(comparison)==0:
-            return [{}]
-        sols = comparison[0].accept(self)
-        return sols
-
-    def visit_function(self, function):
-        # XXX : todo function typing
-        return [{'type':[None]}]
-
-    def visit_variableref(self, variableref):
-        var = variableref.name
-        typ = [None]
-        sols = [{'type': typ, var: typ}]
-        return sols
-
-    def visit_constant(self, constant):
-        _typ = constant.type
-        if _typ == 'etype':
-            _typ = constant.value
-        elif _typ == 'Substitute':
-            return [{}]
-        return [{ 'type' : _typ }]
-
-    def visit_keyword(self, keyword):
-        return [{}]
-    def visit_group(self, group):
-        return [{}]
-    def visit_sort(self, sort):
-        return [{}]
-    
-    def visit_mathexpression(self, mathexpression):
-        lhs, rhs = mathexpression
-        sols1 = lhs.accept( self )
-        sols2 = rhs.accept( self )
-        sols = unify_sols( sols1, sols2 )
-        return sols
-
-    def visit_and(self, et):
-        sols1 = et[0].accept(self)
-        for n in et[1:]:
-            sols2 = n.accept(self)
-            sols1 = unify_sols( sols1, sols2 )
-        return sols1
-    
-    def visit_or(self, ou):
-        sols = []
-        for n in ou:
-            sols += n.accept(self)
-        return sols
-    
-#ETypeResolver = UnifyingETypeResolver
