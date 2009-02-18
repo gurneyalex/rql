@@ -16,11 +16,25 @@ from rql import TypeResolverException, nodes
 from pprint import pprint
 
 
-class Constraints(object):
+class CSPProblem(object):
     def __init__(self):
         self.constraints = []
         self.domains = {}
         self.scons = []
+        self.output = StringIO()
+
+    def get_output(self):
+        return self.output.getvalue()
+
+    def printer(self, *msgs):
+        self.output.write(' '.join(str(msg) for msg in msgs))
+        self.output.write('\n')
+
+    def solve(self):
+        repo = Repository(self.domains.keys(), self.domains, self.get_constraints())
+        solver = Solver(printer=self.printer)
+        sols = solver.solve(repo, verbose=(True or self.debug))
+        return sols
 
     def add_var(self, name, values):
         self.domains[name] = fd.FiniteDomain(values)
@@ -90,6 +104,9 @@ class _eq(object):
         if len(dom)==1:
             return 1
         return 0
+
+    def accept(self, vis):
+        vis.visit_eq(self)
         
 class _true(object):
     def __str__(self):
@@ -98,6 +115,8 @@ class _true(object):
         pass
     def simplify(self, doms):
         return 1
+    def accept(self, vis):
+        vis.visit_true( self )
 
 class _false(object):
     def __str__(self):
@@ -106,6 +125,8 @@ class _false(object):
         pass
     def simplify(self, doms):
         return -1
+    def accept(self, vis):
+        vis.visit_false( self )
     
 class _eqv(object):
     def __init__(self, vars):
@@ -116,6 +137,8 @@ class _eqv(object):
         s+=self.vars
     def simplify(self, doms):
         return 0
+    def accept(self, vis):
+        vis.visit_eqv( self )
 
 class _and(object):
     def __init__(self):
@@ -127,6 +150,8 @@ class _and(object):
     def get_vars(self, s):
         for t in self.cond:
             t.get_vars(s)
+    def accept(self, vis):
+        vis.visit_and( self )
 
     def simplify(self, doms):
         cd = []
@@ -168,9 +193,25 @@ class _or(_and):
             self.cond = [ _false() ]
             return -1
         return 0
-            
+    def accept(self, vis):
+        vis.visit_or( self )
 
-class _Constraints(object):
+
+class DistributeVisitor(object):
+    def visit_and(self, node):
+        pass
+    def visit_or(self, node):
+        pass
+    def visit_true(self, node):
+        pass
+    def visit_false(self, node):
+        pass
+    def visit_eq(self, node):
+        pass
+    def visit_eqv(self, node):
+        pass
+
+class _CSPProblem(object):
     def __init__(self):
         self.constraints = []
         self.op = _and()
@@ -307,23 +348,14 @@ class ETypeResolver(object):
             print "CONSTRAINTS:"
             pprint(constraints.scons)
         domains = constraints.get_domains()
-        # solve the problem and check there is at least one solution
-        kwargs = {}
-        if True or self.debug: # capture solver output
-            solve_debug = StringIO()
-            def printer(*msgs):
-                solve_debug.write(' '.join(str(msg) for msg in msgs))
-                solve_debug.write('\n')
-            kwargs['printer'] = printer
-        
-        r = Repository(domains.keys(), domains, constraints.get_constraints())
-        solver = Solver(**kwargs)
-        sols = solver.solve(r, verbose=(True or self.debug))
+
+        sols = constraints.solve()
+
         if not sols:
             rql = node.as_string('utf8', self.kwargs)
             ex_msg = 'Unable to resolve variables types in "%s"!!' % (rql,)
             if True or self.debug:
-                ex_msg += '\n%s' % (solve_debug.getvalue(),)
+                ex_msg += '\n%s' % (constraints.get_output(),)
             raise TypeResolverException(ex_msg)
         node.set_possible_types(sols, self.kwargs, self.var_solkey)
 
@@ -350,7 +382,7 @@ class ETypeResolver(object):
         return types
 
     def _init_stmt(self, node):
-        pb = Constraints()
+        pb = CSPProblem()
         # set domain for the all variables
         for var in node.defined_vars.itervalues():
             pb.add_var( var.name, self._base_domain )
