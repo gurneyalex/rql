@@ -1,5 +1,6 @@
 #include <Python.h>
 #include <iostream>
+#include <string.h>
 #include "gecode/kernel.hh"
 #include "gecode/int.hh"
 #include "gecode/search.hh"
