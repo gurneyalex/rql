@@ -15,8 +15,16 @@ from logilab.constraint import Repository, Solver, fd
 from rql import TypeResolverException, nodes
 from pprint import pprint
 
+from copy import deepcopy
 
-class CSPProblem(object):
+try:
+    import rql_solve
+except ImportError:
+    rql_solve = None
+    # Gecode solver not available
+
+
+class ConstraintCSPProblem(object):
     def __init__(self):
         self.constraints = []
         self.domains = {}
@@ -85,7 +93,6 @@ class CSPProblem(object):
         expr = " or ".join( list(orred) )
         self.add_expr( tuple(variables), expr )
 
-
 class _eq(object):
     def __init__(self, var, val):
         self.var = var
@@ -97,37 +104,9 @@ class _eq(object):
     def get_vars(self, s):
         s.add(self.var)
 
-    def simplify(self, doms):
-        dom = doms[self.var]
-        if self.val not in dom:
-            return -1
-        if len(dom)==1:
-            return 1
-        return 0
+    def for_gecode(self, all_vars, all_values):
+        return ["eq", all_vars.index( self.var ), all_values.index(self.val) ]
 
-    def accept(self, vis):
-        vis.visit_eq(self)
-        
-class _true(object):
-    def __str__(self):
-        return "True"
-    def get_vars(self, s):
-        pass
-    def simplify(self, doms):
-        return 1
-    def accept(self, vis):
-        vis.visit_true( self )
-
-class _false(object):
-    def __str__(self):
-        return "False"
-    def get_vars(self, s):
-        pass
-    def simplify(self, doms):
-        return -1
-    def accept(self, vis):
-        vis.visit_false( self )
-    
 class _eqv(object):
     def __init__(self, vars):
         self.vars = set(vars)
@@ -135,139 +114,77 @@ class _eqv(object):
         return '(' + " == ".join( str(t) for t in self.vars ) + ')'
     def get_vars(self, s):
         s+=self.vars
-    def simplify(self, doms):
-        return 0
-    def accept(self, vis):
-        vis.visit_eqv( self )
+    def for_gecode(self, all_vars, all_values):
+        l = ["eqv"]
+        for v in self.vars:
+            l.append( all_vars.index( v ) )
+        return l
 
 class _and(object):
     def __init__(self):
         self.cond = []
     def add(self, expr):
         self.cond.append( expr )
+        #if expr not in self.cond:
+        #    self.cond.append( expr )
     def __str__(self):
         return '(' + " and ".join( str(t) for t in self.cond ) + ')'
     def get_vars(self, s):
         for t in self.cond:
             t.get_vars(s)
-    def accept(self, vis):
-        vis.visit_and( self )
+    def for_gecode(self, all_vars, all_values):
+        l = ["and"]
+        for n in self.cond:
+            l.append( n.for_gecode(all_vars, all_values) )
+        return l
 
-    def simplify(self, doms):
-        cd = []
-        for f in self.cond:
-            res = f.simplify(doms)
-            if res==-1:
-                # always false
-                self.cond = [ _false() ]
-                return -1
-            if res==1:
-                # always true don't keep it
-                continue
-            cd.append(f)
-        self.cond = cd
-        if not cd:
-            # all true
-            self.cond = [ _true() ]
-            return 1
-        return 0
 
 class _or(_and):
     def __str__(self):
         return '(' + " or ".join( str(t) for t in self.cond ) + ')'
-
-    def simplify(self, doms):
-        cd = []
-        for f in self.cond:
-            res = f.simplify(doms)
-            if res==1:
-                # always true
-                self.cond = [ _true() ]
-                return 1
-            if res==-1:
-                # always false don't keep it
-                continue
-            cd.append(f)
-        self.cond = cd
-        if not cd:
-            self.cond = [ _false() ]
-            return -1
-        return 0
-    def accept(self, vis):
-        vis.visit_or( self )
-
-
-class DistributeVisitor(object):
-    """The purpose of this visitor is to distribute and's over
-    or's in the expression tree. For example if A and B is
-    represented as A*B and A or B as A+B we want to transform :
-    A*(B+C*(D+E)+A*B) into A*B+A*C*D+A*C*E+A*A*B
-    """
-    def __init__(self):
-        self.stack = []
-    def visit_and(self, node):
-        first = self.cond.pop(0)
-        if isinstance(first, _or):
-            distrib = _or.cond[:]
-        else:
-            distrib = [first]
-        while self.cond:
-            next = self.cond.pop(0)
-        
-    def visit_or(self, node):
-        pass
-    def visit_true(self, node):
-        pass
-    def visit_false(self, node):
-        pass
-    def visit_eq(self, node):
-        pass
-    def visit_eqv(self, node):
-        pass
-
-class _CSPProblem(object):
+    def for_gecode(self, all_vars, all_values):
+        l = ["or"]
+        for n in self.cond:
+            l.append( n.for_gecode(all_vars, all_values) )
+        return l
+# TODO: refactor/optimize:
+# now that gecode solver is working we don't need the above _and/_or... classes
+# we can generate the constraint tree directly as ["and", ['or',...], ... ]
+# Another thing that 
+class GecodeCSPProblem(object):
     def __init__(self):
         self.constraints = []
         self.op = _and()
         self.domains = {}
 
+    def get_output(self):
+        return ""
+    def solve(self):
+        # assign an integer to each var and each domain values
+        all_values = set()
+        all_vars = sorted(self.domains.keys())
+        for values in self.domains.values():
+            all_values.update(values)
+        all_values = sorted(all_values)
+        constraints = self.op.for_gecode( all_vars, all_values )
+        var_domains = []
+        for var in all_vars:
+            dom = []
+            for val in self.domains[var]:
+                dom.append( all_values.index(val) )
+            var_domains.append( dom )
+
+        sols = rql_solve.solve( var_domains, len(all_values), constraints )
+        rql_sols = []
+        for s in sols:
+            r={}
+            for var,val in zip(all_vars,s):
+                r[var] = all_values[val]
+            rql_sols.append(r)
+        return rql_sols
+
     def add_var(self, name, values):
         self.domains[name] = set(values)
-
-    def get_domains(self):
-        self.simplify()
-        d = {}
-        for var, dom in self.domains.items():
-            print var, "==", dom
-            d[var] = fd.FiniteDomain(dom)
-        return d
-
-    def get_constraints(self):
-        self.simplify()
-        lst = []
-        for expr in self.op.cond:
-            constr = str(expr)
-            print constr
-            if isinstance(expr, _eq):
-                # taken into account bye simplify
-                continue
-            vrs = set()
-            expr.get_vars( vrs )
-            lst.append( fd.make_expression( tuple(vrs), constr ) )
-        print "----------"
-        return lst
-
-    def simplify(self):
-        print "EQN=", self.op
-        for op in self.op.cond:
-            if isinstance(op, _eqv):
-                s = self.domains[op.vars[0]]
-                for var in op.vars:
-                    s.intersection_update( self.domains[var] )
-                    self.domains[var] = s
-            if isinstance(op, _eq):
-                self.domains[op.var].intersection_update([op.val])
-        self.op.simplify(self.domains)
 
     def and_eq( self, var, value ):
         eq = _eq(var, value)
@@ -310,10 +227,15 @@ class _CSPProblem(object):
                     else:
                         or2 = _or()
                         for t in types:
-                            or2.add( _eq(var, types[0]) )
+                            or2.add( _eq(var, t) )
                         anded.add( or2 )
             orred.add(anded)
         self.op.add(orred)
+
+if rql_solve is None:
+    CSPProblem = ConstraintCSPProblem
+else:
+    CSPProblem = GecodeCSPProblem
 
 
 class ETypeResolver(object):
@@ -361,7 +283,6 @@ class ETypeResolver(object):
             pprint(domains)
             print "CONSTRAINTS:"
             pprint(constraints.scons)
-        domains = constraints.get_domains()
 
         sols = constraints.solve()
 

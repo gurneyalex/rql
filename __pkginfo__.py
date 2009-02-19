@@ -32,4 +32,12 @@ debian_maintainer_email = 'sylvain.thenault@logilab.fr'
 pyversions = ['2.4']
 
 
+from distutils.core import Extension
+
 include_dirs = []
+
+ext_modules = [ Extension('rql_solve',
+                          ['gecode_solver.cpp'],
+                          libraries=['gecodeint', 'gecodekernel', 'gecodesearch'],
+                          
+                          ) ]
