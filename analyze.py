@@ -22,7 +22,7 @@ try:
 except ImportError:
     rql_solve = None
     # Gecode solver not available
-
+# rql_solve = None # uncomment to force using logilab-constraint
 
 class ConstraintCSPProblem(object):
     def __init__(self):
@@ -93,106 +93,76 @@ class ConstraintCSPProblem(object):
         expr = " or ".join( list(orred) )
         self.add_expr( tuple(variables), expr )
 
-class _eq(object):
-    def __init__(self, var, val):
-        self.var = var
-        self.val = val
+# GECODE based constraint solver
 
-    def __str__(self):
-        return '%s == "%s"' % (self.var, self.val)
+_AND = "and"
+_OR = "or"
+_EQ = "eq"
+_EQV = "eqv"
 
-    def get_vars(self, s):
-        s.add(self.var)
-
-    def for_gecode(self, all_vars, all_values):
-        return ["eq", all_vars.index( self.var ), all_values.index(self.val) ]
-
-class _eqv(object):
-    def __init__(self, vars):
-        self.vars = set(vars)
-    def __str__(self):
-        return '(' + " == ".join( str(t) for t in self.vars ) + ')'
-    def get_vars(self, s):
-        s+=self.vars
-    def for_gecode(self, all_vars, all_values):
-        l = ["eqv"]
-        for v in self.vars:
-            l.append( all_vars.index( v ) )
-        return l
-
-class _and(object):
-    def __init__(self):
-        self.cond = []
-    def add(self, expr):
-        self.cond.append( expr )
-        #if expr not in self.cond:
-        #    self.cond.append( expr )
-    def __str__(self):
-        return '(' + " and ".join( str(t) for t in self.cond ) + ')'
-    def get_vars(self, s):
-        for t in self.cond:
-            t.get_vars(s)
-    def for_gecode(self, all_vars, all_values):
-        l = ["and"]
-        for n in self.cond:
-            l.append( n.for_gecode(all_vars, all_values) )
-        return l
-
-
-class _or(_and):
-    def __str__(self):
-        return '(' + " or ".join( str(t) for t in self.cond ) + ')'
-    def for_gecode(self, all_vars, all_values):
-        l = ["or"]
-        for n in self.cond:
-            l.append( n.for_gecode(all_vars, all_values) )
-        return l
-# TODO: refactor/optimize:
-# now that gecode solver is working we don't need the above _and/_or... classes
-# we can generate the constraint tree directly as ["and", ['or',...], ... ]
-# Another thing that 
 class GecodeCSPProblem(object):
+    """Builds an internal representation of the constraint
+    that will be passed to the rql_solve module which implements
+    a gecode-based solver
+
+    The internal representation is a tree builds with lists of lists
+    the first item of the list is the node type (_AND,_OR,_EQ,_EQV)
+    
+    an example : ["and", [ "eq",0,0 ], ["or", ["eq", 1, 1], ["eq", 1, 2] ] ]
+
+    means Var(0) == Value(0) and ( Var(1)==Val(1) or Var(1) == Val(2)
+
+    TODO: at the moment the solver makes no type checking on the structure
+    of the tree thus can crash badly if something wrong is handled to it
+    this should not happend as the building of the tree is done internally
+    but it should be fixed anyways.
+    When fixing that we should also replace string nodes by integers
+    """
     def __init__(self):
         self.constraints = []
-        self.op = _and()
+        self.op = [ _AND ]
         self.domains = {}
+        self.variables = {}
+        self.values = {}
 
     def get_output(self):
         return ""
     def solve(self):
         # assign an integer to each var and each domain values
-        all_values = set()
-        all_vars = sorted(self.domains.keys())
-        for values in self.domains.values():
-            all_values.update(values)
-        all_values = sorted(all_values)
-        constraints = self.op.for_gecode( all_vars, all_values )
+        all_values = range(len(self.values))
+        constraints = self.op #.for_gecode( all_vars, all_values )
         var_domains = []
-        for var in all_vars:
-            dom = []
-            for val in self.domains[var]:
-                dom.append( all_values.index(val) )
-            var_domains.append( dom )
+        # loop through variables in increasing order of the number they have been assigned
+        variables = [ var_name for var_name, var_value in sorted(self.variables.items(), key=lambda item:item[1] ) ]
+        for var_name in variables:
+            var_domains.append( self.domains[var_name] )
 
         sols = rql_solve.solve( var_domains, len(all_values), constraints )
         rql_sols = []
+        # values is the list of values (string) order according to the integer value they have been assigned
+        values = [ val_name for val_name, val_value in sorted(self.values.items(), key=lambda item:item[1] ) ]
         for s in sols:
             r={}
-            for var,val in zip(all_vars,s):
-                r[var] = all_values[val]
+            for var, val in zip(variables, s):
+                r[var] = values[val]
             rql_sols.append(r)
         return rql_sols
 
     def add_var(self, name, values):
-        self.domains[name] = set(values)
+        domain = []
+        var_value = self.variables.setdefault( name, len(self.variables) )
+        for val in values:
+            val_value = self.values.setdefault( val, len(self.values) )
+            domain.append( val_value )
+        self.domains[name] = domain
+        
 
     def and_eq( self, var, value ):
-        eq = _eq(var, value)
-        self.op.add(eq)
+        self.op.append( [_EQ, self.variables[var], self.values[value] ] )
 
     def equal_vars(self, varnames):
         if len(varnames)>1:
-            self.op.add( _eqv(varnames) )
+            self.op.append( [ _EQV] + [ self.variables[v] for v in varnames ] )
 
     def var_has_type(self, var, etype):
         self.and_eq( var, etype)
@@ -203,10 +173,10 @@ class GecodeCSPProblem(object):
         if len(etypes) == 1:
             self.and_eq( var, tuple(etypes)[0] )
         else:
-            orred = _or()
+            orred = [ _OR ]
             for t in etypes:
-                orred.add( _eq(var, t) )
-            self.op.add( orred )
+                orred.append( [ _EQ, self.variables[var], self.values[t] ] )
+            self.op.append( orred )
 
     def vars_have_types(self, varnames, types):
         self.equal_vars( varnames )
@@ -214,23 +184,23 @@ class GecodeCSPProblem(object):
             self.var_has_types( var, types )
 
     def or_and(self, equalities):
-        orred = _or()
+        orred = [ _OR ]
         for orred_expr in equalities:
-            anded = _and()
+            anded = [ _AND ]
             for vars, types in orred_expr:
                 self.equal_vars( vars )
                 for t in types:
                     assert isinstance(t, (str,unicode))
                 for var in vars:
                     if len(types)==1:
-                        anded.add( _eq(var, types[0]) )
+                        anded.append( [ _EQ, self.variables[var], self.values[types[0]] ] )
                     else:
-                        or2 = _or()
+                        or2 = [ _OR ]
                         for t in types:
-                            or2.add( _eq(var, t) )
-                        anded.add( or2 )
-            orred.add(anded)
-        self.op.add(orred)
+                            or2.append(  [_EQ, self.variables[var], self.values[t] ] )
+                        anded.append( or2 )
+            orred.append(anded)
+        self.op.append(orred)
 
 if rql_solve is None:
     CSPProblem = ConstraintCSPProblem
