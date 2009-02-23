@@ -85,23 +85,23 @@ class RQLCompareClassTest(TestCase):
         self._compareEquivalent(r1, r2)
 
     def test_same_request_with_comparison(self):
-        r1 = "Note N WHERE N creation_date D, N a_faire_par P, P nom 'jphc', D day > today-10;"
-        r2 = "Note K WHERE K creation_date D, K a_faire_par Y, D day > today-10, Y nom 'jphc';"
+        r1 = "Note N WHERE N a_faire_par P, P nom 'jphc', K creation_date > today-10;"
+        r2 = "Note K WHERE K a_faire_par Y, K creation_date > today-10, Y nom 'jphc';"
         self._compareEquivalent(r1, r2)
 
     def test_same_request_in_or(self):
-        r1 = "Note N WHERE N creation_date D, D day > today-10, N a_faire_par P, P nom 'jphc' or P  nom 'ludal';"
-        r2 = "Note K WHERE K creation_date D, K a_faire_par Y, D day > today-10, Y nom in ('jphc', 'ludal');"
+        r1 = "Note N WHERE N creation_date > today-10, N a_faire_par P, P nom 'jphc' or P  nom 'ludal';"
+        r2 = "Note K WHERE K a_faire_par Y, K creation_date > today-10, Y nom in ('jphc', 'ludal');"
         self._compareEquivalent(r1, r2)
 
     def test_same_request_reverse_or(self):
-        r1 = "Note N WHERE N creation_date D, D day > today-10, N a_faire_par P, P nom 'jphc' or P nom 'ludal';"
-        r2 = "Note N WHERE N creation_date D, D day > today-10, N a_faire_par P, P nom 'ludal' or P nom 'jphc';"
+        r1 = "Note N WHERE N creation_date > today-10, N a_faire_par P, P nom 'jphc' or P nom 'ludal';"
+        r2 = "Note N WHERE N creation_date > today-10, N a_faire_par P, P nom 'ludal' or P nom 'jphc';"
         self._compareEquivalent(r1, r2)
 
     def test_same_request_reverse_or2(self):
-        r1 = "Note N WHERE N creation_date D, D day > today-10, N a_faire_par P, P prenom 'jphc' or P nom 'ludal';"
-        r2 = "Note N WHERE N creation_date D, D day > today-10, N a_faire_par P, P nom 'ludal' or P prenom 'jphc';"
+        r1 = "Note N WHERE N creation_date > today-10, N a_faire_par P, P prenom 'jphc' or P nom 'ludal';"
+        r2 = "Note N WHERE N creation_date > today-10, N a_faire_par P, P nom 'ludal' or P prenom 'jphc';"
         self._compareEquivalent(r1, r2)
 
     def test_same_request_duplicate_expr(self):
@@ -110,8 +110,8 @@ class RQLCompareClassTest(TestCase):
         self._compareEquivalent(r1, r2)
 
     def test_same_request_not_in_or(self):
-        r1 = "Note K WHERE K creation_date D, K a_faire_par Y, D day > today-10, not Y nom in ('jphc', 'ludal');"
-        r2 = "Note K WHERE K creation_date D, K a_faire_par Y, D day > today-10, not Y nom 'jphc' and not Y nom 'ludal';"
+        r1 = "Note K WHERE K a_faire_par Y, K creation_date > today-10, not Y nom in ('jphc', 'ludal');"
+        r2 = "Note K WHERE K a_faire_par Y, K creation_date > today-10, not Y nom 'jphc' and not Y nom 'ludal';"
         self._compareEquivalent(r1, r2)
 
     # non equivalent queries ##################################################
@@ -122,13 +122,13 @@ class RQLCompareClassTest(TestCase):
         self._compareNotEquivalent(r1,r2)
 
     def test_diff_request_and_or(self):
-        r1 = "Note N WHERE N creation_date D, D day > today-10, N a_faire_par P, P nom 'jphc' or P nom 'ludal';"
-        r2 = "Note N WHERE N creation_date D, D day > today-10, N a_faire_par P, P nom 'jphc', P nom 'ludal';"
+        r1 = "Note N WHERE N creation_date > today-10, N a_faire_par P, P nom 'jphc' or P nom 'ludal';"
+        r2 = "Note N WHERE N creation_date > today-10, N a_faire_par P, P nom 'jphc', P nom 'ludal';"
         self._compareNotEquivalent(r1, r2)
 
     def test_diff_request_and_or2(self):
-        r1 = "Note N WHERE N creation_date D, D day > today-10, N a_faire_par P, P nom 'jphc' or P prenom 'ludal';"
-        r2 = "Note N WHERE N creation_date D, D day > today-10, N a_faire_par P, P nom 'jphc', P prenom 'ludal';"
+        r1 = "Note N WHERE N creation_date > today-10, N a_faire_par P, P nom 'jphc' or P prenom 'ludal';"
+        r2 = "Note N WHERE N creation_date > today-10, N a_faire_par P, P nom 'jphc', P prenom 'ludal';"
         self._compareNotEquivalent(r1, r2)
 
     def test_diff_request_non_selected_var(self):
@@ -157,8 +157,8 @@ class RQLCompareClassTest(TestCase):
         self._compareNotEquivalent(r1, r2)
 
     def test_diff_request_not_in_or(self):
-        r1 = "Note K WHERE K creation_date D, K a_faire_par Y, D day > today-10, not Y nom in ('jphc', 'ludal');"
-        r2 = "Note K WHERE K creation_date D, K a_faire_par Y, D day > today-10, not Y nom 'jphc' or not Y nom 'ludal';"
+        r1 = "Note K WHERE K a_faire_par Y, K creation_date > today-10, not Y nom in ('jphc', 'ludal');"
+        r2 = "Note K WHERE K a_faire_par Y, K creation_date > today-10, not Y nom 'jphc' or not Y nom 'ludal';"
         self._compareNotEquivalent(r1, r2)
 
 if __name__ == '__main__':
