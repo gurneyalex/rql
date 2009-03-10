@@ -3,26 +3,21 @@
 This module defines all the nodes we can find in a RQL Syntax tree, except
 root nodes, defined in the `stmts` module.
 
-:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 :license: General Public License version 2 - http://www.gnu.org/licenses
 """
 __docformat__ = "restructuredtext en"
 
 from itertools import chain
-
-try:
-    from mx.DateTime import DateTimeType, today, now
-except:
-    from datetime import datetime as DateTimeType, date, datetime
-    from time import localtime
-    def now():
-        return datetime(*localtime()[:6])
-    def today():
-        return date(*localtime()[:3])
+from decimal import Decimal
+from datetime import datetime, date, time, timedelta
+from time import localtime
     
-KEYWORD_MAP = {'NOW' : now,
-               'TODAY': today}
+try:
+    from mx.DateTime import DateTimeType, DateTimeDeltaType, today, now
+except:
+    pass
 
 from rql import CoercionError
 from rql.base import BaseNode, Node, BinaryNode, LeafNode
@@ -32,18 +27,37 @@ from rql.utils import (function_description, quote, uquote, build_visitor_stub,
 CONSTANT_TYPES = frozenset((None, 'Date', 'Datetime', 'Boolean', 'Float', 'Int',
                             'String', 'Substitute', 'etype'))
 
+KEYWORD_MAP = {'NOW' : now,
+               'TODAY': today}
+
+# keep using mx DateTime by default for bw compat
+def use_py_datetime():
+    global KEYWORD_MAP
+    KEYWORD_MAP = {'NOW' : datetime.now,
+                   'TODAY': date.today}
+
+ETYPE_PYOBJ_MAP = { bool: 'Boolean',
+                    int: 'Int',
+                    long: 'Int',
+                    float: 'Float',
+                    Decimal: 'Decimal',
+                    unicode: 'String',
+                    str: 'String',
+                    datetime: 'Datetime',
+                    date: 'Date',
+                    time: 'Time',
+                    timedelta: 'Interval',
+                    DateTimeType: 'Datetime',
+                    DateTimeDeltaType: 'Datetime',
+                    }
+
 def etype_from_pyobj(value):
-    # try to guess type from value
-    if isinstance(value, bool):
-        return 'Boolean'
-    if isinstance(value, (int, long)):
-        return 'Int'
-    if isinstance(value, DateTimeType):
-        return 'Datetime'
-    elif isinstance(value, float):
-        return 'Float'
-    # XXX Bytes
-    return 'String'
+    """guess yams type from python value"""
+    # note:
+    # * Password is not selectable so no problem)
+    # * use type(value) and not value.__class__ since mx instances have no
+    #   __class__ attribute
+    return ETYPE_PYOBJ_MAP[type(value)]
 
 def variable_ref(var):
     """get a VariableRef"""
