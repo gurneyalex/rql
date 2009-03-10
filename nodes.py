@@ -13,11 +13,6 @@ from itertools import chain
 from decimal import Decimal
 from datetime import datetime, date, time, timedelta
 from time import localtime
-    
-try:
-    from mx.DateTime import DateTimeType, DateTimeDeltaType, today, now
-except:
-    pass
 
 from rql import CoercionError
 from rql.base import BaseNode, Node, BinaryNode, LeafNode
@@ -27,8 +22,6 @@ from rql.utils import (function_description, quote, uquote, build_visitor_stub,
 CONSTANT_TYPES = frozenset((None, 'Date', 'Datetime', 'Boolean', 'Float', 'Int',
                             'String', 'Substitute', 'etype'))
 
-KEYWORD_MAP = {'NOW' : now,
-               'TODAY': today}
 
 # keep using mx DateTime by default for bw compat
 def use_py_datetime():
@@ -47,9 +40,17 @@ ETYPE_PYOBJ_MAP = { bool: 'Boolean',
                     date: 'Date',
                     time: 'Time',
                     timedelta: 'Interval',
-                    DateTimeType: 'Datetime',
-                    DateTimeDeltaType: 'Datetime',
                     }
+
+    
+try:
+    from mx.DateTime import DateTimeType, DateTimeDeltaType, today, now
+    KEYWORD_MAP = {'NOW' : now,
+                   'TODAY': today}
+    ETYPE_PYOBJ_MAP[DateTimeType] = 'Datetime'
+    ETYPE_PYOBJ_MAP[DateTimeDeltaType] = 'Datetime'
+except:
+    use_py_datetime()
 
 def etype_from_pyobj(value):
     """guess yams type from python value"""
