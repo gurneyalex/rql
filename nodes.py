@@ -899,6 +899,20 @@ class Referenceable(object):
             return None
         return iter(self.stinfo['selected']).next()
 
+    def main_relation(self):
+        """Return the relation where this variable is used in the rhs.
+
+        It is useful for cases where this variable is final and we are
+        looking for the entity to which it belongs.
+        """
+        for ref in self.references():
+            rel = ref.relation()
+            if rel is None:
+                continue
+            if rel.r_type != 'is' and self.name != rel.children[0].name:
+                return rel
+        return None
+
     
 class ColumnAlias(Referenceable):
     __slots__ = ('colnum', 'query',
@@ -1004,20 +1018,6 @@ class Variable(Referenceable):
         """
         stinfo = self.stinfo
         return len(stinfo['selected']) + len(stinfo['relations'])
-
-    def main_relation(self):
-        """Return the relation where this variable is used in the rhs.
-
-        It is useful for cases where this variable is final and we are
-        looking for the entity to which it belongs.
-        """
-        for ref in self.references():
-            rel = ref.relation()
-            if rel is None:
-                continue
-            if rel.r_type != 'is' and self.name != rel.children[0].name:
-                return rel
-        return None
 
 
 build_visitor_stub((SubQuery, And, Or, Not, Exists, Relation,
