@@ -152,6 +152,22 @@ class CheckClassTest(TestCase):
             ):
             yield self._test_rewrite, rql, expected
 
+    def test_subquery_graphdict(self):
+        # test two things:
+        # * we get graph information from subquery
+        # * we see that we can sort on VCS (eg we have a unique value path from VF to VCD)
+        rqlst = self.parse(('DISTINCT Any VF ORDERBY VCD DESC WHERE '
+                            'VC work_for S, S name "draft" '
+                            'WITH VF, VC, VCD BEING (Any VF, MAX(VC), VCD GROUPBY VF, VCD '
+                            '                        WHERE VC connait VF, VC creation_date VCD)'))
+        self.assertEquals(rqlst.children[0].vargraph,
+                          {'VCD': ['VC'], 'VF': ['VC'], 'S': ['VC'], 'VC': ['S', 'VF', 'VCD'],
+                           ('VC', 'S'): 'work_for',
+                           ('VC', 'VF'): 'connait',
+                           ('VC', 'VCD'): 'creation_date'})
+        self.assertEquals(rqlst.children[0].aggregated, set(('VC',)))
+        
+            
 ##     def test_rewriten_as_string(self):
 ##         rqlst = self.parse('Any X WHERE X eid 12')
 ##         self.assertEquals(rqlst.as_string(), 'Any X WHERE X eid 12')
