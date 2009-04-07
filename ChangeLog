@@ -1,6 +1,15 @@
 ChangeLog for RQL
 =================
 
+ --
+    * consider subqueries in variables graph
+    * py datetime support (must be explicitly activated until we drop mx.DateTime support)
+    * implements main_relation on ColumnAlias
+	
+2009-02-17 -- 0.21.0
+    * new type solver based on gecode
+
+	
 2008-10-17  --  0.20.2
     * new remove_subquery method on Select node
 
