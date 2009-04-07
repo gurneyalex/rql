@@ -1,3 +1,9 @@
+rql (0.21.0-2) unstable; urgency=low
+
+  * [unstable] change libgecode dependency
+
+ -- Julien Jehannet <julien.jehannet@logilab.fr>  Tue, 07 Apr 2009 12:12:48 +0200
+
 rql (0.21.0-1) unstable; urgency=low
 
   * new upstream release
