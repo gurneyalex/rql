@@ -17,6 +17,13 @@ from rql.nodes import (VariableRef, Constant, Not, Exists, Function,
 from rql.stmts import Union
 
 
+def _var_graphid(subvarname, trmap, select):
+    try:
+        return trmap[subvarname]
+    except KeyError:
+        return subvarname + str(id(select))
+
+
 class GoTo(Exception):
     """Exception used to control the visit of the tree."""
     def __init__(self, node):
@@ -89,6 +96,7 @@ class RQLSTChecker(object):
     
     def visit_select(self, node, errors):
         node.vargraph = {} # graph representing links between variable
+        node.aggregated = set()
         self._visit_selectedterm(node, errors)
         
     def leave_select(self, node, errors):
@@ -104,10 +112,9 @@ class RQLSTChecker(object):
                     errors.append('variable %s should be grouped' % var)
             for group in node.groupby:
                 self._check_selected(group, 'group', errors)
-        if node.distinct:
+        if node.distinct and node.orderby:
             # check that variables referenced in the given term are reachable from
             # a selected variable with only ?1 cardinalityselected
-            graph = node.vargraph
             selectidx = frozenset(vref.name for term in selected for vref in term.iget_nodes(VariableRef))
             schema = self.schema
             for sortterm in node.orderby:
@@ -115,15 +122,19 @@ class RQLSTChecker(object):
                     if vref.name in selectidx:
                         continue
                     for vname in selectidx:
-                        if self.has_unique_value_path(graph, vname, vref.name):
-                            break
+                        try:
+                            if self.has_unique_value_path(node, vname, vref.name):
+                                break
+                        except KeyError:
+                            continue # unlinked variable (usually from a subquery)
                     else:
                         msg = ('can\'t sort on variable %s which is linked to a'
                                ' variable in the selection but may have different'
                                ' values for a resulting row')
                         errors.append(msg % vref.name)
 
-    def has_unique_value_path(self, graph, fromvar, tovar):
+    def has_unique_value_path(self, select, fromvar, tovar):
+        graph = select.vargraph
         path = has_path(graph, fromvar, tovar)
         if path is None:
             return False
@@ -136,7 +147,9 @@ class RQLSTChecker(object):
                 cardidx = 1
             rschema = self.schema.rschema(rtype)
             for rdef in rschema.iter_rdefs():
-                if not rschema.rproperty(rdef[0], rdef[1], 'cardinality')[cardidx] in '?1':
+                # XXX aggregats handling needs much probably some enhancements...
+                if not (tovar in select.aggregated
+                        or rschema.rproperty(rdef[0], rdef[1], 'cardinality')[cardidx] in '?1'):
                     return False
             fromvar = tovar
         return True
@@ -166,8 +179,31 @@ class RQLSTChecker(object):
     
     def visit_subquery(self, node, errors):
         pass
+    
     def leave_subquery(self, node, errors):
-        pass 
+        # copy graph information we're interested in
+        pgraph = node.parent.vargraph
+        for select in node.query.children:
+            # map subquery variable names to outer query variable names
+            trmap = {} 
+            for i, vref in enumerate(node.aliases):
+                subvref = select.selection[i]
+                if isinstance(subvref, VariableRef):
+                    trmap[subvref.name] = vref.name
+                elif (isinstance(subvref, Function) and subvref.descr().aggregat
+                      and len(subvref.children) == 1
+                      and isinstance(subvref.children[0], VariableRef)):
+                    # XXX ok for MIN, MAX, but what about COUNT, AVG...
+                    trmap[subvref.children[0].name] = vref.name
+                    node.parent.aggregated.add(vref.name)
+            for key, val in select.vargraph.iteritems():
+                if isinstance(key, tuple):
+                    key = (_var_graphid(key[0], trmap, select),
+                           _var_graphid(key[1], trmap, select))
+                    pgraph[key] = val
+                else:
+                    values = pgraph.setdefault(_var_graphid(key, trmap, select), [])
+                    values += [_var_graphid(v, trmap, select) for v in val]
     
     def visit_sortterm(self, sortterm, errors):
         term = sortterm.term

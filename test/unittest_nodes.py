@@ -472,7 +472,8 @@ class NodesTest(TestCase):
         self.assertEquals(N.get_description(), 'firstname') # XXX how to choose 
         self.assertEquals(X.selected_index(), 0)
         self.assertEquals(N.selected_index(), None)
-       
+        self.assertEquals(X.main_relation(), None)
+        
     # non regression tests ####################################################
     
     def test_get_description_and_get_type(self):
