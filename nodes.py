@@ -356,7 +356,7 @@ class Exists(EditableMixIn, BaseNode):
 class Relation(Node):
     """a RQL relation"""
     __slots__ = ('r_type', 'optional',
-                 '_q_sqltable', '_q_needcast') # XXX ginco specific
+                 '_q_sqltable', '_q_needcast') # XXX cubicweb specific
     
     def __init__(self, r_type, optional=None):
         Node.__init__(self)
