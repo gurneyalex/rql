@@ -38,18 +38,18 @@ class ScopeNode(BaseNode):
     solutions = ()   # list of possibles solutions for used variables
     _varmaker = None # variable names generator, built when necessary
     where = None     # where clause node
-    
+
     def __init__(self):
         # dictionnary of defined variables in the original RQL syntax tree
         self.defined_vars = {}
-        
+
     def get_selected_variables(self):
         return self.selected_terms()
-        
+
     def set_where(self, node):
         self.where = node
         node.parent = self
-        
+
     def copy(self, copy_solutions=True, solutions=None):
         new = self.__class__()
         if self.schema is not None:
@@ -61,17 +61,17 @@ class ScopeNode(BaseNode):
         return new
 
     # construction helper methods #############################################
-    
+
     def get_etype(self, name):
         """return the type object for the given entity's type name
-        
+
         raise BadRQLQuery on unknown type
         """
         return nodes.Constant(name, 'etype')
-        
+
     def get_variable(self, name):
         """get a variable instance from its name
-        
+
         the variable is created if it doesn't exist yet
         """
         try:
@@ -91,7 +91,7 @@ class ScopeNode(BaseNode):
         while name in self.defined_vars:
             name =  self._varmaker.next()
         return name
-        
+
     def make_variable(self):
         """create a new variable with an unique name for this tree"""
         var = self.get_variable(self.allocate_varname())
@@ -99,7 +99,7 @@ class ScopeNode(BaseNode):
             from rql.undo import MakeVarOperation
             self.undo_manager.add_operation(MakeVarOperation(var))
         return var
-    
+
     def set_possible_types(self, solutions, kwargs=_MARKER, key='possibletypes'):
         if key == 'possibletypes':
             self.solutions = solutions
@@ -131,7 +131,7 @@ class ScopeNode(BaseNode):
             print repr(self)
             raise
         return True
-        
+
 class Statement(object):
     """base class for statement nodes"""
 
@@ -139,19 +139,19 @@ class Statement(object):
     # used
     schema = None     # ISchema
     annotated = False # set by the annotator
-    
+
 #     def __init__(self):
 #         Node.__init__(self)
 #         # syntax tree meta-information
 #         self.stinfo = {}
 
     # navigation helper methods #############################################
-    
+
     @property
     def root(self):
         """return the root node of the tree"""
         return self
-        
+
     @property
     def stmt(self):
         return self
@@ -160,10 +160,10 @@ class Statement(object):
     def scope(self):
         return self
     sqlscope = scope
-    
+
     def ored(self, traverse_scope=False, _fromnode=None):
         return None
-    
+
     def neged(self, traverse_scope=False, _fromnode=None, strict=False):
         return None
 
@@ -205,7 +205,7 @@ class Union(Statement, Node):
         self.wrap_selects()
         self.children[0].set_offset(offset)
     offset = property(_get_offset, set_offset)
-        
+
     def _get_limit(self):
         warn('limit is now a Select node attribute', DeprecationWarning,
              stacklevel=2)
@@ -217,22 +217,22 @@ class Union(Statement, Node):
         self.wrap_selects()
         self.children[0].set_limit(limit)
     limit = property(_get_limit, set_limit)
-    
-    @property 
+
+    @property
     def root(self):
         """return the root node of the tree"""
         if self.parent is None:
             return self
         return self.parent.root
-    
+
     def get_description(self):
         return [c.get_description() for c in self.children]
 
     # repr / as_string / copy #################################################
-    
+
     def __repr__(self):
         return '\nUNION\n'.join(repr(select) for select in self.children)
-    
+
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         strings = [select.as_string(encoding, kwargs)
@@ -240,7 +240,7 @@ class Union(Statement, Node):
         if len(strings) == 1:
             return strings[0]
         return ' UNION '.join('(%s)' % part for part in strings)
-            
+
     def copy(self, copy_children=True):
         new = Union()
         if self.schema is not None:
@@ -262,7 +262,7 @@ class Union(Statement, Node):
         for select in self.children:
             change.update(select.get_variable_variables(values))
         return change
-    
+
     def _locate_subquery(self, col, etype, kwargs):
         if len(self.children) == 1 and not self.children[0].with_:
             return self.children[0]
@@ -315,7 +315,7 @@ class Union(Statement, Node):
         """reverts the tree as it was when save_state() was last called"""
         self.memorizing -= 1
         assert self.memorizing >= 0
-        self.undo_manager.recover()    
+        self.undo_manager.recover()
 
     def check_references(self):
         """test function"""
@@ -336,7 +336,7 @@ class Union(Statement, Node):
             self.undo_manager.add_operation(RemoveSelectOperation(self, select, idx))
         self.children.pop(idx)
 
-        
+
 class Select(Statement, nodes.EditableMixIn, ScopeNode):
     """the select node is the base statement of the syntax tree for selection
     statement, always child of a UNION root.
@@ -354,7 +354,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
     with_ = ()
     # set by the annotator
     has_aggregat = False
-    
+
     def __init__(self):
         Statement.__init__(self)
         ScopeNode.__init__(self)
@@ -364,11 +364,11 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         # syntax tree meta-information
         self.stinfo = {'rewritten': {}}
 
-    @property 
+    @property
     def root(self):
         """return the root node of the tree"""
         return self.parent
-                    
+
     def get_description(self):
         """return the list of types or relations (if not found) associated to
         selected variables
@@ -397,10 +397,10 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         return children
 
     # repr / as_string / copy #################################################
-    
+
     def __repr__(self):
         return self.as_string(userepr=True)
-    
+
     def as_string(self, encoding=None, kwargs=None, userepr=False):
         """return the tree as an encoded rql string"""
         if userepr:
@@ -429,7 +429,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         if self.distinct:
             return 'DISTINCT Any ' + ' '.join(s)
         return 'Any ' + ' '.join(s)
-                                      
+
     def copy(self, copy_solutions=True, solutions=None):
         new = ScopeNode.copy(self, copy_solutions, solutions)
         if self.with_:
@@ -449,9 +449,9 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         new.offset = self.offset
         new.vargraph = self.vargraph
         return new
-    
+
     # select specific methods #################################################
-    
+
     def set_possible_types(self, solutions, kwargs=_MARKER, key='possibletypes'):
         super(Select, self).set_possible_types(solutions, kwargs, key)
         for ca in self.aliases.itervalues():
@@ -470,7 +470,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
                     ca.query.remove_select(stmt)
                 else:
                     stmt.set_possible_types(sols)
-                                  
+
     def set_statement_type(self, etype):
         """set the statement type for this selection
         this method must be called last (i.e. once selected variables has been
@@ -481,14 +481,14 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         if etype != 'Any':
             for var in self.get_selected_variables():
                 self.add_type_restriction(var.variable, etype)
-    
+
     def set_distinct(self, value):
         """mark DISTINCT query"""
         if self.should_register_op and value != self.distinct:
             from rql.undo import SetDistinctOperation
             self.undo_manager.add_operation(SetDistinctOperation(self.distinct, self))
         self.distinct = value
-    
+
     def set_limit(self, limit):
         if limit is not None and (not isinstance(limit, (int, long)) or limit <= 0):
             raise BadRQLQuery('bad limit %s' % limit)
@@ -504,7 +504,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             from rql.undo import SetOffsetOperation
             self.undo_manager.add_operation(SetOffsetOperation(self.offset, self))
         self.offset = offset
-    
+
     def set_orderby(self, terms):
         self.orderby = terms
         for node in terms:
@@ -519,12 +519,12 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         self.having = terms
         for node in terms:
             node.parent = self
-            
+
     def set_with(self, terms, check=True):
         self.with_ = []
         for node in terms:
             self.add_subquery(node, check)
-            
+
     def add_subquery(self, node, check=True):
         assert node.query
         if not isinstance(self.with_, list):
@@ -540,16 +540,16 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
                 raise BadRQLQuery('Duplicated alias %s' % alias)
             ca = self.get_variable(alias, i)
             ca.query = node.query
-            
+
     def remove_subquery(self, node):
         self.with_.remove(node)
         node.parent = None
         for i, alias in enumerate(node.aliases):
             del self.aliases[alias.name]
-            
+
     def get_variable(self, name, colnum=None):
         """get a variable instance from its name
-        
+
         the variable is created if it doesn't exist yet
         """
         if name in self.aliases:
@@ -564,7 +564,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
                     vref.variable = calias
             return self.aliases[name]
         return super(Select, self).get_variable(name)
-    
+
     def clean_solutions(self, solutions=None):
         """when a rqlst has been extracted from another, this method returns
         solutions which make sense for this sub syntax tree
@@ -599,9 +599,9 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
                 elif _values[vname] != etype:
                     change.add(vname)
         return change
-    
+
     # quick accessors #########################################################
-        
+
     def get_selected_variables(self):
         """returns all selected variables, including those used in aggregate
         functions
@@ -611,7 +611,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
                 yield node
 
     # construction helper methods #############################################
-    
+
     def save_state(self):
         """save the current tree"""
         self.parent.save_state()
@@ -625,7 +625,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             raise BadRQLQuery('Entity type are not allowed in selection')
         term.parent = self
         self.selection.append(term)
-            
+
     def replace(self, oldnode, newnode):
         assert oldnode is self.where
         self.where = newnode
@@ -637,7 +637,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
 #             i = self.selection.index(oldnode)
 #             self.selection.pop(i)
 #             self.selection.insert(i, newnode)
-        
+
     def remove(self, node):
         if node is self.where:
             self.where = None
@@ -648,7 +648,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         else:
             raise Exception('duh XXX')
         node.parent = None
-        
+
     def undefine_variable(self, var):
         """undefine the given variable and remove all relations where it appears"""
         if hasattr(var, 'variable'):
@@ -736,7 +736,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
     def remove_groups(self):
         for vref in self.groupby[:]:
             self.remove_group_var(vref)
-            
+
     def add_sort_var(self, var, asc=True):
         """add var in 'orderby' constraints
         asc is a boolean indicating the sort order (ascendent or descendent)
@@ -745,7 +745,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         vref.register_reference()
         term = nodes.SortTerm(vref, asc)
         self.add_sort_term(term)
-        
+
     def add_sort_term(self, term, index=None):
         if not self.orderby:
             self.orderby = []
@@ -767,7 +767,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         if self.orderby:
             for term in self.orderby[:]:
                 self.remove_sort_term(term)
-        
+
     def remove_sort_term(self, term):
         """remove a sort term and the sort node if necessary"""
         if self.should_register_op:
@@ -786,12 +786,12 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
                     selection.append(vref)
         self.selection = selection
 
-    
+
 class Delete(Statement, ScopeNode):
     """the Delete node is the root of the syntax tree for deletion statement
     """
     TYPE = 'delete'
-    
+
     def __init__(self):
         Statement.__init__(self)
         ScopeNode.__init__(self)
@@ -809,7 +809,7 @@ class Delete(Statement, ScopeNode):
     @property
     def selection(self):
         return [vref for et, vref in self.main_variables]
-    
+
     def add_main_variable(self, etype, vref):
         """add a variable to the list of deleted variables"""
         #if etype == 'Any':
@@ -824,7 +824,7 @@ class Delete(Statement, ScopeNode):
         assert isinstance(relation.children[1].children[0], nodes.VariableRef)
         relation.parent = self
         self.main_relations.append( relation )
-    
+
     # repr / as_string / copy #################################################
 
     def __repr__(self):
@@ -850,7 +850,7 @@ class Delete(Statement, ScopeNode):
             if self.main_variables:
                 result.append(',')
             result.append(', '.join([rel.as_string(encoding, kwargs)
-                                     for rel in self.main_relations]))                
+                                     for rel in self.main_relations]))
         if self.where is not None:
             result.append('WHERE ' + self.where.as_string(encoding, kwargs))
         return ' '.join(result)
@@ -871,7 +871,7 @@ class Insert(Statement, ScopeNode):
     """the Insert node is the root of the syntax tree for insertion statement
     """
     TYPE = 'insert'
-    
+
     def __init__(self):
         Statement.__init__(self)
         ScopeNode.__init__(self)
@@ -890,7 +890,7 @@ class Insert(Statement, ScopeNode):
     @property
     def selection(self):
         return [vref for et, vref in self.main_variables]
-        
+
     def add_main_variable(self, etype, vref):
         """add a variable to the list of inserted variables"""
         if etype == 'Any':
@@ -898,7 +898,7 @@ class Insert(Statement, ScopeNode):
         self.main_variables.append( (etype.encode(), vref) )
         vref.parent = self
         self.inserted_variables[vref.variable] = 1
-        
+
     def add_main_relation(self, relation):
         """add a relation to the list of inserted relations"""
         var = relation.children[0].variable
@@ -910,7 +910,7 @@ insertion variable'
                 raise BadRQLQuery(msg % (var, var))
         relation.parent = self
         self.main_relations.append( relation )
-                              
+
     # repr / as_string / copy #################################################
 
     def __repr__(self):
@@ -948,7 +948,7 @@ insertion variable'
             new.set_where(self.where.copy(new))
         return new
 
-        
+
 class Set(Statement, ScopeNode):
     """the Set node is the root of the syntax tree for update statement
     """
@@ -969,7 +969,7 @@ class Set(Statement, ScopeNode):
     @property
     def selection(self):
         return []
-        
+
     def add_main_relation(self, relation):
         """add a relation to the list of modified relations"""
         relation.parent = self
