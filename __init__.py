@@ -80,7 +80,7 @@ class RQLHelper(object):
             self.annotate(rqlst)
         rqlst.schema = self._annotator.schema
         return rqlst
-    
+
     def annotate(self, rqlst):
         self._annotator.annotate(rqlst)
 
@@ -97,7 +97,7 @@ class RQLHelper(object):
                                  debug)
         finally:
             self._analyser_lock.release()
-            
+
     def compute_all_solutions(self, rqlst, uid_func_mapping=None, kwargs=None,
                           debug=False):
         """compute syntaxe tree solutions with all types restriction (eg
@@ -109,8 +109,8 @@ class RQLHelper(object):
                                  debug)
         finally:
             self._itr_analyser_lock.release()
-    
-    
+
+
     def simplify(self, rqlst):
         """Simplify `rqlst` by rewriting non-final variables associated to a const
         node (if annotator say we can...)
@@ -161,7 +161,7 @@ class RQLHelper(object):
                         else:
                             rhs = copy_uid_node(select, rhs, vconsts)
                             select.groupby[select.groupby.index(vref)] = rhs
-                            rhs.parent = select                            
+                            rhs.parent = select
                     elif rel is uidrel or rel.is_types_restriction():
                         # drop this relation
                         rel.parent.remove(rel)
@@ -173,10 +173,10 @@ class RQLHelper(object):
                     select.stinfo['rewritten'][var.name] = vconsts
         if select.stinfo['rewritten'] and select.solutions:
             select.clean_solutions()
-        
+
     def compare(self, rqlstring1, rqlstring2):
         """Compare 2 RQL requests.
-        
+
         Return True if both requests would return the same results.
         """
         from rql.compare import compare_tree
@@ -189,9 +189,9 @@ def copy_uid_node(select, node, vconsts):
     vconsts.append(node)
     return node
 
-        
-def parse(rqlstring, print_errors=True): 
-    """Return a syntax tree created from a RQL string."""   
+
+def parse(rqlstring, print_errors=True):
+    """Return a syntax tree created from a RQL string."""
     from yapps.runtime import print_error, SyntaxError, NoMoreTokens
     from rql.parser import Hercule, HerculeScanner
     # make sure rql string ends with a semi-colon
