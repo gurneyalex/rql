@@ -208,7 +208,7 @@ Exemples avancés
 
    ::
 
-      Personne P WHERE NOT p travaille_pour S ;
+      Personne P WHERE NOT P travaille_pour S ;
 
 
 3. *Toutes les sociétés où la personne nommée toto ne travaille pas*
