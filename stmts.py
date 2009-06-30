@@ -3,7 +3,7 @@
 This module defines only first level nodes (i.e. statements). Child nodes are
 defined in the nodes module
 
-:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 :license: General Public License version 2 - http://www.gnu.org/licenses
 """
