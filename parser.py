@@ -94,7 +94,7 @@ class HerculeScanner(runtime.Scanner):
         ('FALSE', re.compile('(?i)FALSE')),
         ('NULL', re.compile('(?i)NULL')),
         ('EXISTS', re.compile('(?i)EXISTS')),
-        ('CMP_OP', re.compile('(?i)<=|<|>=|>|~=|=|LIKE|ILIKE')),
+        ('CMP_OP', re.compile('(?i)<=|<|>=|>|~=|=|LIKE|ILIKE|IS')),
         ('ADD_OP', re.compile('\\+|-')),
         ('MUL_OP', re.compile('\\*|/')),
         ('FUNCTION', re.compile('[A-Za-z_]+\\s*(?=\\()')),
@@ -228,20 +228,17 @@ class Hercule(runtime.Parser):
     def dorderby(self, S, _parent=None):
         _context = self.Context(_parent, self._scanner, 'dorderby', [S])
         orderby = self.orderby(S, _context)
-        if orderby:
-            warn('ORDERBY is now before WHERE clause', stacklevel=14)
+        if orderby: warn('ORDERBY is now before WHERE clause')
 
     def dgroupby(self, S, _parent=None):
         _context = self.Context(_parent, self._scanner, 'dgroupby', [S])
         groupby = self.groupby(S, _context)
-        if groupby:
-            warn('GROUPBY is now before WHERE clause', stacklevel=14)
+        if groupby: warn('GROUPBY is now before WHERE clause')
 
     def dlimit_offset(self, S, _parent=None):
         _context = self.Context(_parent, self._scanner, 'dlimit_offset', [S])
         limit_offset = self.limit_offset(S, _context)
-        if limit_offset:
-            warn('LIMIT/OFFSET are now before WHERE clause', stacklevel=14)
+        if limit_offset: warn('LIMIT/OFFSET are now before WHERE clause')
 
     def groupby(self, S, _parent=None):
         _context = self.Context(_parent, self._scanner, 'groupby', [S])
