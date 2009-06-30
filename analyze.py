@@ -175,7 +175,12 @@ class GecodeCSPProblem(object):
         else:
             orred = [ _OR ]
             for t in etypes:
-                orred.append( [ _EQ, self.variables[var], self.values[t] ] )
+                try:
+                    orred.append( [ _EQ, self.variables[var], self.values[t] ] )
+                except KeyError:
+                    # key error may be raised by self.values[t] if self.values
+                    # reflects constraints from subqueries
+                    continue
             self.op.append( orred )
 
     def vars_have_types(self, varnames, types):
