@@ -55,10 +55,11 @@ KEYWORDS = set(('INSERT', 'SET', 'DELETE',
 from logilab.common.adbh import _GenericAdvFuncHelper, FunctionDescr, \
     auto_register_function
 
-def st_description(cls, funcnode):
-    return '%s(%s)' % (cls.name,
-                       ', '.join(child.get_description()
-                                 for child in iter_funcnode_variables(funcnode)))
+def st_description(cls, funcnode, mainindex, tr):
+    return '%s(%s)' % (
+        tr(cls.name),
+        ', '.join(child.get_description(mainindex, tr)
+                  for child in iter_funcnode_variables(funcnode)))
 
 FunctionDescr.st_description = classmethod(st_description)
 
