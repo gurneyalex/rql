@@ -84,8 +84,8 @@ class HSMixin(object):
         except AttributeError:
             return None
 
-    def get_description(self):
-        return self.get_type()
+    def get_description(self, mainindex, tr):
+        return tr(self.get_type())
 
 
 # rql st edition utilities ####################################################
@@ -559,17 +559,18 @@ class MathExpression(HSMixin, BinaryNode):
                 return 'Float'
             raise CoercionError(key)
 
-    def get_description(self):
+    def get_description(self, mainindex, tr):
         """if there is a variable in the math expr used as rhs of a relation,
         return the name of this relation, else return the type of the math
         expression
         """
-        schema = self.root.schema
-        for vref in self.iget_nodes(VariableRef):
-            rtype = vref.get_description()
-            if schema.has_relation(rtype):
-                return rtype
-        return self.get_type()
+        try:
+            return tr(self.get_type())
+        except CoercionError:
+            for vref in self.iget_nodes(VariableRef):
+                type = vref.get_description(mainindex, tr)
+                if type is not None :
+                    return type
 
 
 class Function(HSMixin, Node):
@@ -613,8 +614,8 @@ class Function(HSMixin, Node):
                 pass
         return rtype or 'Any'
 
-    def get_description(self):
-        return self.descr().st_description(self)
+    def get_description(self, mainindex, tr):
+        return self.descr().st_description(self, mainindex, tr)
 
     def descr(self):
         """return the type of object returned by this function if known"""
@@ -739,8 +740,8 @@ class VariableRef(HSMixin, LeafNode):
     def get_type(self, solution=None, kwargs=None):
         return self.variable.get_type(solution, kwargs)
 
-    def get_description(self):
-        return self.variable.get_description()
+    def get_description(self, mainindex, tr):
+        return self.variable.get_description(mainindex, tr)
 
 
 class SortTerm(Node):
@@ -856,7 +857,7 @@ class Referenceable(object):
                     pass
         return 'Any'
 
-    def get_description(self):
+    def get_description(self, mainindex, tr, none_allowed=False):
         """return :
         * the name of a relation where this variable is used as lhs,
         * the entity type of this object if specified by a 'is' relation,
@@ -864,32 +865,44 @@ class Referenceable(object):
 
         give priority to relation name
         """
-        etype = 'Any'
-        rtype = None
+        if mainindex is not None:
+            if mainindex in self.stinfo['selected']:
+                return ', '.join(sorted(
+                    tr(etype) for etype in self.stinfo['possibletypes']))
+        rtype = frtype = None
         schema = self.schema
-        for rel in chain(self.stinfo['typerels'], self.stinfo['relations']):
-            if rel.is_types_restriction():
-                try:
-                    etype = str(rel.children[1].children[0].value)
-                except AttributeError:
-                    # "IN" Function node
-                    pass
-                continue
+        for rel in self.stinfo['relations']:
             if schema is not None:
                 rschema = schema.rschema(rel.r_type)
                 if rschema.is_final():
                     if self.name == rel.children[0].name:
-                        continue # ignore
-                    rtype = rel.r_type
-                    break
-            else:
-                print 'NO SCHEMA', repr(self), repr(self.stmt.root)
+                        # ignore final relation where this variable is used as subject
+                        continue
+                    # final relation where this variable is used as object
+                    frtype = rel.r_type
             rtype = rel.r_type
-            # use getattr since variable may have been rewritten
-            if not self.name != getattr(rel.children[0], 'name', None):
-                # priority to relation where variable is on the rhs
-                break
-        return rtype or etype
+            lhs, rhs = rel.get_variable_parts()
+            # use getattr, may not be a variable ref (rewritten, constant...)
+            lhsvar = getattr(lhs, 'variable', None)
+            rhsvar = getattr(rhs, 'variable', None)
+            if mainindex is not None:
+                # relation to the main variable, stop searching
+                if mainindex in lhsvar.stinfo['selected']:
+                    return tr(rtype)
+                if mainindex in rhsvar.stinfo['selected']:
+                    if schema is not None and rschema.symetric:
+                        return tr(rtype)
+                    return tr(rtype + '_object')
+            if rhsvar is self:
+                rtype += '_object'
+        if frtype is not None:
+            return tr(frtype)
+        if mainindex is None and rtype is not None:
+            return tr(rtype)
+        if none_allowed:
+            return None
+        return ', '.join(sorted(
+            tr(etype) for etype in self.stinfo['possibletypes']))
 
     def selected_index(self):
         """return the index of this variable in the selection if it's selected,
@@ -939,14 +952,18 @@ class ColumnAlias(Referenceable):
                     return vtype
         return vtype
 
-    def get_description(self):
+    def get_description(self, mainindex, tr):
         """return entity type of this object, 'Any' if not found"""
-        vtype = super(ColumnAlias, self).get_description()
-        if vtype == 'Any':
+        vtype = super(ColumnAlias, self).get_description(mainindex, tr,
+                                                         none_allowed=True)
+        if vtype is None:
+            vtypes = set()
             for select in self.query.children:
-                vtype = select.selection[self.colnum].get_description()
-                if vtype != 'Any':
-                    return vtype
+                vtype = select.selection[self.colnum].get_description(mainindex, tr)
+                if vtype is not None:
+                    vtypes.add(vtype)
+            if vtypes:
+                return ', '.join(sorted(tr(vtype) for vtype in vtypes))
         return vtype
 
     # Variable compatibility

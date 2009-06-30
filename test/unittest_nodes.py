@@ -8,12 +8,18 @@ from unittest_analyze import DummySchema
 schema = DummySchema()
 from rql.stcheck import RQLSTAnnotator
 annotator = RQLSTAnnotator(schema, {})
+helper = RQLHelper(schema, None, {'eid': 'uid'})
+
+def sparse(rql):
+    tree = helper.parse(rql)
+    helper.compute_solutions(tree)
+    return tree
 
 class EtypeFromPyobjTC(TestCase):
     def test_bool(self):
         self.assertEquals(nodes.etype_from_pyobj(True), 'Boolean')
         self.assertEquals(nodes.etype_from_pyobj(False), 'Boolean')
-        
+
     def test_int(self):
         self.assertEquals(nodes.etype_from_pyobj(0), 'Int')
         self.assertEquals(nodes.etype_from_pyobj(1L), 'Int')
@@ -452,7 +458,7 @@ class NodesTest(TestCase):
     # sub-queries tests #######################################################
     
     def test_subq_colalias_compat(self):
-        tree = parse('Any X ORDERBY N WHERE X creation_date <NOW WITH X,N BEING ('
+        tree = sparse('Any X ORDERBY N WHERE X creation_date <NOW WITH X,N BEING ('
                      '(Any X,N WHERE X firstname N) UNION (Any X,N WHERE X name N, X is Company))')
         select = tree.children[0]
         select.save_state()
@@ -463,13 +469,13 @@ class NodesTest(TestCase):
         self.assertEquals(len(X.references()), 3)
         self.assertEquals(len(N.references()), 2)
         tree.schema = schema
-        annotator.annotate(tree)
+        #annotator.annotate(tree)
         # XXX how to choose
         self.assertEquals(X.get_type(), 'Company')
         self.assertEquals(X.get_type({'X': 'Personne'}), 'Personne')
         #self.assertEquals(N.get_type(), 'String')
-        self.assertEquals(X.get_description(), 'Company')
-        self.assertEquals(N.get_description(), 'firstname') # XXX how to choose 
+        self.assertEquals(X.get_description(0, lambda x:x), 'Company, Person, Student')
+        self.assertEquals(N.get_description(0, lambda x:x), 'firstname, name')
         self.assertEquals(X.selected_index(), 0)
         self.assertEquals(N.selected_index(), None)
         self.assertEquals(X.main_relation(), None)
@@ -477,10 +483,9 @@ class NodesTest(TestCase):
     # non regression tests ####################################################
     
     def test_get_description_and_get_type(self):
-        tree = parse("Any N,COUNT(X),NOW-D GROUPBY N WHERE X name N, X creation_date D;")
+        tree = sparse("Any N,COUNT(X),NOW-D GROUPBY N WHERE X name N, X creation_date D;")
         tree.schema = schema
-        annotator.annotate(tree)
-        self.assertEqual(tree.get_description(), [['name', 'COUNT(Any)', 'creation_date']])
+        self.assertEqual(tree.get_description(), [['name', 'COUNT(Company, Person, Student)', 'creation_date']])
         select = tree.children[0]
         self.assertEqual(select.selection[0].get_type(), 'Any')
         self.assertEqual(select.selection[1].get_type(), 'Int')
@@ -488,17 +493,23 @@ class NodesTest(TestCase):
         self.assertEqual(select.selection[2].get_type({'D': 'Datetime'}), 'Interval')
 
     def test_get_description_simplified(self):
-        helper = RQLHelper(DummySchema(), None, {'eid': 'uid'})
-        tree = helper.parse('Any X,R,D WHERE X eid 2, X work_for R, R creation_date D')        
-        select = tree.children[0]
-        self.assertEqual(tree.get_description(), [['work_for', 'work_for', 'creation_date']])
+        tree = sparse('Any X,R,D WHERE X eid 2, X work_for R, R creation_date D')
+        self.assertEqual(tree.get_description(), [['work_for', 'work_for_object', 'creation_date']])
         helper.simplify(tree)
-        # None since const.uid_type is used while solutions have not been computed
-        self.assertEqual(tree.get_description(), [[None, 'work_for', 'creation_date']])
-        
+        # Any since const.uid_type is used while solutions have not been computed
+        self.assertEqual(tree.get_description(), [['Any', 'work_for_object', 'creation_date']])
+
     def test_repr_encoding(self):
         tree = parse(u'Any N where NOT N has_text "bidüle"')
         repr(tree)
+
+    def test_get_description_mainvar_objrel(self):
+        tree = sparse('Any X,R,D,Y WHERE X work_for R, R creation_date D, Y owned_by X')
+        self.assertEqual(tree.get_description(0), [['Person', 'work_for', 'creation_date', 'owned_by_object']])
+
+    def test_get_description_mainvar_symrel(self):
+        tree = sparse('Any X,R,D,Y WHERE X work_for R, R creation_date D, Y connait X')
+        self.assertEqual(tree.get_description(0), [['Person, Student', 'work_for', 'creation_date', 'connait']])
 
 
 class GetNodesFunctionTest(TestCase):

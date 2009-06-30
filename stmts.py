@@ -225,8 +225,18 @@ class Union(Statement, Node):
             return self
         return self.parent.root
 
-    def get_description(self):
-        return [c.get_description() for c in self.children]
+    def get_description(self, mainindex=None, tr=None):
+        """
+        `mainindex`:
+          selection index to consider as main column, useful to get smarter
+          results
+        `tr`:
+          optional translation function taking a string as argument and
+          returning a string
+        """
+        if tr is None:
+            tr = lambda x: x
+        return [c.get_description(mainindex, tr) for c in self.children]
 
     # repr / as_string / copy #################################################
 
@@ -369,16 +379,18 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         """return the root node of the tree"""
         return self.parent
 
-    def get_description(self):
+    def get_description(self, mainindex, tr):
         """return the list of types or relations (if not found) associated to
-        selected variables
+        selected variables.
+        mainindex is an optional selection index which should be considered has
+        'pivot' entity.
         """
         descr = []
         for term in self.selection:
             try:
-                descr.append(term.get_description())
+                descr.append(term.get_description(mainindex, tr) or tr('Any'))
             except CoercionError:
-                descr.append('Any')
+                descr.append(tr('Any'))
         return descr
 
     @property
