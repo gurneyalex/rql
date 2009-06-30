@@ -1,7 +1,7 @@
 """Base classes for RQL syntax tree nodes.
 
 Note: this module uses __slots__ to limit memory usage.
-      
+
 :copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 :license: General Public License version 2 - http://www.gnu.org/licenses
@@ -10,7 +10,7 @@ __docformat__ = "restructuredtext en"
 
 class BaseNode(object):
     __slots__ = ('parent',)
-    
+
     def __str__(self):
         return self.as_string(encoding='utf-8')
 
@@ -25,24 +25,24 @@ class BaseNode(object):
         copy/pickle
         """
         return ()
-    
+
     @property
     def root(self):
         """Return the root node of the tree"""
         return self.parent.root
-    
+
     @property
     def stmt(self):
         """Return the Select node to which this node belong"""
         return self.parent.stmt
-    
+
     @property
     def scope(self):
         """Return the scope node to which this node belong (eg Select or Exists
         node)
         """
         return self.parent.scope
-    
+
     @property
     def sqlscope(self):
         """Return the SQL scope node to which this node belong (eg Select,
@@ -94,10 +94,10 @@ class BaseNode(object):
             except IndexError:
                 return False
         return True
-    
+
     def index_path(self):
         if self.parent is None:
-            return [] 
+            return []
         myindex = self.parent.children.index(self)
         parentindexpath = self.parent.index_path()
         parentindexpath.append(myindex)
@@ -107,7 +107,7 @@ class BaseNode(object):
         if not path:
             return self
         return self.children[path[0]].go_to_index_path(path[1:])
-    
+
     def copy(self, stmt):
         """Create and return a copy of this node and its descendant.
 
@@ -118,15 +118,15 @@ class BaseNode(object):
             new.append(child.copy(stmt))
         return new
 
-        
+
 class Node(BaseNode):
     """Class for nodes of the tree which may have children (almost all...)"""
     __slots__ = ('children',)
-    
+
     def __init__(self) :
         self.parent = None
         self.children = []
-    
+
     def append(self, child):
         """add a node to children"""
         self.children.append(child)
@@ -141,7 +141,7 @@ class Node(BaseNode):
         """insert a child node"""
         self.children.insert(index, child)
         child.parent = self
-        
+
     def replace(self, old_child, new_child):
         """replace a child node with another"""
         i = self.children.index(old_child)
@@ -152,14 +152,14 @@ class Node(BaseNode):
 
 class BinaryNode(Node):
     __slots__ = ()
-    
+
     def __init__(self, lhs=None, rhs=None):
         Node.__init__(self)
         if not lhs is None:
             self.append(lhs)
         if not rhs is None:
             self.append(rhs)
-            
+
     def remove(self, child):
         """Remove the child and replace this node with the other child."""
         self.children.remove(child)
@@ -177,11 +177,11 @@ class LeafNode(BaseNode):
     @property
     def children(self):
         return ()
-    
+
     def copy(self, stmt):
         """Create and return a copy of this node and its descendant.
 
         stmt is the root node, which should be use to get new variables.
         """
         return self.__class__(*self.initargs(stmt))
-    
+

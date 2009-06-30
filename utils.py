@@ -1,6 +1,6 @@
 """Miscellaneous utilities for RQL.
 
-:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 :license: General Public License version 2 - http://www.gnu.org/licenses
 """
@@ -16,7 +16,7 @@ def decompose_b26(index, table=UPPERCASE):
 
 class rqlvar_maker(object):
     """Yields consistent RQL variable names.
-    
+
     :param stop: optional argument to stop iteration after the Nth variable
                  default is None which means 'never stop'
     :param defined: optional dict of already defined vars
@@ -28,10 +28,10 @@ class rqlvar_maker(object):
         self.stop = stop
         self.defined = defined
         self.aliases = aliases
-        
+
     def __iter__(self):
         return self
-    
+
     def next(self):
         while self.stop is None or self.index < self.stop:
             var = decompose_b26(self.index)
@@ -42,7 +42,7 @@ class rqlvar_maker(object):
                 continue
             return var
         raise StopIteration()
-    
+
 KEYWORDS = set(('INSERT', 'SET', 'DELETE',
                 'UNION', 'WITH', 'BEING',
                 'WHERE', 'AND', 'OR', 'NOT'
@@ -50,7 +50,7 @@ KEYWORDS = set(('INSERT', 'SET', 'DELETE',
                 'TRUE', 'FALSE', 'NULL', 'TODAY',
                 'GROUPBY', 'HAVING', 'ORDERBY', 'ASC', 'DESC',
                 'LIMIT', 'OFFSET'))
-    
+
 
 from logilab.common.adbh import _GenericAdvFuncHelper, FunctionDescr, \
     auto_register_function
@@ -68,7 +68,7 @@ def iter_funcnode_variables(funcnode):
         try:
             yield term.variable.stinfo['attrvar'] or term
         except AttributeError, ex:
-            yield term    
+            yield term
 
 def is_keyword(word):
     """Return true if the given word is a RQL keyword."""
@@ -92,7 +92,7 @@ def common_parent(node1, node2):
             return node2
         node2 = node2.parent
     raise Exception('DUH!')
-    
+
 FUNCTIONS = _GenericAdvFuncHelper.FUNCTIONS.copy()
 
 def register_function(funcdef):
@@ -102,7 +102,7 @@ def register_function(funcdef):
            '%s is already registered' % funcdef.name
     FUNCTIONS[funcdef.name] = funcdef
     auto_register_function(funcdef)
-    
+
 def function_description(funcname):
     """Return the description (`FunctionDescription`) for a RQL function."""
     return FUNCTIONS[funcname.upper()]
@@ -129,18 +129,18 @@ def uquote(value):
 
 # Visitor #####################################################################
 
-_accept = 'lambda self, visitor, *args, **kwargs: visitor.visit_%s(self, *args, **kwargs)' 
-_leave = 'lambda self, visitor, *args, **kwargs: visitor.leave_%s(self, *args, **kwargs)' 
+_accept = 'lambda self, visitor, *args, **kwargs: visitor.visit_%s(self, *args, **kwargs)'
+_leave = 'lambda self, visitor, *args, **kwargs: visitor.leave_%s(self, *args, **kwargs)'
 def build_visitor_stub(classes):
     for cls in classes:
         cls.accept = eval(_accept % (cls.__name__.lower()))
-        cls.leave = eval(_leave % (cls.__name__.lower()))        
+        cls.leave = eval(_leave % (cls.__name__.lower()))
 
 class RQLVisitorHandler(object):
     """Handler providing a dummy implementation of all callbacks necessary
     to visit a RQL syntax tree.
     """
-    
+
     def visit_union(self, union):
         pass
     def visit_insert(self, insert):
@@ -149,16 +149,16 @@ class RQLVisitorHandler(object):
         pass
     def visit_set(self, update):
         pass
-    
+
     def visit_select(self, selection):
         pass
     def visit_sortterm(self, sortterm):
         pass
-    
+
     def visit_and(self, et):
         pass
     def visit_or(self, ou):
-        pass        
+        pass
     def visit_not(self, not_):
         pass
     def visit_relation(self, relation):

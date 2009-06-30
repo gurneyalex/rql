@@ -1,6 +1,6 @@
 """RQL Syntax tree annotator.
 
-:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 :license: General Public License version 2 - http://www.gnu.org/licenses
 """
@@ -28,7 +28,7 @@ class GoTo(Exception):
     """Exception used to control the visit of the tree."""
     def __init__(self, node):
         self.node = node
-        
+
 
 class RQLSTChecker(object):
     """Check a RQL syntax tree for errors not detected on parsing.
@@ -36,7 +36,7 @@ class RQLSTChecker(object):
     Some simple rewriting of the tree may be done too:
     * if a OR is used on a symetric relation
     * IN function with a single child
-    
+
     use assertions for internal error but specific `BadRQLQuery` exception for
     errors due to a bad rql input
     """
@@ -54,7 +54,7 @@ class RQLSTChecker(object):
         #    result = []
         #    for term in node.selected_terms():
         #        result.append(term.eval(kwargs))
-            
+
     def _visit(self, node, errors):
         try:
             node.accept(self, errors)
@@ -64,13 +64,13 @@ class RQLSTChecker(object):
             for c in node.children:
                 self._visit(c, errors)
             node.leave(self, errors)
-            
+
     def _visit_selectedterm(self, node, errors):
         for i, term in enumerate(node.selection):
             # selected terms are not included by the default visit,
             # accept manually each of them
             self._visit(term, errors)
-                    
+
     def _check_selected(self, term, termtype, errors):
         """check that variables referenced in the given term are selected"""
         for vref in variable_refs(term):
@@ -82,7 +82,7 @@ class RQLSTChecker(object):
             else:
                 msg = 'variable %s used in %s is not referenced by any relation'
                 errors.append(msg % (vref.name, termtype))
-                
+
     # statement nodes #########################################################
 
     def visit_union(self, node, errors):
@@ -90,15 +90,15 @@ class RQLSTChecker(object):
         for select in node.children[1:]:
             if not len(select.selection) == nbselected:
                 errors.append('when using union, all subqueries should have '
-                              'the same number of selected terms')            
+                              'the same number of selected terms')
     def leave_union(self, node, errors):
         pass
-    
+
     def visit_select(self, node, errors):
         node.vargraph = {} # graph representing links between variable
         node.aggregated = set()
         self._visit_selectedterm(node, errors)
-        
+
     def leave_select(self, node, errors):
         selected = node.selection
         # check selected variable are used in restriction
@@ -153,7 +153,7 @@ class RQLSTChecker(object):
                     return False
             fromvar = tovar
         return True
-        
+
 
     def visit_insert(self, insert, errors):
         self._visit_selectedterm(insert, errors)
@@ -164,28 +164,28 @@ class RQLSTChecker(object):
         self._visit_selectedterm(delete, errors)
     def leave_delete(self, node, errors):
         pass
-        
+
     def visit_set(self, update, errors):
         self._visit_selectedterm(update, errors)
     def leave_set(self, node, errors):
-        pass                
+        pass
 
     # tree nodes ##############################################################
-    
+
     def visit_exists(self, node, errors):
         pass
     def leave_exists(self, node, errors):
         pass
-    
+
     def visit_subquery(self, node, errors):
         pass
-    
+
     def leave_subquery(self, node, errors):
         # copy graph information we're interested in
         pgraph = node.parent.vargraph
         for select in node.query.children:
             # map subquery variable names to outer query variable names
-            trmap = {} 
+            trmap = {}
             for i, vref in enumerate(node.aliases):
                 subvref = select.selection[i]
                 if isinstance(subvref, VariableRef):
@@ -204,7 +204,7 @@ class RQLSTChecker(object):
                 else:
                     values = pgraph.setdefault(_var_graphid(key, trmap, select), [])
                     values += [_var_graphid(v, trmap, select) for v in val]
-    
+
     def visit_sortterm(self, sortterm, errors):
         term = sortterm.term
         if isinstance(term, Constant):
@@ -220,15 +220,15 @@ class RQLSTChecker(object):
                 else:
                     msg = 'sort variable %s is not referenced any where else'
                     errors.append(msg % tvref.name)
-                    
+
     def leave_sortterm(self, node, errors):
         pass
-    
+
     def visit_and(self, et, errors):
         assert len(et.children) == 2, len(et.children)
     def leave_and(self, node, errors):
         pass
-        
+
     def visit_or(self, ou, errors):
         assert len(ou.children) == 2, len(ou.children)
         # simplify Ored expression of a symetric relation
@@ -257,7 +257,7 @@ class RQLSTChecker(object):
         pass
     def leave_not(self, not_, errors):
         pass
-    
+
     def visit_relation(self, relation, errors):
         if relation.optional and relation.neged():
                 errors.append("can use optional relation under NOT (%s)"
@@ -287,22 +287,22 @@ class RQLSTChecker(object):
             vargraph.setdefault(lhsvarname, []).append(rhsvarname)
             vargraph.setdefault(rhsvarname, []).append(lhsvarname)
             vargraph[(lhsvarname, rhsvarname)] = relation.r_type
-        
+
     def leave_relation(self, relation, errors):
         pass
         #assert isinstance(lhs, VariableRef), '%s: %s' % (lhs.__class__,
         #                                                       relation)
-        
+
     def visit_comparison(self, comparison, errors):
         assert len(comparison.children) in (1,2), len(comparison.children)
     def leave_comparison(self, node, errors):
         pass
-    
+
     def visit_mathexpression(self, mathexpr, errors):
         assert len(mathexpr.children) == 2, len(mathexpr.children)
     def leave_mathexpression(self, node, errors):
         pass
-        
+
     def visit_function(self, function, errors):
         try:
             funcdescr = function_description(function.name)
@@ -346,15 +346,15 @@ class RQLSTChecker(object):
                 errors.append(msg)
             if not constant.value in self.schema:
                 errors.append('unknown entity type %s' % constant.value)
-                
+
     def leave_constant(self, node, errors):
-        pass 
+        pass
 
 
-            
+
 class RQLSTAnnotator(object):
     """Annotate RQL syntax tree to ease further code generation from it.
-    
+
     If an optional variable is shared among multiple scopes, it's rewritten to
     use identity relation.
     """
@@ -367,7 +367,7 @@ class RQLSTAnnotator(object):
         #assert not node.annotated
         node.accept(self)
         node.annotated = True
-        
+
     def _visit_stmt(self, node):
         for var in node.defined_vars.itervalues():
             var.prepare_annotation()
@@ -385,11 +385,11 @@ class RQLSTAnnotator(object):
             node.where.accept(self, node, node)
 
     visit_insert = visit_delete = visit_set = _visit_stmt
-    
+
     def visit_union(self, node):
         for select in node.children:
             self.visit_select(select)
-            
+
     def visit_select(self, node):
         for var in node.aliases.itervalues():
             var.prepare_annotation()
@@ -407,7 +407,7 @@ class RQLSTAnnotator(object):
         for var in node.defined_vars.itervalues():
             if not var.stinfo['relations'] and var.stinfo['typerels'] and not var.stinfo['selected']:
                 raise BadRQLQuery('unbound variable %s (%s)' % (var.name, var.stmt.root))
-            
+
     def rewrite_shared_optional(self, exists, var):
         """if variable is shared across multiple scopes, need some tree
         rewriting
@@ -458,18 +458,18 @@ class RQLSTAnnotator(object):
         return None
 
     # tree nodes ##############################################################
-    
+
     def visit_exists(self, node, scope, sqlscope):
         node.children[0].accept(self, node, node)
-        
+
     def visit_not(self, node, scope, sqlscope):
         node.children[0].accept(self, scope, node)
-        
+
     def visit_and(self, node, scope, sqlscope):
         node.children[0].accept(self, scope, sqlscope)
         node.children[1].accept(self, scope, sqlscope)
     visit_or = visit_and
-        
+
     def visit_relation(self, relation, scope, sqlscope):
         assert relation.parent, repr(relation)
         lhs, rhs = relation.get_parts()
@@ -548,4 +548,4 @@ def update_attrvars(var, relation, lhs):
     # "main" attribute variable
     if var.stinfo['attrvar'] is None or not isinstance(relation.scope, Exists):
         var.stinfo['attrvar'] = lhsvar or lhs
-    
+

@@ -106,11 +106,11 @@ parser Hercule:
 
 # Grammar entry ###############################################################
 
-        
+
 rule goal: DELETE _delete<<Delete()>> ';'             {{ return _delete }}
 
          | INSERT _insert<<Insert()>> ';'             {{ return _insert }}
- 
+
          | SET update<<Set()>> ';'                    {{ return update }}
 
          | union<<Union()>> ';'                       {{ return union }}
@@ -125,7 +125,7 @@ rule _delete<<R>>: decl_rels<<R>> where<<R>> {{ return R }}
 # Insertion  ##################################################################
 
 rule _insert<<R>>: decl_vars<<R>> insert_rels<<R>> {{ return R }}
-                    
+
 
 rule insert_rels<<R>>: ":" decl_rels<<R>> where<<R>> {{ return R }}
 
@@ -143,13 +143,13 @@ rule union<<R>>: select<<Select()>>               {{ R.append(select); return R 
 
                | r"\(" select<<Select()>> r"\)"   {{ R.append(select) }}
                  ( UNION
-                   r"\(" select<<Select()>> r"\)" {{ R.append(select) }} 
+                   r"\(" select<<Select()>> r"\)" {{ R.append(select) }}
                  )*                               {{ return R }}
 
 rule select<<S>>: DISTINCT select_<<S>>  {{ S.distinct = True ; return S }}
                  | select_<<S>>          {{ return S }}
 
-rule select_<<S>>: E_TYPE selection<<S>> 
+rule select_<<S>>: E_TYPE selection<<S>>
                    groupby<<S>>
                    orderby<<S>>
                    limit_offset<<S>>
@@ -157,12 +157,12 @@ rule select_<<S>>: E_TYPE selection<<S>>
                    having<<S>>
                    with_<<S>>
                    dgroupby<<S>>
-                   dorderby<<S>>      
+                   dorderby<<S>>
                    dlimit_offset<<S>>    {{ S.set_statement_type(E_TYPE); return S }}
-        
+
 rule selection<<S>>: expr_add<<S>>        {{ S.append_selected(expr_add) }}
                      (  ',' expr_add<<S>> {{ S.append_selected(expr_add) }}
-                     )*                  
+                     )*
 
 
 
@@ -175,13 +175,13 @@ rule dlimit_offset<<S>>: limit_offset<<S>> {{ if limit_offset: warn('LIMIT/OFFSE
 
 rule groupby<<S>>: GROUPBY variables<<S>> {{ S.set_groupby(variables); return True }}
                  |
-            
+
 rule having<<S>>: HAVING               {{ nodes = [] }}
                    expr_cmp<<S>>       {{ nodes.append(expr_cmp) }}
                    ( ',' expr_cmp<<S>> {{ nodes.append(expr_cmp) }}
                    )*                  {{ S.set_having(nodes) }}
                 |
-        
+
 rule orderby<<S>>: ORDERBY              {{ nodes = [] }}
                    sort_term<<S>>       {{ nodes.append(sort_term) }}
                    ( ',' sort_term<<S>> {{ nodes.append(sort_term) }}
@@ -193,15 +193,15 @@ rule with_<<S>>: WITH                {{ nodes = [] }}
                  ( ',' subquery<<S>> {{ nodes.append(subquery) }}
                  )*                  {{ S.set_with(nodes) }}
                |
-        
+
 rule subquery<<S>>: variables<<S>>                     {{ node = SubQuery() ; node.set_aliases(variables) }}
                     BEING r"\(" union<<Union()>> r"\)" {{ node.set_query(union); return node }}
 
-        
+
 rule expr_cmp<<S>>: expr_add<<S>>  {{ c1 = expr_add }}
                     CMP_OP         {{ cmp = Comparison(CMP_OP.upper(), c1) }}
                     expr_add<<S>>  {{ cmp.append(expr_add); return cmp }}
-        
+
 
 rule sort_term<<S>>: expr_add<<S>> sort_meth {{ return SortTerm(expr_add, sort_meth) }}
 
@@ -216,27 +216,27 @@ rule sort_meth: SORT_DESC {{ return 0 }}
 # Limit and offset ############################################################
 
 rule limit_offset<<R>> :  limit<<R>> offset<<R>> {{ return limit or offset }}
-		  
-rule limit<<R>> : LIMIT INT {{ R.set_limit(int(INT)); return True }} 
+
+rule limit<<R>> : LIMIT INT {{ R.set_limit(int(INT)); return True }}
                 |
 
 rule offset<<R>> : OFFSET INT {{ R.set_offset(int(INT)); return True }}
-  		         | 
+  		         |
 
 
 # Restriction statements ######################################################
 
 rule where<<S>>: WHERE restriction<<S>> {{ S.set_where(restriction) }}
-               | 
+               |
 
 rule restriction<<S>>: rels_or<<S>>       {{ node = rels_or }}
                        ( ',' rels_or<<S>> {{ node = And(node, rels_or) }}
                        )*                 {{ return node }}
-        
+
 rule rels_or<<S>>: rels_and<<S>>      {{ node = rels_and }}
                    ( OR rels_and<<S>> {{ node = Or(node, rels_and) }}
                    )*                 {{ return node }}
-        
+
 rule rels_and<<S>>: rels_not<<S>>        {{ node = rels_not }}
                     (  AND rels_not<<S>> {{ node = And(node, rels_not) }}
                     )*                   {{ return node }}
@@ -248,24 +248,24 @@ rule rel<<S>>: rel_base<<S>>                {{ return rel_base }}
              | r"\(" restriction<<S>> r"\)" {{ return restriction }}
 
 
-rule rel_base<<S>>: var<<S>> opt_left<<S>> rtype        {{ rtype.append(var) ; rtype.set_optional(opt_left) }} 
+rule rel_base<<S>>: var<<S>> opt_left<<S>> rtype        {{ rtype.append(var) ; rtype.set_optional(opt_left) }}
                     expr<<S>> opt_right<<S>>            {{ rtype.append(expr) ; rtype.set_optional(opt_right) ; return rtype }}
                   | EXISTS r"\(" restriction<<S>> r"\)" {{ return Exists(restriction) }}
-               
+
 rule rtype: R_TYPE {{ return Relation(R_TYPE) }}
 
 rule opt_left<<S>>: QMARK  {{ return 'left' }}
-                  | 
+                  |
 rule opt_right<<S>>: QMARK  {{ return 'right' }}
-                   | 
-                    
+                   |
+
 # common statements ###########################################################
 
 rule variables<<S>>:                   {{ vars = [] }}
                        var<<S>>        {{ vars.append(var) }}
                        (  ',' var<<S>> {{ vars.append(var) }}
                        )*              {{ return vars }}
-        
+
 rule decl_vars<<R>>: E_TYPE var<<R>> (     {{ R.add_main_variable(E_TYPE, var) }}
                      ',' E_TYPE var<<R>>)* {{ R.add_main_variable(E_TYPE, var) }}
 
@@ -274,7 +274,7 @@ rule decl_rels<<R>>: simple_rel<<R>> (     {{ R.add_main_relation(simple_rel) }}
                      ',' simple_rel<<R>>)* {{ R.add_main_relation(simple_rel) }}
 
 
-rule simple_rel<<R>>: var<<R>> R_TYPE  {{ e = Relation(R_TYPE) ; e.append(var) }} 
+rule simple_rel<<R>>: var<<R>> R_TYPE  {{ e = Relation(R_TYPE) ; e.append(var) }}
                       expr_add<<R>>    {{ e.append(Comparison('=', expr_add)) ; return e }}
 
 
@@ -294,23 +294,23 @@ rule expr_mul<<S>>: expr_base<<S>>          {{ node = expr_base }}
 
 
 rule expr_base<<S>>: const                     {{ return const }}
-                   | var<<S>>                  {{ return var }} 
-                   | etype<<S>>                {{ return etype }} 
+                   | var<<S>>                  {{ return var }}
+                   | etype<<S>>                {{ return etype }}
                    | func<<S>>                 {{ return func }}
                    | r"\(" expr_add<<S>> r"\)" {{ return expr_add }}
 
 
 rule func<<S>>: FUNCTION r"\("        {{ F = Function(FUNCTION) }}
                    ( expr_add<<S>> (     {{ F.append(expr_add) }}
-                      ',' expr_add<<S>>       
+                      ',' expr_add<<S>>
                      )*                  {{ F.append(expr_add) }}
                    )?
-                r"\)"                 {{ return F }} 
+                r"\)"                 {{ return F }}
 
 
 rule var<<S>>: VARIABLE {{ return VariableRef(S.get_variable(VARIABLE)) }}
-        
-rule etype<<S>>: E_TYPE {{ return S.get_etype(E_TYPE) }} 
+
+rule etype<<S>>: E_TYPE {{ return S.get_etype(E_TYPE) }}
 
 
 rule const: NULL       {{ return Constant(None, None) }}
@@ -322,4 +322,4 @@ rule const: NULL       {{ return Constant(None, None) }}
           | INT        {{ return Constant(int(INT), 'Int') }}
           | STRING     {{ return Constant(unquote(STRING), 'String') }}
           | SUBSTITUTE {{ return Constant(SUBSTITUTE[2:-2], 'Substitute') }}
-                       
+

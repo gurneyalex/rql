@@ -9,13 +9,13 @@ class ERSchema(object):
     def __cmp__(self, other):
         other = getattr(other, 'type', other)
         return cmp(self.type, other)
-            
+
     def __hash__(self):
         return hash(self.type)
-    
+
     def __str__(self):
         return self.type
-    
+
 
 class RelationSchema(ERSchema):
     def __init__(self, assoc_types, symetric=False, card=None):
@@ -37,13 +37,13 @@ class RelationSchema(ERSchema):
             else:
                 card = '**'
         self.card = card
-        
+
     def associations(self):
         return self.assoc_types
-    
+
     def subjects(self, etype=None):
         return self.subj_types
-    
+
     def objects(self, etype=None):
         return self.obj_types
 
@@ -58,7 +58,7 @@ class RelationSchema(ERSchema):
     def rproperty(self, subj, obj, rprop):
         assert rprop == 'cardinality'
         return self.card
-    
+
 class EntitySchema(ERSchema):
     def __init__(self, type, specialized_by=None):
         self.type = type
@@ -66,16 +66,16 @@ class EntitySchema(ERSchema):
 
     def is_final(self):
         return self.type in FINAL_ETYPES
-    
+
     def specialized_by(self):
         return self._specialized_by
-    
+
 class DummySchema(object):
 
     def __init__(self):
         self._types = {}
-        for etype in ['String', 'Boolean', 'Int', 'Float', 'Date',
-                     'Eetype', 'Person', 'Company', 'Address', 'Student']:
+        for etype in ['String', 'Boolean', 'Int', 'Float', 'Date', 'Datetime',
+                      'Eetype', 'Person', 'Company', 'Address', 'Student']:
             self._types[etype] = EntitySchema(etype)
         self._types['Person']._specialized_by = [self._types['Student']]
         self._relations  = {
@@ -150,27 +150,27 @@ class DummySchema(object):
             }
         for rtype, rschema in self._relations.iteritems():
             rschema.type = rtype
-            
+
     def entities(self):
         return self._types.values()
-        
+
     def relations(self):
         return self._relations.keys()
 
     def has_entity(self, e_type):
         return self._types.has_key(e_type)
-    
+
     def has_relation(self, r_type):
         return self._relations.has_key(r_type)
-    
+
     def __contains__(self, ertype):
         return self.has_entity(ertype) or self.has_relation(ertype)
-    
+
     def rschema(self, r_type):
         return self._relations[r_type]
     def eschema(self, e_type):
         return self._types[e_type]
-        
+
 UNRESOLVABLE_QUERIES = (
     'Person X WHERE Y work_for X',
     'Person X WHERE X work_for Y, Y is Address',
@@ -188,7 +188,7 @@ class AnalyzerClassTest(TestCase):
     eids = {10: 'Eetype'}
     def _type_from_eid(self, eid):
         return self.eids.get(eid, 'Person')
-    
+
     def setUp(self):
         self.helper = RQLHelper(DummySchema(), {'eid': self._type_from_eid})
 
@@ -199,7 +199,7 @@ class AnalyzerClassTest(TestCase):
             node = self.helper.parse(rql)
             self.assertRaises(TypeResolverException,
                               self.helper.compute_solutions, node, debug=DEBUG)
-        
+
     def test_base_1(self):
         node = self.helper.parse('Any X')
         self.helper.compute_solutions(node, debug=DEBUG)
@@ -209,7 +209,7 @@ class AnalyzerClassTest(TestCase):
                                 {'X': 'Eetype'},
                                 {'X': 'Person'},
                                 {'X': 'Student'}])
-        
+
     def test_base_2(self):
         node = self.helper.parse('Person X')
         # check constant type of the is relation inserted
@@ -218,7 +218,7 @@ class AnalyzerClassTest(TestCase):
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = node.children[0].solutions
         self.assertEqual(sols, [{'X': 'Person'}])
-        
+
     def test_base_3(self):
         node = self.helper.parse('Any X WHERE X eid 1')
         self.helper.compute_solutions(node, debug=DEBUG)
@@ -228,19 +228,19 @@ class AnalyzerClassTest(TestCase):
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = node.children[0].solutions
         self.assertEqual(sols, [{}])
-    
+
     def test_base_guess_1(self):
         node = self.helper.parse('Person X WHERE X work_for Y')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
         self.assertEqual(sols, [{'X': 'Person', 'Y': 'Company'}])
-    
+
     def test_base_guess_2(self):
         node = self.helper.parse('Any X WHERE X name "Logilab"')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
         self.assertEqual(sols, [{'X': 'Company'}, {'X': 'Person'}, {'X': 'Student'}])
-        
+
     def test_is_instance_of_1(self):
         node = self.helper.parse('Any X WHERE X is_instance_of Person')
         # check constant type of the is relation inserted
@@ -249,7 +249,7 @@ class AnalyzerClassTest(TestCase):
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = node.children[0].solutions
         self.assertEqual(sols, [{'X': 'Person'}, {'X': 'Student'}])
-    
+
     def test_is_instance_of_2(self):
         node = self.helper.parse('Any X WHERE X is_instance_of Student')
         # check constant type of the is relation inserted
@@ -258,7 +258,7 @@ class AnalyzerClassTest(TestCase):
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = node.children[0].solutions
         self.assertEqual(sols, [{'X': 'Student'}])
-    
+
     def test_is_query(self):
         node = self.helper.parse('Any T WHERE X name "logilab", X is T')
         self.helper.compute_solutions(node, debug=DEBUG)
@@ -326,8 +326,8 @@ class AnalyzerClassTest(TestCase):
                             debug=DEBUG)
         sols = sorted(node.children[0].solutions)
         self.assertEquals(sols, ALL_SOLS)
-        
-        
+
+
     def test_base_guess_3(self):
         node = self.helper.parse('Any Z GROUPBY Z WHERE X name Z')
         self.helper.compute_solutions(node, debug=DEBUG)
@@ -351,7 +351,7 @@ class AnalyzerClassTest(TestCase):
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
         self.assertEqual(sols, [{'E1': 'Company'}])
-        
+
         node = self.helper.parse('Any E1 WHERE E2 work_for E1, E2 eid 2')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
@@ -360,7 +360,7 @@ class AnalyzerClassTest(TestCase):
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
         self.assertEqual(sols, [{'E1': 'Company'}])
-        
+
     def test_not_symetric_relation_eid(self):
         node = self.helper.parse('Any P WHERE X eid 0, NOT X connait P')
         self.helper.compute_solutions(node, debug=DEBUG)
@@ -371,7 +371,7 @@ class AnalyzerClassTest(TestCase):
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
         self.assertEqual(sols, [{'P': 'Person'}, {'P': 'Student'}])
-        
+
     def test_union(self):
         node = self.helper.parse('(Any P WHERE X eid 0, X is Person, NOT X connait P) UNION (Any E1 WHERE E2 work_for E1, E2 eid 2)')
         self.helper.compute_solutions(node, debug=DEBUG)
@@ -385,7 +385,7 @@ class AnalyzerClassTest(TestCase):
         self.assertEqual(sols, [{'P': 'Person'}, {'P': 'Student'}],)
         sols = sorted(node.children[1].solutions)
         self.assertEqual(sols, [{'E1': 'Company'}])
-        
+
     def test_exists(self):
         node = self.helper.parse("Any X WHERE X firstname 'lulu',"
                                  "EXISTS (X owned_by U, U name 'lulufanclub' OR U name 'managers');")
@@ -464,13 +464,13 @@ class AnalyzerClassTest(TestCase):
         self.assertEqual(sols, [{'P': 'Person', 'S': 'Company', 'N': 'Int'},
                                 {'P': 'Student', 'S': 'Company', 'N': 'Int'}])
 
-        
+
     def test_nongrer_not_u_ownedby_u(self):
         node = self.helper.parse('Any U WHERE NOT U owned_by U')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
         self.assertEqual(sols, [{'U': 'Person'}])
-        
+
 
 if __name__ == '__main__':
     unittest_main()

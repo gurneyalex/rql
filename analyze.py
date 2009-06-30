@@ -107,7 +107,7 @@ class GecodeCSPProblem(object):
 
     The internal representation is a tree builds with lists of lists
     the first item of the list is the node type (_AND,_OR,_EQ,_EQV)
-    
+
     an example : ["and", [ "eq",0,0 ], ["or", ["eq", 1, 1], ["eq", 1, 2] ] ]
 
     means Var(0) == Value(0) and ( Var(1)==Val(1) or Var(1) == Val(2)
@@ -155,7 +155,7 @@ class GecodeCSPProblem(object):
             val_value = self.values.setdefault( val, len(self.values) )
             domain.append( val_value )
         self.domains[name] = domain
-        
+
 
     def and_eq( self, var, value ):
         self.op.append( [_EQ, self.variables[var], self.values[value] ] )
@@ -215,14 +215,14 @@ else:
 
 class ETypeResolver(object):
     """Resolve variables types according to the schema.
-    
+
     CSP modelisation:
      * variable    <-> RQL variable
      * domains     <-> different entity's types defined in the schema
      * constraints <-> relations between (RQL) variables
     """
     var_solkey = 'possibletypes'
-    
+
     def __init__(self, schema, uid_func_mapping=None):
         """
         :Parameters:
@@ -241,14 +241,14 @@ class ETypeResolver(object):
         else:
             self.uid_func_mapping = uid_func_mapping
             self.uid_func = uid_func_mapping.values()[0]
-            
+
     def set_schema(self, schema):
         self.schema = schema
         # default domains for a variable
         self._base_domain = [str(etype) for etype in schema.entities()]
         self._nonfinal_domain = [str(etype) for etype in schema.entities()
                                  if not etype.is_final()]
-        
+
     def solve(self, node, constraints):
         # debug info
         if self.debug > 1:
@@ -309,7 +309,7 @@ class ETypeResolver(object):
             alltypes = get_target_types()
 
         constraints.var_has_types( var, [ str(t) for t in alltypes] )
-        
+
     def visit(self, node, uid_func_mapping=None, kwargs=None, debug=False):
         # FIXME: not thread safe
         self.debug = debug
@@ -319,7 +319,7 @@ class ETypeResolver(object):
             self.uid_func = uid_func_mapping.values()[0]
         self.kwargs = kwargs
         self._visit(node)
-        
+
     def visit_union(self, node):
         for select in node.children:
             self._visit(select)
@@ -341,9 +341,9 @@ class ETypeResolver(object):
         if node.where is not None:
             self._visit(node.where, constraints)
         self.solve(node, constraints)
-        
+
     visit_delete = visit_insert
-    
+
     def visit_set(self, node):
         if not node.defined_vars:
             node.set_possible_types([{}])
@@ -355,7 +355,7 @@ class ETypeResolver(object):
         if node.where is not None:
             self._visit(node.where, constraints)
         self.solve(node, constraints)
-        
+
     def visit_select(self, node):
         if not (node.defined_vars or node.aliases):
             node.set_possible_types([{}])
@@ -386,13 +386,12 @@ class ETypeResolver(object):
                          if not eschema.is_final()]
                 constraints.vars_have_types( varnames, types )
         self.solve(node, constraints)
-    
+
     def visit_relation(self, relation, constraints):
         """extract constraints for an relation according to it's  type"""
         if relation.is_types_restriction():
             self.visit_type_restriction(relation, constraints)
             return True
-        
         rtype = relation.r_type
         lhs, rhs = relation.get_parts()
         if rtype in self.uid_func_mapping:
@@ -406,7 +405,7 @@ class ETypeResolver(object):
                 return True
         if isinstance(rhs, nodes.Comparison):
             rhs = rhs.children[0]
-        
+
         rschema = self.schema.rschema(rtype)
         if isinstance(lhs, nodes.Constant): # lhs is a constant node (simplified tree)
             if not isinstance(rhs, nodes.VariableRef):
@@ -451,7 +450,7 @@ class ETypeResolver(object):
                     res.append(str(fromtype))
                 constraints.var_has_types( lhsvar, res )
         return True
-    
+
     def visit_type_restriction(self, relation, constraints):
         lhs, rhs = relation.get_parts()
         etypes = set(c.value for c in rhs.iget_nodes(nodes.Constant)
@@ -464,11 +463,11 @@ class ETypeResolver(object):
             etypes = frozenset(t for t in self._nonfinal_domain if not t in etypes)
 
         constraints.var_has_types( lhs.name, [ str(t) for t in etypes ] )
-       
+
     def visit_and(self, et, constraints):
         pass
     def visit_or(self, ou, constraints):
-        pass        
+        pass
     def visit_not(self, et, constraints):
         pass
     def visit_comparison(self, comparison, constraints):
@@ -496,7 +495,7 @@ class ETypeResolverIgnoreTypeRestriction(ETypeResolver):
 
     def visit_type_restriction(self, relation, constraints):
         pass
-    
+
     def visit_not(self, et, constraints):
         child = et.children[0]
         if isinstance(child, nodes.Relation) and \
