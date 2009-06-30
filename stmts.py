@@ -387,10 +387,11 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         """
         descr = []
         for term in self.selection:
+            # don't translate Any
             try:
-                descr.append(term.get_description(mainindex, tr) or tr('Any'))
+                descr.append(term.get_description(mainindex, tr) or 'Any')
             except CoercionError:
-                descr.append(tr('Any'))
+                descr.append('Any')
         return descr
 
     @property

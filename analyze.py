@@ -405,7 +405,6 @@ class ETypeResolver(object):
                 return True
         if isinstance(rhs, nodes.Comparison):
             rhs = rhs.children[0]
-
         rschema = self.schema.rschema(rtype)
         if isinstance(lhs, nodes.Constant): # lhs is a constant node (simplified tree)
             if not isinstance(rhs, nodes.VariableRef):
