@@ -85,7 +85,10 @@ class HSMixin(object):
             return None
 
     def get_description(self, mainindex, tr):
-        return tr(self.get_type())
+        mytype = self.get_type()
+        if mytype != 'Any':
+            return tr(mytype)
+        return 'Any'
 
 
 # rql st edition utilities ####################################################
@@ -568,9 +571,9 @@ class MathExpression(HSMixin, BinaryNode):
             return tr(self.get_type())
         except CoercionError:
             for vref in self.iget_nodes(VariableRef):
-                type = vref.get_description(mainindex, tr)
-                if type is not None :
-                    return type
+                vtype = vref.get_description(mainindex, tr)
+                if vtype != 'Any':
+                    return tr(vtype)
 
 
 class Function(HSMixin, Node):
@@ -963,7 +966,7 @@ class ColumnAlias(Referenceable):
                 if vtype is not None:
                     vtypes.add(vtype)
             if vtypes:
-                return ', '.join(sorted(tr(vtype) for vtype in vtypes))
+                return ', '.join(sorted(vtype for vtype in vtypes))
         return vtype
 
     # Variable compatibility
