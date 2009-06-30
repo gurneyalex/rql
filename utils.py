@@ -58,8 +58,8 @@ from logilab.common.adbh import _GenericAdvFuncHelper, FunctionDescr, \
 def st_description(cls, funcnode, mainindex, tr):
     return '%s(%s)' % (
         tr(cls.name),
-        ', '.join(child.get_description(mainindex, tr)
-                  for child in iter_funcnode_variables(funcnode)))
+        ', '.join(sorted(child.get_description(mainindex, tr)
+                         for child in iter_funcnode_variables(funcnode))))
 
 FunctionDescr.st_description = classmethod(st_description)
 
