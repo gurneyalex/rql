@@ -472,7 +472,7 @@ class NodesTest(TestCase):
         #annotator.annotate(tree)
         # XXX how to choose
         self.assertEquals(X.get_type(), 'Company')
-        self.assertEquals(X.get_type({'X': 'Personne'}), 'Personne')
+        self.assertEquals(X.get_type({'X': 'Person'}), 'Person')
         #self.assertEquals(N.get_type(), 'String')
         self.assertEquals(X.get_description(0, lambda x:x), 'Company, Person, Student')
         self.assertEquals(N.get_description(0, lambda x:x), 'firstname, name')
