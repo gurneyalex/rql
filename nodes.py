@@ -798,6 +798,11 @@ class Referenceable(object):
             'references': set(),
             }
 
+    def init_copy(self, old):
+        # should copy variable's possibletypes on copy
+        if not self.stinfo.get('possibletypes'):
+            self.stinfo['possibletypes'] = old.stinfo.get('possibletypes')
+
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         return self.name
@@ -969,10 +974,6 @@ class ColumnAlias(Referenceable):
                 return ', '.join(sorted(vtype for vtype in vtypes))
         return vtype
 
-    # Variable compatibility
-    def init_copy(self, old):
-        pass
-
     def set_scope(self, scopenode):
         pass
     def get_scope(self):
@@ -1026,11 +1027,6 @@ class Variable(Referenceable):
     def get_sqlscope(self):
         return self.stinfo['sqlscope']
     sqlscope = property(get_sqlscope, set_sqlscope)
-
-    def init_copy(self, old):
-        # should copy variable's possibletypes on copy
-        if not self.stinfo.get('possibletypes'):
-            self.stinfo['possibletypes'] = old.stinfo.get('possibletypes')
 
     def valuable_references(self):
         """return the number of "valuable" references :
