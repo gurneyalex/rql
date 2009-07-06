@@ -1,3 +1,9 @@
+rql (0.22.1-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Mon, 06 Jul 2009 15:19:25 +0200
+
 rql (0.22.0-2) unstable; urgency=low
 
   * replaced python-central with python-support 
