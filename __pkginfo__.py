@@ -8,7 +8,7 @@
 __docformat__ = "restructuredtext en"
 
 modname = "rql"
-numversion = (0, 22, 0)
+numversion = (0, 22, 1)
 version = '.'.join(str(num) for num in numversion)
 
 license = 'LCL'
@@ -39,5 +39,4 @@ include_dirs = []
 ext_modules = [ Extension('rql_solve',
                           ['gecode_solver.cpp'],
                           libraries=['gecodeint', 'gecodekernel', 'gecodesearch'],
-                          
                           ) ]
