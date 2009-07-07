@@ -11,19 +11,19 @@ modname = "rql"
 numversion = (0, 22, 1)
 version = '.'.join(str(num) for num in numversion)
 
-license = 'LCL'
+license = 'LGPL'
 copyright = '''Copyright (c) 2003-2009 LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr'''
 
 author = "Sylvain Thenault"
-author_email = "devel@logilab.fr"
+author_email = "contact@logilab.fr"
 
 short_desc = "relationship query language (RQL) utilities"
 long_desc = """A library providing the base utilities to handle RQL queries,
 such as a parser, a type inferencer.
 """
-web = "" #"http://www.logilab.org/projects/rql"
-#ftp = "ftp://ftp.logilab.org/pub/rql"
+web = "http://www.logilab.org/project/rql"
+ftp = "ftp://ftp.logilab.org/pub/rql"
 
 
 # debianize info
