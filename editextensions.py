@@ -18,7 +18,7 @@ def switch_selection(rqlst, new_var, old_var):
 def add_main_restriction(rqlst, new_type, r_type, direction):
     """The result_tree must represent the same restriction as 'rqlst' and :
        - 'new_varname' IS <new_type>
-       - 'old_main_var' <r_type> 'new_varname' 
+       - 'old_main_var' <r_type> 'new_varname'
     """
     new_var = rqlst.make_variable(new_type)
     # new_var IS new_type
@@ -41,7 +41,7 @@ def remove_has_text_relation(node):
         if rel.r_type == 'has_text':
             node.remove_node(rel)
             return
-        
+
 def get_vars_relations(node):
     """Return a dict with 'var_names' as keys, and the list of relations which
     concern them.

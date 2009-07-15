@@ -11,28 +11,28 @@ from rql.stmts import Select
 
 class SelectionManager(object):
     """Manage the operation stacks."""
-    
+
     def __init__(self, selection):
         self._selection = selection # The selection tree
         self.op_list = []           # The operations we'll have to undo
         self.state_stack = []       # The save_state()'s index stack
-    
+
     def push_state(self):
         """defines current state as the new 'start' state"""
         self.state_stack.append(len(self.op_list))
-        
+
     def recover(self):
         """recover to the latest pushed state"""
         last_state_index = self.state_stack.pop()
         # if last_index == 0, then there's no intermediate state => undo all !
         for i in self.op_list[:-last_state_index] or self.op_list[:]:
             self.undo()
-    
+
     def add_operation(self, operation):
         """add an operation to the current ones"""
         # stores operations in reverse order :
         self.op_list.insert(0, operation)
-        
+
     def undo(self):
         """undo the latest operation"""
         assert len(self.op_list) > 0
@@ -50,13 +50,13 @@ class NodeOperation(object):
     def __init__(self, node):
         self.node = node
         self.stmt = node.stmt
-        
+
     def __str__(self):
         """undo the operation on the selection"""
-        return "%s %s" % (self.__class__.__name__, self.node)    
+        return "%s %s" % (self.__class__.__name__, self.node)
 
 # Undo for variable manipulation operations  ##################################
-        
+
 class MakeVarOperation(NodeOperation):
     """Defines how to undo make_variable()."""
 
@@ -120,7 +120,7 @@ class ReplaceNodeOperation(object):
 
 class RemoveNodeOperation(NodeOperation):
     """Defines how to undo remove_node()."""
-    
+
     def __init__(self, node):
         NodeOperation.__init__(self, node)
         self.node_parent = node.parent
@@ -137,7 +137,7 @@ class RemoveNodeOperation(NodeOperation):
                 assert self.node_parent is self.gd_parent.where
             else:
                 self.parent_index = self.gd_parent.children.index(self.node_parent)
-                
+
     def undo(self, selection):
         """undo the operation on the selection"""
         if self.binary_remove:
@@ -162,14 +162,14 @@ class RemoveNodeOperation(NodeOperation):
         # register reference from the removed node
         for varref in self.node.iget_nodes(VariableRef):
             varref.register_reference()
-    
+
 class AddSortOperation(NodeOperation):
     """Defines how to undo 'add sort'."""
 
     def undo(self, selection):
         """undo the operation on the selection"""
         self.stmt.remove_sort_term(self.node)
-    
+
 class RemoveSortOperation(NodeOperation):
     """Defines how to undo 'remove sort'."""
     def __init__(self, node):
@@ -179,21 +179,21 @@ class RemoveSortOperation(NodeOperation):
     def undo(self, selection):
         """undo the operation on the selection"""
         self.stmt.add_sort_term(self.node, self.index)
-    
+
 class AddGroupOperation(NodeOperation):
     """Defines how to undo 'add group'."""
-    
+
     def undo(self, selection):
         """undo the operation on the selection"""
         self.stmt.remove_group_var(self.node)
-    
+
 class RemoveGroupOperation(NodeOperation):
     """Defines how to undo 'remove group'."""
-    
+
     def __init__(self, node):
         NodeOperation.__init__(self, node)
         self.index = self.stmt.groupby.index(self.node)
-        
+
     def undo(self, selection):
         """undo the operation on the selection"""
         self.stmt.add_group_var(self.node, self.index)
@@ -207,21 +207,21 @@ class ChangeValueOperation(object):
 
 class SetDistinctOperation(ChangeValueOperation):
     """Defines how to undo 'set_distinct'."""
-        
+
     def undo(self, selection):
         """undo the operation on the selection"""
         self.node.distinct = self.value
 
 class SetOffsetOperation(ChangeValueOperation):
     """Defines how to undo 'set_offset'."""
-        
+
     def undo(self, selection):
         """undo the operation on the selection"""
         self.node.offset = self.value
 
 class SetLimitOperation(ChangeValueOperation):
     """Defines how to undo 'set_limit'."""
-        
+
     def undo(self, selection):
         """undo the operation on the selection"""
         self.node.limit = self.value
@@ -231,7 +231,7 @@ class SetOptionalOperation(ChangeValueOperation):
     def __init__(self, rel, previous_value):
         self.rel = rel
         self.value = previous_value
-        
+
     def undo(self, selection):
         """undo the operation on the selection"""
         self.rel.optional = self.value
@@ -248,7 +248,7 @@ class AppendSelectOperation(object):
         """undo the operation on the union's children"""
         self.select.parent = self.union
         self.union.children.remove(self.select)
-        
+
 class RemoveSelectOperation(AppendSelectOperation):
     """Defines how to undo append_select()."""
     def __init__(self, union, select, origindex):
@@ -261,6 +261,6 @@ class RemoveSelectOperation(AppendSelectOperation):
 
 __all__ = ('SelectionManager', 'MakeVarOperation', 'UndefineVarOperation',
            'SelectVarOperation', 'UnselectVarOperation', 'AddNodeOperation',
-           'ReplaceNodeOperation', 'RemoveNodeOperation', 
+           'ReplaceNodeOperation', 'RemoveNodeOperation',
            'AddSortOperation', 'AddGroupOperation',
            'SetOptionalOperation', 'SetDistinctOperation')

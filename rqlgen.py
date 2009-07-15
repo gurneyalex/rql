@@ -19,7 +19,7 @@ class RQLGenerator(object):
 
         :Parameters:
          * `etype`: the desired entity type (can be 'Any')
-         
+
          * `nupplets`: a list of 4-uples (subject, relation, object, not).
            <subject> and <object> may be a string representing a variable
            or a constant. The special variable X represents the searched set
@@ -28,15 +28,15 @@ class RQLGenerator(object):
            <not> is a boolean indicating it should be a negative statement
            (0 -> positive statement, 1 -> negative statement). You may omit
            this parameter, it default to 0.
-              
+
          * `groups`: a list of variables to use in groups
-         
+
          * `sorts`: a list of sort term. A sort term is a string designing a
            variable and optionnaly the sort order ('ASC' or 'DESC'). If the
            sort order is omitted default to 'ASC'
 
         Example:
-        
+
         >>> s = RQLGenerator()
         >>> s.select('Any', (('X', 'eid', 14),) )
         'Any X\\nWHERE X eid 14'
@@ -56,7 +56,7 @@ class RQLGenerator(object):
             result.append(self.sortby(sorts))
         return '\n'.join(result)
 
-                
+
     def where(self, nupplets):
         """Return a WHERE statement.
 
@@ -71,11 +71,11 @@ class RQLGenerator(object):
            this parameter, it default to 0.
 
         Example:
-                     
+
         >>> s = RQLGenerator()
         >>> s.where( (('X', 'eid', 14),) )
         'WHERE X eid 14'
-        >>> s.where( ( ('X','work_for','S'), ('S','name','"Logilab"'), 
+        >>> s.where( ( ('X','work_for','S'), ('S','name','"Logilab"'),
         ...            ('X','firstname','F'), ('X','surname','S') ) )
         'WHERE X work_for S , S name "Logilab" , X firstname F , X surname S'
         """
@@ -92,24 +92,24 @@ class RQLGenerator(object):
                 result.append(',')
         return ' '.join(result)
 
-        
+
     def groupby(self, groups):
         """Return a GROUPBY statement.
-        
+
         :param groups: a list of variables to use in groups
 
         Example:
-        
+
         >>> s = RQLGenerator()
         >>> s.groupby(('F', 'S'))
         'GROUPBY F, S'
         """
         return 'GROUPBY %s' % ', '.join(groups)
 
-    
+
     def sortby(self, sorts):
         """Return a SORTBY statement.
-        
+
         :param sorts: a list of sort term. A sort term is a string designing a
           variable and optionnaly the sort order ('ASC' or 'DESC'). If the
           sort order is omitted default to 'ASC'
@@ -184,7 +184,7 @@ class RQLGenerator(object):
                             for attr_name, attr_value in new_descr]
         return 'SET %s WHERE %s' % (', '.join(new_restrictions),
                                     ', '.join(old_restrictions))
-    
+
 RQLGENERATOR = RQLGenerator()
 
 def _test():

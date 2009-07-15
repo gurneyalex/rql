@@ -647,7 +647,7 @@ __docformat__ = "restructuredtext en"
 
 if __name__ == '__main__':
     from sys import argv
-    
+
     parser = Hercule(HerculeScanner(argv[1]))
     e_types = {}
     # parse the RQL string

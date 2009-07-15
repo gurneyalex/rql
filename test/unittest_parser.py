@@ -21,7 +21,7 @@ BAD_SYNTAX_QUERIES = (
     '(Any X GROUPBY X WHERE X nom "toto") UNION (Any X GROUPBY X WHERE X firstname "toto") ORDERBY X;',
 
     'Any X, X/Y FROM (Any SUM(X) WHERE X is Person) WHERE X is Person;', # missing AS for subquery
-    
+
     'Any X, X/Y FROM (Any X WHERE X is) WHERE X is Person;', # missing AS for subquery
 
     )
@@ -77,9 +77,9 @@ SPEC_QUERIES = (
 
     "Any X ORDERBY RANDOM();",
     "Any X ORDERBY F(1, 2);",
-    
+
     "Any X, COUNT(B) GROUPBY X ORDERBY 1 WHERE B concerns X HAVING COUNT(B) > 2;",
-    
+
     'Any X, MAX(COUNT(B)) GROUPBY X WHERE B concerns X;', # syntaxically correct
 
     'Any X WHERE X eid > 12;',
@@ -92,7 +92,7 @@ SPEC_QUERIES = (
 
     'Any X, X/Y WHERE X is Person WITH Y BEING (Any SUM(X) WHERE X is Person);',
     'Any Y, COUNT(X) GROUPBY Y WHERE X bla Y WITH Y BEING ((Person X) UNION (Document X));',
-    
+
     'Any T2, COUNT(T1)'
     ' GROUPBY T1'
     ' ORDERBY 2 DESC, T2;'
@@ -119,7 +119,7 @@ class ParserHercule(TestCase):
             if print_errors:
                 print string, ex
             raise
-        
+
     def test_precedence_1(self):
         tree = self.parse("Any X WHERE X firstname 'lulu' AND X name 'toto' OR X name 'tutu';")
         base = tree.children[0].where
@@ -150,7 +150,7 @@ class ParserHercule(TestCase):
         self.assertEqual(isinstance(base, nodes.Or), 1)
         self.assertEqual(isinstance(base.children[0], nodes.Relation), 1)
         self.assertEqual(isinstance(base.children[1], nodes.And), 1)
-        
+
     def test_not_precedence_0(self):
         tree = self.parse("Any X WHERE NOT X firstname 'lulu', X name 'toto';")
         self.assertEqual(str(tree), "Any X WHERE NOT X firstname 'lulu', X name 'toto'")
@@ -269,6 +269,6 @@ class ParserRQLHelper(ParserHercule):
         except:
             raise
 
-     
+
 if __name__ == '__main__':
     unittest_main()

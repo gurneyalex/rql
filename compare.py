@@ -25,9 +25,9 @@ def make_canon_dict(rql_tree, verbose=0):
         'selected' : [],
         'restriction' : {},
         }
-        
+
     canon = RQLCanonizer().visit(rql_tree, canon)
-    
+
     # forge variable name
     for var, name_parts in allvars.values():
         name_parts.sort()
@@ -35,7 +35,7 @@ def make_canon_dict(rql_tree, verbose=0):
     sort(canon)
     if verbose:
         print 'CANON FOR', rql_tree
-        from pprint import pprint 
+        from pprint import pprint
         pprint(canon)
     return canon
 
@@ -45,13 +45,13 @@ def sort(canon_dict):
     canon_dict['selection'].sort()
     for values in canon_dict['restriction'].values():
         values.sort()
-        
+
 class SkipChildren(Exception):
     """Signal indicating to ignore the current child."""
 
 class RQLCanonizer(object):
     """Build a dictionnary which represents a RQL syntax tree."""
-    
+
     def visit(self, node, canon):
         try:
             node.accept(self, canon)
@@ -77,19 +77,19 @@ class RQLCanonizer(object):
                 l.append(node)
                 for var in node.iget_nodes(VariableRef):
                     var.parent.replace(var, allvars[var.variable][0])
-                    
+
     def visit_group(self, group, canon):
         canon['group'] = group
-        
+
     def visit_sort(self, sort, canon):
         canon['sort'] = sort
-        
+
     def visit_sortterm(self, sortterm, canon):
         pass
- 
+
     def visit_and(self, et, canon):
         pass
-    
+
     def visit_or(self, ou, canon):
         canon_dict = {}
         keys = []
@@ -108,7 +108,7 @@ class RQLCanonizer(object):
             for expr in canon_dict[key]:
                 self.manage_relation(expr, canon, r_list)
         raise SkipChildren()
-    
+
     def manage_relation(self, relation, canon, r_list):
         lhs, rhs = relation.get_parts()
         # handle special case of the IN function
@@ -146,31 +146,31 @@ class RQLCanonizer(object):
         rhs_vars = rhs.get_nodes(VariableRef)
         if not rhs_vars:
             expr_reminder = "%s_%s" % (expr_reminder, rhs)
-            
+
         for var in lhs_vars + rhs_vars:
             var = var.variable
             canon['all_variables'][var][1].append(expr_reminder)
 
-        
+
     def visit_relation(self, relation, canon):
         key = '%s%s' % (relation.r_type, relation._not)
         r_list = canon['restriction'].setdefault(key, [])
         self.manage_relation(relation, canon, r_list)
-            
-        
+
+
     def visit_comparison(self, comparison, canon):
         """do nothing for this node type"""
-    
+
     def visit_mathexpression(self, mathexpression, canon):
         """do nothing for this node type"""
-    
+
     def visit_function(self, function, canon):
         """do nothing for this node type"""
-    
+
     def visit_variableref(self, varref, canon):
         varref.parent.replace(varref,
                               canon['all_variables'][varref.variable][0])
-        
+
     def visit_constant(self, constante, canon):
         """do nothing for this node type"""
 
