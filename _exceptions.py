@@ -23,6 +23,6 @@ class TypeResolverException(RQLException):
 
 class BadRQLQuery(RQLException):
     """Raised when there is a no sense in the rql query."""
-    
+
 class CoercionError(RQLException):
     """Failed to infer type of a math expression."""

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # pylint: disable-msg=W0404,W0622,W0704,W0613,E0611,C0103
-"""Generic Setup script, takes package info from __pkginfo__.py file. 
+"""Generic Setup script, takes package info from __pkginfo__.py file.
 
 :copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
@@ -45,7 +45,7 @@ except ImportError:
 
 BASE_BLACKLIST = ('CVS', 'debian', 'dist', 'build', '__buildlog')
 IGNORED_EXTENSIONS = ('.pyc', '.pyo', '.elc')
-    
+
 
 def ensure_scripts(linux_scripts):
     """
@@ -140,7 +140,7 @@ def install(**kwargs):
                  ext_modules=ext_modules,
                  **kwargs
                  )
-    
+
     if dist.have_run.get('install_lib'):
         _install = dist.get_command_obj('install_lib')
         if subpackage_of:
@@ -151,7 +151,7 @@ def install(**kwargs):
                 stream = open(product_init, 'w')
                 stream.write(EMPTY_FILE)
                 stream.close()
-        
+
         # manually install included directories if any
         if include_dirs:
             if subpackage_of:
@@ -162,6 +162,6 @@ def install(**kwargs):
                 dest = join(_install.install_dir, base, directory)
                 export(directory, dest)
     return dist
-            
+
 if __name__ == '__main__' :
     install()
