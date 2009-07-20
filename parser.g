@@ -104,7 +104,7 @@ parser Hercule:
     token SUBSTITUTE:  r'%\([A-Za-z_0-9]+\)s'
 
 
-# Grammar entry ###############################################################
+#// Grammar entry ###############################################################
 
 
 rule goal: DELETE _delete<<Delete()>> ';'             {{ return _delete }}
@@ -115,14 +115,14 @@ rule goal: DELETE _delete<<Delete()>> ';'             {{ return _delete }}
 
          | union<<Union()>> ';'                       {{ return union }}
 
-# Deletion  ###################################################################
+#// Deletion  ###################################################################
 
 rule _delete<<R>>: decl_rels<<R>> where<<R>> {{ return R }}
 
                  | decl_vars<<R>> where<<R>> {{ return R }}
 
 
-# Insertion  ##################################################################
+#// Insertion  ##################################################################
 
 rule _insert<<R>>: decl_vars<<R>> insert_rels<<R>> {{ return R }}
 
@@ -132,12 +132,12 @@ rule insert_rels<<R>>: ":" decl_rels<<R>> where<<R>> {{ return R }}
                      |
 
 
-# Update  #####################################################################
+#// Update  #####################################################################
 
 rule update<<R>>: decl_rels<<R>> where<<R>> {{ return R }}
 
 
-# Selection  ##################################################################
+#// Selection  ##################################################################
 
 rule union<<R>>: select<<Select()>>               {{ R.append(select); return R }}
 
@@ -166,9 +166,9 @@ rule selection<<S>>: expr_add<<S>>        {{ S.append_selected(expr_add) }}
 
 
 
-# other clauses (groupby, orderby, with, having) ##############################
+#// other clauses (groupby, orderby, with, having) ##############################
 
-# to remove in rql 1.0
+#// to remove in rql 1.0
 rule dorderby<<S>>: orderby<<S>> {{ if orderby: warn('ORDERBY is now before WHERE clause') }}
 rule dgroupby<<S>>: groupby<<S>> {{ if groupby: warn('GROUPBY is now before WHERE clause') }}
 rule dlimit_offset<<S>>: limit_offset<<S>> {{ if limit_offset: warn('LIMIT/OFFSET are now before WHERE clause') }}
@@ -213,7 +213,7 @@ rule sort_meth: SORT_DESC {{ return 0 }}
               |           {{ return 1 # default to SORT_ASC }}
 
 
-# Limit and offset ############################################################
+#// Limit and offset ############################################################
 
 rule limit_offset<<R>> :  limit<<R>> offset<<R>> {{ return limit or offset }}
 
@@ -224,7 +224,7 @@ rule offset<<R>> : OFFSET INT {{ R.set_offset(int(INT)); return True }}
   		         |
 
 
-# Restriction statements ######################################################
+#// Restriction statements ######################################################
 
 rule where<<S>>: WHERE restriction<<S>> {{ S.set_where(restriction) }}
                |
@@ -259,7 +259,7 @@ rule opt_left<<S>>: QMARK  {{ return 'left' }}
 rule opt_right<<S>>: QMARK  {{ return 'right' }}
                    |
 
-# common statements ###########################################################
+#// common statements ###########################################################
 
 rule variables<<S>>:                   {{ vars = [] }}
                        var<<S>>        {{ vars.append(var) }}
