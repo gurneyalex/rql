@@ -32,6 +32,11 @@ class ConstraintCSPProblem(object):
         self.scons = []
         self.output = StringIO()
 
+    def debug(self):
+        print "Domains:", self.domains
+        print "Constraints:", self.constraints
+        print "Scons:", self.scons
+
     def get_output(self):
         return self.output.getvalue()
 
@@ -134,6 +139,13 @@ class GecodeCSPProblem(object):
         self.values = {}        # maps val name -> val index
         self.all_values = set() # this gets turned into a list later
         self.idx_domains = []   # maps var index -> list of val index
+
+
+    def debug(self):
+        print "Domains:", self.domains
+        print "Ops:", self.op
+        print "Variables:", self.variables
+        print "Values:", self.values
 
     def get_output(self):
         return ""
@@ -250,6 +262,7 @@ class ETypeResolver(object):
            [mapping from relation to function taking rhs value as argument
            and returning an entity type].
         """
+        self.debug = 0
         self.set_schema(schema)
         if uid_func_mapping is None:
             self.uid_func_mapping = {}
@@ -270,10 +283,8 @@ class ETypeResolver(object):
         if self.debug > 1:
             print "- AN1 -"+'-'*80
             print node
-            print "DOMAINS:"
-            pprint(domains)
             print "CONSTRAINTS:"
-            pprint(constraints.scons)
+            constraints.debug()
 
         sols = constraints.solve()
 
@@ -450,8 +461,6 @@ class ETypeResolver(object):
                         samevar = True
                     else:
                         rhsvars.append(v.name)
-            else:
-                return True
             if rhsvars:
                 s2 = '=='.join(rhsvars)
                 res = []
@@ -519,4 +528,3 @@ class ETypeResolverIgnoreTypeRestriction(ETypeResolver):
         if isinstance(child, nodes.Relation) and \
            not self.schema.rschema(child.r_type).is_final():
             return True
-
