@@ -5,6 +5,26 @@
 #include "gecode/int.hh"
 #include "gecode/search.hh"
 
+#define PM_VERSION(a,b,c) ((a<<16)+(b<<8)+(c))
+// There is no easy way to test for gecode version here
+// so the build system must pass GE_VERSION accordingly
+// by default we build for 3.1.0 if GECODE_VERSION exists
+
+#ifndef GECODE_VERSION
+#define GE_VERSION PM_VERSION(2,1,2)
+#else
+#define GE_VERSION PM_VERSION(3,1,0)
+#endif
+
+#if GE_VERSION < PM_VERSION(3,0,0)
+#define SELF this
+#define SET_VAR_SIZE_MAX SET_VAR_MAX_CARD
+#define SET_VAL_MIN_INC SET_VAL_MIN
+#else
+#define SELF (*this)
+#define convexHull convex
+#endif
+
 using namespace std;
 using namespace Gecode;
 
@@ -41,20 +61,20 @@ protected:
 public:
     RqlSolver() {}
     RqlSolver(const RqlContext& pb):
-	variables(this,pb.nvars,0,pb.nvalues-1)
+	variables(SELF,pb.nvars,0,pb.nvalues-1)
     {
-	BoolVar root(this, 1,1);
+	BoolVar root(SELF, 1,1);
 	set_domains( pb.domains );
 	add_constraints( pb.constraints, root );
 	
-	branch(this, variables, INT_VAR_NONE, INT_VAL_MIN);
+	branch(SELF, variables, INT_VAR_NONE, INT_VAL_MIN);
     }
 
     ~RqlSolver() {};
 
     RqlSolver(bool share, RqlSolver& s) : Space(share,s)
     {
-	variables.update(this, share, s.variables);
+	variables.update(SELF, share, s.variables);
     }
 
     void set_domains( PyObject* domains )
@@ -70,7 +90,7 @@ public:
 		vals[i] = PyInt_AsLong( PyList_GetItem( ovalues, i ) );
 	    }
 	    IntSet gvalues(vals,nval);
-	    dom(this, variables[var], gvalues);
+	    dom(SELF, variables[var], gvalues);
 	    delete [] vals;
 	}
     }
@@ -103,7 +123,7 @@ public:
 	
 	variable = get_int( desc, 1 );
 	value = get_int( desc, 2 );
-	rel(this, variables[variable], IRT_EQ, value, var);
+	rel(SELF, variables[variable], IRT_EQ, value, var);
     }
 
     void add_equivalence( PyObject* desc, BoolVar& var ) {
@@ -112,28 +132,28 @@ public:
 
 	for (int i=1;i<len-1;++i) {
 	    int var1 = get_int(desc, i+1);
-	    rel( this, variables[var0], IRT_EQ, variables[var1], var );
+	    rel( SELF, variables[var0], IRT_EQ, variables[var1], var );
 	}
     }
 
     void add_and( PyObject* desc, BoolVar& var ) {
 	int len = PyList_Size(desc);
-	BoolVarArray terms(this, len-1,0,1);
+	BoolVarArray terms(SELF, len-1,0,1);
 	for(int i=0;i<len-1;++i) {
 	    PyObject* expr = PyList_GetItem(desc, i+1);
 	    add_constraints( expr, terms[i] );
 	}
-	rel(this, BOT_AND, terms, var);
+	rel(SELF, BOT_AND, terms, var);
     }
 
     void add_or( PyObject* desc, BoolVar& var ) {
 	int len = PyList_Size(desc);
-	BoolVarArray terms(this, len-1,0,1);
+	BoolVarArray terms(SELF, len-1,0,1);
 	for(int i=0;i<len-1;++i) {
 	    PyObject* expr = PyList_GetItem(desc, i+1);
 	    add_constraints( expr, terms[i] );
 	}
-	rel(this, BOT_OR, terms, var);
+	rel(SELF, BOT_OR, terms, var);
     }
 
     template <template<class> class Engine>
@@ -177,8 +197,14 @@ public:
 	     << "\tsolutions:     " << abs(static_cast<int>(pb.solutions) - i) << endl
 	     << "\tpropagations:  " << stat.propagate << endl
 	     << "\tfailures:      " << stat.fail << endl
+#if GE_VERSION < PM_VERSION(3,0,0)
 	     << "\tclones:        " << stat.clone << endl
 	     << "\tcommits:       " << stat.commit << endl
+#else
+	     << "\tdepth:        " << stat.depth << endl
+	     << "\tnode:       " << stat.node << endl
+#endif
+
 	     << "\tpeak memory:   "
 	     << static_cast<int>((stat.memory+1023) / 1024) << " KB"
 	     << endl;
@@ -211,6 +237,7 @@ public:
 	    fs = new Search::FailStop(fails);
 	}
     }
+#if GE_VERSION < PM_VERSION(3,1,0)
     bool stop(const Search::Statistics& s) {
 	int sigs = PyErr_CheckSignals();
 	bool fs_stop = false;
@@ -223,6 +250,22 @@ public:
 	}
 	return sigs || fs_stop || ts_stop;
     }
+#else
+    /* from gecode 3.1.0 */
+    bool stop(const Search::Statistics& s, const Search::Options &o) {
+	int sigs = PyErr_CheckSignals();
+	bool fs_stop = false;
+	bool ts_stop = false;
+	if (fs) {
+	    fs_stop = fs->stop(s,o);
+	}
+	if (ts) {
+	    ts_stop = ts->stop(s,o);
+	}
+	return sigs || fs_stop || ts_stop;
+    }
+#endif
+
     /// Create appropriate stop-object
     static Search::Stop* create(int fails, int time) {
 	return new FailTimeStop(fails, time);
