@@ -241,6 +241,17 @@ class AnalyzerClassTest(TestCase):
         sols = sorted(node.children[0].solutions)
         self.assertEqual(sols, [{'X': 'Company'}, {'X': 'Person'}, {'X': 'Student'}])
 
+    def test_non_regr_no_final_type(self):
+        """https://www.logilab.net/elo/ticket/9042"""
+        node = self.helper.parse('Any X WHERE X creation_date > ((2009 - 4) - 16)')
+        self.helper.compute_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(sols, [{'X': 'Address'},
+                                {'X': 'Company'},
+                                {'X': 'Eetype'},
+                                {'X': 'Person'},
+                                {'X': 'Student'}])
+
     def test_is_instance_of_1(self):
         node = self.helper.parse('Any X WHERE X is_instance_of Person')
         # check constant type of the is relation inserted
