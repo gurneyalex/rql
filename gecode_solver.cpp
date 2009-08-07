@@ -6,6 +6,13 @@
 #include "gecode/int.hh"
 #include "gecode/search.hh"
 
+#if 1
+#define debug(fmt,...)
+#else
+#define debug(fmt,...) printf(fmt, ##__VA_ARGS__)
+#endif
+
+
 #define PM_VERSION(a,b,c) ((a<<16)+(b<<8)+(c))
 // There is no easy way to test for gecode version here
 // so the build system must pass GE_VERSION accordingly
@@ -95,7 +102,7 @@ public:
     RqlContext(long nvars, PyObject* domains,
 	       long nvalues, PyObject* constraints, PyObject* sols):
 	solutions(-1), // return every solutions
-	time(1000),    // time limit in case the problem is too big
+	time(-1),    // time limit in case the problem is too big
 	fails(-1),     // ?? used by GecodeStop ...
 	nvars(nvars),  // Number of variables
 	nvalues(nvalues), // Number of values
@@ -263,6 +270,11 @@ public:
 	
 	variable = get_uint( desc, 1 );
 	value = get_uint( desc, 2 );
+	if (variable==1) {
+	    debug("RQL:%ld == %ld ***\n", variable, value);
+	} else {
+	    debug("RQL:%ld == %ld\n", variable, value);
+	}
 	rel(SELF, variables[variable], IRT_EQ, value, expr_value);
     }
 
@@ -280,10 +292,13 @@ public:
 	int len = PyList_Size(desc);
 	int var0 = get_uint( desc, 1 );
 	BoolVarArray terms(SELF, len-2,0,1);
+	debug("RQL:EQV(%d",var0);
 	for (int i=1;i<len-1;++i) {
 	    int var1 = get_uint(desc, i+1);
+	    debug(",%d",var1);
 	    rel(SELF, variables[var0], IRT_EQ, variables[var1], terms[i-1] );
 	}
+	debug(")\n");
 	rel(SELF, BOT_AND, terms, expr_value);
     }
 
@@ -292,10 +307,12 @@ public:
 	int len = PyList_Size(desc);
 	BoolVarArray terms(SELF, len-1,0,1);
 
+	debug("RQL:AND(\n");
 	for(int i=0;i<len-1;++i) {
 	    PyObject* expr = PyList_GetItem(desc, i+1);
 	    add_constraints( expr, terms[i] );
 	}
+	debug("RQL:)\n");
 	rel(SELF, BOT_AND, terms, var);
     }
 
@@ -304,10 +321,12 @@ public:
 	int len = PyList_Size(desc);
 	BoolVarArray terms(SELF, len-1,0,1);
 
+	debug("RQL:OR(\n");
 	for(int i=0;i<len-1;++i) {
 	    PyObject* expr = PyList_GetItem(desc, i+1);
 	    add_constraints( expr, terms[i] );
 	}
+	debug("RQL:)\n");
 	rel(SELF, BOT_OR, terms, var);
     }
 
@@ -340,7 +359,7 @@ public:
 
 	    delete ex;
 	    t0 = t0 + t.stop();
-	} while (--i != 0 && t0 < pb.time);
+	} while (--i != 0 && (pb.time<0 || t0 < pb.time));
 	Search::Statistics stat = e.statistics();
 	if (pb.verbosity) {
 	    cout << endl;
