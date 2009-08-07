@@ -110,12 +110,14 @@ class DummySchema(object):
                                      ('Student', ('Eetype',) ),
                                      ('Company', ('Eetype',) ),
                                      ('Address', ('Eetype',) ),
+                                     ('Eetype', ('Eetype',) ),
                                      )
                                    ),
             'is_instance_of' : RelationSchema( ( ('Person', ('Eetype',) ),
                                               ('Student', ('Eetype',) ),
                                               ('Company', ('Eetype',) ),
                                               ('Address', ('Eetype',) ),
+                                              ('Eetype', ('Eetype',) ),
                                               )
                                             ),
             'connait' : RelationSchema( (('Person', ('Person',) ),
@@ -308,6 +310,22 @@ class AnalyzerClassTest(TestCase):
                         debug=DEBUG)
         sols = sorted(node.children[0].solutions)
         self.assertEquals(sols, [{'X': 'Company'}])
+
+    def test_non_regr_subjobj(self):
+        h = self.helper
+        def type_from_uid(name):
+            self.assertEquals(name, "Societe")
+            return 'Eetype'
+        uid_func_mapping = {'name': type_from_uid}
+        # constant as rhs of the uid relation
+        node = h.parse('Any X WHERE X name "Societe", X is ISOBJ, ISSIBJ is X')
+        h.compute_solutions(node, uid_func_mapping, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEquals(sols, [{'X': 'Eetype', 'ISOBJ': 'Eetype', 'ISSIBJ': 'Address'},
+                                 {'X': 'Eetype', 'ISOBJ': 'Eetype', 'ISSIBJ': 'Company'},
+                                 {'X': 'Eetype', 'ISOBJ': 'Eetype', 'ISSIBJ': 'Eetype'},
+                                 {'X': 'Eetype', 'ISOBJ': 'Eetype', 'ISSIBJ': 'Person'},
+                                 {'X': 'Eetype', 'ISOBJ': 'Eetype', 'ISSIBJ': 'Student'}])
 
 
     def test_unusableuid_func_mapping(self):
