@@ -1,6 +1,6 @@
 """Analyze of the RQL syntax tree to get possible types for RQL variables.
 
-:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 :license: General Public License version 2 - http://www.gnu.org/licenses
 """
@@ -9,8 +9,6 @@ __docformat__ = "restructuredtext en"
 from cStringIO import StringIO
 import warnings
 warnings.filterwarnings(action='ignore', module='logilab.constraint.propagation')
-
-from logilab.constraint import Repository, Solver, fd
 
 from rql import TypeResolverException, nodes
 from pprint import pprint
@@ -22,6 +20,8 @@ try:
     import rql_solve
 except ImportError:
     rql_solve = None
+    from logilab.constraint import Repository, Solver, fd
+
     # Gecode solver not available
 #rql_solve = None # uncomment to force using logilab-constraint
 
@@ -59,7 +59,7 @@ class ConstraintCSPProblem(object):
 
     def end_domain_definition(self):
         pass
-    
+
     def get_domains(self):
         return self.domains
 
