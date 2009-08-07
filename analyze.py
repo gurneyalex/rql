@@ -1,6 +1,6 @@
 """Analyze of the RQL syntax tree to get possible types for RQL variables.
 
-:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 :license: General Public License version 2 - http://www.gnu.org/licenses
 """
@@ -10,19 +10,20 @@ from cStringIO import StringIO
 import warnings
 warnings.filterwarnings(action='ignore', module='logilab.constraint.propagation')
 
-from logilab.constraint import Repository, Solver, fd
-
 from rql import TypeResolverException, nodes
 from pprint import pprint
 
 from copy import deepcopy
+from itertools import izip
 
 try:
     import rql_solve
 except ImportError:
     rql_solve = None
+    from logilab.constraint import Repository, Solver, fd
+
     # Gecode solver not available
-# rql_solve = None # uncomment to force using logilab-constraint
+#rql_solve = None # uncomment to force using logilab-constraint
 
 class ConstraintCSPProblem(object):
     def __init__(self):
@@ -30,6 +31,11 @@ class ConstraintCSPProblem(object):
         self.domains = {}
         self.scons = []
         self.output = StringIO()
+
+    def debug(self):
+        print "Domains:", self.domains
+        print "Constraints:", self.constraints
+        print "Scons:", self.scons
 
     def get_output(self):
         return self.output.getvalue()
@@ -41,11 +47,18 @@ class ConstraintCSPProblem(object):
     def solve(self):
         repo = Repository(self.domains.keys(), self.domains, self.get_constraints())
         solver = Solver(printer=self.printer)
+        # used for timing 
+        #import time
+        #t0=time.time()
         sols = solver.solve(repo, verbose=(True or self.debug))
+        #print "RUNTIME:", time.time()-t0
         return sols
 
     def add_var(self, name, values):
         self.domains[name] = fd.FiniteDomain(values)
+
+    def end_domain_definition(self):
+        pass
 
     def get_domains(self):
         return self.domains
@@ -71,7 +84,7 @@ class ConstraintCSPProblem(object):
             cstr = '%s in %s ' % (var, etypes)
         self.add_expr( (var,), cstr)
 
-    def vars_have_types(self, varnames, types):
+    def vars_have_same_types(self, varnames, types):
         self.add_expr( varnames, '%s in %s' % ( '=='.join(varnames), types))
 
     def or_and(self, equalities):
@@ -94,11 +107,10 @@ class ConstraintCSPProblem(object):
         self.add_expr( tuple(variables), expr )
 
 # GECODE based constraint solver
-
-_AND = "and"
-_OR = "or"
-_EQ = "eq"
-_EQV = "eqv"
+_AND = 0 # symbolic values
+_OR = 1
+_EQ = 2
+_EQV = 3
 
 class GecodeCSPProblem(object):
     """Builds an internal representation of the constraint
@@ -121,41 +133,57 @@ class GecodeCSPProblem(object):
     def __init__(self):
         self.constraints = []
         self.op = [ _AND ]
-        self.domains = {}
-        self.variables = {}
-        self.values = {}
+        self.domains = {}       # maps var name -> var value
+        self.variables = {}     # maps var name -> var index
+        self.ivariables = []    # maps var index-> var name
+        self.values = {}        # maps val name -> val index
+        self.all_values = set() # this gets turned into a list later
+        self.idx_domains = []   # maps var index -> list of val index
+
+
+    def debug(self):
+        print "Domains:", self.domains
+        print "Ops:", self.op
+        print "Variables:", self.variables
+        print "Values:", self.values
 
     def get_output(self):
         return ""
     def solve(self):
-        # assign an integer to each var and each domain values
-        all_values = range(len(self.values))
-        constraints = self.op #.for_gecode( all_vars, all_values )
-        var_domains = []
-        # loop through variables in increasing order of the number they have been assigned
-        variables = [ var_name for var_name, var_value in sorted(self.variables.items(), key=lambda item:item[1] ) ]
-        for var_name in variables:
-            var_domains.append( self.domains[var_name] )
+        constraints = self.op
 
-        sols = rql_solve.solve( var_domains, len(all_values), constraints )
+        # used for timing
+        #import time
+        #t0=time.time()
+
+        sols = rql_solve.solve( self.idx_domains, len(self.all_values), constraints )
         rql_sols = []
-        # values is the list of values (string) order according to the integer value they have been assigned
-        values = [ val_name for val_name, val_value in sorted(self.values.items(), key=lambda item:item[1] ) ]
         for s in sols:
             r={}
-            for var, val in zip(variables, s):
-                r[var] = values[val]
+            for var, val in izip(self.ivariables, s):
+                r[var] = self.all_values[val]
             rql_sols.append(r)
+        #print "RUNTIME:", time.time()-t0
         return rql_sols
 
     def add_var(self, name, values):
-        domain = []
-        var_value = self.variables.setdefault( name, len(self.variables) )
-        for val in values:
-            val_value = self.values.setdefault( val, len(self.values) )
-            domain.append( val_value )
-        self.domains[name] = domain
+        assert name not in self.variables
+        self.all_values.update( values )
+        self.variables[name] = len(self.variables)
+        self.ivariables.append(name)
+        self.domains[name] = values
 
+    def end_domain_definition(self):
+        # maps integer->value
+        self.all_values = list(self.all_values)
+        # maps value->integer
+        self.values = dict( [ (v,i) for i,v in enumerate(self.all_values)] )
+        #print self.values
+        #print self.domains
+        for var_name in self.ivariables:
+            val_domain = self.domains[var_name]
+            idx_domain = [ self.values[val] for val in val_domain ]
+            self.idx_domains.append( idx_domain )
 
     def and_eq( self, var, value ):
         self.op.append( [_EQ, self.variables[var], self.values[value] ] )
@@ -183,7 +211,7 @@ class GecodeCSPProblem(object):
                     continue
             self.op.append( orred )
 
-    def vars_have_types(self, varnames, types):
+    def vars_have_same_types(self, varnames, types):
         self.equal_vars( varnames )
         for var in varnames:
             self.var_has_types( var, types )
@@ -234,6 +262,7 @@ class ETypeResolver(object):
            [mapping from relation to function taking rhs value as argument
            and returning an entity type].
         """
+        self.debug = 0
         self.set_schema(schema)
         if uid_func_mapping is None:
             self.uid_func_mapping = {}
@@ -254,10 +283,8 @@ class ETypeResolver(object):
         if self.debug > 1:
             print "- AN1 -"+'-'*80
             print node
-            print "DOMAINS:"
-            pprint(domains)
             print "CONSTRAINTS:"
-            pprint(constraints.scons)
+            constraints.debug()
 
         sols = constraints.solve()
 
@@ -293,7 +320,7 @@ class ETypeResolver(object):
 
     def _init_stmt(self, node):
         pb = CSPProblem()
-        # set domain for the all variables
+        # set domain for all the variables
         for var in node.defined_vars.itervalues():
             pb.add_var( var.name, self._base_domain )
         # no variable short cut
@@ -329,6 +356,7 @@ class ETypeResolver(object):
             node.set_possible_types([{}])
             return
         constraints = self._init_stmt(node)
+        constraints.end_domain_definition()
         for etype, variable in node.main_variables:
             if node.TYPE == 'delete' and etype == 'Any':
                 continue
@@ -349,6 +377,7 @@ class ETypeResolver(object):
             node.set_possible_types([{}])
             return
         constraints = self._init_stmt(node)
+        constraints.end_domain_definition()
         for relation in node.main_relations:
             self._visit(relation, constraints)
         # get constraints from the restriction subtree
@@ -367,6 +396,7 @@ class ETypeResolver(object):
             etypes = set(stmt.selection[ca.colnum].get_type(sol, self.kwargs)
                          for stmt in ca.query.children for sol in stmt.solutions)
             constraints.add_var( ca.name, etypes )
+        constraints.end_domain_definition()
         if self.uid_func:
             # check rewritten uid const
             for consts in node.stinfo['rewritten'].values():
@@ -384,7 +414,7 @@ class ETypeResolver(object):
                 # add constraint on real relation types if no restriction
                 types = [eschema.type for eschema in self.schema.entities()
                          if not eschema.is_final()]
-                constraints.vars_have_types( varnames, types )
+                constraints.vars_have_same_types( varnames, types )
         self.solve(node, constraints)
 
     def visit_relation(self, relation, constraints):
@@ -431,8 +461,6 @@ class ETypeResolver(object):
                         samevar = True
                     else:
                         rhsvars.append(v.name)
-            else:
-                return True
             if rhsvars:
                 s2 = '=='.join(rhsvars)
                 res = []
@@ -500,4 +528,3 @@ class ETypeResolverIgnoreTypeRestriction(ETypeResolver):
         if isinstance(child, nodes.Relation) and \
            not self.schema.rschema(child.r_type).is_final():
             return True
-

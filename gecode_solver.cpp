@@ -1,6 +1,7 @@
 #include <Python.h>
 #include <iostream>
 #include <string.h>
+#include <exception>
 #include "gecode/kernel.hh"
 #include "gecode/int.hh"
 #include "gecode/search.hh"
@@ -28,19 +29,81 @@
 using namespace std;
 using namespace Gecode;
 
+#define USE_CLOCK
+#ifdef USE_CLOCK
+#include <ctime>
+
+/// Timer interface stolen from gecode examples
+class Timer {
+private:
+    clock_t t0;
+public:
+    void start(void);
+    double stop(void);
+};
+
+forceinline void
+Timer::start(void) {
+    t0 = clock();
+}
+
+forceinline double
+Timer::stop(void) {
+    return (static_cast<double>(clock()-t0) / CLOCKS_PER_SEC) * 1000.0;
+}
+#else
+#include <sys/time.h>
+#include <unistd.h>
+
+/// Timer interface stolen from gecode examples
+class Timer {
+private:
+    struct timeval t0;
+public:
+    void start(void);
+    double stop(void);
+};
+
+forceinline void
+Timer::start(void) {
+    gettimeofday( &t0, NULL );
+}
+forceinline double
+Timer::stop(void) {
+    struct timeval t1;
+    gettimeofday( &t1, NULL );
+    return (t1.tv_sec - t0.tv_sec)+1e-6*(t1.tv_usec - t0.tv_usec);
+}
+#endif
+
+enum {
+    _AND = 0,
+    _OR  = 1,
+    _EQ  = 2,
+    _EQV = 3
+};
+
+class RqlError : public exception {
+};
+
 class RqlContext {
+    /** Context holding the problem for solving Rql constraints
+	we keep the info as Python objects and parse the problem
+	during the creation of the Gecode problem
+    */
 public:
     RqlContext(long nvars, PyObject* domains,
 	       long nvalues, PyObject* constraints, PyObject* sols):
-	solutions(-1),
-	time(1000),
-	fails(-1),
-	nvars(nvars),
-	nvalues(nvalues),
-	constraints(constraints),
-	sols(sols),
-	domains(domains),
-	verbosity(false)
+	solutions(-1), // return every solutions
+	time(1000),    // time limit in case the problem is too big
+	fails(-1),     // ?? used by GecodeStop ...
+	nvars(nvars),  // Number of variables
+	nvalues(nvalues), // Number of values
+	constraints(constraints), // A python list, holding the root of the problem
+	sols(sols),    // an empty list that will receive the solutions
+	domains(domains), // A PyList of PyList, one for each var,
+	                  // holding the allowable integer values
+	verbosity(false)  // can help debugging
     {
     }
 
@@ -56,17 +119,45 @@ public:
 };
 
 class RqlSolver : public Space {
+/* A gecode Space
+   this is a strange beast that requires special methods and
+   behavior (mostly, copy and (bool,share,space) constructor
+*/
 protected:
+    /* The variables we try to find values for
+       these are the only 'public' variable of the
+       problem.
+
+       we use a lot more intermediate variables but
+       they shouldn't be member of the space
+     */
     IntVarArray  variables;
+
 public:
-    RqlSolver() {}
     RqlSolver(const RqlContext& pb):
-	variables(SELF,pb.nvars,0,pb.nvalues-1)
+	variables(SELF,     // all gecode variable keep a reference to the space
+		  pb.nvars, // number of variables
+		  0,        // minimum domain value
+		  pb.nvalues-1) // max domain value (included)
     {
+	/* Since we manipulate Boolean expression and
+	   we need to assign truth value to subexpression
+	   eg (a+b)*(c+d) will be translated as :
+	   root = x1 * x2
+	   x1 = a+b
+	   x2 = c+d
+	   root = True
+	*/
 	BoolVar root(SELF, 1,1);
+	
 	set_domains( pb.domains );
 	add_constraints( pb.constraints, root );
-	
+
+	/* the branching strategy, there must be one,
+	   changing it might improve performance, but
+	   in out case, we almost never propagate (ie
+	   gecode solves the problem during its creation)
+	*/
 	branch(SELF, variables, INT_VAR_NONE, INT_VAL_MIN);
     }
 
@@ -74,20 +165,45 @@ public:
 
     RqlSolver(bool share, RqlSolver& s) : Space(share,s)
     {
+	/* this is necessary for the solver to fork space
+	   while branching
+	*/
 	variables.update(SELF, share, s.variables);
     }
 
     void set_domains( PyObject* domains )
     {
 	PyObject* ovalues;
+	if (!PyList_Check(domains)) {
+	    throw RqlError();
+	}
 	int n = PyList_Size( domains );
-	for(int var=0;var<n;++var) {
+	for(int var=0 ;var<n; ++var) {
+	    /* iterate of domains which should contains
+	       list of values
+	       domains[0] contains possible values for var[0]...
+	    */
 	    int i, nval;
 	    ovalues = PyList_GetItem( domains, var );
+	    if (!PyList_Check(ovalues)) {
+		throw RqlError();
+	    }
 	    nval = PyList_Size( ovalues );
+
+	    /* It's a bit cumbersome to construct an IntSet, but
+	       it's the only way to reduce an integer domain to
+	       a discrete set
+	    */
 	    int* vals = new int[nval];
 	    for(i=0;i<nval;++i) {
+		//refcount ok, borrowed ref
 		vals[i] = PyInt_AsLong( PyList_GetItem( ovalues, i ) );
+		if (vals[i]<0) {
+		    /* we don't have negative values and PyInt_AsLong returns
+		       -1 if the object is not an Int */
+		    delete [] vals;
+		    throw RqlError();
+		}
 	    }
 	    IntSet gvalues(vals,nval);
 	    dom(SELF, variables[var], gvalues);
@@ -95,50 +211,87 @@ public:
 	}
     }
 
+    /* Dispatch method from Node to specific node type */
     void add_constraints( PyObject* desc, BoolVar& var )
     {
-	PyObject* type;
-	char* s_type;
-	type = PyList_GetItem( desc, 0 );
-	s_type = PyString_AsString( type );
-	if (strcmp(s_type, "eq")==0) {
-	    add_equality( desc, var );
-	} else if (strcmp(s_type, "eqv")==0) {
-	    add_equivalence( desc, var );
-	} else if (strcmp(s_type, "and")==0) {
+	long type;
+
+	if (!PyList_Check(desc)) {
+	    throw RqlError();
+	}
+	/* the first element of each list (node) is 
+	   a symbolic Int from _AND, _OR, _EQ, _EQV
+	*/
+	type = PyInt_AsLong( PyList_GetItem( desc, 0 ) );
+	
+	switch(type) {
+	case _AND:
 	    add_and( desc, var );
-	} else if (strcmp(s_type, "or")==0) {
+	    break;
+	case _OR:
 	    add_or( desc, var );
+	    break;
+	case _EQ:
+	    add_equality( desc, var );
+	    break;
+	case _EQV:
+	    add_equivalence( desc, var );
+	    break;
+	default:
+	    throw RqlError();
 	}
     }
 
-    long get_int( PyObject* lst, int index ) {
+    /* retrieve an int from a list, throw error if int is <0 */
+    long get_uint( PyObject* lst, int index ) {
 	PyObject* val;
 	val = PyList_GetItem(lst, index);
+	if (val<0) {
+	    throw RqlError();
+	}
 	return PyInt_AsLong(val);
     }
 
-    void add_equality( PyObject* desc, BoolVar& var ) {
+    /* post gecode condition for Var == Value
+       we can't use domain restriction since this
+       condition can be part of an OR clause
+
+       so we post  (var == value) <=> expr_value
+    */
+    void add_equality( PyObject* desc, BoolVar& expr_value ) {
 	long variable, value;
 	
-	variable = get_int( desc, 1 );
-	value = get_int( desc, 2 );
-	rel(SELF, variables[variable], IRT_EQ, value, var);
+	variable = get_uint( desc, 1 );
+	value = get_uint( desc, 2 );
+	rel(SELF, variables[variable], IRT_EQ, value, expr_value);
     }
 
-    void add_equivalence( PyObject* desc, BoolVar& var ) {
+    /* post gecode condition for Var[i] == Var[j] ... == Var[k]
+
+       there's no operator for assigning chained equality to boolean
+      
+       so we post for 1<=i<=N (var[0] == var[i]) <=> bool[i]
+                  and    bool[1] & ... & bool[N] <=> expr_value
+       that means if all vars are equal expr_value is true
+       if all vars are different from var[0] expr_value is false
+       if some are equals and some false, the constraint is unsatisfiable
+    */
+    void add_equivalence( PyObject* desc, BoolVar& expr_value ) {
 	int len = PyList_Size(desc);
-	int var0 = get_int( desc, 1 );
-
+	int var0 = get_uint( desc, 1 );
+	BoolVarArray terms(SELF, len-2,0,1);
 	for (int i=1;i<len-1;++i) {
-	    int var1 = get_int(desc, i+1);
-	    rel( SELF, variables[var0], IRT_EQ, variables[var1], var );
+	    int var1 = get_uint(desc, i+1);
+	    rel(SELF, variables[var0], IRT_EQ, variables[var1], terms[i-1] );
 	}
+	rel(SELF, BOT_AND, terms, expr_value);
     }
 
+    /* simple and relation between nodes */
     void add_and( PyObject* desc, BoolVar& var ) {
 	int len = PyList_Size(desc);
 	BoolVarArray terms(SELF, len-1,0,1);
+
 	for(int i=0;i<len-1;++i) {
 	    PyObject* expr = PyList_GetItem(desc, i+1);
 	    add_constraints( expr, terms[i] );
@@ -146,9 +299,11 @@ public:
 	rel(SELF, BOT_AND, terms, var);
     }
 
+    /* simple or relation between nodes */
     void add_or( PyObject* desc, BoolVar& var ) {
 	int len = PyList_Size(desc);
 	BoolVarArray terms(SELF, len-1,0,1);
+
 	for(int i=0;i<len-1;++i) {
 	    PyObject* expr = PyList_GetItem(desc, i+1);
 	    add_constraints( expr, terms[i] );
@@ -159,66 +314,75 @@ public:
     template <template<class> class Engine>
     static void run( RqlContext& pb, Search::Stop* stop )
     {
-    double t0 = 0;
-    int i = pb.solutions;
-    //Timer t;
-    RqlSolver* s = new RqlSolver( pb );
-    //t.start();
-    unsigned int n_p = 0;
-    unsigned int n_b = 0;
-    if (s->status() != SS_FAILED) {
-	n_p = s->propagators();
-	n_b = s->branchings();
-    }
-    Search::Options opts;
-    //opts.c_d = pb.c_d;
-    //opts.a_d = pb.a_d;
-    opts.stop = stop;
-    Engine<RqlSolver> e(s, opts);
-    delete s;
-    do {
-	RqlSolver* ex = e.next();
-	if (ex == NULL)
-	    break;
-	ex->print(pb);
-	delete ex;
-	//t0 = t0 + t.stop();
-    } while (--i != 0 && t0 < pb.time);
-    Search::Statistics stat = e.statistics();
-    if (pb.verbosity) {
-	cout << endl;
-	cout << "Initial" << endl
-	     << "\tpropagators:   " << n_p << endl
-	     << "\tbranchings:    " << n_b << endl
-	     << endl
-	     << "Summary" << endl
-	     //<< "\truntime:       " << t.stop() << endl
-	     << "\truntime:       " << t0 << endl
-	     << "\tsolutions:     " << abs(static_cast<int>(pb.solutions) - i) << endl
-	     << "\tpropagations:  " << stat.propagate << endl
-	     << "\tfailures:      " << stat.fail << endl
-#if GE_VERSION < PM_VERSION(3,0,0)
-	     << "\tclones:        " << stat.clone << endl
-	     << "\tcommits:       " << stat.commit << endl
-#else
-	     << "\tdepth:        " << stat.depth << endl
-	     << "\tnode:       " << stat.node << endl
-#endif
+	double t0 = 0;
+	int i = pb.solutions;
+	Timer t;
+	RqlSolver* s = new RqlSolver( pb );
+	t.start();
+	unsigned int n_p = 0;
+	unsigned int n_b = 0;
+	if (s->status() != SS_FAILED) {
+	    n_p = s->propagators();
+	    n_b = s->branchings();
+	}
+	Search::Options opts;
+	//opts.c_d = pb.c_d;
+	//opts.a_d = pb.a_d;
+	opts.stop = stop;
+	Engine<RqlSolver> e(s, opts);
+	delete s;
+	do {
+	    RqlSolver* ex = e.next();
+	    if (ex == NULL)
+		break;
 
-	     << "\tpeak memory:   "
-	     << static_cast<int>((stat.memory+1023) / 1024) << " KB"
-	     << endl;
+	    ex->add_new_solution(pb);
+
+	    delete ex;
+	    t0 = t0 + t.stop();
+	} while (--i != 0 && t0 < pb.time);
+	Search::Statistics stat = e.statistics();
+	if (pb.verbosity) {
+	    cout << endl;
+	    cout << "Initial" << endl
+		 << "\tpropagators:   " << n_p << endl
+		 << "\tbranchings:    " << n_b << endl
+		 << endl
+		 << "Summary" << endl
+		 << "\truntime:       " << t.stop() << endl
+		 << "\tsolutions:     " << abs(static_cast<int>(pb.solutions) - i) << endl
+		 << "\tpropagations:  " << stat.propagate << endl
+		 << "\tfailures:      " << stat.fail << endl
+#if GE_VERSION < PM_VERSION(3,0,0)
+		 << "\tclones:        " << stat.clone << endl
+		 << "\tcommits:       " << stat.commit << endl
+#else
+		 << "\tdepth:        " << stat.depth << endl
+		 << "\tnode:       " << stat.node << endl
+#endif
+		 << "\tpeak memory:   "
+		 << static_cast<int>((stat.memory+1023) / 1024) << " KB"
+		 << endl;
+	}
     }
-    }
-    virtual void print(RqlContext& pb) {
+
+    /* We append each solutions to `sols` as a
+       tuple `t` of the values assigned to each var
+       that is t[i] = solution for var[i]
+    */
+    virtual void add_new_solution(RqlContext& pb) {
 	PyObject *tuple, *ival;
+
 	tuple = PyTuple_New( pb.nvars );
+
 	for(int i=0;i<pb.nvars;++i) {
 	    ival = PyInt_FromLong( variables[i].val() );
 	    PyTuple_SetItem( tuple, i, ival );
 	}
 	PyList_Append( pb.sols, tuple );
     }
+
+    /* another function need by gecode kernel */
     virtual Space* copy(bool share) {
 	return new RqlSolver(share, *this);
     }
@@ -287,12 +451,21 @@ rql_solve(PyObject *self, PyObject *args)
     PyObject* constraints;
     PyObject* domains;
     long nvars, nvalues;
-    sols = PyList_New(0);
     if (!PyArg_ParseTuple(args, "OiO", &domains, &nvalues, &constraints))
         return NULL;
-    nvars = PyList_Size(domains);
-    RqlContext ctx(nvars, domains, nvalues, constraints, sols );
-    _solve( ctx );
+    sols = PyList_New(0);
+    try {
+	if (!PyList_Check(domains)) {
+	    throw RqlError();
+	}
+	nvars = PyList_Size(domains);
+	RqlContext ctx(nvars, domains, nvalues, constraints, sols );
+	_solve( ctx );
+    } catch(RqlError& e) {
+	Py_DECREF(sols);
+	PyErr_SetString(PyExc_RuntimeError, "Error parsing constraints");
+	return NULL;
+    };
     return sols;
 }
 
