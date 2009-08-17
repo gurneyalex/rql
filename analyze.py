@@ -112,6 +112,13 @@ _OR = 1
 _EQ = 2
 _EQV = 3
 
+OPSYM={
+    _AND:"and",
+    _OR:"or",
+    _EQ:"eq",
+    _EQV:"eqv"
+}
+
 class GecodeCSPProblem(object):
     """Builds an internal representation of the constraint
     that will be passed to the rql_solve module which implements
@@ -139,16 +146,35 @@ class GecodeCSPProblem(object):
         self.values = {}        # maps val name -> val index
         self.all_values = set() # this gets turned into a list later
         self.idx_domains = []   # maps var index -> list of val index
-
+        self.ivalues = {}       # only used for debugging
 
     def debug(self):
+        self.ivalues = {}
+        for val_name, val_num in self.values.items():
+            self.ivalues[val_num] = val_name
         print "Domains:", self.domains
-        print "Ops:", self.op
+        print "Ops:", self.pretty_print_ops(self.op)
         print "Variables:", self.variables
         print "Values:", self.values
 
+
+    def pretty_print_ops(self, ops):
+        if ops[0] in (_AND, _OR):
+            res = [ OPSYM[ops[0]], '(' ]
+            for op in ops[1:]:
+                res.append(self.pretty_print_ops(op))
+                res.append(',')
+            res.append( ')' )
+            return "".join(res)
+        elif ops[0] == _EQ:
+            return "%s==%s" % (self.ivariables[ops[1]], self.ivalues[ops[2]])
+        elif ops[0] == _EQV:
+            res = [ self.ivariables[k] for k in ops[1:] ]
+            return '~='.join(res)
+
     def get_output(self):
         return ""
+
     def solve(self):
         constraints = self.op
 
@@ -239,6 +265,8 @@ if rql_solve is None:
     CSPProblem = ConstraintCSPProblem
 else:
     CSPProblem = GecodeCSPProblem
+
+#CSPProblem = ConstraintCSPProblem
 
 
 class ETypeResolver(object):
