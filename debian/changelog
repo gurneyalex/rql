@@ -1,3 +1,9 @@
+rql (0.22.2-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Tue, 18 Aug 2009 14:46:03 +0200
+
 rql (0.22.1-1) unstable; urgency=low
 
   * new upstream release
@@ -6,7 +12,7 @@ rql (0.22.1-1) unstable; urgency=low
 
 rql (0.22.0-2) unstable; urgency=low
 
-  * replaced python-central with python-support 
+  * replaced python-central with python-support
 
  -- Nicolas Chauvat <nicolas.chauvat@logilab.fr>  Thu, 21 May 2009 17:26:55 +0200
 
@@ -50,7 +56,7 @@ rql (0.19.2-1) unstable; urgency=low
 
   * new upstream release
 
- -- Nicolas Chauvat <nicolas.chauvat@logilab.fr>  Fri, 29 Aug 2008 19:38:50 +0200 
+ -- Nicolas Chauvat <nicolas.chauvat@logilab.fr>  Fri, 29 Aug 2008 19:38:50 +0200
 
 rql (0.19.1-1) unstable; urgency=low
 
@@ -309,7 +315,7 @@ rql (0.4.0-1) unstable; urgency=low
 
 rql (0.3.1-2) unstable; urgency=low
 
-  * reorganization to install into site-python, removing the need for 
+  * reorganization to install into site-python, removing the need for
     pythonX.X- packages
 
  -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Tue, 10 Jan 2006 17:42:53 +0100
