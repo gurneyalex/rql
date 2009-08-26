@@ -303,6 +303,24 @@ class Union(Statement, Node):
         self._subq_cache[(col, etype)] = self._locate_subquery(col, etype, kwargs)
         return self._subq_cache[(col, etype)]
 
+    def subquery_selection_index(self, subselect, col):
+        """given a select sub-query and a column index in this sub-query, return
+        the selection index for this column in the root query
+        """
+        for select in self.children:
+            if select is subselect:
+                return col
+            term = select.selection[col]
+            try:
+                if term.name in select.aliases:
+                    alias = select.aliases[term.name]
+                    return alias.query.subquery_selection_index(subselect,
+                                                                alias.colnum)
+            except AttributeError:
+                # term has no 'name' attribute
+                pass
+        raise Exception('internal error, col %s not found in subqueries' % col)
+
     # recoverable modification methods ########################################
 
     # don't use @cached: we want to be able to disable it while this must still
