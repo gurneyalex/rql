@@ -746,6 +746,26 @@ class VariableRef(HSMixin, LeafNode):
     def get_description(self, mainindex, tr):
         return self.variable.get_description(mainindex, tr)
 
+    def root_selection_index(self):
+        """return the index of this variable reference *in the root selection*
+        if it's selected, else None
+        """
+        myidx = self.variable.selected_index()
+        if myidx is None:
+            return None
+        stmt = self.stmt
+        union = stmt.parent
+        if union.parent is None:
+            return myidx
+        # first .parent is the SubQuery node, we want the Select node
+        parentselect = union.parent.parent
+        for ca in parentselect.aliases.itervalues():
+            if ca.query is union and ca.colnum == myidx:
+                caidx = ca.selected_index()
+                if caidx is None:
+                    return None
+                return parentselect.selection[caidx].root_selection_index()
+
 
 class SortTerm(Node):
     """a sort term bind a variable to the boolean <asc>
