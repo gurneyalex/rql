@@ -1,6 +1,14 @@
 ChangeLog for RQL
 =================
 
+	--
+    * Union.locate_subquery now return a 2-uple (select subquery, column index in the subquery)
+    * new subquery_selection_index method on Union
+    * new root_selection_index method on VariableRef
+
+2009-08-18  --  0.22.2
+    * fixes to compile with different versions of gecode
+
 2009-05-04  --  0.22.0
     * consider subqueries in variables graph
 
