@@ -115,16 +115,16 @@ class ScopeNode(BaseNode):
 
     def check_references(self):
         """test function"""
-        defined = self.defined_vars.copy()
         try:
             defined = self.aliases.copy()
         except AttributeError:
-            defined = self.defined_vars
+            defined = self.defined_vars.copy()
         else:
             defined.update(self.defined_vars)
             for subq in self.with_:
                 subq.query.check_references()
-        varrefs = [vref for vref in self.get_nodes(nodes.VariableRef) if vref.stmt is self]
+        varrefs = [vref for vref in self.get_nodes(nodes.VariableRef)
+                   if vref.stmt is self]
         try:
             _check_references(defined, varrefs)
         except:
@@ -139,11 +139,6 @@ class Statement(object):
     # used
     schema = None     # ISchema
     annotated = False # set by the annotator
-
-#     def __init__(self):
-#         Node.__init__(self)
-#         # syntax tree meta-information
-#         self.stinfo = {}
 
     # navigation helper methods #############################################
 
@@ -284,6 +279,7 @@ class Union(Statement, Node):
                     return alias.query._locate_subquery(alias.colnum, etype,
                                                         kwargs)
             except AttributeError:
+                # term has no 'name' attribute
                 pass
             for i, solution in enumerate(select.solutions):
                 if term.get_type(solution, kwargs) == etype:
@@ -300,7 +296,8 @@ class Union(Statement, Node):
             self._subq_cache = {}
         except KeyError:
             pass
-        self._subq_cache[(col, etype)] = self._locate_subquery(col, etype, kwargs)
+        self._subq_cache[(col, etype)] = self._locate_subquery(col, etype,
+                                                               kwargs)
         return self._subq_cache[(col, etype)]
 
     def subquery_selection_index(self, subselect, col):
