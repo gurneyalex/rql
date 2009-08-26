@@ -275,21 +275,25 @@ class Union(Statement, Node):
 
     def _locate_subquery(self, col, etype, kwargs):
         if len(self.children) == 1 and not self.children[0].with_:
-            return self.children[0]
+            return self.children[0], col
         for select in self.children:
             term = select.selection[col]
             try:
                 if term.name in select.aliases:
-                    union = select.aliases[term.name].query
-                    return union._locate_subquery(col, etype, kwargs)
+                    alias = select.aliases[term.name]
+                    return alias.query._locate_subquery(alias.colnum, etype,
+                                                        kwargs)
             except AttributeError:
                 pass
             for i, solution in enumerate(select.solutions):
                 if term.get_type(solution, kwargs) == etype:
-                    return select
+                    return select, col
         raise Exception('internal error, %s not found on col %s' % (etype, col))
 
     def locate_subquery(self, col, etype, kwargs=None):
+        """return a select node and associated selection index where root
+        variable at column `col` is of type `etype`
+        """
         try:
             return self._subq_cache[(col, etype)]
         except AttributeError:
