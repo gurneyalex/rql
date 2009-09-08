@@ -18,13 +18,20 @@
 // so the build system must pass GE_VERSION accordingly
 // by default we build for 3.1.0 if GECODE_VERSION exists
 
+#ifndef GE_VERSION
 #ifndef GECODE_VERSION
 #define GE_VERSION PM_VERSION(2,1,2)
 #else
 #define GE_VERSION PM_VERSION(3,1,0)
 #endif
+#endif
 
-#if GE_VERSION < PM_VERSION(3,0,0)
+#if GE_VERSION < PM_VERSION(2,0,0)
+#define SELF this
+#define INT_VAR_NONE BVAR_NONE
+#define INT_VAL_MIN BVAL_MIN
+
+#elif GE_VERSION < PM_VERSION(3,0,0)
 #define SELF this
 #define SET_VAR_SIZE_MAX SET_VAR_MAX_CARD
 #define SET_VAL_MIN_INC SET_VAL_MIN
@@ -299,7 +306,12 @@ public:
 	    rel(SELF, variables[var0], IRT_EQ, variables[var1], terms[i-1] );
 	}
 	debug(")\n");
+#if GE_VERSION<PM_VERSION(2,0,0)
+    BoolVarArgs terms_args(terms);
+    bool_and(SELF, terms_args, expr_value);
+#else
 	rel(SELF, BOT_AND, terms, expr_value);
+#endif
     }
 
     /* simple and relation between nodes */
@@ -313,7 +325,12 @@ public:
 	    add_constraints( expr, terms[i] );
 	}
 	debug("RQL:)\n");
-	rel(SELF, BOT_AND, terms, var);
+#if GE_VERSION<PM_VERSION(2,0,0)
+    BoolVarArgs terms_args(terms);
+    bool_and(SELF, terms_args, var);
+#else
+    rel(SELF, BOT_AND, terms, var);
+#endif
     }
 
     /* simple or relation between nodes */
@@ -327,7 +344,13 @@ public:
 	    add_constraints( expr, terms[i] );
 	}
 	debug("RQL:)\n");
+#if GE_VERSION<PM_VERSION(2,0,0)
+    BoolVarArgs terms_args(terms);
+    bool_or(SELF, terms_args, var);
+#else
 	rel(SELF, BOT_OR, terms, var);
+#endif
+
     }
 
     template <template<class> class Engine>
@@ -344,11 +367,15 @@ public:
 	    n_p = s->propagators();
 	    n_b = s->branchings();
 	}
-	Search::Options opts;
+#if GE_VERSION<PM_VERSION(2,0,0)
+    Engine<RqlSolver> e(s);
+#else
+    Search::Options opts;
 	//opts.c_d = pb.c_d;
 	//opts.a_d = pb.a_d;
 	opts.stop = stop;
 	Engine<RqlSolver> e(s, opts);
+#endif
 	delete s;
 	do {
 	    RqlSolver* ex = e.next();
