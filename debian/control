@@ -3,7 +3,7 @@ Section: python
 Priority: optional
 Maintainer: Logilab Packaging Team <contact@logilab.fr>
 Uploaders: Sylvain Thenault <sylvain.thenault@logilab.fr>, Ludovic Aubry <ludovic.aubry@logilab.fr>, Nicolas Chauvat <nicolas.chauvat@logilab.fr>
-Build-Depends: debhelper (>= 5.0.37.1), python-all-dev (>=2.4), python-all (>=2.4), libgecode-dev, python-sphinx
+Build-Depends: debhelper (>= 5.0.37.1), python-all-dev (>=2.4), python-all (>=2.4), libgecode-dev, python-sphinx, g++
 Build-Depends-Indep: python-support
 XS-Python-Version: >= 2.4
 Standards-Version: 3.8.0
