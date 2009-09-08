@@ -16,7 +16,7 @@ build-stamp:
 	dh_testdir
 	(for PYTHON in `pyversions -r`; do \
 	    $${PYTHON} setup.py build ; done )
-	${MAKE} -C doc html
+	${MAKE} -C doc html || true
 	touch build-stamp
 clean: 
 	dh_testdir
