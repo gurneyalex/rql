@@ -32,11 +32,32 @@ debian_maintainer_email = 'sylvain.thenault@logilab.fr'
 pyversions = ['2.4']
 
 
+import os, subprocess
 from distutils.core import Extension
 
 include_dirs = []
 
-ext_modules = [ Extension('rql_solve',
-                          ['gecode_solver.cpp'],
-                          libraries=['gecodeint', 'gecodekernel', 'gecodesearch'],
-                          ) ]
+def gecode_version():
+    import os, subprocess
+    version = [0,0,0]
+    if os.path.exists('data/gecode_version.cc'):
+        try:
+            res = os.system("g++ -o gecode_version data/gecode_version.cc")
+            p = subprocess.Popen("./gecode_version",stdout=subprocess.PIPE)
+            vers = p.stdout.read()
+            version = [int(c) for c in vers.strip().split('.')]
+        except OSError:
+            pass
+    return version
+
+def encode_version(a,b,c):
+    return ((a<<16)+(b<<8)+c)
+
+GECODE_VERSION = encode_version(*gecode_version())
+
+ext_modules = [Extension('rql_solve',
+                         ['gecode_solver.cpp'],
+                         libraries=['gecodeint', 'gecodekernel', 'gecodesearch'],
+                         extra_compile_args=['-DGE_VERSION=%s' % GECODE_VERSION],
+                         )
+               ]
