@@ -39,11 +39,11 @@ include_dirs = []
 
 def gecode_version():
     import os, subprocess
-    version = [0,0,0]
+    version = [1, 3, 1]
     if os.path.exists('data/gecode_version.cc'):
         try:
             res = os.system("g++ -o gecode_version data/gecode_version.cc")
-            p = subprocess.Popen("./gecode_version",stdout=subprocess.PIPE)
+            p = subprocess.Popen("./gecode_version", stdout=subprocess.PIPE)
             vers = p.stdout.read()
             version = [int(c) for c in vers.strip().split('.')]
         except OSError:
