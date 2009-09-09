@@ -88,7 +88,7 @@ run::
   $ make CXXFLAGS="-I. -O1 -DNDEBUG -Wextra -Wall -pipe -ggdb \
   -fno-strict-aliasing -ffast-math -mthreads -DGECODE_BUILD_SUPPORT -static-libgcc"
 
-While this run, consider renting some Bollywood movie (I enjoyed `this one
+While this runs, consider renting some Bollywood movie (I enjoyed `this one
 <http://www.imdb.com/title/tt0172684/>`_) and watching it.
 
 
