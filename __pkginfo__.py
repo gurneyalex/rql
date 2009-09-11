@@ -70,4 +70,5 @@ else:
                                          'gecodesearch','gecodesupport'],
                               extra_compile_args=['-DGE_VERSION=%s' % GECODE_VERSION],
                               extra_link_args=['-static-libgcc'],
-                ]
+                              )
+                    ]
