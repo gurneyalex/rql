@@ -162,8 +162,15 @@ class RQLHelper(object):
                             rhs = copy_uid_node(select, rhs, vconsts)
                             select.groupby[select.groupby.index(vref)] = rhs
                             rhs.parent = select
-                    elif rel is uidrel or rel.is_types_restriction():
+                    elif rel is uidrel:
                         # drop this relation
+                        rel.parent.remove(rel)
+                    elif rel.is_types_restriction():
+                        stinfo['typerels'].remove(rel)
+                        rel.parent.remove(rel)
+                    elif rel in stinfo['uidrels']:
+                        # XXX check equivalence not necessary else we wouldn't be here right?
+                        stinfo['uidrels'].remove(rel)
                         rel.parent.remove(rel)
                     else:
                         rhs = copy_uid_node(select, rhs, vconsts)
