@@ -304,19 +304,12 @@ class Union(Statement, Node):
         """given a select sub-query and a column index in this sub-query, return
         the selection index for this column in the root query
         """
-        for select in self.children:
-            if select is subselect:
-                return col
-            term = select.selection[col]
-            try:
-                if term.name in select.aliases:
-                    alias = select.aliases[term.name]
-                    return alias.query.subquery_selection_index(subselect,
-                                                                alias.colnum)
-            except AttributeError:
-                # term has no 'name' attribute
-                pass
-        raise Exception('internal error, col %s not found in subqueries' % col)
+        while col is not None and subselect.parent.parent:
+            subq = subselect.parent.parent
+            subselect = subq.parent
+            termvar = subselect.aliases[subq.aliases[col].name]
+            col = termvar.selected_index()
+        return col
 
     # recoverable modification methods ########################################
 
