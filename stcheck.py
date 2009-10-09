@@ -187,7 +187,12 @@ class RQLSTChecker(object):
             # map subquery variable names to outer query variable names
             trmap = {}
             for i, vref in enumerate(node.aliases):
-                subvref = select.selection[i]
+                try:
+                    subvref = select.selection[i]
+                except IndexError:
+                    errors.append('subquery "%s" has only %s selected terms, needs %s'
+                                  % (select, len(select.selection), len(node.aliases)))
+                    continue
                 if isinstance(subvref, VariableRef):
                     trmap[subvref.name] = vref.name
                 elif (isinstance(subvref, Function) and subvref.descr().aggregat
