@@ -1,25 +1,25 @@
 from logilab.common.testlib import TestCase, unittest_main
 from unittest_analyze import DummySchema
 from rql import RQLHelper, BadRQLQuery, stmts, nodes
-    
+
 BAD_QUERIES = (
     'Any X, Y GROUPBY X',
-    
+
     # this is now a valid query
     #'DISTINCT Any X WHERE X work_for Y ORDERBY Y',
-    
+
     'Any X WHERE X name Person',
-    
+
     'Any X WHERE X name nofunction(Y)',
 
     'Any X WHERE X name nofunction(Y)',
-    
+
     'Any Y WHERE X name "toto"',
 
     'Any X WHERE X noattr "toto"',
-    
+
     'Any X WHERE X is NonExistant',
-    
+
     'Any UPPER(Y) WHERE X name "toto"',
 
     'Any C ORDERBY N where C located P, P eid %(x)s', #15066
@@ -35,7 +35,9 @@ BAD_QUERIES = (
 
     # BAD QUERY cant sort on y
     'DISTINCT Any X ORDERBY Y WHERE B work_for X, B name Y',
-    
+
+    "Any X WHERE X eid 0, X eid 1"
+
     )
 
 OK_QUERIES = (
@@ -51,38 +53,38 @@ OK_QUERIES = (
     'DISTINCT Any B ORDERBY Y WHERE B work_for X, X name Y',
 
 #    'DISTINCT Any X ORDERBY SN WHERE X in_state S, S name SN',
-    
-    
+
+
     )
 
 class CheckClassTest(TestCase):
     """check wrong queries are correctly detected"""
-    
+
     def setUp(self):
         helper = RQLHelper(DummySchema(), None, {'eid': 'uid'})
         self.parse = helper.parse
         self.simplify = helper.simplify
-        
+
     def _test(self, rql):
         try:
             self.assertRaises(BadRQLQuery, self.parse, rql)
         except:
             print rql
             raise
-        
+
     def test_raise(self):
         for rql in BAD_QUERIES:
             yield self._test, rql
-        
+
     def test_ok(self):
         for rql in OK_QUERIES:
             yield self.parse, rql
-        
+
     def _test_rewrite(self, rql, expected):
         rqlst = self.parse(rql)
         self.simplify(rqlst)
         self.assertEquals(rqlst.as_string(), expected)
-        
+
     def test_rewrite(self):
         for rql, expected in (
             ('Person X',
@@ -123,7 +125,7 @@ class CheckClassTest(TestCase):
 
             ('Any X WHERE X eid > 12',
              'Any X WHERE X eid > 12'),
-            
+
             ('Any X WHERE X eid 12, X connait P?, X work_for Y',
              'Any X WHERE X eid 12, X connait P?, X work_for Y'),
             ('Any X WHERE X eid 12, P? connait X',
@@ -136,7 +138,7 @@ class CheckClassTest(TestCase):
 
             ('Any X WHERE X eid 12, EXISTS(X name "hop" OR X work_for Y?)',
              "Any 12 WHERE EXISTS((A name 'hop') OR (A work_for Y?), 12 identity A)"),
-            
+
             ('(Any X WHERE X eid 12) UNION (Any X ORDERBY X WHERE X eid 13)',
              '(Any 12) UNION (Any 13)'),
 
@@ -166,8 +168,8 @@ class CheckClassTest(TestCase):
                            ('VC', 'VF'): 'connait',
                            ('VC', 'VCD'): 'creation_date'})
         self.assertEquals(rqlst.children[0].aggregated, set(('VC',)))
-        
-            
+
+
 ##     def test_rewriten_as_string(self):
 ##         rqlst = self.parse('Any X WHERE X eid 12')
 ##         self.assertEquals(rqlst.as_string(), 'Any X WHERE X eid 12')
@@ -176,7 +178,7 @@ class CheckClassTest(TestCase):
 ##         self.assertEquals(rqlst.as_string(), 'Any X WHERE X eid 12')
 
 class CopyTest(TestCase):
-    
+
     def setUp(self):
         helper = RQLHelper(DummySchema(), None, {'eid': 'uid'})
         self.parse = helper.parse
@@ -191,7 +193,7 @@ class CopyTest(TestCase):
         exists = copy.get_nodes(nodes.Exists)[0]
         self.failUnless(exists.children[0].parent is exists)
         self.failUnless(exists.parent)
-        
+
     def test_copy_internals(self):
         root = self.parse('Any X,U WHERE C owned_by U, NOT X owned_by U, X eid 1, C eid 2')
         self.simplify(root)
@@ -210,7 +212,7 @@ class CopyTest(TestCase):
 
 
 class AnnotateTest(TestCase):
-    
+
     def setUp(self):
         helper = RQLHelper(DummySchema(), None, {'eid': 'uid'})
         self.parse = helper.parse
@@ -241,6 +243,6 @@ class AnnotateTest(TestCase):
         C = rqlst.with_[0].query.children[0].defined_vars['C']
         self.failUnless(C.scope is rqlst.with_[0].query.children[0], C.scope)
         self.assertEquals(len(C.stinfo['relations']), 2)
-        
+
 if __name__ == '__main__':
     unittest_main()

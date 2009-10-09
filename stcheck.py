@@ -412,6 +412,13 @@ class RQLSTAnnotator(object):
         for var in node.defined_vars.itervalues():
             if not var.stinfo['relations'] and var.stinfo['typerels'] and not var.stinfo['selected']:
                 raise BadRQLQuery('unbound variable %s (%s)' % (var.name, var.stmt.root))
+            if len(var.stinfo['uidrels']) > 1:
+                uidrels = iter(var.stinfo['uidrels'])
+                val = getattr(uidrels.next().get_variable_parts()[1], 'value', object())
+                for uidrel in uidrels:
+                    if getattr(uidrel.get_variable_parts()[1], 'value', None) != val:
+                        # XXX should check OR branch and check simplify in that case as well
+                        raise BadRQLQuery('conflicting eid values for %s' % var.name)
 
     def rewrite_shared_optional(self, exists, var):
         """if variable is shared across multiple scopes, need some tree
