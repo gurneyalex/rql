@@ -286,6 +286,7 @@ class AnalyzerClassTest(TestCase):
         sols = sorted(node.children[0].solutions)
         self.assertEqual(sols, [{'X': 'Address', 'T': 'Eetype'},
                                 {'X': 'Company', 'T': 'Eetype'},
+                                {'X': 'Eetype', 'T': 'Eetype'},
                                 {'X': 'Person', 'T': 'Eetype'},
                                 {'X': 'Student', 'T': 'Eetype'}])
 
