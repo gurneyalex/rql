@@ -1,6 +1,6 @@
 .. -*- coding: utf-8 -*-
 
-	
+
 ===================================================
 Specification "Relations Query Language" (Hercules)
 ===================================================
@@ -17,7 +17,7 @@ special relations (in terms of implementation, the user
 language not to see virtually no difference between an attribute and a
 relation).
 
-RQL is inspired by SQL but is the highest level. A knowledge of the 
+RQL is inspired by SQL but is the highest level. A knowledge of the
 `CubicWeb` schema defining the application is necessary.
 
 Comparison with existing languages
@@ -27,8 +27,8 @@ SQL
 ```
 RQL builds on the features of SQL but is at a higher level
 (the current implementation of RQL generates SQL). For that it is limited
-to the way of browsing relations and introduces variables. 
-The user does not need to know the model underlying SQL, but the `CubicWeb` 
+to the way of browsing relations and introduces variables.
+The user does not need to know the model underlying SQL, but the `CubicWeb`
 scheam defining the application.
 
 Versa
@@ -36,10 +36,10 @@ Versa
 Should I look in more detail, but here is already some ideas for
 the moment ... Versa_ is the language most similar to what we wanted
 to do, but the model underlying data being RDF, there is some
-number of things such as namespaces or handling of the RDF types which 
+number of things such as namespaces or handling of the RDF types which
 does not interest us. On the functionality level, Versa_ is very comprehensive
 including through many functions of conversion and basic types manipulation,
-which may need to be guided at one time or another. 
+which may need to be guided at one time or another.
 Finally, the syntax is a little esoteric.
 
 See also
@@ -156,7 +156,7 @@ Insertion query
 
 The restriction can define variables used in assignments.
 
-Caution, if a restriction is specified, the insertion is done for 
+Caution, if a restriction is specified, the insertion is done for
 *each line results returned by the restriction*.
 
 - *Insert a new person named 'foo'*
@@ -170,7 +170,7 @@ Caution, if a restriction is specified, the insertion is done for
 
         INSERT Person X, Person Y: X name 'foo', Y name 'nice', X friend Y
 
-- *Insert a new person named 'foo' and a 'friend' relation with an existing 
+- *Insert a new person named 'foo' and a 'friend' relation with an existing
   person called 'nice'*
   ::
 
@@ -189,7 +189,7 @@ each line results returned by the restriction*.
 
         SET X name 'bar', X first_name 'original' where X is Person X name 'foo'
 
-- *Insert a relation of type 'know' between objects linked by 
+- *Insert a relation of type 'know' between objects linked by
   the relation of type 'friend'*
   ::
 
@@ -227,7 +227,7 @@ The keywords are not case sensitive.
 
      DISTINCT, INSERT, SET, DELETE,
      WHERE, AND, OR, NOT
-     IN, LIKE,
+     IN, LIKE, ILIKE,
      TRUE, FALSE, NULL, TODAY, NOW
      GROUPBY, ORDERBY, ASC, DESC
 
@@ -289,21 +289,23 @@ Comparison operators
 ````````````````````
 ::
 
-     =, <, <=, >=, > = ~, IN, LIKE
+     =, <, <=, >=, > = ~, IN, LIKE, ILIKE
 
 * The operator `=` is the default operator.
 
 * The operator `LIKE` equivalent to `~=` can be used with the
-  special character `%` in a string to indicate that the chain 
+  special character `%` in a string to indicate that the chain
   must start or finish by a prefix/suffix:
   ::
 
      Any X WHERE X name =~ 'Th%'
      Any X WHERE X name LIKE '%lt'
 
+* The operator `ILIKE` is a case-insensitive version of `LIKE`.
+
 * The operator `IN` provides a list of possible values:
   ::
-  
+
     Any X WHERE X name IN ( 'chauvat', 'fayolle', 'di mascio', 'thenault')
 
 
@@ -410,7 +412,7 @@ expression.
 
      relation    ::= 'NOT'? VARIABLE R_TYPE COMP_OP? expression
                    | 'NOT'? R_TYPE VARIABLE 'IN' '(' expression (',' expression)* ')'
-                   
+
      expression  ::= var_or_func_or_const (MATH_OP var_or_func_or_const) *
                    | '(' expression ')'
 
@@ -423,7 +425,7 @@ expression.
      # tokens
      LOGIC_OP ::= ',' | 'GOLD' | 'AND'
      MATH_OP  ::= '+' | '-' | '/' | '*'
-     COMP_OP  ::= '>' | '>=' | '=' | '<=' | '<' | '~=' | 'LIKE'
+     COMP_OP  ::= '>' | '>=' | '=' | '<=' | '<' | '~=' | 'LIKE' | 'ILIKE'
 
      FUNCTION ::= 'MIN' | 'MAX' | 'SUM' | 'AVG' | 'COUNT' | 'upper' | 'LOWER'
 
@@ -464,7 +466,7 @@ Negation
 Identity
 ````````
 
-You can use the special relation `identity` in a query to 
+You can use the special relation `identity` in a query to
 add an identity constraint between two variables. This is equivalent
 to ``is`` in python::
 
@@ -480,7 +482,7 @@ Implementation
 Internal representation (syntactic tree)
 ----------------------------------------
 
-The tree research does not contain the selected variables 
+The tree research does not contain the selected variables
 (e.g. there is only what follows "WHERE").
 
 The insertion tree does not contain the variables inserted or relations
@@ -523,10 +525,10 @@ Remarks
 -------
 
 - The current implementation does not support linking two relations of type
-  'is' with a OR. I do not think that the negation is  supported on this type 
+  'is' with a OR. I do not think that the negation is  supported on this type
   of relation (XXX FIXME to be confirmed).
 
-- Relations defining the variables must be left to those using them. 
+- Relations defining the variables must be left to those using them.
   For example::
 
      Point P where P abs X, P ord Y, P value X+Y
@@ -567,7 +569,7 @@ relations (non-recursive rules)::
 
      Document class Type <-> Document occurence_of Fiche class Type
      Sheet class Type    <-> Form collection Collection class Type
-    
+
 Therefore 1. becomes::
 
      Document X where
