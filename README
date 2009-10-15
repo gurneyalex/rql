@@ -2,4 +2,11 @@ This package provides base library for the Relationship Query Language
 
 INSTALL
 -------
+
+the standard way:
+
 python setup.py install
+
+building rql binary extension in place:
+
+python setup.py build_ext --inplace
