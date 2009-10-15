@@ -115,10 +115,10 @@ class RQLSTChecker(object):
         if node.distinct and node.orderby:
             # check that variables referenced in the given term are reachable from
             # a selected variable with only ?1 cardinalityselected
-            selectidx = frozenset(vref.name for term in selected for vref in term.iget_nodes(VariableRef))
+            selectidx = frozenset(vref.name for term in selected for vref in term.get_nodes(VariableRef))
             schema = self.schema
             for sortterm in node.orderby:
-                for vref in sortterm.term.iget_nodes(VariableRef):
+                for vref in sortterm.term.get_nodes(VariableRef):
                     if vref.name in selectidx:
                         continue
                     for vname in selectidx:
@@ -230,12 +230,12 @@ class RQLSTChecker(object):
         pass
 
     def visit_and(self, et, errors):
-        assert len(et.children) == 2, len(et.children)
+        pass #assert len(et.children) == 2, len(et.children)
     def leave_and(self, node, errors):
         pass
 
     def visit_or(self, ou, errors):
-        assert len(ou.children) == 2, len(ou.children)
+        #assert len(ou.children) == 2, len(ou.children)
         # simplify Ored expression of a symetric relation
         r1, r2 = ou.children[0], ou.children[1]
         try:
@@ -271,15 +271,15 @@ class RQLSTChecker(object):
         if relation.r_type == 'identity':
             lhs, rhs = relation.children
             #assert not isinstance(relation.parent, Not)
-            assert rhs.operator == '='
+            #assert rhs.operator == '='
         elif relation.r_type == 'is':
             # special case "C is NULL"
             if relation.children[1].operator == 'IS':
                 lhs, rhs = relation.children
-                assert isinstance(lhs, VariableRef), lhs
-                assert isinstance(rhs.children[0], Constant)
-                assert rhs.operator == 'IS', rhs.operator
-                assert rhs.children[0].type == None
+                #assert isinstance(lhs, VariableRef), lhs
+                #assert isinstance(rhs.children[0], Constant)
+                #assert rhs.operator == 'IS', rhs.operator
+                #assert rhs.children[0].type == None
         elif not relation.r_type in self.schema:
             errors.append('unknown relation `%s`' % relation.r_type)
         try:
@@ -299,12 +299,12 @@ class RQLSTChecker(object):
         #                                                       relation)
 
     def visit_comparison(self, comparison, errors):
-        assert len(comparison.children) in (1,2), len(comparison.children)
+        pass #assert len(comparison.children) in (1,2), len(comparison.children)
     def leave_comparison(self, node, errors):
         pass
 
     def visit_mathexpression(self, mathexpr, errors):
-        assert len(mathexpr.children) == 2, len(mathexpr.children)
+        pass #assert len(mathexpr.children) == 2, len(mathexpr.children)
     def leave_mathexpression(self, node, errors):
         pass
 
@@ -323,28 +323,30 @@ class RQLSTChecker(object):
                        function.children[0].descr().aggregat:
                     errors.append('can\'t nest aggregat functions')
             if funcdescr.name == 'IN':
-                assert function.parent.operator == '='
+                #assert function.parent.operator == '='
                 if len(function.children) == 1:
                     function.parent.append(function.children[0])
                     function.parent.remove(function)
-                else:
-                    assert len(function.children) >= 1
+                #else:
+                #    assert len(function.children) >= 1
     def leave_function(self, node, errors):
         pass
 
     def visit_variableref(self, variableref, errors):
-        assert len(variableref.children)==0
-        assert not variableref.parent is variableref
+        #assert len(variableref.children)==0
+        #assert not variableref.parent is variableref
 ##         try:
 ##             assert variableref.variable in variableref.root().defined_vars.values(), \
 ##                    (variableref.root(), variableref.variable, variableref.root().defined_vars)
 ##         except AttributeError:
 ##             raise Exception((variableref.root(), variableref.variable))
+        pass
+
     def leave_variableref(self, node, errors):
         pass
 
     def visit_constant(self, constant, errors):
-        assert len(constant.children)==0
+        #assert len(constant.children)==0
         if constant.type == 'etype':
             if constant.relation().r_type not in ('is', 'is_instance_of'):
                 msg ='using an entity type in only allowed with "is" relation'
@@ -382,7 +384,7 @@ class RQLSTAnnotator(object):
                     node.has_aggregat = True
                     break
             # register the selection column index
-            for vref in term.iget_nodes(VariableRef):
+            for vref in term.get_nodes(VariableRef):
                 vref.variable.stinfo['selected'].add(i)
                 vref.variable.set_scope(node)
                 vref.variable.set_sqlscope(node)
@@ -407,7 +409,7 @@ class RQLSTAnnotator(object):
         if node.having:
             # if there is a having clause, bloc simplification of variables used in GROUPBY
             for term in node.groupby:
-                for vref in term.iget_nodes(VariableRef):
+                for vref in term.get_nodes(VariableRef):
                     vref.variable.stinfo['blocsimplification'].add(term)
         for var in node.defined_vars.itervalues():
             if not var.stinfo['relations'] and var.stinfo['typerels'] and not var.stinfo['selected']:
@@ -439,7 +441,7 @@ class RQLSTAnnotator(object):
                     if rel in var.stinfo['rhsrelations']:
                         lhs, rhs = rel.get_parts()
                         if vref is rhs.children[0] and \
-                               self.schema.rschema(rel.r_type).is_final():
+                               self.schema.rschema(rel.r_type).final:
                             update_attrvars(newvar, rel, lhs)
                             lhsvar = getattr(lhs, 'variable', None)
                             var.stinfo['attrvars'].remove( (lhsvar, rel.r_type) )
@@ -483,13 +485,13 @@ class RQLSTAnnotator(object):
     visit_or = visit_and
 
     def visit_relation(self, relation, scope, sqlscope):
-        assert relation.parent, repr(relation)
+        #assert relation.parent, repr(relation)
         lhs, rhs = relation.get_parts()
         # may be a constant once rqlst has been simplified
         lhsvar = getattr(lhs, 'variable', None)
         if relation.is_types_restriction():
-            assert rhs.operator == '='
-            assert not relation.optional
+            #assert rhs.operator == '='
+            #assert not relation.optional
             if lhsvar is not None:
                 lhsvar.stinfo['typerels'].add(relation)
             return
@@ -541,15 +543,15 @@ class RQLSTAnnotator(object):
                         lhsvar.stinfo.setdefault(key, set()).add(relation)
                 else:
                     lhsvar.stinfo.setdefault(key, set()).add(relation)
-            elif rschema.is_final() or rschema.inlined:
+            elif rschema.final or rschema.inlined:
                 lhsvar.stinfo['blocsimplification'].add(relation)
-        for vref in rhs.iget_nodes(VariableRef):
+        for vref in rhs.get_nodes(VariableRef):
             var = vref.variable
             var.set_scope(scope)
             var.set_sqlscope(sqlscope)
             var.stinfo['relations'].add(relation)
             var.stinfo['rhsrelations'].add(relation)
-            if vref is rhs.children[0] and rschema.is_final():
+            if vref is rhs.children[0] and rschema.final:
                 update_attrvars(var, relation, lhs)
 
 

@@ -47,7 +47,8 @@ class RelationSchema(ERSchema):
     def objects(self, etype=None):
         return self.obj_types
 
-    def is_final(self):
+    @property
+    def final(self):
         return self.obj_types[0] in FINAL_ETYPES
 
     def iter_rdefs(self):
@@ -63,9 +64,7 @@ class EntitySchema(ERSchema):
     def __init__(self, type, specialized_by=None):
         self.type = type
         self._specialized_by = specialized_by or ()
-
-    def is_final(self):
-        return self.type in FINAL_ETYPES
+        self.final = self.type in FINAL_ETYPES
 
     def specialized_by(self):
         return self._specialized_by
