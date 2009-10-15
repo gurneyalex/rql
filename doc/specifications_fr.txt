@@ -224,13 +224,13 @@ Définition du langage
 
 Mots clés réservés
 ------------------
-Les mots clés ne sont pas sensibles à la casse. 
+Les mots clés ne sont pas sensibles à la casse.
 
 ::
 
     DISTINCT, INSERT, SET, DELETE,
     WHERE, AND, OR, NOT
-    IN, LIKE,
+    IN, LIKE, ILIKE,
     TRUE, FALSE, NULL, TODAY, NOW
     GROUPBY, ORDERBY, ASC, DESC
 
@@ -292,16 +292,19 @@ Opérateurs de comparaison
 `````````````````````````
 ::
 
-    =, <, <=, >=, >, ~=, IN, LIKE
+    =, <, <=, >=, >, ~=, IN, LIKE, ILIKE
 
 * L'opérateur `=` est l'opérateur par défaut.
 
-* L'opérateur `LIKE` équivalent à `~=` permet d'utiliser le caractère `%` dans 
-  une chaine de caractère pour indiquer que la chaîne doit commencer ou terminer 
+* L'opérateur `LIKE` équivalent à `~=` permet d'utiliser le caractère `%` dans
+  une chaine de caractère pour indiquer que la chaîne doit commencer ou terminer
   par un préfix/suffixe::
-    
+
     Any X WHERE X nom ~= 'Th%'
     Any X WHERE X nom LIKE '%lt'
+
+* L'opérateur `ILIKE` est une version de `LIKE` qui n'est pas sensible à la
+  casse.
 
 * L'opérateur `IN` permet de donner une liste de valeurs possibles::
 
