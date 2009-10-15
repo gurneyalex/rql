@@ -304,7 +304,7 @@ class ETypeResolver(object):
         # default domains for a variable
         self._base_domain = [str(etype) for etype in schema.entities()]
         self._nonfinal_domain = [str(etype) for etype in schema.entities()
-                                 if not etype.is_final()]
+                                 if not etype.final]
 
     def solve(self, node, constraints):
         # debug info
@@ -441,7 +441,7 @@ class ETypeResolver(object):
             if varnames:
                 # add constraint on real relation types if no restriction
                 types = [eschema.type for eschema in self.schema.entities()
-                         if not eschema.is_final()]
+                         if not eschema.final]
                 constraints.vars_have_same_types( varnames, types )
         self.solve(node, constraints)
 
@@ -468,7 +468,7 @@ class ETypeResolver(object):
             if not isinstance(rhs, nodes.VariableRef):
                 return True
             self._extract_constraint(constraints, rhs.name, lhs, rschema.objects)
-        elif isinstance(rhs, nodes.Constant) and not rschema.is_final():
+        elif isinstance(rhs, nodes.Constant) and not rschema.final:
             # rhs.type is None <-> NULL
             if not isinstance(lhs, nodes.VariableRef) or rhs.type is None:
                 return True
@@ -554,5 +554,5 @@ class ETypeResolverIgnoreTypeRestriction(ETypeResolver):
     def visit_not(self, et, constraints):
         child = et.children[0]
         if isinstance(child, nodes.Relation) and \
-           not self.schema.rschema(child.r_type).is_final():
+           not self.schema.rschema(child.r_type).final:
             return True

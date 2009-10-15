@@ -712,11 +712,12 @@ class VariableRef(HSMixin, LeafNode):
 
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node"""
-        if isinstance(self.variable, ColumnAlias):
-            newvar = stmt.get_variable(self.name, self.variable.colnum)
+        var = self.variable
+        if isinstance(var, ColumnAlias):
+            newvar = stmt.get_variable(self.name, var.colnum)
         else:
             newvar = stmt.get_variable(self.name)
-        newvar.init_copy(self.variable)
+        newvar.init_copy(var)
         return (newvar,)
 
     def is_equivalent(self, other):
@@ -902,7 +903,7 @@ class Referenceable(object):
         for rel in self.stinfo['relations']:
             if schema is not None:
                 rschema = schema.rschema(rel.r_type)
-                if rschema.is_final():
+                if rschema.final:
                     if self.name == rel.children[0].name:
                         # ignore final relation where this variable is used as subject
                         continue
