@@ -480,7 +480,7 @@ class Comparison(HSMixin, Node):
         elif operator == '=' and isinstance(value, Constant) and \
                  value.type is None:
             operator = 'IS'
-        assert operator in ('<', '<=', '=', '>=', '>', 'ILIKE', 'LIKE', 'IS'), operator
+        assert operator in ('=', '<', '<=', '>=', '>', 'ILIKE', 'LIKE', 'IS'), operator
         self.operator = operator.encode()
         if value is not None:
             self.append(value)
