@@ -146,10 +146,10 @@ class RQLSTChecker(object):
                 rtype = graph[(tovar, fromvar)]
                 cardidx = 1
             rschema = self.schema.rschema(rtype)
-            for rdef in rschema.iter_rdefs():
+            for rdef in rschema.rdefs.itervalues():
                 # XXX aggregats handling needs much probably some enhancements...
                 if not (tovar in select.aggregated
-                        or rschema.rproperty(rdef[0], rdef[1], 'cardinality')[cardidx] in '?1'):
+                        or rdef.cardinality[cardidx] in '?1'):
                     return False
             fromvar = tovar
         return True
