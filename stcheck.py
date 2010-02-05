@@ -34,7 +34,7 @@ class RQLSTChecker(object):
     """Check a RQL syntax tree for errors not detected on parsing.
 
     Some simple rewriting of the tree may be done too:
-    * if a OR is used on a symetric relation
+    * if a OR is used on a symmetric relation
     * IN function with a single child
 
     use assertions for internal error but specific `BadRQLQuery` exception for
@@ -236,14 +236,14 @@ class RQLSTChecker(object):
 
     def visit_or(self, ou, errors):
         #assert len(ou.children) == 2, len(ou.children)
-        # simplify Ored expression of a symetric relation
+        # simplify Ored expression of a symmetric relation
         r1, r2 = ou.children[0], ou.children[1]
         try:
             r1type = r1.r_type
             r2type = r2.r_type
         except AttributeError:
             return # can't be
-        if r1type == r2type and self.schema.rschema(r1type).symetric:
+        if r1type == r2type and self.schema.rschema(r1type).symmetric:
             lhs1, rhs1 = r1.get_variable_parts()
             lhs2, rhs2 = r2.get_variable_parts()
             try:
