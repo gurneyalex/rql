@@ -18,7 +18,7 @@ class ERSchema(object):
 
 
 class RelationSchema(ERSchema):
-    def __init__(self, assoc_types, symetric=False, card=None):
+    def __init__(self, assoc_types, symmetric=False, card=None):
         self.assoc_types = assoc_types
         self.subj_types = [e_type[0] for e_type in assoc_types]
         self.final = False
@@ -29,7 +29,7 @@ class RelationSchema(ERSchema):
                 if e_type in ('Int', 'Datetime', 'String'):
                     self.final = True
         self.obj_types = d.keys()
-        self.symetric = symetric
+        self.symmetric = symmetric
         self.inlined = False
         if card is None:
             if self.final:
@@ -124,7 +124,7 @@ class DummySchema(object):
                                          ('Student', ('Student',) ),
                                          ('Person', ('Student',) ),
                                          ),
-                                        symetric=True),
+                                        symmetric=True),
             'located' : RelationSchema( ( ('Person', ('Address',) ),
                                           ('Student', ('Address',) ),
                                           ('Company', ('Address',) ),
@@ -416,7 +416,7 @@ class AnalyzerClassTest(TestCase):
         sols = sorted(node.children[0].solutions)
         self.assertEqual(sols, [{'E1': 'Company'}])
 
-    def test_not_symetric_relation_eid(self):
+    def test_not_symmetric_relation_eid(self):
         node = self.helper.parse('Any P WHERE X eid 0, NOT X connait P')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)

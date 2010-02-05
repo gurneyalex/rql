@@ -906,7 +906,7 @@ class Referenceable(object):
                 if mainindex in lhsvar.stinfo['selected']:
                     return tr(rtype)
                 if mainindex in rhsvar.stinfo['selected']:
-                    if schema is not None and rschema.symetric:
+                    if schema is not None and rschema.symmetric:
                         return tr(rtype)
                     return tr(rtype + '_object')
             if rhsvar is self:
