@@ -365,7 +365,11 @@ public:
 	unsigned int n_b = 0;
 	if (s->status() != SS_FAILED) {
 	    n_p = s->propagators();
+#if GE_VERSION<PM_VERSION(3,2,0)
 	    n_b = s->branchings();
+#else
+	    n_b = s->branchers();
+#endif
 	}
 #if GE_VERSION<PM_VERSION(2,0,0)
     Engine<RqlSolver> e(s);
