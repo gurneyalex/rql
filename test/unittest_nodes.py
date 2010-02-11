@@ -1,5 +1,7 @@
 # -*- coding: iso-8859-1 -*-
 
+from datetime import date, datetime
+
 from logilab.common.testlib import TestCase, unittest_main
 
 from rql import nodes, stmts, parse, BadRQLQuery, RQLHelper
@@ -28,8 +30,8 @@ class EtypeFromPyobjTC(TestCase):
         self.assertEquals(nodes.etype_from_pyobj(0.), 'Float')
 
     def test_datetime(self):
-        self.assertEquals(nodes.etype_from_pyobj(nodes.now()), 'Datetime')
-        self.assertEquals(nodes.etype_from_pyobj(nodes.today()), 'Datetime')
+        self.assertEquals(nodes.etype_from_pyobj(datetime.now()), 'Datetime')
+        self.assertEquals(nodes.etype_from_pyobj(date.today()), 'Date')
 
     def test_string(self):
         self.assertEquals(nodes.etype_from_pyobj('hop'), 'String')
