@@ -1,4 +1,4 @@
-from logilab.common.testlib import TestCase, unittest_main
+from logilab.common.testlib import TestCase, unittest_main, mock_object as mock
 
 from rql import RQLHelper, TypeResolverException
 
@@ -18,18 +18,15 @@ class ERSchema(object):
 
 
 class RelationSchema(ERSchema):
-    def __init__(self, assoc_types, symetric=False, card=None):
+    def __init__(self, assoc_types, symmetric=False, card=None):
         self.assoc_types = assoc_types
         self.subj_types = [e_type[0] for e_type in assoc_types]
-        self.final = False
         d = {}
         for e_type, dest_types in assoc_types:
             for e_type in dest_types:
                 d[e_type] = 1
-                if e_type in ('Int', 'Datetime', 'String'):
-                    self.final = True
         self.obj_types = d.keys()
-        self.symetric = symetric
+        self.symmetric = symmetric
         self.inlined = False
         if card is None:
             if self.final:
@@ -37,6 +34,11 @@ class RelationSchema(ERSchema):
             else:
                 card = '**'
         self.card = card
+        self.rdefs = {}
+        for subjtype, dest_types in self.assoc_types:
+            for objtype in dest_types:
+                self.rdefs[(subjtype, objtype)] = mock(subject=subjtype, object=objtype, cardinality=self.card)
+
 
     def associations(self):
         return self.assoc_types
@@ -51,14 +53,6 @@ class RelationSchema(ERSchema):
     def final(self):
         return self.obj_types[0] in FINAL_ETYPES
 
-    def iter_rdefs(self):
-        for subjtype, dest_types in self.assoc_types:
-            for objtype in dest_types:
-                yield subjtype, objtype
-
-    def rproperty(self, subj, obj, rprop):
-        assert rprop == 'cardinality'
-        return self.card
 
 class EntitySchema(ERSchema):
     def __init__(self, type, specialized_by=None):
@@ -124,7 +118,7 @@ class DummySchema(object):
                                          ('Student', ('Student',) ),
                                          ('Person', ('Student',) ),
                                          ),
-                                        symetric=True),
+                                        symmetric=True),
             'located' : RelationSchema( ( ('Person', ('Address',) ),
                                           ('Student', ('Address',) ),
                                           ('Company', ('Address',) ),
@@ -416,7 +410,7 @@ class AnalyzerClassTest(TestCase):
         sols = sorted(node.children[0].solutions)
         self.assertEqual(sols, [{'E1': 'Company'}])
 
-    def test_not_symetric_relation_eid(self):
+    def test_not_symmetric_relation_eid(self):
         node = self.helper.parse('Any P WHERE X eid 0, NOT X connait P')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)

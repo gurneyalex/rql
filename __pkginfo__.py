@@ -1,21 +1,19 @@
 # pylint: disable-msg=W0622
 """RQL packaging information.
 
-:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:copyright: 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 :license: General Public License version 2 - http://www.gnu.org/licenses
 """
 __docformat__ = "restructuredtext en"
 
 modname = "rql"
-numversion = (0, 23, 0)
+numversion = (0, 24, 0)
 version = '.'.join(str(num) for num in numversion)
 
 license = 'LGPL'
-copyright = '''Copyright (c) 2003-2009 LOGILAB S.A. (Paris, FRANCE).
-http://www.logilab.fr/ -- mailto:contact@logilab.fr'''
 
-author = "Sylvain Thenault"
+author = "Logilab"
 author_email = "contact@logilab.fr"
 
 short_desc = "relationship query language (RQL) utilities"
@@ -25,10 +23,6 @@ such as a parser, a type inferencer.
 web = "http://www.logilab.org/project/rql"
 ftp = "ftp://ftp.logilab.org/pub/rql"
 
-
-# debianize info
-debian_maintainer = 'Sylvain Thenault'
-debian_maintainer_email = 'sylvain.thenault@logilab.fr'
 pyversions = ['2.4']
 
 
@@ -58,16 +52,14 @@ GECODE_VERSION = encode_version(*gecode_version())
 if sys.platform != 'win32':
     ext_modules = [Extension('rql_solve',
                              ['gecode_solver.cpp'],
-                              libraries=['gecodeint', 'gecodekernel', 
-                                         'gecodesearch','gecodesupport'],
+                              libraries=['gecodeint', 'gecodekernel', 'gecodesearch',],
                              extra_compile_args=['-DGE_VERSION=%s' % GECODE_VERSION],
                          )
                    ]
 else:
     ext_modules = [ Extension('rql_solve',
                               ['gecode_solver.cpp'],
-                              libraries=['gecodeint', 'gecodekernel', 
-                                         'gecodesearch','gecodesupport'],
+                              libraries=['gecodeint', 'gecodekernel', 'gecodesearch',],
                               extra_compile_args=['-DGE_VERSION=%s' % GECODE_VERSION],
                               extra_link_args=['-static-libgcc'],
                               )
