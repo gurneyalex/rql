@@ -1,7 +1,7 @@
 """RQL library (implementation independant).
 
 :copyright:
-  2001-2009 `LOGILAB S.A. <http://www.logilab.fr>`_ (Paris, FRANCE),
+  2001-2010 `LOGILAB S.A. <http://www.logilab.fr>`_ (Paris, FRANCE),
   all rights reserved.
 
 :contact:

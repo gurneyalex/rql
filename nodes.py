@@ -3,7 +3,7 @@
 This module defines all the nodes we can find in a RQL Syntax tree, except
 root nodes, defined in the `stmts` module.
 
-:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:copyright: 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 :license: General Public License version 2 - http://www.gnu.org/licenses
 """
@@ -23,12 +23,6 @@ CONSTANT_TYPES = frozenset((None, 'Date', 'Datetime', 'Boolean', 'Float', 'Int',
                             'String', 'Substitute', 'etype'))
 
 
-# keep using mx DateTime by default for bw compat
-def use_py_datetime():
-    global KEYWORD_MAP
-    KEYWORD_MAP = {'NOW' : datetime.now,
-                   'TODAY': date.today}
-
 ETYPE_PYOBJ_MAP = { bool: 'Boolean',
                     int: 'Int',
                     long: 'Int',
@@ -42,21 +36,14 @@ ETYPE_PYOBJ_MAP = { bool: 'Boolean',
                     timedelta: 'Interval',
                     }
 
-
-try:
-    from mx.DateTime import DateTimeType, DateTimeDeltaType, today, now
-    KEYWORD_MAP = {'NOW' : now,
-                   'TODAY': today}
-    ETYPE_PYOBJ_MAP[DateTimeType] = 'Datetime'
-    ETYPE_PYOBJ_MAP[DateTimeDeltaType] = 'Datetime'
-except:
-    use_py_datetime()
+KEYWORD_MAP = {'NOW' : datetime.now,
+               'TODAY': date.today}
 
 def etype_from_pyobj(value):
     """guess yams type from python value"""
     # note:
-    # * Password is not selectable so no problem)
-    # * use type(value) and not value.__class__ since mx instances have no
+    # * Password is not selectable so no problem
+    # * use type(value) and not value.__class__ since C instances may have no
     #   __class__ attribute
     return ETYPE_PYOBJ_MAP[type(value)]
 
@@ -480,7 +467,7 @@ class Comparison(HSMixin, Node):
         elif operator == '=' and isinstance(value, Constant) and \
                  value.type is None:
             operator = 'IS'
-        assert operator in ('<', '<=', '=', '>=', '>', 'ILIKE', 'LIKE', 'IS'), operator
+        assert operator in ('=', '<', '<=', '>=', '>', 'ILIKE', 'LIKE', 'IS'), operator
         self.operator = operator.encode()
         if value is not None:
             self.append(value)
@@ -919,7 +906,7 @@ class Referenceable(object):
                 if mainindex in lhsvar.stinfo['selected']:
                     return tr(rtype)
                 if mainindex in rhsvar.stinfo['selected']:
-                    if schema is not None and rschema.symetric:
+                    if schema is not None and rschema.symmetric:
                         return tr(rtype)
                     return tr(rtype + '_object')
             if rhsvar is self:

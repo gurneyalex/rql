@@ -108,7 +108,7 @@ class CheckClassTest(TestCase):
 # no more supported, use outerjoin explicitly
 #            ('Any X,Y WHERE X work_for Y OR NOT X work_for Y', 'Any X,Y WHERE X? work_for Y?'),
 #            ('Any X,Y WHERE NOT X work_for Y OR X work_for Y', 'Any X,Y WHERE X? work_for Y?'),
-            # test symetric OR rewrite
+            # test symmetric OR rewrite
             ("DISTINCT Any P WHERE P connait S OR S connait P, S name 'chouette'",
              "DISTINCT Any P WHERE P connait S, S name 'chouette'"),
             # queries that should not be rewritten
