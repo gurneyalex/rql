@@ -52,16 +52,17 @@ KEYWORDS = set(('INSERT', 'SET', 'DELETE',
                 'LIMIT', 'OFFSET'))
 
 
-from logilab.common.adbh import _GenericAdvFuncHelper, FunctionDescr, \
-    auto_register_function
+from logilab.common.decorators import monkeypatch
+from logilab.db import SQL_FUNCTIONS_REGISTRY, FunctionDescr
 
-def st_description(cls, funcnode, mainindex, tr):
+RQL_FUNCTIONS_REGISTRY = SQL_FUNCTIONS_REGISTRY.copy()
+
+@monkeypatch(FunctionDescr)
+def st_description(self, funcnode, mainindex, tr):
     return '%s(%s)' % (
-        tr(cls.name),
+        tr(self.name),
         ', '.join(sorted(child.get_description(mainindex, tr)
                          for child in iter_funcnode_variables(funcnode))))
-
-FunctionDescr.st_description = classmethod(st_description)
 
 def iter_funcnode_variables(funcnode):
     for term in funcnode.children:
@@ -93,19 +94,13 @@ def common_parent(node1, node2):
         node2 = node2.parent
     raise Exception('DUH!')
 
-FUNCTIONS = _GenericAdvFuncHelper.FUNCTIONS.copy()
-
 def register_function(funcdef):
-    if isinstance(funcdef, basestring) :
-        funcdef = FunctionDescr(funcdef.upper())
-    assert not funcdef.name in FUNCTIONS, \
-           '%s is already registered' % funcdef.name
-    FUNCTIONS[funcdef.name] = funcdef
-    auto_register_function(funcdef)
+    RQL_FUNCTIONS_REGISTRY.register_function(funcdef)
+    SQL_FUNCTIONS_REGISTRY.register_function(funcdef)
 
 def function_description(funcname):
     """Return the description (`FunctionDescription`) for a RQL function."""
-    return FUNCTIONS[funcname.upper()]
+    return RQL_FUNCTIONS_REGISTRY.get_function(funcname)
 
 def quote(value):
     """Quote a string value."""
