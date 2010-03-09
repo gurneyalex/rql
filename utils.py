@@ -53,7 +53,7 @@ KEYWORDS = set(('INSERT', 'SET', 'DELETE',
 
 
 from logilab.common.decorators import monkeypatch
-from logilab.db import SQL_FUNCTIONS_REGISTRY, FunctionDescr
+from logilab.database import SQL_FUNCTIONS_REGISTRY, FunctionDescr
 
 RQL_FUNCTIONS_REGISTRY = SQL_FUNCTIONS_REGISTRY.copy()
 
