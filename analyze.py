@@ -7,8 +7,6 @@
 __docformat__ = "restructuredtext en"
 
 from cStringIO import StringIO
-import warnings
-warnings.filterwarnings(action='ignore', module='logilab.constraint.propagation')
 
 from rql import TypeResolverException, nodes
 from pprint import pprint
@@ -20,6 +18,8 @@ try:
     import rql_solve
 except ImportError:
     rql_solve = None
+    import warnings
+    warnings.filterwarnings(action='ignore', module='logilab.constraint.propagation')
     from logilab.constraint import Repository, Solver, fd
 
     # Gecode solver not available
