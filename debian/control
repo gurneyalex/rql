@@ -12,7 +12,7 @@ Homepage: http://www.logilab.org/project/rql
 Package: python-rql
 Architecture: any
 XB-Python-Version: ${python:Versions}
-Depends: ${python:Depends}, ${misc:Depends}, ${shlibs:Depends}, python-logilab-common (>= 0.35.3-1), yapps2-runtime, python-logilab-db
+Depends: ${python:Depends}, ${misc:Depends}, ${shlibs:Depends}, python-logilab-common (>= 0.35.3-1), yapps2-runtime, python-logilab-database
 Provides: ${python:Provides}
 Description: relationship query language (RQL) utilities
  A library providing the base utilities to handle RQL queries,

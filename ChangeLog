@@ -1,6 +1,13 @@
 ChangeLog for RQL
 =================
 
+2010-03-16  --  0.25.0
+    * depends on logilab-database
+
+    * raise BadRQLQuery when using optional on attribute relation
+
+
+
 2010-02-10  --  0.24.0
     * update to yams 0.27 api
 
