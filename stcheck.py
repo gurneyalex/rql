@@ -319,8 +319,8 @@ class RQLSTChecker(object):
     def visit_function(self, function, errors):
         try:
             funcdescr = function_description(function.name)
-            errors.append('unknown function "%s"' % function.name)
         except UnknownFunction:
+            errors.append('unknown function "%s"' % function.name)
         else:
             try:
                 funcdescr.check_nbargs(len(function.children))
