@@ -9,6 +9,7 @@ __docformat__ = "restructuredtext en"
 from itertools import chain
 from logilab.common.compat import any
 from logilab.common.graph import has_path
+from logilab.database import UnknownFunction
 
 from rql._exceptions import BadRQLQuery
 from rql.utils import function_description
@@ -318,8 +319,8 @@ class RQLSTChecker(object):
     def visit_function(self, function, errors):
         try:
             funcdescr = function_description(function.name)
-        except KeyError:
             errors.append('unknown function "%s"' % function.name)
+        except UnknownFunction:
         else:
             try:
                 funcdescr.check_nbargs(len(function.children))
