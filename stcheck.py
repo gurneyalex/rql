@@ -24,6 +24,12 @@ def _var_graphid(subvarname, trmap, select):
     except KeyError:
         return subvarname + str(id(select))
 
+def bloc_simplification(variable, term):
+    try:
+        variable.stinfo['blocsimplification'].add(term)
+    except KeyError:
+        variable.stinfo['blocsimplification'] = set((term,))
+
 
 class GoTo(Exception):
     """Exception used to control the visit of the tree."""
@@ -407,7 +413,6 @@ class RQLSTChecker(object):
         pass
 
 
-
 class RQLSTAnnotator(object):
     """Annotate RQL syntax tree to ease further code generation from it.
 
@@ -459,7 +464,7 @@ class RQLSTAnnotator(object):
             # if there is a having clause, bloc simplification of variables used in GROUPBY
             for term in node.groupby:
                 for vref in term.get_nodes(VariableRef):
-                    vref.variable.stinfo['blocsimplification'].add(term)
+                    bloc_simplification(vref.variable, term)
 
     def rewrite_shared_optional(self, exists, var):
         """if variable is shared across multiple scopes, need some tree
@@ -474,29 +479,42 @@ class RQLSTAnnotator(object):
                 vref.unregister_reference()
                 newvref = VariableRef(newvar)
                 vref.parent.replace(vref, newvref)
+                stinfo = var.stinfo
                 # update stinfo structure which may have already been
                 # partially processed
-                if rel in var.stinfo['rhsrelations']:
+                if rel in stinfo['rhsrelations']:
                     lhs, rhs = rel.get_parts()
                     if vref is rhs.children[0] and \
                            self.schema.rschema(rel.r_type).final:
                         update_attrvars(newvar, rel, lhs)
                         lhsvar = getattr(lhs, 'variable', None)
-                        var.stinfo['attrvars'].remove( (lhsvar, rel.r_type) )
-                        if var.stinfo['attrvar'] is lhsvar:
-                            if var.stinfo['attrvars']:
-                                var.stinfo['attrvar'] = iter(var.stinfo['attrvars']).next()
+                        stinfo['attrvars'].remove( (lhsvar, rel.r_type) )
+                        if stinfo['attrvar'] is lhsvar:
+                            if stinfo['attrvars']:
+                                stinfo['attrvar'] = iter(stinfo['attrvars']).next()
                             else:
-                                var.stinfo['attrvar'] = None
-                    var.stinfo['rhsrelations'].remove(rel)
+                                stinfo['attrvar'] = None
+                    stinfo['rhsrelations'].remove(rel)
                     newvar.stinfo['rhsrelations'].add(rel)
-                for stinfokey in ('blocsimplification','typerels', 'uidrels',
-                                  'relations', 'optrelations'):
-                    try:
-                        var.stinfo[stinfokey].remove(rel)
-                        newvar.stinfo[stinfokey].add(rel)
-                    except KeyError:
-                        continue
+                try:
+                    stinfo['relations'].remove(rel)
+                    newvar.stinfo['relations'].add(rel)
+                except KeyError:
+                    pass
+                try:
+                    stinfo['optrelations'].remove(rel)
+                    newvar.add_optional_relation(rel)
+                except KeyError:
+                    pass
+                try:
+                    stinfo['blocsimplification'].remove(rel)
+                    bloc_simplification(newvar, rel)
+                except KeyError:
+                    pass
+                if stinfo['uidrel'] is rel:
+                    newvar.stinfo['uidrel'] = rel
+                if stinfo['typerel'] is rel:
+                    newvar.stinfo['typerel'] = rel
         # shared references
         newvar.stinfo['constnode'] = var.stinfo['constnode']
         if newvar.stmt.solutions: # solutions already computed
@@ -527,10 +545,8 @@ class RQLSTAnnotator(object):
         # may be a constant once rqlst has been simplified
         lhsvar = getattr(lhs, 'variable', None)
         if relation.is_types_restriction():
-            #assert rhs.operator == '='
-            #assert not relation.optional
             if lhsvar is not None:
-                lhsvar.stinfo['typerels'].add(relation)
+                lhsvar.stinfo['typerel'] = relation
             return
         if relation.optional is not None:
             exists = relation.scope
@@ -539,20 +555,20 @@ class RQLSTAnnotator(object):
             if lhsvar is not None:
                 if exists is not None and lhsvar.scope is lhsvar.stmt:
                     lhsvar = self.rewrite_shared_optional(exists, lhsvar)
-                lhsvar.stinfo['blocsimplification'].add(relation)
+                bloc_simplification(lhsvar, relation)
                 if relation.optional == 'both':
-                    lhsvar.stinfo['optrelations'].add(relation)
+                    lhsvar.add_optional_relation(relation)
                 elif relation.optional == 'left':
-                    lhsvar.stinfo['optrelations'].add(relation)
+                    lhsvar.add_optional_relation(relation)
             try:
                 rhsvar = rhs.children[0].variable
                 if exists is not None and rhsvar.scope is rhsvar.stmt:
                     rhsvar = self.rewrite_shared_optional(exists, rhsvar)
-                rhsvar.stinfo['blocsimplification'].add(relation)
+                bloc_simplification(rhsvar, relation)
                 if relation.optional == 'right':
-                    rhsvar.stinfo['optrelations'].add(relation)
+                    rhsvar.add_optional_relation(relation)
                 elif relation.optional == 'both':
-                    rhsvar.stinfo['optrelations'].add(relation)
+                    rhsvar.add_optional_relation(relation)
             except AttributeError:
                 # may have been rewritten as well
                 pass
@@ -570,11 +586,11 @@ class RQLSTAnnotator(object):
                             isinstance(relation.parent, Not)):
                         if isinstance(constnode, Constant):
                             lhsvar.stinfo['constnode'] = constnode
-                        lhsvar.stinfo.setdefault(key, set()).add(relation)
+                        lhsvar.stinfo['uidrel'] = relation
                 else:
                     lhsvar.stinfo.setdefault(key, set()).add(relation)
             elif rschema.final or rschema.inlined:
-                lhsvar.stinfo['blocsimplification'].add(relation)
+                bloc_simplification(lhsvar, relation)
         for vref in rhs.get_nodes(VariableRef):
             var = vref.variable
             var.set_scope(scope)
@@ -586,8 +602,13 @@ class RQLSTAnnotator(object):
 
 
 def update_attrvars(var, relation, lhs):
+    # stinfo['attrvars'] is set of couple (lhs variable name, relation name)
+    # where the `var` attribute variable is used
     lhsvar = getattr(lhs, 'variable', None)
-    var.stinfo['attrvars'].add( (lhsvar, relation.r_type) )
+    try:
+        var.stinfo['attrvars'].add( (lhsvar, relation.r_type) )
+    except KeyError:
+        var.stinfo['attrvars'] = set([(lhsvar, relation.r_type)])
     # give priority to variable which is not in an EXISTS as
     # "main" attribute variable
     if var.stinfo['attrvar'] is None or not isinstance(relation.scope, Exists):
