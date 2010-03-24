@@ -465,50 +465,48 @@ class RQLSTAnnotator(object):
         """if variable is shared across multiple scopes, need some tree
         rewriting
         """
-        if var.scope is var.stmt:
-            # allocate a new variable
-            newvar = var.stmt.make_variable()
-            newvar.prepare_annotation()
-            for vref in var.references():
-                if vref.scope is exists:
-                    rel = vref.relation()
-                    vref.unregister_reference()
-                    newvref = VariableRef(newvar)
-                    vref.parent.replace(vref, newvref)
-                    # update stinfo structure which may have already been
-                    # partially processed
-                    if rel in var.stinfo['rhsrelations']:
-                        lhs, rhs = rel.get_parts()
-                        if vref is rhs.children[0] and \
-                               self.schema.rschema(rel.r_type).final:
-                            update_attrvars(newvar, rel, lhs)
-                            lhsvar = getattr(lhs, 'variable', None)
-                            var.stinfo['attrvars'].remove( (lhsvar, rel.r_type) )
-                            if var.stinfo['attrvar'] is lhsvar:
-                                if var.stinfo['attrvars']:
-                                    var.stinfo['attrvar'] = iter(var.stinfo['attrvars']).next()
-                                else:
-                                    var.stinfo['attrvar'] = None
-                        var.stinfo['rhsrelations'].remove(rel)
-                        newvar.stinfo['rhsrelations'].add(rel)
-                    for stinfokey in ('blocsimplification','typerels', 'uidrels',
-                                      'relations', 'optrelations'):
-                        try:
-                            var.stinfo[stinfokey].remove(rel)
-                            newvar.stinfo[stinfokey].add(rel)
-                        except KeyError:
-                            continue
-            # shared references
-            newvar.stinfo['constnode'] = var.stinfo['constnode']
-            if newvar.stmt.solutions: # solutions already computed
-                newvar.stinfo['possibletypes'] = var.stinfo['possibletypes']
-                for sol in newvar.stmt.solutions:
-                    sol[newvar.name] = sol[var.name]
-            rel = exists.add_relation(var, 'identity', newvar)
-            # we have to force visit of the introduced relation
-            self.visit_relation(rel, exists, exists)
-            return newvar
-        return None
+        # allocate a new variable
+        newvar = var.stmt.make_variable()
+        newvar.prepare_annotation()
+        for vref in var.references():
+            if vref.scope is exists:
+                rel = vref.relation()
+                vref.unregister_reference()
+                newvref = VariableRef(newvar)
+                vref.parent.replace(vref, newvref)
+                # update stinfo structure which may have already been
+                # partially processed
+                if rel in var.stinfo['rhsrelations']:
+                    lhs, rhs = rel.get_parts()
+                    if vref is rhs.children[0] and \
+                           self.schema.rschema(rel.r_type).final:
+                        update_attrvars(newvar, rel, lhs)
+                        lhsvar = getattr(lhs, 'variable', None)
+                        var.stinfo['attrvars'].remove( (lhsvar, rel.r_type) )
+                        if var.stinfo['attrvar'] is lhsvar:
+                            if var.stinfo['attrvars']:
+                                var.stinfo['attrvar'] = iter(var.stinfo['attrvars']).next()
+                            else:
+                                var.stinfo['attrvar'] = None
+                    var.stinfo['rhsrelations'].remove(rel)
+                    newvar.stinfo['rhsrelations'].add(rel)
+                for stinfokey in ('blocsimplification','typerels', 'uidrels',
+                                  'relations', 'optrelations'):
+                    try:
+                        var.stinfo[stinfokey].remove(rel)
+                        newvar.stinfo[stinfokey].add(rel)
+                    except KeyError:
+                        continue
+        # shared references
+        newvar.stinfo['constnode'] = var.stinfo['constnode']
+        if newvar.stmt.solutions: # solutions already computed
+            newvar.stinfo['possibletypes'] = var.stinfo['possibletypes']
+            for sol in newvar.stmt.solutions:
+                sol[newvar.name] = sol[var.name]
+        rel = exists.add_relation(var, 'identity', newvar)
+        # we have to force visit of the introduced relation
+        self.visit_relation(rel, exists, exists)
+        return newvar
 
     # tree nodes ##############################################################
 
@@ -539,10 +537,8 @@ class RQLSTAnnotator(object):
             if not isinstance(exists, Exists):
                 exists = None
             if lhsvar is not None:
-                if exists is not None:
-                    newvar = self.rewrite_shared_optional(exists, lhsvar)
-                    if newvar is not None:
-                        lhsvar = newvar
+                if exists is not None and lhsvar.scope is lhsvar.stmt:
+                    lhsvar = self.rewrite_shared_optional(exists, lhsvar)
                 lhsvar.stinfo['blocsimplification'].add(relation)
                 if relation.optional == 'both':
                     lhsvar.stinfo['optrelations'].add(relation)
@@ -550,10 +546,8 @@ class RQLSTAnnotator(object):
                     lhsvar.stinfo['optrelations'].add(relation)
             try:
                 rhsvar = rhs.children[0].variable
-                if exists is not None:
-                    newvar = self.rewrite_shared_optional(exists, rhsvar)
-                    if newvar is not None:
-                        rhsvar = newvar
+                if exists is not None and rhsvar.scope is rhsvar.stmt:
+                    rhsvar = self.rewrite_shared_optional(exists, rhsvar)
                 rhsvar.stinfo['blocsimplification'].add(relation)
                 if relation.optional == 'right':
                     rhsvar.stinfo['optrelations'].add(relation)
