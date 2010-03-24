@@ -1,6 +1,8 @@
 from logilab.common.testlib import TestCase, unittest_main
-from unittest_analyze import DummySchema
+
 from rql import RQLHelper, BadRQLQuery, stmts, nodes
+
+from unittest_analyze import DummySchema
 
 BAD_QUERIES = (
     'Any X, Y GROUPBY X',

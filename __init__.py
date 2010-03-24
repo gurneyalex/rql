@@ -45,7 +45,7 @@ class RQLHelper(object):
         if uid_func_mapping:
             for key in uid_func_mapping:
                 special_relations[key] = 'uid'
-        self._checker = RQLSTChecker(schema)
+        self._checker = RQLSTChecker(schema, special_relations)
         self._annotator = RQLSTAnnotator(schema, special_relations)
         self._analyser_lock = threading.Lock()
         if resolver_class is None:
