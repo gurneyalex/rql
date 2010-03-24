@@ -9,6 +9,7 @@ __docformat__ = "restructuredtext en"
 from itertools import chain
 from logilab.common.compat import any
 from logilab.common.graph import has_path
+from logilab.database import UnknownFunction
 
 from rql._exceptions import BadRQLQuery
 from rql.utils import function_description
@@ -265,8 +266,8 @@ class RQLSTChecker(object):
 
     def visit_relation(self, relation, errors):
         if relation.optional and relation.neged():
-                errors.append("can use optional relation under NOT (%s)"
-                              % relation.as_string())
+            errors.append("can use optional relation under NOT (%s)"
+                          % relation.as_string())
         # special case "X identity Y"
         if relation.r_type == 'identity':
             lhs, rhs = relation.children
@@ -280,8 +281,15 @@ class RQLSTChecker(object):
                 #assert isinstance(rhs.children[0], Constant)
                 #assert rhs.operator == 'IS', rhs.operator
                 #assert rhs.children[0].type == None
-        elif not relation.r_type in self.schema:
-            errors.append('unknown relation `%s`' % relation.r_type)
+        else:
+            try:
+                rschema = self.schema.rschema(relation.r_type)
+            except KeyError:
+                errors.append('unknown relation `%s`' % relation.r_type)
+            else:
+                if relation.optional and rschema.final:
+                    errors.append("shouldn't use optional on final relation `%s`"
+                                  % relation.r_type)
         try:
             vargraph = relation.stmt.vargraph
             rhsvarname = relation.children[1].children[0].variable.name
@@ -311,7 +319,7 @@ class RQLSTChecker(object):
     def visit_function(self, function, errors):
         try:
             funcdescr = function_description(function.name)
-        except KeyError:
+        except UnknownFunction:
             errors.append('unknown function "%s"' % function.name)
         else:
             try:
