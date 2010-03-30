@@ -945,7 +945,7 @@ class Referenceable(object):
 
 class ColumnAlias(Referenceable):
     __slots__ = ('colnum', 'query',
-                 '_q_sql', '_q_sqltable') # XXX ginco specific
+                 '_q_sql', '_q_sqltable') # XXX cubicweb specific
     def __init__(self, alias, colnum, query=None):
         super(ColumnAlias, self).__init__(alias)
         self.colnum = int(colnum)

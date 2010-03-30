@@ -128,6 +128,7 @@ class RQLHelper(object):
         for subquery in select.with_:
             for select in subquery.query.children:
                 self._simplify(select)
+        rewritten = False
         for var in select.defined_vars.values():
             stinfo = var.stinfo
             if stinfo['constnode'] and not stinfo['blocsimplification']:
@@ -176,9 +177,10 @@ class RQLHelper(object):
                         rhs = copy_uid_node(select, rhs, vconsts)
                         vref.parent.replace(vref, rhs)
                 del select.defined_vars[var.name]
+                rewritten = True
                 if vconsts:
                     select.stinfo['rewritten'][var.name] = vconsts
-        if select.stinfo['rewritten'] and select.solutions:
+        if rewritten and select.solutions:
             select.clean_solutions()
 
     def compare(self, rqlstring1, rqlstring2):
