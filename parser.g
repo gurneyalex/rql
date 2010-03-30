@@ -92,7 +92,7 @@ parser Hercule:
     token ADD_OP:      r'\+|-'
     token MUL_OP:      r'\*|/'
     token FUNCTION:    r'[A-Za-z_]+\s*(?=\()'
-    token R_TYPE:      r'[a-z][a-z0-9_]*'
+    token R_TYPE:      r'[a-z_][a-z0-9_]*'
     token E_TYPE:      r'[A-Z][A-Za-z0-9]*[a-z]+[0-9]*'
     token VARIABLE:    r'[A-Z][A-Z0-9_]*'
     token COLALIAS:    r'[A-Z][A-Z0-9_]*\.\d+'

@@ -7,8 +7,6 @@
 __docformat__ = "restructuredtext en"
 
 from cStringIO import StringIO
-import warnings
-warnings.filterwarnings(action='ignore', module='logilab.constraint.propagation')
 
 from rql import TypeResolverException, nodes
 from pprint import pprint
@@ -20,6 +18,8 @@ try:
     import rql_solve
 except ImportError:
     rql_solve = None
+    import warnings
+    warnings.filterwarnings(action='ignore', module='logilab.constraint.propagation')
     from logilab.constraint import Repository, Solver, fd
 
     # Gecode solver not available
@@ -368,12 +368,15 @@ class ETypeResolver(object):
     def visit(self, node, uid_func_mapping=None, kwargs=None, debug=False):
         # FIXME: not thread safe
         self.debug = debug
-        if uid_func_mapping:
+        if uid_func_mapping is not None:
             assert len(uid_func_mapping) <= 1
             self.uid_func_mapping = uid_func_mapping
             self.uid_func = uid_func_mapping.values()[0]
         self.kwargs = kwargs
         self._visit(node)
+        if uid_func_mapping is not None:
+            self.uid_func_mapping = None
+            self.uid_func = None
 
     def visit_union(self, node):
         for select in node.children:
