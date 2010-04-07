@@ -428,7 +428,6 @@ class RQLSTAnnotator(object):
         #assert not node.annotated
         node.accept(self)
         node.annotated = True
-
     def _visit_stmt(self, node):
         for var in node.defined_vars.itervalues():
             var.prepare_annotation()
@@ -513,8 +512,10 @@ class RQLSTAnnotator(object):
                     pass
                 if stinfo['uidrel'] is rel:
                     newvar.stinfo['uidrel'] = rel
+                    stinfo['uidrel'] = None
                 if stinfo['typerel'] is rel:
                     newvar.stinfo['typerel'] = rel
+                    stinfo['typerel'] = None
         # shared references
         newvar.stinfo['constnode'] = var.stinfo['constnode']
         if newvar.stmt.solutions: # solutions already computed
