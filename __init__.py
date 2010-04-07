@@ -136,11 +136,8 @@ class RQLHelper(object):
                 var = uidrel.children[0].variable
                 vconsts = []
                 rhs = uidrel.children[1].children[0]
-                #from rql.nodes import Constant
-                #assert isinstance(rhs, nodes.Constant), rhs
                 for vref in var.references():
                     rel = vref.relation()
-                    #assert vref.parent
                     if rel is None:
                         term = vref
                         while not term.parent is select:
@@ -162,9 +159,6 @@ class RQLHelper(object):
                             rhs = copy_uid_node(select, rhs, vconsts)
                             select.groupby[select.groupby.index(vref)] = rhs
                             rhs.parent = select
-                    elif rel is uidrel:
-                        # drop this relation
-                        rel.parent.remove(rel)
                     elif rel.is_types_restriction():
                         stinfo['typerel'] = None
                         rel.parent.remove(rel)
@@ -172,6 +166,7 @@ class RQLHelper(object):
                         rhs = copy_uid_node(select, rhs, vconsts)
                         vref.parent.replace(vref, rhs)
                 del select.defined_vars[var.name]
+                uidrel.parent.remove(uidrel)
                 stinfo['uidrel'] = None
                 rewritten = True
                 if vconsts:
