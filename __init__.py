@@ -159,6 +159,8 @@ class RQLHelper(object):
                             rhs = copy_uid_node(select, rhs, vconsts)
                             select.groupby[select.groupby.index(vref)] = rhs
                             rhs.parent = select
+                    elif rel is uidrel:
+                        uidrel.parent.remove(uidrel)
                     elif rel.is_types_restriction():
                         stinfo['typerel'] = None
                         rel.parent.remove(rel)
@@ -166,7 +168,6 @@ class RQLHelper(object):
                         rhs = copy_uid_node(select, rhs, vconsts)
                         vref.parent.replace(vref, rhs)
                 del select.defined_vars[var.name]
-                uidrel.parent.remove(uidrel)
                 stinfo['uidrel'] = None
                 rewritten = True
                 if vconsts:
