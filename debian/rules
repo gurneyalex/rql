@@ -12,13 +12,13 @@
 #export DH_VERBOSE=1
 
 build: build-stamp
-build-stamp: 
+build-stamp:
 	dh_testdir
 	(for PYTHON in `pyversions -r`; do \
-	    $${PYTHON} setup.py build ; done )
+	    NO_SETUPTOOLS=1 $${PYTHON} setup.py build ; done )
 	${MAKE} -C doc html || true
 	touch build-stamp
-clean: 
+clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp configure-stamp
@@ -33,7 +33,7 @@ install: build
 	dh_clean -k
 	dh_installdirs
 	(for PYTHON in `pyversions -r`; do \
-		$${PYTHON} setup.py install --no-compile --prefix=debian/python-rql/usr/ ; \
+		NO_SETUPTOOLS=1 $${PYTHON} setup.py install --no-compile --prefix=debian/python-rql/usr/ ; \
 	done)
 	# remove test directory (installed in in the doc directory)
 	rm -rf debian/python-rql/usr/lib/python*/site-packages/rql/test
@@ -45,10 +45,10 @@ binary-indep:
 
 # Build architecture-dependent files here.
 binary-arch: build install
-	dh_testdir 
-	dh_testroot 
+	dh_testdir
+	dh_testroot
 	dh_install -a
-	dh_pysupport -a 
+	dh_pysupport -a
 	gzip -9 -c ChangeLog > changelog.gz
 	dh_installchangelogs -a
 	dh_installexamples -a
@@ -59,7 +59,7 @@ binary-arch: build install
 	dh_fixperms -a
 	dh_shlibdeps -a
 	dh_installdeb -a
-	dh_gencontrol -a 
+	dh_gencontrol -a
 	dh_md5sums -a
 	dh_builddeb -a
 
