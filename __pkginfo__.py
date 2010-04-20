@@ -8,7 +8,7 @@
 __docformat__ = "restructuredtext en"
 
 modname = "rql"
-numversion = (0, 25, 0)
+numversion = (0, 26, 0)
 version = '.'.join(str(num) for num in numversion)
 
 license = 'LGPL'
@@ -64,3 +64,14 @@ else:
                               extra_link_args=['-static-libgcc'],
                               )
                     ]
+
+install_requires = [
+    'logilab-common >= 0.47.0',
+    'logilab-database',
+    'yapps2 >= 2.1.1',
+    ]
+
+# links to download yapps2 package that is not (yet) registered in pypi
+dependency_links = [
+    "http://ftp.logilab.org/pub/yapps/yapps2-2.1.1.zip#egg=yapps2-2.1.1",
+    ]
