@@ -1,6 +1,17 @@
 ChangeLog for RQL
 =================
 
+2010-04-20  --  0.26.0
+    * setuptools support
+
+    * variable and column alias stinfo optimization
+
+    * analyzer return key used in args to unambiguify solutions
+
+    * rewrite_shared_optional refactoring
+
+
+
 2010-03-16  --  0.25.0
     * depends on logilab-database
 
