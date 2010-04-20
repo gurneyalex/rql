@@ -38,7 +38,7 @@ subpackage_of = getattr(__pkginfo__, 'subpackage_of', None)
 include_dirs = getattr(__pkginfo__, 'include_dirs', [])
 ext_modules = getattr(__pkginfo__, 'ext_modules', None)
 install_requires = getattr(__pkginfo__, 'install_requires', None)
-dependency_links = getattr(__pkginfo__, 'dependency_links', None)
+dependency_links = getattr(__pkginfo__, 'dependency_links', [])
 
 STD_BLACKLIST = ('CVS', '.svn', '.hg', 'debian', 'dist', 'build')
 
@@ -150,19 +150,12 @@ class MyInstallLib(install_lib.install_lib):
 
 def install(**kwargs):
     """setup entry point"""
-    try:
-        if USE_SETUPTOOLS:
+    if USE_SETUPTOOLS:
+        if '--force-manifest' in sys.argv:
             sys.argv.remove('--force-manifest')
-    except:
-        pass
-    try:
-        if not USE_SETUPTOOLS:
-            # install-layout option was introduced in 2.5.3-1~exp1
-            if sys.versioninfo < (2, 5, 4):
-                sys.argv.remove('--install-layout=deb')
-                print "W: remove '--install-layout=deb' option"
-    except:
-        pass
+    # install-layout option was introduced in 2.5.3-1~exp1
+    elif sys.version_info < (2, 5, 4) and '--install-layout=deb' in sys.argv:
+        sys.argv.remove('--install-layout=deb')
     if subpackage_of:
         package = subpackage_of + '.' + modname
         kwargs['package_dir'] = {package : '.'}
