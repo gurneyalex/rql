@@ -836,33 +836,32 @@ class Referenceable(object):
             # relations where this variable is used on the lhs/rhs
             'relations': set(),
             'rhsrelations': set(),
-            'optrelations': set(),
-            # empty if this variable may be simplified (eg not used in optional
-            # relations and no final relations where this variable is used on
-            # the lhs)
-            'blocsimplification': set(),
-            # type relations (e.g. "is") where this variable is used on the lhs
-            'typerels': set(),
-            # uid relations (e.g. "eid") where this variable is used on the lhs
-            'uidrels': set(),
             # selection indexes if any
             'selected': set(),
-            # if this variable is an attribute variable (ie final entity),
-            # link to the (prefered) attribute owner variable
+            # type restriction (e.g. "is" / "is_instance_of") where this
+            # variable is used on the lhs
+            'typerel': None,
+            # uid relations (e.g. "eid") where this variable is used on the lhs
+            'uidrel': None,
+            # if this variable is an attribute variable (ie final entity), link
+            # to the (prefered) attribute owner variable
             'attrvar': None,
-            # set of couple (lhs variable name, relation name) where this
-            # attribute variable is used
-            'attrvars': set(),
             # constant node linked to an uid variable if any
             'constnode': None,
             })
+
+    def add_optional_relation(self, relation):
+        try:
+            self.stinfo['optrelations'].add(relation)
+        except KeyError:
+            self.stinfo['optrelations'] = set((relation,))
 
     def get_type(self, solution=None, kwargs=None):
         """return entity type of this object, 'Any' if not found"""
         if solution:
             return solution[self.name]
-        for rel in self.stinfo['typerels']:
-            return str(rel.children[1].children[0].value)
+        if self.stinfo['typerel']:
+            return str(self.stinfo['typerel'].children[1].children[0].value)
         schema = self.schema
         if schema is not None:
             for rel in self.stinfo['rhsrelations']:
