@@ -33,7 +33,7 @@ include_dirs = []
 
 def gecode_version():
     import os, subprocess
-    version = [1, 3, 1]
+    version = [3,3,1]
     if os.path.exists('data/gecode_version.cc'):
         try:
             res = os.system("g++ -o gecode_version data/gecode_version.cc")
@@ -59,8 +59,12 @@ if sys.platform != 'win32':
 else:
     ext_modules = [ Extension('rql_solve',
                               ['gecode_solver.cpp'],
-                              libraries=['gecodeint', 'gecodekernel', 'gecodesearch',],
-                              extra_compile_args=['-DGE_VERSION=%s' % GECODE_VERSION],
-                              extra_link_args=['-static-libgcc'],
+                              libraries=['GecodeInt-3-3-1-r-x86', 
+                                         'GecodeKernel-3-3-1-r-x86', 
+                                         'GecodeSearch-3-3-1-r-x86',
+                                         'GecodeSupport-3-3-1-r-x86',
+                                         ],
+                              extra_compile_args=['/DGE_VERSION=%s' % GECODE_VERSION, '/EHsc'],
+                              #extra_link_args=['-static-libgcc'],
                               )
                     ]
