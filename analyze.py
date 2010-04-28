@@ -354,9 +354,10 @@ class ETypeResolver(object):
             assert cst.type
             if cst.type == 'Substitute':
                 eid = self.kwargs[cst.value]
+                self.deambiguifiers.add(cst.value)
             else:
                 eid = cst.value
-            cst.uidtype = self.uid_func(eid)
+            cst.uidtype = self.uid_func(cst.eval(self.kwargs))
             types.add(cst.uidtype)
         return types
 
@@ -387,10 +388,12 @@ class ETypeResolver(object):
             self.uid_func_mapping = uid_func_mapping
             self.uid_func = uid_func_mapping.values()[0]
         self.kwargs = kwargs
+        self.deambiguifiers = set()
         self._visit(node)
         if uid_func_mapping is not None:
             self.uid_func_mapping = None
             self.uid_func = None
+        return self.deambiguifiers
 
     def visit_union(self, node):
         for select in node.children:
