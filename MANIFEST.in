@@ -10,7 +10,8 @@ include parser.g
 include README
 include TODO 
 include ChangeLog
-include DEPENDS
+include COPYING 
+include COPYING.LESSER 
 include data/gecode_version.cc
 
 recursive-include tools *.py *.rql

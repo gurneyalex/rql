@@ -1,17 +1,21 @@
-"""RQL library (implementation independant).
-
-:copyright:
-  2001-2010 `LOGILAB S.A. <http://www.logilab.fr>`_ (Paris, FRANCE),
-  all rights reserved.
-
-:contact:
-  http://www.logilab.org/project/rql --
-  mailto:python-projects@logilab.org
-
-:license:
-  `General Public License version 2
-  <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>`_
-"""
+# copyright 2004-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
+#
+# This file is part of rql.
+#
+# rql is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 2.1 of the License, or (at your option)
+# any later version.
+#
+# rql is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with rql. If not, see <http://www.gnu.org/licenses/>.
+"""RQL library (implementation independant)."""
 __docformat__ = "restructuredtext en"
 
 from rql.__pkginfo__ import version as __version__

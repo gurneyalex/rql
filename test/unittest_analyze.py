@@ -1,3 +1,20 @@
+# copyright 2004-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
+#
+# This file is part of rql.
+#
+# rql is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 2.1 of the License, or (at your option)
+# any later version.
+#
+# rql is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with rql. If not, see <http://www.gnu.org/licenses/>.
 from logilab.common.testlib import TestCase, unittest_main, mock_object as mock
 
 from rql import RQLHelper, TypeResolverException
@@ -284,7 +301,7 @@ class AnalyzerClassTest(TestCase):
                                 {'X': 'Student', 'T': 'Eetype'}])
 
     def test_not(self):
-        node = self.helper.parse('Any X WHERE not X is Person')
+        node = self.helper.parse('Any X WHERE NOT X is Person')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
         expected = ALL_SOLS[:]

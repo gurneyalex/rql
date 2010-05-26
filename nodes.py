@@ -1,11 +1,25 @@
+# copyright 2004-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
+#
+# This file is part of rql.
+#
+# rql is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 2.1 of the License, or (at your option)
+# any later version.
+#
+# rql is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with rql. If not, see <http://www.gnu.org/licenses/>.
 """RQL syntax tree nodes.
 
 This module defines all the nodes we can find in a RQL Syntax tree, except
 root nodes, defined in the `stmts` module.
 
-:copyright: 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
-:contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
-:license: General Public License version 2 - http://www.gnu.org/licenses
 """
 __docformat__ = "restructuredtext en"
 
@@ -254,10 +268,6 @@ class Not(Node):
     def __repr__(self, encoding=None, kwargs=None):
         return 'NOT (%s)' % repr(self.children[0])
 
-    @property
-    def sqlscope(self):
-        return self
-
     def ored(self, traverse_scope=False, _fromnode=None):
         # XXX consider traverse_scope ?
         return self.parent.ored(traverse_scope, _fromnode or self)
@@ -324,7 +334,6 @@ class Exists(EditableMixIn, BaseNode):
     @property
     def scope(self):
         return self
-    sqlscope = scope
 
     def ored(self, traverse_scope=False, _fromnode=None):
         if not traverse_scope:
@@ -986,8 +995,6 @@ class ColumnAlias(Referenceable):
     def get_scope(self):
         return self.query
     scope = property(get_scope, set_scope)
-    sqlscope = scope
-    set_sqlscope = set_scope
 
 
 class Variable(Referenceable):
@@ -1015,7 +1022,6 @@ class Variable(Referenceable):
     def prepare_annotation(self):
         super(Variable, self).prepare_annotation()
         self.stinfo['scope'] = None
-        self.stinfo['sqlscope'] = None
 
     def _set_scope(self, key, scopenode):
         if scopenode is self.stmt or self.stinfo[key] is None:
@@ -1028,12 +1034,6 @@ class Variable(Referenceable):
     def get_scope(self):
         return self.stinfo['scope']
     scope = property(get_scope, set_scope)
-
-    def set_sqlscope(self, sqlscopenode):
-        self._set_scope('sqlscope', sqlscopenode)
-    def get_sqlscope(self):
-        return self.stinfo['sqlscope']
-    sqlscope = property(get_sqlscope, set_sqlscope)
 
     def valuable_references(self):
         """return the number of "valuable" references :
