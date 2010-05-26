@@ -226,7 +226,7 @@ class CopyTest(TestCase):
         newroot.append(copy)
         self.annotate(newroot)
         self.simplify(newroot)
-        self.assertEquals(newroot.as_string(), 'Any 1,U WHERE 2 owned_by U, NOT 1 owned_by U')
+        self.assertEquals(newroot.as_string(), 'Any 1,U WHERE 2 owned_by U, NOT EXISTS(1 owned_by U)')
         self.assertEquals(copy.defined_vars['U'].valuable_references(), 3)
 
 
@@ -241,23 +241,60 @@ class AnnotateTest(TestCase):
 #         self.annotate(rqlst)
 #         self.failUnless(rqlst.defined_vars['L'].stinfo['attrvar'])
 
-    def test_is_rel_no_scope(self):
-        """is relation used as type restriction should not affect variable's scope,
-        and should not be included in stinfo['relations']"""
+    def test_is_rel_no_scope_1(self):
+        """is relation used as type restriction should not affect variable's
+        scope, and should not be included in stinfo['relations']
+        """
         rqlst = self.parse('Any X WHERE C is Company, EXISTS(X work_for C)').children[0]
         C = rqlst.defined_vars['C']
         self.failIf(C.scope is rqlst, C.scope)
         self.assertEquals(len(C.stinfo['relations']), 1)
+
+    def test_is_rel_no_scope_2(self):
         rqlst = self.parse('Any X, ET WHERE C is ET, EXISTS(X work_for C)').children[0]
         C = rqlst.defined_vars['C']
         self.failUnless(C.scope is rqlst, C.scope)
         self.assertEquals(len(C.stinfo['relations']), 2)
 
-    def test_subquery_annotation(self):
+
+    def test_not_rel_normalization_1(self):
+        rqlst = self.parse('Any X WHERE C is Company, NOT X work_for C').children[0]
+        self.assertEquals(rqlst.as_string(), 'Any X WHERE C is Company, NOT EXISTS(X work_for C)')
+        C = rqlst.defined_vars['C']
+        self.failIf(C.scope is rqlst, C.scope)
+
+    def test_not_rel_normalization_2(self):
+        rqlst = self.parse('Any X, ET WHERE C is ET, NOT X work_for C').children[0]
+        self.assertEquals(rqlst.as_string(), 'Any X,ET WHERE C is ET, NOT EXISTS(X work_for C)')
+        C = rqlst.defined_vars['C']
+        self.failUnless(C.scope is rqlst, C.scope)
+
+    def test_not_rel_normalization_3(self):
+        rqlst = self.parse('Any X WHERE C is Company, X work_for C, NOT C name "World Company"').children[0]
+        self.assertEquals(rqlst.as_string(), "Any X WHERE C is Company, X work_for C, NOT C name 'World Company'")
+        C = rqlst.defined_vars['C']
+        self.failUnless(C.scope is rqlst, C.scope)
+
+    def test_not_rel_normalization_4(self):
+        rqlst = self.parse('Any X WHERE C is Company, NOT (X work_for C, C name "World Company")').children[0]
+        self.assertEquals(rqlst.as_string(), "Any X WHERE C is Company, NOT EXISTS(X work_for C, C name 'World Company')")
+        C = rqlst.defined_vars['C']
+        self.failIf(C.scope is rqlst, C.scope)
+
+    def test_not_rel_normalization_5(self):
+        rqlst = self.parse('Any X WHERE X work_for C, EXISTS(C identity D, NOT Y work_for D, D name "World Company")').children[0]
+        self.assertEquals(rqlst.as_string(), "Any X WHERE X work_for C, EXISTS(C identity D, NOT EXISTS(Y work_for D), D name 'World Company')")
+        D = rqlst.defined_vars['D']
+        self.failIf(D.scope is rqlst, D.scope)
+        self.failUnless(D.scope.parent.scope is rqlst, D.scope.parent.scope)
+
+    def test_subquery_annotation_1(self):
         rqlst = self.parse('Any X WITH X BEING (Any X WHERE C is Company, EXISTS(X work_for C))').children[0]
         C = rqlst.with_[0].query.children[0].defined_vars['C']
         self.failIf(C.scope is rqlst, C.scope)
         self.assertEquals(len(C.stinfo['relations']), 1)
+
+    def test_subquery_annotation_2(self):
         rqlst = self.parse('Any X,ET WITH X,ET BEING (Any X, ET WHERE C is ET, EXISTS(X work_for C))').children[0]
         C = rqlst.with_[0].query.children[0].defined_vars['C']
         self.failUnless(C.scope is rqlst.with_[0].query.children[0], C.scope)

@@ -268,10 +268,6 @@ class Not(Node):
     def __repr__(self, encoding=None, kwargs=None):
         return 'NOT (%s)' % repr(self.children[0])
 
-    @property
-    def sqlscope(self):
-        return self
-
     def ored(self, traverse_scope=False, _fromnode=None):
         # XXX consider traverse_scope ?
         return self.parent.ored(traverse_scope, _fromnode or self)
@@ -338,7 +334,6 @@ class Exists(EditableMixIn, BaseNode):
     @property
     def scope(self):
         return self
-    sqlscope = scope
 
     def ored(self, traverse_scope=False, _fromnode=None):
         if not traverse_scope:
@@ -1000,8 +995,6 @@ class ColumnAlias(Referenceable):
     def get_scope(self):
         return self.query
     scope = property(get_scope, set_scope)
-    sqlscope = scope
-    set_sqlscope = set_scope
 
 
 class Variable(Referenceable):
@@ -1029,7 +1022,6 @@ class Variable(Referenceable):
     def prepare_annotation(self):
         super(Variable, self).prepare_annotation()
         self.stinfo['scope'] = None
-        self.stinfo['sqlscope'] = None
 
     def _set_scope(self, key, scopenode):
         if scopenode is self.stmt or self.stinfo[key] is None:
@@ -1042,12 +1034,6 @@ class Variable(Referenceable):
     def get_scope(self):
         return self.stinfo['scope']
     scope = property(get_scope, set_scope)
-
-    def set_sqlscope(self, sqlscopenode):
-        self._set_scope('sqlscope', sqlscopenode)
-    def get_sqlscope(self):
-        return self.stinfo['sqlscope']
-    sqlscope = property(get_sqlscope, set_sqlscope)
 
     def valuable_references(self):
         """return the number of "valuable" references :
