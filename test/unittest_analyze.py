@@ -301,7 +301,7 @@ class AnalyzerClassTest(TestCase):
                                 {'X': 'Student', 'T': 'Eetype'}])
 
     def test_not(self):
-        node = self.helper.parse('Any X WHERE not X is Person')
+        node = self.helper.parse('Any X WHERE NOT X is Person')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
         expected = ALL_SOLS[:]

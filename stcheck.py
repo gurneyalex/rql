@@ -15,9 +15,8 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with rql. If not, see <http://www.gnu.org/licenses/>.
-"""RQL Syntax tree annotator.
+"""RQL Syntax tree annotator"""
 
-"""
 __docformat__ = "restructuredtext en"
 
 from itertools import chain
@@ -27,7 +26,7 @@ from logilab.database import UnknownFunction
 
 from rql._exceptions import BadRQLQuery
 from rql.utils import function_description
-from rql.nodes import (VariableRef, Constant, Not, Exists, Function,
+from rql.nodes import (Relation, VariableRef, Constant, Not, Exists, Function,
                        Variable, variable_refs)
 from rql.stmts import Union
 
@@ -310,6 +309,37 @@ class RQLSTChecker(object):
         state.under_not.append(True)
     def leave_not(self, not_, state):
         state.under_not.pop()
+        # NOT normalization
+        child = not_.children[0]
+        if self._should_wrap_by_exists(child):
+            not_.remove(child)
+            not_.append(Exists(child))
+
+    def _should_wrap_by_exists(self, child):
+        if isinstance(child, Exists):
+            return False
+        if not isinstance(child, Relation):
+            return True
+        if child.r_type == 'identity':
+            return False
+        rschema = self.schema.rschema(child.r_type)
+        if rschema.final:
+            return False
+        # XXX no exists for `inlined` relation (allow IS NULL optimization)
+        # unless the lhs variable is only referenced from this neged relation,
+        # in which case it's *not* in the statement's scope, hence EXISTS should
+        # be added anyway
+        if rschema.inlined:
+            references = child.children[0].variable.references()
+            valuable = 0
+            for vref in references:
+                rel = vref.relation()
+                if rel is None or not rel.is_types_restriction():
+                    if valuable:
+                        return False
+                    valuable = 1
+            return True
+        return not child.is_types_restriction()
 
     def visit_relation(self, relation, state):
         if relation.optional and state.under_not:
@@ -349,6 +379,7 @@ class RQLSTChecker(object):
                                     '(use IN for %s if desired)' % lhsvar.name)
                     else:
                         state.add_var_info(lhsvar, VAR_HAS_UID_REL)
+
             for vref in relation.children[1].get_nodes(VariableRef):
                 state.add_var_info(vref.variable, VAR_HAS_REL)
         try:
@@ -454,9 +485,8 @@ class RQLSTAnnotator(object):
             for vref in term.get_nodes(VariableRef):
                 vref.variable.stinfo['selected'].add(i)
                 vref.variable.set_scope(node)
-                vref.variable.set_sqlscope(node)
         if node.where is not None:
-            node.where.accept(self, node, node)
+            node.where.accept(self, node)
 
     visit_insert = visit_delete = visit_set = _visit_stmt
 
@@ -538,23 +568,23 @@ class RQLSTAnnotator(object):
                 sol[newvar.name] = sol[var.name]
         rel = exists.add_relation(var, 'identity', newvar)
         # we have to force visit of the introduced relation
-        self.visit_relation(rel, exists, exists)
+        self.visit_relation(rel, exists)
         return newvar
 
     # tree nodes ##############################################################
 
-    def visit_exists(self, node, scope, sqlscope):
-        node.children[0].accept(self, node, node)
+    def visit_exists(self, node, scope):
+        node.children[0].accept(self, node)
 
-    def visit_not(self, node, scope, sqlscope):
-        node.children[0].accept(self, scope, node)
+    def visit_not(self, node, scope):
+        node.children[0].accept(self, scope)
 
-    def visit_and(self, node, scope, sqlscope):
-        node.children[0].accept(self, scope, sqlscope)
-        node.children[1].accept(self, scope, sqlscope)
+    def visit_and(self, node, scope):
+        node.children[0].accept(self, scope)
+        node.children[1].accept(self, scope)
     visit_or = visit_and
 
-    def visit_relation(self, relation, scope, sqlscope):
+    def visit_relation(self, relation, scope):
         #assert relation.parent, repr(relation)
         lhs, rhs = relation.get_parts()
         # may be a constant once rqlst has been simplified
@@ -591,7 +621,6 @@ class RQLSTAnnotator(object):
         rschema = self.schema.rschema(rtype)
         if lhsvar is not None:
             lhsvar.set_scope(scope)
-            lhsvar.set_sqlscope(sqlscope)
             lhsvar.stinfo['relations'].add(relation)
             if rtype in self.special_relations:
                 key = '%srels' % self.special_relations[rtype]
@@ -609,7 +638,6 @@ class RQLSTAnnotator(object):
         for vref in rhs.get_nodes(VariableRef):
             var = vref.variable
             var.set_scope(scope)
-            var.set_sqlscope(sqlscope)
             var.stinfo['relations'].add(relation)
             var.stinfo['rhsrelations'].add(relation)
             if vref is rhs.children[0] and rschema.final:

@@ -57,13 +57,6 @@ class BaseNode(object):
         """
         return self.parent.scope
 
-    @property
-    def sqlscope(self):
-        """Return the SQL scope node to which this node belong (eg Select,
-        Exists or Not node)
-        """
-        return self.parent.sqlscope
-
     def get_nodes(self, klass):
         """Return the list of nodes of a given class in the subtree.
 
