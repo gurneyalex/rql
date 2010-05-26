@@ -1,9 +1,23 @@
 # pylint: disable-msg=W0622
+# copyright 2004-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
+#
+# This file is part of rql.
+#
+# rql is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 2.1 of the License, or (at your option)
+# any later version.
+#
+# rql is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with rql. If not, see <http://www.gnu.org/licenses/>.
 """RQL packaging information.
 
-:copyright: 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
-:contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
-:license: General Public License version 2 - http://www.gnu.org/licenses
 """
 __docformat__ = "restructuredtext en"
 
@@ -33,7 +47,7 @@ include_dirs = []
 
 def gecode_version():
     import os, subprocess
-    version = [1, 3, 1]
+    version = [3,3,1]
     if os.path.exists('data/gecode_version.cc'):
         try:
             res = os.system("g++ -o gecode_version data/gecode_version.cc")
@@ -59,9 +73,13 @@ if sys.platform != 'win32':
 else:
     ext_modules = [ Extension('rql_solve',
                               ['gecode_solver.cpp'],
-                              libraries=['gecodeint', 'gecodekernel', 'gecodesearch',],
-                              extra_compile_args=['-DGE_VERSION=%s' % GECODE_VERSION],
-                              extra_link_args=['-static-libgcc'],
+                              libraries=['GecodeInt-3-3-1-r-x86', 
+                                         'GecodeKernel-3-3-1-r-x86', 
+                                         'GecodeSearch-3-3-1-r-x86',
+                                         'GecodeSupport-3-3-1-r-x86',
+                                         ],
+                              extra_compile_args=['/DGE_VERSION=%s' % GECODE_VERSION, '/EHsc'],
+                              #extra_link_args=['-static-libgcc'],
                               )
                     ]
 
