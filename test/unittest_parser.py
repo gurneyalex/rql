@@ -116,7 +116,23 @@ SPEC_QUERIES = (
     ' WITH T1,T2 BEING ('
     '      (Any X,N WHERE X name N, X transition_of E, E name %(name)s)'
     '       UNION '
-    '      (Any X,N WHERE X name N, X state_of E, E name %(name)s))',
+    '      (Any X,N WHERE X name N, X state_of E, E name %(name)s));',
+
+
+    'Any T2'
+    ' GROUPBY T2'
+    ' WHERE T1 relation T2'
+    ' HAVING COUNT(T1) IN (1,2);',
+
+    'Any T2'
+    ' GROUPBY T2'
+    ' WHERE T1 relation T2'
+    ' HAVING COUNT(T1) IN (1,2) OR COUNT(T1) IN (3,4);',
+
+    'Any T2'
+    ' GROUPBY T2'
+    ' WHERE T1 relation T2'
+    ' HAVING 1 < COUNT(T1) OR COUNT(T1) IN (3,4);',
     )
 
 class ParserHercule(TestCase):
