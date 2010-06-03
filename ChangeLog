@@ -3,7 +3,7 @@ ChangeLog for RQL
 
 --
     * normalize NOT() to NOT EXISTS() when it makes sense
-
+    * fix grammar bug in HAVING clause: should all arbitrary expression and fix to deal with IN() hack
 
 2010-04-20  --  0.26.0
     * setuptools support
