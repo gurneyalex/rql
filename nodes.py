@@ -259,6 +259,10 @@ class Or(BinaryNode):
 class Not(Node):
     """a logical NOT node (unary)"""
     __slots__ = ()
+    def __init__(self, expr=None):
+        Node.__init__(self)
+        if expr is not None:
+            self.append(expr)
 
     def as_string(self, encoding=None, kwargs=None):
         if isinstance(self.children[0], (Exists, Relation)):
