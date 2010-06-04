@@ -16,13 +16,11 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with rql. If not, see <http://www.gnu.org/licenses/>.
-"""RQL packaging information.
-
-"""
+"""RQL packaging information."""
 __docformat__ = "restructuredtext en"
 
 modname = "rql"
-numversion = (0, 26, 0)
+numversion = (0, 26, 1)
 version = '.'.join(str(num) for num in numversion)
 
 license = 'LGPL'
@@ -36,8 +34,6 @@ such as a parser, a type inferencer.
 """
 web = "http://www.logilab.org/project/rql"
 ftp = "ftp://ftp.logilab.org/pub/rql"
-
-pyversions = ['2.4']
 
 
 import os, subprocess, sys
