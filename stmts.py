@@ -271,14 +271,27 @@ class Union(Statement, Node):
 
     # union specific methods ##################################################
 
+    # XXX for bw compat, should now use get_variable_indices (cw > 3.8.4)
     def get_variable_variables(self):
-        """return the set of variable names which take different type according
-        to the solutions
+        change = set()
+        for idx in self.get_variable_indices():
+            for vref in self.children[0].selection[idx].iget_nodes(VariableRef):
+                change.add(vref.name)
+        return change
+
+    def get_variable_indices(self):
+        """return the set of selection indexes which take different types
+        according to the solutions
         """
         change = set()
         values = {}
         for select in self.children:
-            change.update(select.get_variable_variables(values))
+            for descr in select.get_selection_solutions():
+                for i, etype in enumerate(descr):
+                    values.setdefault(i, set()).add(etype)
+        for idx, etypes in values.iteritems():
+            if len(etypes) > 1:
+                change.add(idx)
         return change
 
     def _locate_subquery(self, col, etype, kwargs):
@@ -623,20 +636,20 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
                     newsolutions.append(asol)
             self.solutions = newsolutions
 
-    def get_variable_variables(self, _values=None):
+    def get_selection_solutions(self):
         """return the set of variable names which take different type according
         to the solutions
         """
-        change = set()
-        if _values is None:
-            _values = {}
+        descriptions = set()
         for solution in self.solutions:
-            for vname, etype in solution.iteritems():
-                if not vname in _values:
-                    _values[vname] = etype
-                elif _values[vname] != etype:
-                    change.add(vname)
-        return change
+            descr = []
+            for term in self.selection:
+                try:
+                    descr.append(term.get_type(solution=solution))
+                except CoercionError:
+                    pass
+            descriptions.add(tuple(descr))
+        return descriptions
 
     # quick accessors #########################################################
 
