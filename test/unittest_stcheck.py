@@ -170,6 +170,12 @@ class CheckClassTest(TestCase):
             # A eid 12 can be removed since the type analyzer checked its existence
             ('Any X WHERE A eid 12, X connait Y',
              'Any X WHERE X connait Y'),
+
+            ('Any X WHERE EXISTS(X work_for Y, Y eid 12) OR X eid 12',
+             'Any X WHERE (EXISTS(X work_for 12)) OR (X eid 12)'),
+
+            ('Any X WHERE EXISTS(X work_for Y, Y eid IN (12)) OR X eid IN (12)',
+             'Any X WHERE (EXISTS(X work_for 12)) OR (X eid 12)'),
             ):
             yield self._test_rewrite, rql, expected
 

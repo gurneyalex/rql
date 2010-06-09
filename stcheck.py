@@ -627,7 +627,8 @@ class RQLSTAnnotator(object):
                 if key == 'uidrels':
                     constnode = relation.get_variable_parts()[1]
                     if not (relation.operator() != '=' or
-                            isinstance(relation.parent, Not)):
+                            isinstance(relation.parent, Not) or
+                            relation.parent.ored()):
                         if isinstance(constnode, Constant):
                             lhsvar.stinfo['constnode'] = constnode
                         lhsvar.stinfo['uidrel'] = relation
@@ -642,7 +643,6 @@ class RQLSTAnnotator(object):
             var.stinfo['rhsrelations'].add(relation)
             if vref is rhs.children[0] and rschema.final:
                 update_attrvars(var, relation, lhs)
-
 
 def update_attrvars(var, relation, lhs):
     # stinfo['attrvars'] is set of couple (lhs variable name, relation name)
