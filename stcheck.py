@@ -473,6 +473,7 @@ class RQLSTAnnotator(object):
         #assert not node.annotated
         node.accept(self)
         node.annotated = True
+
     def _visit_stmt(self, node):
         for var in node.defined_vars.itervalues():
             var.prepare_annotation()
@@ -627,6 +628,8 @@ class RQLSTAnnotator(object):
                 if key == 'uidrels':
                     constnode = relation.get_variable_parts()[1]
                     if not (relation.operator() != '=' or
+                            # XXX use state to detect relation under NOT/OR
+                            # + check variable's scope
                             isinstance(relation.parent, Not) or
                             relation.parent.ored()):
                         if isinstance(constnode, Constant):
