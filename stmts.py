@@ -275,7 +275,7 @@ class Union(Statement, Node):
     def get_variable_variables(self):
         change = set()
         for idx in self.get_variable_indices():
-            for vref in self.children[0].selection[idx].iget_nodes(VariableRef):
+            for vref in self.children[0].selection[idx].iget_nodes(nodes.VariableRef):
                 change.add(vref.name)
         return change
 
