@@ -268,8 +268,16 @@ rule exprs_and<<S>>: exprs_not<<S>>        {{ node = exprs_not }}
 rule exprs_not<<S>>: NOT balanced_expr<<S>> {{ return Not(balanced_expr) }}
                    | balanced_expr<<S>>     {{ return balanced_expr }}
 
-rule balanced_expr<<S>>: expr_add<<S>> expr_op<<S>>       {{ expr_op.insert(0, expr_add); return expr_op }}
-                       | r"\(" logical_expr<<S>> r"\)" {{ return logical_expr }}
+#// XXX ambiguity, expr_add may also have '(' as first token. Hence
+#// put "(" logical_expr<<S>> ")" rule first. We can then parse:
+#//
+#//   Any T2 WHERE T1 relation T2 HAVING (1 < COUNT(T1));
+#//
+#// but not
+#//
+#//   Any T2 WHERE T1 relation T2 HAVING (1+2) < COUNT(T1);
+rule balanced_expr<<S>>: r"\(" logical_expr<<S>> r"\)" {{ return logical_expr }}
+                       | expr_add<<S>> expr_op<<S>>    {{ expr_op.insert(0, expr_add); return expr_op }}
 
 # // cant use expr<<S>> without introducing some ambiguities
 rule expr_op<<S>>: CMP_OP expr_add<<S>> {{ return Comparison(CMP_OP.upper(), expr_add) }}
