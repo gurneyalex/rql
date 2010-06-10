@@ -355,12 +355,31 @@ class NodesTest(TestCase):
         self.assertEquals(tree.defined_vars['X'].selected_index(), 0)
         self.assertEquals(tree.defined_vars['N'].selected_index(), None)
 
-    def test_get_variable_variables(self):
-        dummy = self._simpleparse("Any X")
-        dummy.solutions = [{'A': 'String', 'B': 'EUser', 'C': 'EGroup'},
-                           {'A': 'String', 'B': 'Personne', 'C': 'EGroup'},
-                           {'A': 'String', 'B': 'EUser', 'C': 'Societe'}]
-        self.assertEquals(dummy.get_variable_variables(), set(['B', 'C']))
+    def test_get_variable_indices_1(self):
+        dummy = self._parse("Any A,B,C")
+        dummy.children[0].solutions = [{'A': 'String', 'B': 'EUser', 'C': 'EGroup'},
+                                       {'A': 'String', 'B': 'Personne', 'C': 'EGroup'},
+                                       {'A': 'String', 'B': 'EUser', 'C': 'Societe'}]
+        self.assertEquals(dummy.get_variable_indices(), set([1, 2]))
+
+    def test_get_variable_indices_2(self):
+        dummy = self._parse("Any A,B WHERE B relation C")
+        dummy.children[0].solutions = [{'A': 'String', 'B': 'EUser', 'C': 'EGroup'},
+                                       {'A': 'String', 'B': 'Personne', 'C': 'EGroup'},
+                                       {'A': 'String', 'B': 'EUser', 'C': 'Societe'}]
+        self.assertEquals(dummy.get_variable_indices(), set([1]))
+
+    def test_get_variable_indices_3(self):
+        dummy = self._parse("(Any X WHERE X is EGroup) UNION (Any C WHERE C is EUser)")
+        dummy.children[0].solutions = [{'X': 'EGroup'}]
+        dummy.children[1].solutions = [{'C': 'EUser'}]
+        self.assertEquals(dummy.get_variable_indices(), set([0]))
+
+    def test_get_variable_indices_4(self):
+        dummy = self._parse("(Any X,XN WHERE X is EGroup, X name XN) UNION (Any C,CL WHERE C is EUser, C login CL)")
+        dummy.children[0].solutions = [{'X': 'EGroup', 'XN': 'String'}]
+        dummy.children[1].solutions = [{'C': 'EUser', 'CL': 'String'}]
+        self.assertEquals(dummy.get_variable_indices(), set([0]))
 
     # insertion tests #########################################################
 

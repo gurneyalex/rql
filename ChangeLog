@@ -1,6 +1,9 @@
 ChangeLog for RQL
 =================
 
+	--
+    * fix simplification bug with ored uid relations
+
 2010-06-04  --  0.26.1
     * normalize NOT() to NOT EXISTS() when it makes sense
 

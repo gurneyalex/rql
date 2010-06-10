@@ -466,6 +466,8 @@ class Relation(Node):
         self.optional= value
 
 
+OPERATORS = frozenset(('=', '<', '<=', '>=', '>', 'ILIKE', 'LIKE'))
+
 class Comparison(HSMixin, Node):
     """handle comparisons:
 
@@ -477,10 +479,7 @@ class Comparison(HSMixin, Node):
         Node.__init__(self)
         if operator == '~=':
             operator = 'ILIKE'
-        elif operator == '=' and isinstance(value, Constant) and \
-                 value.type is None:
-            operator = 'IS'
-        assert operator in ('=', '<', '<=', '>=', '>', 'ILIKE', 'LIKE', 'IS'), operator
+        assert operator in OPERATORS, operator
         self.operator = operator.encode()
         if value is not None:
             self.append(value)
@@ -502,7 +501,7 @@ class Comparison(HSMixin, Node):
             return '%s %s %s' % (self.children[0].as_string(encoding, kwargs),
                                  self.operator.encode(),
                                  self.children[1].as_string(encoding, kwargs))
-        if self.operator in ('=', 'IS'):
+        if self.operator == '=':
             return self.children[0].as_string(encoding, kwargs)
         return '%s %s' % (self.operator.encode(),
                           self.children[0].as_string(encoding, kwargs))
