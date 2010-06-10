@@ -519,9 +519,17 @@ class Hercule(runtime.Parser):
     def balanced_expr(self, S, _parent=None):
         _context = self.Context(_parent, self._scanner, 'balanced_expr', [S])
         _token = self._peek('r"\\("', 'NULL', 'DATE', 'DATETIME', 'TRUE', 'FALSE', 'FLOAT', 'INT', 'STRING', 'SUBSTITUTE', 'VARIABLE', 'E_TYPE', 'FUNCTION', context=_context)
-        expr_add = self.expr_add(S, _context)
-        expr_op = self.expr_op(S, _context)
-        expr_op.insert(0, expr_add); return expr_op
+        if _token == 'r"\\("':
+            self._scan('r"\\("', context=_context)
+            logical_expr = self.logical_expr(S, _context)
+            self._scan('r"\\)"', context=_context)
+            return logical_expr
+        elif 1:
+            expr_add = self.expr_add(S, _context)
+            expr_op = self.expr_op(S, _context)
+            expr_op.insert(0, expr_add); return expr_op
+        else:
+            raise runtime.SyntaxError(_token[0], 'Could not match balanced_expr')
 
     def expr_op(self, S, _parent=None):
         _context = self.Context(_parent, self._scanner, 'expr_op', [S])

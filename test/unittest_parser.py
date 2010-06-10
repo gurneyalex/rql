@@ -133,6 +133,21 @@ SPEC_QUERIES = (
     ' GROUPBY T2'
     ' WHERE T1 relation T2'
     ' HAVING 1 < COUNT(T1) OR COUNT(T1) IN (3,4);',
+
+    'Any T2'
+    ' GROUPBY T2'
+    ' WHERE T1 relation T2'
+    ' HAVING (COUNT(T1) IN (1,2)) OR (COUNT(T1) IN (3,4));',
+
+    'Any T2'
+    ' GROUPBY T2'
+    ' WHERE T1 relation T2'
+    ' HAVING (1 < COUNT(T1) OR COUNT(T1) IN (3,4));',
+
+    'Any T2'
+    ' GROUPBY T2'
+    ' WHERE T1 relation T2'
+    ' HAVING 1+2 < COUNT(T1);',
     )
 
 class ParserHercule(TestCase):
