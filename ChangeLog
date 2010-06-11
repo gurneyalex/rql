@@ -1,8 +1,16 @@
 ChangeLog for RQL
 =================
 
-	--
+2010-06-11  --  0.26.2
+    * totally remove 'IS' operator
+
+    * replace get_variable_variables by get_variable_indicies
+
+    * fix rule order so 'HAVING (X op Y)' is now parseable while 'HAVING (1+2) op Y' isn't anymore parseable
+
     * fix simplification bug with ored uid relations
+
+
 
 2010-06-04  --  0.26.1
     * normalize NOT() to NOT EXISTS() when it makes sense
