@@ -19,8 +19,8 @@
 
 This module defines only first level nodes (i.e. statements). Child nodes are
 defined in the nodes module
-
 """
+
 __docformat__ = "restructuredtext en"
 
 from copy import deepcopy
@@ -398,7 +398,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
     # select clauses
     groupby = ()
     orderby = ()
-    having = ()
+    having = () # XXX now a single node
     with_ = ()
     # set by the annotator
     has_aggregat = False
@@ -678,16 +678,23 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         self.selection.append(term)
 
     def replace(self, oldnode, newnode):
-        assert oldnode is self.where
-        self.where = newnode
+        if oldnode is self.where:
+            self.where = newnode
+        elif oldnode in self.selection:
+            self.selection[self.selection.index(oldnode)] = newnode
+        elif oldnode in self.orderby:
+            self.orderby[self.orderby.index(oldnode)] = newnode
+        elif oldnode in self.groupby:
+            self.groupby[self.groupby.index(oldnode)] = newnode
+        elif oldnode in self.having:
+            self.having[self.having.index(oldnode)] = newnode
+        else:
+            raise Exception('duh XXX %s' % oldnode)
+        # XXX no undo/reference support 'by design' (eg breaks things if you add
+        # it...)
+        # XXX resetting oldnode parent cause pb with cw.test_views (w/ facets)
+        #oldnode.parent = None
         newnode.parent = self
-#         # XXX no vref handling ?
-#         try:
-#             Statement.replace(self, oldnode, newnode)
-#         except ValueError:
-#             i = self.selection.index(oldnode)
-#             self.selection.pop(i)
-#             self.selection.insert(i, newnode)
 
     def remove(self, node):
         if node is self.where:
@@ -696,6 +703,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             self.remove_sort_term(node)
         elif node in self.groupby:
             self.remove_group_var(node)
+        # XXX having, selection
         else:
             raise Exception('duh XXX')
         node.parent = None
