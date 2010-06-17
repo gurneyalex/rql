@@ -18,8 +18,8 @@
 """Base classes for RQL syntax tree nodes.
 
 Note: this module uses __slots__ to limit memory usage.
-
 """
+
 __docformat__ = "restructuredtext en"
 
 class BaseNode(object):

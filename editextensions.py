@@ -15,9 +15,8 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with rql. If not, see <http://www.gnu.org/licenses/>.
-"""RQL functions for manipulating syntax trees.
+"""RQL functions for manipulating syntax trees."""
 
-"""
 __docformat__ = "restructuredtext en"
 
 from rql.nodes import Constant, Variable, VariableRef, Relation, make_relation
