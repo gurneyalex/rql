@@ -1,6 +1,9 @@
 ChangeLog for RQL
 =================
 
+	--
+    * support for node from having in Select.remove
+
 2010-06-11  --  0.26.2
     * totally remove 'IS' operator
 
