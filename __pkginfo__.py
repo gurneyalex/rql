@@ -20,7 +20,7 @@
 __docformat__ = "restructuredtext en"
 
 modname = "rql"
-numversion = (0, 26, 2)
+numversion = (0, 26, 3)
 version = '.'.join(str(num) for num in numversion)
 
 license = 'LGPL'
@@ -28,7 +28,7 @@ license = 'LGPL'
 author = "Logilab"
 author_email = "contact@logilab.fr"
 
-short_desc = "relationship query language (RQL) utilities"
+description = "relationship query language (RQL) utilities"
 long_desc = """A library providing the base utilities to handle RQL queries,
 such as a parser, a type inferencer.
 """

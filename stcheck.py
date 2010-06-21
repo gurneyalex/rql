@@ -80,9 +80,10 @@ class RQLSTChecker(object):
     errors due to a bad rql input
     """
 
-    def __init__(self, schema, special_relations=None):
+    def __init__(self, schema, special_relations=None, backend=None):
         self.schema = schema
         self.special_relations = special_relations or {}
+        self.backend = backend
 
     def check(self, node):
         state = STCheckState()
@@ -417,6 +418,11 @@ class RQLSTChecker(object):
                 funcdescr.check_nbargs(len(function.children))
             except BadRQLQuery, ex:
                 state.error(str(ex))
+            if self.backend is not None:
+                try:
+                    funcdescr.st_check_backend(self.backend, function)
+                except BadRQLQuery, ex:
+                    state.error(str(ex))
             if funcdescr.aggregat:
                 if isinstance(function.children[0], Function) and \
                        function.children[0].descr().aggregat:

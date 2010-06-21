@@ -38,7 +38,7 @@ class RQLHelper(object):
       - comparison of two queries
     """
     def __init__(self, schema, uid_func_mapping=None, special_relations=None,
-                 resolver_class=None):
+                 resolver_class=None, backend=None):
         # chech schema
         #for e_type in REQUIRED_TYPES:
         #    if not schema.has_entity(e_type):
@@ -49,7 +49,7 @@ class RQLHelper(object):
         if uid_func_mapping:
             for key in uid_func_mapping:
                 special_relations[key] = 'uid'
-        self._checker = RQLSTChecker(schema, special_relations)
+        self._checker = RQLSTChecker(schema, special_relations, backend)
         self._annotator = RQLSTAnnotator(schema, special_relations)
         self._analyser_lock = threading.Lock()
         if resolver_class is None:
@@ -75,6 +75,12 @@ class RQLHelper(object):
         self._checker.schema = schema
         self._annotator.schema = schema
         self._analyser.set_schema(schema)
+
+    def get_backend(self):
+        return self._checker.backend
+    def set_backend(self, backend):
+        self._checker.backend = backend
+    backend = property(get_backend, set_backend)
 
     def parse(self, rqlstring, annotate=True):
         """Return a syntax tree created from a RQL string."""
