@@ -677,6 +677,9 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         term.parent = self
         self.selection.append(term)
 
+    # XXX proprify edition, we should specify if we want:
+    # * undo support
+    # * references handling
     def replace(self, oldnode, newnode):
         if oldnode is self.where:
             self.where = newnode
@@ -703,7 +706,9 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             self.remove_sort_term(node)
         elif node in self.groupby:
             self.remove_group_var(node)
-        # XXX having, selection
+        elif node in self.having:
+            self.having.remove(node)
+        # XXX selection
         else:
             raise Exception('duh XXX')
         node.parent = None
