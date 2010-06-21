@@ -15,10 +15,11 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with rql. If not, see <http://www.gnu.org/licenses/>.
-"""Miscellaneous utilities for RQL.
+"""Miscellaneous utilities for RQL."""
 
-"""
 __docformat__ = "restructuredtext en"
+
+from rql._exceptions import BadRQLQuery
 
 UPPERCASE = u'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 def decompose_b26(index, table=UPPERCASE):
@@ -77,6 +78,12 @@ def st_description(self, funcnode, mainindex, tr):
         tr(self.name),
         ', '.join(sorted(child.get_description(mainindex, tr)
                          for child in iter_funcnode_variables(funcnode))))
+
+@monkeypatch(FunctionDescr)
+def st_check_backend(self, backend, funcnode):
+    if not self.supports(backend):
+        raise BadRQLQuery("backend %s doesn't support function %s" % (backend, self.name))
+
 
 def iter_funcnode_variables(funcnode):
     for term in funcnode.children:
