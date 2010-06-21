@@ -1,9 +1,14 @@
 ChangeLog for RQL
 =================
 
-	--
+2010-06-21  --  0.26.3
+    * support for node from having in Select.remove
+
     * enhanced Select.replace method
+
     * rql st checker now checks function avaibility according to backend (if specified)
+
+
 
 2010-06-11  --  0.26.2
     * totally remove 'IS' operator
