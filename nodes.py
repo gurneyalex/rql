@@ -19,8 +19,8 @@
 
 This module defines all the nodes we can find in a RQL Syntax tree, except
 root nodes, defined in the `stmts` module.
-
 """
+
 __docformat__ = "restructuredtext en"
 
 from itertools import chain
@@ -861,6 +861,9 @@ class Referenceable(object):
             # constant node linked to an uid variable if any
             'constnode': None,
             })
+        # remove optional st infos
+        for key in ('optrelations', 'blocsimplification', 'ftirels'):
+            self.stinfo.pop(key, None)
 
     def add_optional_relation(self, relation):
         try:
