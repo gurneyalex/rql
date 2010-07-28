@@ -1,6 +1,10 @@
 ChangeLog for RQL
 =================
 
+	--
+    * fix re-annotation pb: some stinfo keys wasn't properly reinitialized
+      which may cause pb later (at sql generation time for instance)
+	
 2010-06-21  --  0.26.3
     * support for node from having in Select.remove
 
