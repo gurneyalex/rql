@@ -1,8 +1,10 @@
 ChangeLog for RQL
 =================
 
-	--
-   * fix solutions computation crash with some query using sub-queries (closes #37423)
+2010-08-02  --  0.26.5
+    * fix solutions computation crash with some query using sub-queries (closes #37423)
+
+
 
 2010-07-28  --  0.26.4
     * fix re-annotation pb: some stinfo keys were not properly reinitialized
