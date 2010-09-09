@@ -8,6 +8,9 @@ ChangeLog for RQL
     * add constraint package to dependencies  so we've fallback opportunity if
       gecode is not installed
 
+    * fix subquery_selection_index responsability mess-up: it wasn't doing what
+      it should have done (see cw.rset related_entity implementation)
+
 2010-08-02  --  0.26.5
     * fix solutions computation crash with some query using sub-queries (closes #37423)
 
