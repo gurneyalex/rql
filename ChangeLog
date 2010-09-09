@@ -3,7 +3,10 @@ ChangeLog for RQL
 
 --
     * enhance bad rql query detection with ordered distinct (can't use distinct
-      if an attribute is selected and we order on another attribute)
+      if an attribute is selected and we sort on another attribute)
+
+    * add constraint package to dependencies  so we've fallback opportunity if
+      gecode is not installed
 
 2010-08-02  --  0.26.5
     * fix solutions computation crash with some query using sub-queries (closes #37423)
