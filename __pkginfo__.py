@@ -20,7 +20,7 @@
 __docformat__ = "restructuredtext en"
 
 modname = "rql"
-numversion = (0, 26, 4)
+numversion = (0, 26, 5)
 version = '.'.join(str(num) for num in numversion)
 
 license = 'LGPL'
@@ -83,6 +83,7 @@ install_requires = [
     'logilab-common >= 0.47.0',
     'logilab-database',
     'yapps2 >= 2.1.1',
+    'constraint', # fallback if the gecode compiled module is missing
     ]
 
 # links to download yapps2 package that is not (yet) registered in pypi

@@ -47,7 +47,7 @@ class RelationSchema(ERSchema):
         self.inlined = False
         if card is None:
             if self.final:
-                card = '?*'
+                card = '?1'
             else:
                 card = '**'
         self.card = card

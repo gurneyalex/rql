@@ -327,14 +327,16 @@ class Union(Statement, Node):
         return self._subq_cache[(col, etype)]
 
     def subquery_selection_index(self, subselect, col):
-        """given a select sub-query and a column index in this sub-query, return
-        the selection index for this column in the root query
+        """given a select sub-query and a column index in the root query, return
+        the selection index for this column in the sub-query
         """
-        while col is not None and subselect.parent.parent:
+        selectpath = []
+        while subselect.parent.parent is not None:
             subq = subselect.parent.parent
             subselect = subq.parent
-            termvar = subselect.aliases[subq.aliases[col].name]
-            col = termvar.selected_index()
+            selectpath.insert(0, subselect)
+        for select in selectpath:
+            col = select.selection[col].variable.colnum
         return col
 
     # recoverable modification methods ########################################
@@ -624,13 +626,15 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             solutions = self.solutions
         # this may occurs with rql optimization, for instance on
         # 'Any X WHERE X eid 12' query
-        if not self.defined_vars:
+        if not (self.defined_vars or self.aliases):
             self.solutions = [{}]
         else:
             newsolutions = []
             for origsol in solutions:
                 asol = {}
                 for var in self.defined_vars:
+                    asol[var] = origsol[var]
+                for var in self.aliases:
                     asol[var] = origsol[var]
                 if not asol in newsolutions:
                     newsolutions.append(asol)

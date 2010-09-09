@@ -377,8 +377,8 @@ class ETypeResolver(object):
                     alltypes.add(targettypes)
         else:
             alltypes = get_target_types()
-
-        constraints.var_has_types( var, [ str(t) for t in alltypes] )
+        domain = constraints.domains[var]
+        constraints.var_has_types( var, [str(t) for t in alltypes if t in domain] )
 
     def visit(self, node, uid_func_mapping=None, kwargs=None, debug=False):
         # FIXME: not thread safe
@@ -509,18 +509,26 @@ class ETypeResolver(object):
                         samevar = True
                     else:
                         rhsvars.append(v.name)
+            lhsdomain = constraints.domains[lhsvar]
             if rhsvars:
                 s2 = '=='.join(rhsvars)
+                # filter according to domain necessary for column aliases
+                rhsdomain = constraints.domains[rhsvars[0]]
                 res = []
                 for fromtype, totypes in rschema.associations():
-                    res.append( [ ( [lhsvar], [str(fromtype)]), (rhsvars, [ str(t) for t in totypes]) ] )
+                    if not fromtype in lhsdomain:
+                        continue
+                    ptypes = [str(t) for t in totypes if t in rhsdomain]
+                    res.append( [ ( [lhsvar], [str(fromtype)]), (rhsvars, ptypes) ] )
                 constraints.or_and( res )
             else:
-                constraints.var_has_types( lhsvar, [ str(subj) for subj in rschema.subjects()] )
+                ptypes = [str(subj) for subj in rschema.subjects()
+                          if subj in lhsdomain]
+                constraints.var_has_types( lhsvar, ptypes )
             if samevar:
                 res = []
                 for fromtype, totypes in rschema.associations():
-                    if not fromtype in totypes:
+                    if not (fromtype in totypes and fromtype in lhsdomain):
                         continue
                     res.append(str(fromtype))
                 constraints.var_has_types( lhsvar, res )
