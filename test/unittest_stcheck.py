@@ -52,10 +52,17 @@ BAD_QUERIES = (
 
     'Any X WHERE X name "Toto", P is Person',
 
-    # BAD QUERY cant sort on y
-    'DISTINCT Any X ORDERBY Y WHERE B work_for X, B name Y',
+    "Any X WHERE X eid 0, X eid 1",
 
-    "Any X WHERE X eid 0, X eid 1"
+    # DISTINCT+ORDERBY tests ###################################################
+    # cant sort on Y, B <- work_for X is multivalued
+    'DISTINCT Any X ORDERBY Y WHERE B work_for X, B name Y',
+    # cant sort on PN, there may be different PF values for the same PN value
+    # XXX untrue if PF or PN is marked as unique
+    'DISTINCT Any PF ORDERBY PN WHERE P firstname PF, P name PN',
+    # cant sort on XN, there may be different PF values for the same PF value
+    'DISTINCT Any PF ORDERBY X WHERE P work_for X, P firstname PF',
+    'DISTINCT Any PF ORDERBY XN WHERE P work_for X, P firstname PF, X name XN',
 
     )
 
@@ -66,12 +73,12 @@ OK_QUERIES = (
 
     'DISTINCT Any X, MAX(Y) GROUPBY X WHERE X is Person, Y is Company',
 
+    # DISTINCT+ORDERBY tests ###################################################
     # sorting allowed since order variable reachable from a selected
     # variable with only ?1 cardinality
-    'DISTINCT Any B ORDERBY Y WHERE B work_for X, B name Y',
-    'DISTINCT Any B ORDERBY Y WHERE B work_for X, X name Y',
+    'DISTINCT Any P ORDERBY PN WHERE P work_for X, P name PN',
+    'DISTINCT Any P ORDERBY XN WHERE P work_for X, X name XN',
 
-#    'DISTINCT Any X ORDERBY SN WHERE X in_state S, S name SN',
 
 
     )

@@ -162,8 +162,9 @@ class RQLSTChecker(object):
                 self._check_selected(group, 'group', state)
         if node.distinct and node.orderby:
             # check that variables referenced in the given term are reachable from
-            # a selected variable with only ?1 cardinalityselected
-            selectidx = frozenset(vref.name for term in selected for vref in term.get_nodes(VariableRef))
+            # a selected variable with only ?1 cardinality selected
+            selectidx = frozenset(vref.name for term in selected
+                                  for vref in term.get_nodes(VariableRef))
             schema = self.schema
             for sortterm in node.orderby:
                 for vref in sortterm.term.get_nodes(VariableRef):
@@ -186,20 +187,21 @@ class RQLSTChecker(object):
         path = has_path(graph, fromvar, tovar)
         if path is None:
             return False
-        for tovar in path:
+        for var in path:
             try:
-                rtype = graph[(fromvar, tovar)]
+                rtype = graph[(fromvar, var)]
                 cardidx = 0
             except KeyError:
-                rtype = graph[(tovar, fromvar)]
+                rtype = graph[(var, fromvar)]
                 cardidx = 1
             rschema = self.schema.rschema(rtype)
             for rdef in rschema.rdefs.itervalues():
                 # XXX aggregats handling needs much probably some enhancements...
-                if not (tovar in select.aggregated
-                        or rdef.cardinality[cardidx] in '?1'):
+                if not (var in select.aggregated
+                        or (rdef.cardinality[cardidx] in '?1' and
+                            (var == tovar or not rschema.final))):
                     return False
-            fromvar = tovar
+            fromvar = var
         return True
 
 

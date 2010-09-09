@@ -1,6 +1,10 @@
 ChangeLog for RQL
 =================
 
+--
+    * enhance bad rql query detection with ordered distinct (can't use distinct
+      if an attribute is selected and we order on another attribute)
+
 2010-08-02  --  0.26.5
     * fix solutions computation crash with some query using sub-queries (closes #37423)
 
