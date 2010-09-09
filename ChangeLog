@@ -1,6 +1,24 @@
 ChangeLog for RQL
 =================
 
+--
+    * enhance bad rql query detection with ordered distinct (can't use distinct
+      if an attribute is selected and we sort on another attribute)
+
+    * add constraint package to dependencies  so we've fallback opportunity if
+      gecode is not installed
+
+    * fix subquery_selection_index responsability mess-up: it wasn't doing what
+      it should have done (see cw.rset related_entity implementation)
+
+    * consider subquery aliases in Select.clean_solutions
+
+
+2010-08-02  --  0.26.5
+    * fix solutions computation crash with some query using sub-queries (closes #37423)
+
+
+
 2010-07-28  --  0.26.4
     * fix re-annotation pb: some stinfo keys were not properly reinitialized
       which may cause pb later (at sql generation time for instance)
