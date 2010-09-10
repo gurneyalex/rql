@@ -63,6 +63,7 @@ SPEC_QUERIES = (
     'Any X WHERE X eid 53;',
     'Any X WHERE X eid -53;',
     "Document X WHERE X occurence_of F, F class C, C name 'Bande dessinée', X owned_by U, U login 'syt', X available true;",
+    u"Document X WHERE X occurence_of F, F class C, C name 'Bande dessinée', X owned_by U, U login 'syt', X available true;",
     "Personne P WHERE P travaille_pour S, S nom 'Eurocopter', P interesse_par T, T nom 'formation';",
     "Note N WHERE N ecrit_le D, D day > (today -10), N ecrit_par P, P nom 'jphc' or P nom 'ocy';",
     "Personne P WHERE (P interesse_par T, T nom 'formation') or (P ville 'Paris');",
@@ -167,6 +168,14 @@ class ParserHercule(TestCase):
             if print_errors:
                 print string, ex
             raise
+
+    def test_unicode_constant(self):
+        tree = self.parse(u"Any X WHERE X name 'Ångström';")
+        base = tree.children[0].where
+        comparison = base.children[1]
+        self.failUnless(isinstance(comparison, nodes.Comparison))
+        rhs = comparison.children[0]
+        self.assertEquals(type(rhs.value), unicode)
 
     def test_precedence_1(self):
         tree = self.parse("Any X WHERE X firstname 'lulu' AND X name 'toto' OR X name 'tutu';")
