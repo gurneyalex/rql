@@ -69,8 +69,8 @@ if sys.platform != 'win32':
 else:
     ext_modules = [ Extension('rql_solve',
                               ['gecode_solver.cpp'],
-                              libraries=['GecodeInt-3-3-1-r-x86', 
-                                         'GecodeKernel-3-3-1-r-x86', 
+                              libraries=['GecodeInt-3-3-1-r-x86',
+                                         'GecodeKernel-3-3-1-r-x86',
                                          'GecodeSearch-3-3-1-r-x86',
                                          'GecodeSupport-3-3-1-r-x86',
                                          ],
@@ -82,11 +82,11 @@ else:
 install_requires = [
     'logilab-common >= 0.47.0',
     'logilab-database',
-    'yapps2 >= 2.1.1',
+    'yapps == 2.1.1', # XXX to ensure we don't use the broken pypi version
     'constraint', # fallback if the gecode compiled module is missing
     ]
 
 # links to download yapps2 package that is not (yet) registered in pypi
 dependency_links = [
-    "http://ftp.logilab.org/pub/yapps/yapps2-2.1.1.zip#egg=yapps2-2.1.1",
+    "http://ftp.logilab.org/pub/yapps/yapps2-2.1.1.zip#egg=yapps-2.1.1",
     ]
