@@ -1,17 +1,22 @@
 ChangeLog for RQL
 =================
 
---
+2010-09-10  --  0.26.6
     * enhance bad rql query detection with ordered distinct (can't use distinct
       if an attribute is selected and we sort on another attribute)
-
-    * add constraint package to dependencies  so we've fallback opportunity if
-      gecode is not installed
 
     * fix subquery_selection_index responsability mess-up: it wasn't doing what
       it should have done (see cw.rset related_entity implementation)
 
     * consider subquery aliases in Select.clean_solutions
+
+    * add constraint package to setuptools dependencies so we've fallback
+      opportunity if gecode is not installed
+
+    * fix setuptools dependency on yapps by forcing install of our custom
+      package, so it don't try to install pypi's one which doesn't work well
+      with both pip and easy_install
+
 
 
 2010-08-02  --  0.26.5
