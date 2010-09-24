@@ -101,10 +101,7 @@ class ScopeNode(BaseNode):
             self._varmaker = rqlvar_maker(defined=self.defined_vars,
                                           # XXX only on Select node
                                           aliases=getattr(self, 'aliases', None))
-        name =  self._varmaker.next()
-        while name in self.defined_vars:
-            name =  self._varmaker.next()
-        return name
+        return self._varmaker.next()
 
     def make_variable(self):
         """create a new variable with an unique name for this tree"""
@@ -145,6 +142,7 @@ class ScopeNode(BaseNode):
             print repr(self)
             raise
         return True
+
 
 class Statement(object):
     """base class for statement nodes"""
@@ -702,6 +700,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         # XXX resetting oldnode parent cause pb with cw.test_views (w/ facets)
         #oldnode.parent = None
         newnode.parent = self
+        return oldnode, self, None
 
     def remove(self, node):
         if node is self.where:
@@ -716,6 +715,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         else:
             raise Exception('duh XXX')
         node.parent = None
+        return node, self, None
 
     def undefine_variable(self, var):
         """undefine the given variable and remove all relations where it appears"""
