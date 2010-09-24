@@ -105,6 +105,19 @@ def make_relation(var, rel, rhsargs, rhsclass, operator='='):
     relation.append(cmpop)
     return relation
 
+def make_constant_restriction(var, rtype, value, ctype, operator='='):
+    if ctype is None:
+        ctype = etype_from_pyobj(value)
+    if isinstance(value, (set, frozenset, tuple, list, dict)):
+        if len(value) > 1:
+            rel = make_relation(var, rtype, ('IN',), Function, operator)
+            infunc = rel.children[1].children[0]
+            for atype in sorted(value):
+                infunc.append(Constant(atype, ctype))
+            return rel
+        value = iter(value).next()
+    return make_relation(var, rtype, (value, ctype), Constant, operator)
+
 
 class EditableMixIn(object):
     """mixin class to add edition functionalities to some nodes, eg root nodes
@@ -163,18 +176,8 @@ class EditableMixIn(object):
 
         variable rtype = value
         """
-        if ctype is None:
-            ctype = etype_from_pyobj(value)
-        if isinstance(value, (set, frozenset, tuple, list, dict)):
-            if len(value) > 1:
-                rel = make_relation(var, rtype, ('IN',), Function, operator=operator)
-                infunc = rel.children[1].children[0]
-                for atype in sorted(value):
-                    infunc.append(Constant(atype, ctype))
-                return self.add_restriction(rel)
-            value = iter(value).next()
-        return self.add_restriction(make_relation(var, rtype, (value, ctype),
-                                                  Constant, operator))
+        restr = make_constant_restriction(var, rtype, value, ctype, operator)
+        return self.add_restriction(restr)
 
     def add_relation(self, lhsvar, rtype, rhsvar):
         """builds a restriction node to express '<var> eid <eid>'"""
