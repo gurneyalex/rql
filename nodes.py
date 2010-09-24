@@ -129,14 +129,17 @@ class EditableMixIn(object):
         handling
         """
         # unregister variable references in the removed subtree
+        parent = node.parent
+        stmt = parent.stmt
         for varref in node.iget_nodes(VariableRef):
             varref.unregister_reference()
             if undefine and not varref.variable.stinfo['references']:
-                node.stmt.undefine_variable(varref.variable)
+                stmt.undefine_variable(varref.variable)
+        # remove return actually removed node and its parent
+        node, parent, index = parent.remove(node)
         if self.should_register_op:
             from rql.undo import RemoveNodeOperation
-            self.undo_manager.add_operation(RemoveNodeOperation(node))
-        node.parent.remove(node)
+            self.undo_manager.add_operation(RemoveNodeOperation(node, parent, stmt, index))
 
     def add_restriction(self, relation):
         """add a restriction relation"""
@@ -279,6 +282,9 @@ class Not(Node):
     def neged(self, traverse_scope=False, _fromnode=None, strict=False):
         return self
 
+    def remove(self, child):
+        return self.parent.remove(self)
+
 # def parent_scope_property(attr):
 #     def _get_parent_attr(self, attr=attr):
 #         return getattr(self.parent.scope, attr)
@@ -334,6 +340,10 @@ class Exists(EditableMixIn, BaseNode):
         assert oldnode is self.query
         self.query = newnode
         newnode.parent = self
+        return oldnode, self, None
+
+    def remove(self, child):
+        return self.parent.remove(self)
 
     @property
     def scope(self):
