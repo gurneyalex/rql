@@ -926,13 +926,13 @@ class Referenceable(object):
             rtype = rel.r_type
             lhs, rhs = rel.get_variable_parts()
             # use getattr, may not be a variable ref (rewritten, constant...)
-            lhsvar = getattr(lhs, 'variable', None)
             rhsvar = getattr(rhs, 'variable', None)
             if mainindex is not None:
                 # relation to the main variable, stop searching
-                if mainindex in lhsvar.stinfo['selected']:
+                lhsvar = getattr(lhs, 'variable', None)
+                if lhsvar is not None and mainindex in lhsvar.stinfo['selected']:
                     return tr(rtype)
-                if mainindex in rhsvar.stinfo['selected']:
+                if rhsvar is not None and mainindex in rhsvar.stinfo['selected']:
                     if schema is not None and rschema.symmetric:
                         return tr(rtype)
                     return tr(rtype + '_object')
