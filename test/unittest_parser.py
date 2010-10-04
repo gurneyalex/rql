@@ -149,6 +149,10 @@ SPEC_QUERIES = (
     ' GROUPBY T2'
     ' WHERE T1 relation T2'
     ' HAVING 1+2 < COUNT(T1);',
+
+    'Any X,Y,A ORDERBY Y '
+    'WHERE A done_for Y, X split_into Y, A diem D '
+    'HAVING MIN(D) < "2010-07-01", MAX(D) >= "2010-07-01";',
     )
 
 class ParserHercule(TestCase):
