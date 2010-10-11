@@ -736,7 +736,10 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         # effective undefine operation
         if self.should_register_op:
             from rql.undo import UndefineVarOperation
-            self.undo_manager.add_operation(UndefineVarOperation(var))
+            solutions = [d.copy() for d in self.solutions]
+            self.undo_manager.add_operation(UndefineVarOperation(var, self, solutions))
+        for sol in self.solutions:
+            sol.pop(var.name, None)
         del self.defined_vars[var.name]
 
     def _var_index(self, var):

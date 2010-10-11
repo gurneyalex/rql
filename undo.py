@@ -74,18 +74,21 @@ class NodeOperation(object):
 
 class MakeVarOperation(NodeOperation):
     """Defines how to undo make_variable()."""
-
     def undo(self, selection):
         """undo the operation on the selection"""
         self.stmt.undefine_variable(self.node)
 
 class UndefineVarOperation(NodeOperation):
     """Defines how to undo undefine_variable()."""
+    def __init__(self, node, stmt, solutions):
+        NodeOperation.__init__(self, node, stmt)
+        self.solutions = solutions
 
     def undo(self, selection):
         """undo the operation on the selection"""
         var = self.node
         self.stmt.defined_vars[var.name] = var
+        self.stmt.solutions = self.solutions
 
 class SelectVarOperation(NodeOperation):
     """Defines how to undo add_selected()."""
