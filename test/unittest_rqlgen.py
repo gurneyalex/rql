@@ -41,21 +41,21 @@ class RQLGenTC(TestCase):
         """tests select with entity type only
         """
         rql = self.rql_generator.select('Person')
-        self.assertEquals(rql, 'Person X')
+        self.assertEqual(rql, 'Person X')
         
 
     def test_select_group(self):
         """tests select with group
         """
         rql = self.rql_generator.select('Person', groups=('X',))
-        self.assertEquals(rql, 'Person X\nGROUPBY X')
+        self.assertEqual(rql, 'Person X\nGROUPBY X')
 
 
     def test_select_sort(self):
         """tests select with sort
         """
         rql = self.rql_generator.select('Person', sorts=('X ASC',))
-        self.assertEquals(rql, 'Person X\nSORTBY X ASC')
+        self.assertEqual(rql, 'Person X\nSORTBY X ASC')
 
 
     def test_select(self):
@@ -68,7 +68,7 @@ class RQLGenTC(TestCase):
                                           ('X','surname','S') ),
                                         ('X',),
                                         ('F ASC', 'S DESC'))
-        self.assertEquals(rql, 'Person X\nWHERE X work_for S , S name "Logilab"'
+        self.assertEqual(rql, 'Person X\nWHERE X work_for S , S name "Logilab"'
                           ' , X firstname F , X surname S\nGROUPBY X'
                           '\nSORTBY F ASC, S DESC')
                                         
@@ -80,7 +80,7 @@ class RQLGenTC(TestCase):
                                          ('S','name','"Logilab"'),
                                          ('X','firstname','F'),
                                          ('X','surname','S') ) )
-        self.assertEquals(rql, 'WHERE X work_for S , S name "Logilab" '
+        self.assertEqual(rql, 'WHERE X work_for S , S name "Logilab" '
                           ', X firstname F , X surname S')
 
 
@@ -88,14 +88,14 @@ class RQLGenTC(TestCase):
         """tests the groupby() method behaviour
         """
         rql = self.rql_generator.groupby(('F', 'S'))
-        self.assertEquals(rql, 'GROUPBY F, S')
+        self.assertEqual(rql, 'GROUPBY F, S')
         
 
     def test_sortby(self):
         """tests the sortby() method behaviour
         """
         rql = self.rql_generator.sortby(('F ASC', 'S DESC'))
-        self.assertEquals(rql, 'SORTBY F ASC, S DESC')
+        self.assertEqual(rql, 'SORTBY F ASC, S DESC')
         
 
     def test_insert(self):
@@ -103,7 +103,7 @@ class RQLGenTC(TestCase):
         """
         rql = self.rql_generator.insert('Person', (('firstname', "Clark"),
                                                    ('lastname', "Kent")))
-        self.assertEquals(rql, 'INSERT Person X: X firstname "Clark",'
+        self.assertEqual(rql, 'INSERT Person X: X firstname "Clark",'
                           ' X lastname "Kent"')
         
         
@@ -115,7 +115,7 @@ class RQLGenTC(TestCase):
                                          ('lastname', "Kent")),
                                         (('job', "superhero"),
                                          ('nick', "superman")))
-        self.assertEquals(rql, 'SET X job "superhero", X nick "superman" '
+        self.assertEqual(rql, 'SET X job "superhero", X nick "superman" '
                           'WHERE X is "Person", X firstname "Clark", X '
                           'lastname "Kent"')
 
@@ -126,7 +126,7 @@ class RQLGenTC(TestCase):
         rql = self.rql_generator.delete('Person',
                                         (('firstname', "Clark"),
                                          ('lastname', "Kent")))
-        self.assertEquals(rql, 'DELETE Person X where X firstname "Clark", '
+        self.assertEqual(rql, 'DELETE Person X where X firstname "Clark", '
                           'X lastname "Kent"')
         
 if __name__ == '__main__':
