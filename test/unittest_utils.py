@@ -55,19 +55,19 @@ class RQLVarMakerTC(TestCase):
 
     def test_rqlvar_maker(self):
         varlist = list(utils.rqlvar_maker(27))
-        self.assertEquals(varlist, list('ABCDEFGHIJKLMNOPQRSTUVWXYZ') + ['AA'])
+        self.assertEqual(varlist, list('ABCDEFGHIJKLMNOPQRSTUVWXYZ') + ['AA'])
         varlist = list(utils.rqlvar_maker(27*26+1))
-        self.assertEquals(varlist[-2], 'ZZ')
-        self.assertEquals(varlist[-1], 'AAA')
+        self.assertEqual(varlist[-2], 'ZZ')
+        self.assertEqual(varlist[-1], 'AAA')
 
     def test_rqlvar_maker_dontstop(self):
         varlist = utils.rqlvar_maker()
-        self.assertEquals(varlist.next(), 'A')
-        self.assertEquals(varlist.next(), 'B')
+        self.assertEqual(varlist.next(), 'A')
+        self.assertEqual(varlist.next(), 'B')
         for i in range(24):
             varlist.next()
-        self.assertEquals(varlist.next(), 'AA')
-        self.assertEquals(varlist.next(), 'AB')
+        self.assertEqual(varlist.next(), 'AA')
+        self.assertEqual(varlist.next(), 'AB')
 
         
 if __name__ == '__main__':

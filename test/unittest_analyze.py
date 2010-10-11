@@ -311,19 +311,19 @@ class AnalyzerClassTest(TestCase):
     def test_uid_func_mapping(self):
         h = self.helper
         def type_from_uid(name):
-            self.assertEquals(name, "Logilab")
+            self.assertEqual(name, "Logilab")
             return 'Company'
         uid_func_mapping = {'name': type_from_uid}
         # constant as rhs of the uid relation
         node = h.parse('Any X WHERE X name "Logilab"')
         h.compute_solutions(node, uid_func_mapping, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
-        self.assertEquals(sols, [{'X': 'Company'}])
+        self.assertEqual(sols, [{'X': 'Company'}])
         # variable as rhs of the uid relation
         node = h.parse('Any N WHERE X name N')
         h.compute_solutions(node, uid_func_mapping, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
-        self.assertEquals(sols, [{'X': 'Company', 'N': 'String'},
+        self.assertEqual(sols, [{'X': 'Company', 'N': 'String'},
                                  {'X': 'Person', 'N': 'String'},
                                  {'X': 'Student', 'N': 'String'}])
         # substitute as rhs of the uid relation
@@ -331,19 +331,19 @@ class AnalyzerClassTest(TestCase):
         h.compute_solutions(node, uid_func_mapping, {'company': 'Logilab'},
                         debug=DEBUG)
         sols = sorted(node.children[0].solutions)
-        self.assertEquals(sols, [{'X': 'Company'}])
+        self.assertEqual(sols, [{'X': 'Company'}])
 
     def test_non_regr_subjobj1(self):
         h = self.helper
         def type_from_uid(name):
-            self.assertEquals(name, "Societe")
+            self.assertEqual(name, "Societe")
             return 'Eetype'
         uid_func_mapping = {'name': type_from_uid}
         # constant as rhs of the uid relation
         node = h.parse('Any X WHERE X name "Societe", X is ISOBJ, ISSIBJ is X')
         h.compute_solutions(node, uid_func_mapping, debug=DEBUG)
         sols = sorted(node.children[0].solutions)
-        self.assertEquals(sols, [{'X': 'Eetype', 'ISOBJ': 'Eetype', 'ISSIBJ': 'Address'},
+        self.assertEqual(sols, [{'X': 'Eetype', 'ISOBJ': 'Eetype', 'ISSIBJ': 'Address'},
                                  {'X': 'Eetype', 'ISOBJ': 'Eetype', 'ISSIBJ': 'Company'},
                                  {'X': 'Eetype', 'ISOBJ': 'Eetype', 'ISSIBJ': 'Eetype'},
                                  {'X': 'Eetype', 'ISOBJ': 'Eetype', 'ISSIBJ': 'Person'},
@@ -352,46 +352,46 @@ class AnalyzerClassTest(TestCase):
     def test_non_regr_subjobj2(self):
         h = self.helper
         def type_from_uid(name):
-            self.assertEquals(name, "Societe")
+            self.assertEqual(name, "Societe")
             return 'Eetype'
         uid_func_mapping = {'name': type_from_uid}
         node = h.parse('Any X WHERE X name "Societe", X is ISOBJ, ISSUBJ is X, X is_instance_of ISIOOBJ, ISIOSUBJ is_instance_of X')
         h.compute_solutions(node, uid_func_mapping, debug=DEBUG)
         select = node.children[0]
         sols = sorted(select.solutions)
-        self.assertEquals(len(sols), 25)
+        self.assertEqual(len(sols), 25)
         def var_sols(var):
             s = set()
             for sol in sols:
                 s.add(sol.get(var))
             return s
-        self.assertEquals(var_sols('X'), set(('Eetype',)))
-        self.assertEquals(var_sols('X'), select.defined_vars['X'].stinfo['possibletypes'])
-        self.assertEquals(var_sols('ISSUBJ'), set(('Address', 'Company', 'Eetype', 'Person', 'Student')))
-        self.assertEquals(var_sols('ISSUBJ'), select.defined_vars['ISSUBJ'].stinfo['possibletypes'])
-        self.assertEquals(var_sols('ISOBJ'), set(('Eetype',)))
-        self.assertEquals(var_sols('ISOBJ'), select.defined_vars['ISOBJ'].stinfo['possibletypes'])
-        self.assertEquals(var_sols('ISIOSUBJ'), set(('Address', 'Company', 'Eetype', 'Person', 'Student')))
-        self.assertEquals(var_sols('ISIOSUBJ'), select.defined_vars['ISIOSUBJ'].stinfo['possibletypes'])
-        self.assertEquals(var_sols('ISIOOBJ'), set(('Eetype',)))
-        self.assertEquals(var_sols('ISIOOBJ'), select.defined_vars['ISIOOBJ'].stinfo['possibletypes'])
+        self.assertEqual(var_sols('X'), set(('Eetype',)))
+        self.assertEqual(var_sols('X'), select.defined_vars['X'].stinfo['possibletypes'])
+        self.assertEqual(var_sols('ISSUBJ'), set(('Address', 'Company', 'Eetype', 'Person', 'Student')))
+        self.assertEqual(var_sols('ISSUBJ'), select.defined_vars['ISSUBJ'].stinfo['possibletypes'])
+        self.assertEqual(var_sols('ISOBJ'), set(('Eetype',)))
+        self.assertEqual(var_sols('ISOBJ'), select.defined_vars['ISOBJ'].stinfo['possibletypes'])
+        self.assertEqual(var_sols('ISIOSUBJ'), set(('Address', 'Company', 'Eetype', 'Person', 'Student')))
+        self.assertEqual(var_sols('ISIOSUBJ'), select.defined_vars['ISIOSUBJ'].stinfo['possibletypes'])
+        self.assertEqual(var_sols('ISIOOBJ'), set(('Eetype',)))
+        self.assertEqual(var_sols('ISIOOBJ'), select.defined_vars['ISIOOBJ'].stinfo['possibletypes'])
 
     def test_unusableuid_func_mapping(self):
         h = self.helper
         def type_from_uid(name):
-            self.assertEquals(name, "Logilab")
+            self.assertEqual(name, "Logilab")
             return 'Company'
         uid_func_mapping = {'name': type_from_uid}
         node = h.parse('Any X WHERE NOT X name %(company)s')
         h.compute_solutions(node, uid_func_mapping, {'company': 'Logilab'},
                             debug=DEBUG)
         sols = sorted(node.children[0].solutions)
-        self.assertEquals(sols, ALL_SOLS)
+        self.assertEqual(sols, ALL_SOLS)
         node = h.parse('Any X WHERE X name > %(company)s')
         h.compute_solutions(node, uid_func_mapping, {'company': 'Logilab'},
                             debug=DEBUG)
         sols = sorted(node.children[0].solutions)
-        self.assertEquals(sols, ALL_SOLS)
+        self.assertEqual(sols, ALL_SOLS)
 
 
     def test_base_guess_3(self):
@@ -500,7 +500,7 @@ class AnalyzerClassTest(TestCase):
                          [{'X': 'Person', 'F': 'String'}])
         # auto-simplification
         self.assertEqual(len(node.children[0].with_[0].query.children), 1)
-        self.assertEquals(node.as_string(), 'Any L,Y,F WHERE Y located L, Y is Person WITH Y,F BEING (Any X,F WHERE X is Person, X firstname F)')
+        self.assertEqual(node.as_string(), 'Any L,Y,F WHERE Y located L, Y is Person WITH Y,F BEING (Any X,F WHERE X is Person, X firstname F)')
         self.assertEqual(node.children[0].with_[0].query.children[0].solutions,
                          [{'X': 'Person', 'F': 'String'}])
 

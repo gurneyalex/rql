@@ -149,6 +149,10 @@ SPEC_QUERIES = (
     ' GROUPBY T2'
     ' WHERE T1 relation T2'
     ' HAVING 1+2 < COUNT(T1);',
+
+    'Any X,Y,A ORDERBY Y '
+    'WHERE A done_for Y, X split_into Y, A diem D '
+    'HAVING MIN(D) < "2010-07-01", MAX(D) >= "2010-07-01";',
     )
 
 class ParserHercule(TestCase):
@@ -175,7 +179,7 @@ class ParserHercule(TestCase):
         comparison = base.children[1]
         self.failUnless(isinstance(comparison, nodes.Comparison))
         rhs = comparison.children[0]
-        self.assertEquals(type(rhs.value), unicode)
+        self.assertEqual(type(rhs.value), unicode)
 
     def test_precedence_1(self):
         tree = self.parse("Any X WHERE X firstname 'lulu' AND X name 'toto' OR X name 'tutu';")
@@ -268,22 +272,22 @@ class ParserHercule(TestCase):
         tree = self.parse("Any X WHERE X firstname %(firstname)s;")
         cste = tree.children[0].where.children[1].children[0]
         self.assert_(isinstance(cste, nodes.Constant))
-        self.assertEquals(cste.type, 'Substitute')
-        self.assertEquals(cste.value, 'firstname')
+        self.assertEqual(cste.type, 'Substitute')
+        self.assertEqual(cste.value, 'firstname')
 
     def test_optional_relation(self):
         tree = self.parse(r'Any X WHERE X related Y;')
         related = tree.children[0].where
-        self.assertEquals(related.optional, None)
+        self.assertEqual(related.optional, None)
         tree = self.parse(r'Any X WHERE X? related Y;')
         related = tree.children[0].where
-        self.assertEquals(related.optional, 'left')
+        self.assertEqual(related.optional, 'left')
         tree = self.parse(r'Any X WHERE X related Y?;')
         related = tree.children[0].where
-        self.assertEquals(related.optional, 'right')
+        self.assertEqual(related.optional, 'right')
         tree = self.parse(r'Any X WHERE X? related Y?;')
         related = tree.children[0].where
-        self.assertEquals(related.optional, 'both')
+        self.assertEqual(related.optional, 'both')
 
     def test_exists(self):
         tree = self.parse("Any X WHERE X firstname 'lulu',"
@@ -297,9 +301,9 @@ class ParserHercule(TestCase):
 
     def test_etype(self):
         tree = self.parse('EmailAddress X;')
-        self.assertEquals(tree.as_string(), 'Any X WHERE X is EmailAddress')
+        self.assertEqual(tree.as_string(), 'Any X WHERE X is EmailAddress')
         tree = self.parse('EUser X;')
-        self.assertEquals(tree.as_string(), 'Any X WHERE X is EUser')
+        self.assertEqual(tree.as_string(), 'Any X WHERE X is EUser')
 
     def test_spec(self):
         """test all RQL string found in the specification and test they are well parsed"""

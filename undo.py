@@ -15,9 +15,8 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with rql. If not, see <http://www.gnu.org/licenses/>.
-"""Manages undos on RQL syntax trees.
+"""Manages undos on RQL syntax trees."""
 
-"""
 __docformat__ = "restructuredtext en"
 
 from rql.nodes import VariableRef, Variable, BinaryNode
@@ -61,9 +60,11 @@ class SelectionManager(object):
 
 class NodeOperation(object):
     """Abstract class for node manipulation operations."""
-    def __init__(self, node):
+    def __init__(self, node, stmt=None):
         self.node = node
-        self.stmt = node.stmt
+        if stmt is None:
+            stmt = node.stmt
+        self.stmt = stmt
 
     def __str__(self):
         """undo the operation on the selection"""
@@ -73,18 +74,21 @@ class NodeOperation(object):
 
 class MakeVarOperation(NodeOperation):
     """Defines how to undo make_variable()."""
-
     def undo(self, selection):
         """undo the operation on the selection"""
         self.stmt.undefine_variable(self.node)
 
 class UndefineVarOperation(NodeOperation):
     """Defines how to undo undefine_variable()."""
+    def __init__(self, node, stmt, solutions):
+        NodeOperation.__init__(self, node, stmt)
+        self.solutions = solutions
 
     def undo(self, selection):
         """undo the operation on the selection"""
         var = self.node
         self.stmt.defined_vars[var.name] = var
+        self.stmt.solutions = self.solutions
 
 class SelectVarOperation(NodeOperation):
     """Defines how to undo add_selected()."""
@@ -135,45 +139,36 @@ class ReplaceNodeOperation(object):
 class RemoveNodeOperation(NodeOperation):
     """Defines how to undo remove_node()."""
 
-    def __init__(self, node):
-        NodeOperation.__init__(self, node)
-        self.node_parent = node.parent
-        if isinstance(self.node_parent, Select):
-            assert self.node is self.node_parent.where
-        else:
-            self.index = node.parent.children.index(node)
+    def __init__(self, node, parent, stmt, index):
+        NodeOperation.__init__(self, node, stmt)
+        self.node_parent = parent
+        #if isinstance(parent, Select):
+        #    assert self.node is parent.where
+        self.index = index
         # XXX FIXME : find a better way to do that
-        # needed when removing a BinaryNode's child
-        self.binary_remove = isinstance(self.node_parent, BinaryNode)
-        if self.binary_remove:
-            self.gd_parent = self.node_parent.parent
-            if isinstance(self.gd_parent, Select):
-                assert self.node_parent is self.gd_parent.where
-            else:
-                self.parent_index = self.gd_parent.children.index(self.node_parent)
+        self.binary_remove = isinstance(node, BinaryNode)
 
     def undo(self, selection):
         """undo the operation on the selection"""
+        parent = self.node_parent
+        if self.index is None:
+            assert isinstance(parent, Select)
+            sibling = parent.where = self.node
+            parent.where = self.node
         if self.binary_remove:
             # if 'parent' was a BinaryNode, then first reinsert the removed node
             # at the same pos in the original 'parent' Binary Node, and then
             # reinsert this BinaryNode in its parent's children list
             # WARNING : the removed node sibling's parent is no longer the
             # 'node_parent'. We must Reparent it manually !
-            node_sibling = self.node_parent.children[0]
-            node_sibling.parent = self.node_parent
-            self.node_parent.insert(self.index, self.node)
-            if isinstance(self.gd_parent, Select):
-                self.gd_parent.where = self.node_parent
-            else:
-                self.gd_parent.children[self.parent_index] = self.node_parent
-                self.node_parent.parent = self.gd_parent
-        elif isinstance(self.node_parent, Select):
-            self.node_parent.where = self.node
-            self.node.parent = self.node_parent
-        else:
-            self.node_parent.insert(self.index, self.node)
+            if self.index is not None:
+                sibling = self.node_parent.children[self.index]
+                parent.children[self.index] = self.node
+            sibling.parent = self.node
+        elif self.index is not None:
+            parent.insert(self.index, self.node)
         # register reference from the removed node
+        self.node.parent = parent
         for varref in self.node.iget_nodes(VariableRef):
             varref.register_reference()
 
