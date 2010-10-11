@@ -39,11 +39,11 @@ class RQLCompareClassTest(TestCase):
 
     def setUp(self):
         self.h = RQLHelper(DummySchema(), None)
-        self.skip('broken')
+        self.skipTest('broken')
 
     def _compareEquivalent(self,r1,r2):
         """fails if the RQL strings r1 and r2 are equivalent"""
-        self.skip('broken')
+        self.skipTest('broken')
         self.failUnless(self.h.compare(r1, r2),
                         'r1: %s\nr2: %s' % (r1, r2))
 

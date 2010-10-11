@@ -32,12 +32,12 @@ class RQLUndoTestCase(TestCase):
         select.remove_selected(select.selection[0])
         select.add_selected(var)
         # check operations
-        self.assertEquals(rqlst.as_string(), 'Any %s WHERE X is Person' % var.name)
+        self.assertEqual(rqlst.as_string(), 'Any %s WHERE X is Person' % var.name)
         # check references before recovering
         rqlst.check_references()
         rqlst.recover()
         # check equivalence after recovering
-        self.assertEquals(rqlst.as_string(), orig)
+        self.assertEqual(rqlst.as_string(), orig)
         # check references after recovering
         rqlst.check_references()
     
@@ -50,12 +50,12 @@ class RQLUndoTestCase(TestCase):
         select.remove_selected(select.selection[0])
         select.add_selected(var)
         # check operations
-        self.assertEquals(rqlst.as_string(), 'Any %s WHERE X is Person, X name N' % var.name)
+        self.assertEqual(rqlst.as_string(), 'Any %s WHERE X is Person, X name N' % var.name)
         # check references before recovering
         rqlst.check_references()
         rqlst.recover()
         # check equivalence after recovering
-        self.assertEquals(rqlst.as_string(), orig)
+        self.assertEqual(rqlst.as_string(), orig)
         # check references after recovering
         rqlst.check_references()
         
@@ -65,12 +65,12 @@ class RQLUndoTestCase(TestCase):
         rqlst.save_state()
         rqlst.children[0].undefine_variable(rqlst.children[0].defined_vars['Y'])
         # check operations
-        self.assertEquals(rqlst.as_string(), 'Any X WHERE X is Person')
+        self.assertEqual(rqlst.as_string(), 'Any X WHERE X is Person')
         # check references before recovering
         rqlst.check_references()
         rqlst.recover()
         # check equivalence
-        self.assertEquals(rqlst.as_string(), orig)
+        self.assertEqual(rqlst.as_string(), orig)
         # check references after recovering
         rqlst.check_references()
         
@@ -82,12 +82,12 @@ class RQLUndoTestCase(TestCase):
         var = rqlst.children[0].make_variable()
         rqlst.children[0].add_selected(var)
         # check operations
-        self.assertEquals(rqlst.as_string(), 'Any A')
+        self.assertEqual(rqlst.as_string(), 'Any A')
         # check references before recovering
         rqlst.check_references()
         rqlst.recover()
         # check equivalence
-        self.assertEquals(rqlst.as_string(), orig)
+        self.assertEqual(rqlst.as_string(), orig)
         # check references after recovering
         rqlst.check_references()
         

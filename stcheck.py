@@ -315,8 +315,7 @@ class RQLSTChecker(object):
         # NOT normalization
         child = not_.children[0]
         if self._should_wrap_by_exists(child):
-            not_.remove(child)
-            not_.append(Exists(child))
+            not_.replace(child, Exists(child))
 
     def _should_wrap_by_exists(self, child):
         if isinstance(child, Exists):

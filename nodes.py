@@ -105,6 +105,19 @@ def make_relation(var, rel, rhsargs, rhsclass, operator='='):
     relation.append(cmpop)
     return relation
 
+def make_constant_restriction(var, rtype, value, ctype, operator='='):
+    if ctype is None:
+        ctype = etype_from_pyobj(value)
+    if isinstance(value, (set, frozenset, tuple, list, dict)):
+        if len(value) > 1:
+            rel = make_relation(var, rtype, ('IN',), Function, operator)
+            infunc = rel.children[1].children[0]
+            for atype in sorted(value):
+                infunc.append(Constant(atype, ctype))
+            return rel
+        value = iter(value).next()
+    return make_relation(var, rtype, (value, ctype), Constant, operator)
+
 
 class EditableMixIn(object):
     """mixin class to add edition functionalities to some nodes, eg root nodes
@@ -129,14 +142,17 @@ class EditableMixIn(object):
         handling
         """
         # unregister variable references in the removed subtree
+        parent = node.parent
+        stmt = parent.stmt
         for varref in node.iget_nodes(VariableRef):
             varref.unregister_reference()
             if undefine and not varref.variable.stinfo['references']:
-                node.stmt.undefine_variable(varref.variable)
+                stmt.undefine_variable(varref.variable)
+        # remove return actually removed node and its parent
+        node, parent, index = parent.remove(node)
         if self.should_register_op:
             from rql.undo import RemoveNodeOperation
-            self.undo_manager.add_operation(RemoveNodeOperation(node))
-        node.parent.remove(node)
+            self.undo_manager.add_operation(RemoveNodeOperation(node, parent, stmt, index))
 
     def add_restriction(self, relation):
         """add a restriction relation"""
@@ -160,18 +176,8 @@ class EditableMixIn(object):
 
         variable rtype = value
         """
-        if ctype is None:
-            ctype = etype_from_pyobj(value)
-        if isinstance(value, (set, frozenset, tuple, list, dict)):
-            if len(value) > 1:
-                rel = make_relation(var, rtype, ('IN',), Function, operator=operator)
-                infunc = rel.children[1].children[0]
-                for atype in sorted(value):
-                    infunc.append(Constant(atype, ctype))
-                return self.add_restriction(rel)
-            value = iter(value).next()
-        return self.add_restriction(make_relation(var, rtype, (value, ctype),
-                                                  Constant, operator))
+        restr = make_constant_restriction(var, rtype, value, ctype, operator)
+        return self.add_restriction(restr)
 
     def add_relation(self, lhsvar, rtype, rhsvar):
         """builds a restriction node to express '<var> eid <eid>'"""
@@ -279,6 +285,9 @@ class Not(Node):
     def neged(self, traverse_scope=False, _fromnode=None, strict=False):
         return self
 
+    def remove(self, child):
+        return self.parent.remove(self)
+
 # def parent_scope_property(attr):
 #     def _get_parent_attr(self, attr=attr):
 #         return getattr(self.parent.scope, attr)
@@ -334,6 +343,10 @@ class Exists(EditableMixIn, BaseNode):
         assert oldnode is self.query
         self.query = newnode
         newnode.parent = self
+        return oldnode, self, None
+
+    def remove(self, child):
+        return self.parent.remove(self)
 
     @property
     def scope(self):
@@ -913,13 +926,13 @@ class Referenceable(object):
             rtype = rel.r_type
             lhs, rhs = rel.get_variable_parts()
             # use getattr, may not be a variable ref (rewritten, constant...)
-            lhsvar = getattr(lhs, 'variable', None)
             rhsvar = getattr(rhs, 'variable', None)
             if mainindex is not None:
                 # relation to the main variable, stop searching
-                if mainindex in lhsvar.stinfo['selected']:
+                lhsvar = getattr(lhs, 'variable', None)
+                if lhsvar is not None and mainindex in lhsvar.stinfo['selected']:
                     return tr(rtype)
-                if mainindex in rhsvar.stinfo['selected']:
+                if rhsvar is not None and mainindex in rhsvar.stinfo['selected']:
                     if schema is not None and rschema.symmetric:
                         return tr(rtype)
                     return tr(rtype + '_object')
