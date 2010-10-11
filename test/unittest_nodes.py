@@ -191,6 +191,21 @@ class NodesTest(TestCase):
         tree.check_references()
         self.assertEquals(tree.as_string(), 'Any X,Y ORDERBY X,Y')
 
+    def test_select_undefine_variable(self):
+        tree = sparse('Any X,Y ORDERBY X,Y WHERE X work_for Y')
+        tree.save_state()
+        select = tree.children[0]
+        select.undefine_variable(select.defined_vars['Y'])
+        self.assertEqual(select.solutions, [{'X': 'Person'},
+                                             {'X': 'Student'}])
+        tree.check_references()
+        self.assertEqual(tree.as_string(), 'Any X ORDERBY X')
+        tree.recover()
+        tree.check_references()
+        self.assertEqual(tree.as_string(), 'Any X,Y ORDERBY X,Y WHERE X work_for Y')
+        self.assertEqual(select.solutions, [{'X': 'Person', 'Y': 'Company'},
+                                             {'X': 'Student', 'Y': 'Company'}])
+
     def test_select_set_distinct(self):
         tree = self._parse('DISTINCT Any X')
         tree.save_state()
