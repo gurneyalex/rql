@@ -30,11 +30,11 @@ try:
     if os.environ.get('NO_SETUPTOOLS'):
         raise ImportError()
     from setuptools import setup
-    from setuptools.command import install_lib
+    from setuptools.command import install_lib, build_ext
     USE_SETUPTOOLS = 1
 except ImportError:
     from distutils.core import setup
-    from distutils.command import install_lib
+    from distutils.command import install_lib, build_ext
     USE_SETUPTOOLS = 0
 
 
@@ -161,6 +161,27 @@ class MyInstallLib(install_lib.install_lib):
                 dest = join(self.install_dir, base, directory)
                 export(directory, dest, verbose=False)
 
+class MyBuildExt(build_ext.build_ext):
+    """Extend build_ext command to pass through compilation error.
+    In fact, if gecode extension fail, rql will use logilab.constraint
+    """
+    def run(self):
+        from distutils.errors import CompileError
+        try:
+            build_ext.build_ext.run(self)
+        except CompileError:
+            import traceback
+            traceback.print_traceback()
+            sys.stderr.write('================================\n'
+                             'The compilation of the gecode C extension failed. '
+                             'rql will use logilab.constraint which is a pure '
+                             'python implementation. '
+                             'Please note that the C extension run faster. '
+                             'So, install a compiler then install rql again with'
+                             ' the "force" option for better performance.\n'
+                             '================================\n')
+            pass
+
 def install(**kwargs):
     """setup entry point"""
     if USE_SETUPTOOLS:
@@ -193,7 +214,8 @@ def install(**kwargs):
                  scripts = ensure_scripts(scripts),
                  data_files = data_files,
                  ext_modules = ext_modules,
-                 cmdclass = {'install_lib': MyInstallLib},
+                 cmdclass = {'install_lib': MyInstallLib,
+                             'build_ext':MyBuildExt},
                  **kwargs
                  )
 
