@@ -1,6 +1,17 @@
 ChangeLog for RQL
 =================
 
+2010-10-13  --  0.27.0
+    * select.undefine_variable properly cleanup solutions (and restore them on
+      undo)
+
+    * fix potential crash in Referenceable.get_description
+
+    * introduce make_constant_restriction function, useful to build a
+      restriction without adding it yet to the tree
+
+
+
 2010-09-10  --  0.26.6
     * enhance bad rql query detection with ordered distinct (can't use distinct
       if an attribute is selected and we sort on another attribute)
