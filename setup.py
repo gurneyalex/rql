@@ -171,7 +171,7 @@ class MyBuildExt(build_ext.build_ext):
             build_ext.build_ext.run(self)
         except CompileError:
             import traceback
-            traceback.print_traceback()
+            traceback.print_exc()
             sys.stderr.write('================================\n'
                              'The compilation of the gecode C extension failed. '
                              'rql will use logilab.constraint which is a pure '
