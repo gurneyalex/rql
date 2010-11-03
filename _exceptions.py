@@ -15,9 +15,8 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with rql. If not, see <http://www.gnu.org/licenses/>.
-"""Exceptions used in the RQL package.
+"""Exceptions used in the RQL package."""
 
-"""
 __docformat__ = "restructuredtext en"
 
 class RQLException(Exception):
