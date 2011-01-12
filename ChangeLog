@@ -1,6 +1,12 @@
 ChangeLog for RQL
 =================
 
+2011-01-12  --  0.28.0
+    * enhance rewrite_shared_optional so one can specify where the new identity
+      relation should be added (used by cw multi-sources planner)
+
+
+
 2010-10-13  --  0.27.0
     * select.undefine_variable properly cleanup solutions (and restore them on
       undo)
