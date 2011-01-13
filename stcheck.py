@@ -27,7 +27,7 @@ from logilab.database import UnknownFunction
 from rql._exceptions import BadRQLQuery
 from rql.utils import function_description
 from rql.nodes import (Relation, VariableRef, Constant, Not, Exists, Function,
-                       Variable, variable_refs)
+                       And, Variable, variable_refs, make_relation)
 from rql.stmts import Union
 
 
@@ -517,7 +517,7 @@ class RQLSTAnnotator(object):
                 for vref in term.get_nodes(VariableRef):
                     bloc_simplification(vref.variable, term)
 
-    def rewrite_shared_optional(self, exists, var):
+    def rewrite_shared_optional(self, exists, var, identity_rel_scope=None):
         """if variable is shared across multiple scopes, need some tree
         rewriting
         """
@@ -574,9 +574,14 @@ class RQLSTAnnotator(object):
             newvar.stinfo['possibletypes'] = var.stinfo['possibletypes']
             for sol in newvar.stmt.solutions:
                 sol[newvar.name] = sol[var.name]
-        rel = exists.add_relation(var, 'identity', newvar)
+        if identity_rel_scope is None:
+            rel = exists.add_relation(var, 'identity', newvar)
+            identity_rel_scope = exists
+        else:
+            rel = make_relation(var, 'identity', (newvar,), VariableRef)
+            exists.parent.replace(exists, And(exists, Exists(rel)))
         # we have to force visit of the introduced relation
-        self.visit_relation(rel, exists)
+        self.visit_relation(rel, identity_rel_scope)
         return newvar
 
     # tree nodes ##############################################################

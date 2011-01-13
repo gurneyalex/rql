@@ -440,7 +440,12 @@ class Relation(Node):
             return False
         rhs = self.children[1]
         if isinstance(rhs, Comparison):
-            rhs = rhs.children[0]
+            try:
+                rhs = rhs.children[0]
+            except:
+                print 'opppp', rhs
+                print rhs.root
+                raise
         # else: relation used in SET OR DELETE selection
         return ((isinstance(rhs, Constant) and rhs.type == 'etype')
                 or (isinstance(rhs, Function) and rhs.name == 'IN'))
