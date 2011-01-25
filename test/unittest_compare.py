@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with rql. If not, see <http://www.gnu.org/licenses/>.
-from logilab.common.testlib import TestCase, unittest_main
+from logilab.common.testlib import TestCase, SkipTest, unittest_main
 
 from rql import RQLHelper
 from unittest_analyze import RelationSchema, EntitySchema, DummySchema as BaseSchema
@@ -36,10 +36,12 @@ class DummySchema(BaseSchema):
 
 class RQLCompareClassTest(TestCase):
     """ Compare RQL strings """
+    @classmethod
+    def setUpClass(cls):
+        raise SkipTest('broken')
 
     def setUp(self):
         self.h = RQLHelper(DummySchema(), None)
-        self.skipTest('broken')
 
     def _compareEquivalent(self,r1,r2):
         """fails if the RQL strings r1 and r2 are equivalent"""
