@@ -57,6 +57,7 @@ binary-arch: build install
 	dh_link -a
 	dh_compress -a -X.py -X.ini -X.xml -Xtest
 	dh_fixperms -a
+	dh_strip
 	dh_shlibdeps -a
 	dh_installdeb -a
 	dh_gencontrol -a
