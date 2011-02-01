@@ -109,7 +109,7 @@ class HerculeScanner(runtime.Scanner):
         ('FALSE', re.compile('(?i)FALSE')),
         ('NULL', re.compile('(?i)NULL')),
         ('EXISTS', re.compile('(?i)EXISTS')),
-        ('CMP_OP', re.compile('(?i)<=|<|>=|>|~=|=|LIKE|ILIKE')),
+        ('CMP_OP', re.compile('(?i)<=|<|>=|>|!=|=|~=|LIKE|ILIKE')),
         ('ADD_OP', re.compile('\\+|-')),
         ('MUL_OP', re.compile('\\*|/')),
         ('FUNCTION', re.compile('[A-Za-z_]+\\s*(?=\\()')),
