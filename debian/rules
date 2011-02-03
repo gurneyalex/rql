@@ -55,7 +55,8 @@ binary-arch: build install
 	dh_installdocs -a README TODO changelog.gz
 	dh_installman -a
 	dh_link -a
-	dh_compress -a -X.py -X.ini -X.xml -Xtest
+	# .js, .txt and .json are coming from sphinx build
+	dh_compress -a -X.py -X.ini -X.xml -Xtest/ -X.js -X.txt -X.json
 	dh_fixperms -a
 	dh_strip
 	dh_shlibdeps -a

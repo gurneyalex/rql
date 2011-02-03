@@ -2,18 +2,17 @@ Source: rql
 Section: python
 Priority: optional
 Maintainer: Logilab Packaging Team <contact@logilab.fr>
-Uploaders: Sylvain Thenault <sylvain.thenault@logilab.fr>, Ludovic Aubry <ludovic.aubry@logilab.fr>, Nicolas Chauvat <nicolas.chauvat@logilab.fr>
-Build-Depends: debhelper (>= 5.0.37.1), python-all-dev (>=2.4), python-all (>=2.4), libgecode12-dev, python-sphinx, g++
-Build-Depends-Indep: python-support
+Uploaders: Sylvain Thenault <sylvain.thenault@logilab.fr>, Nicolas Chauvat <nicolas.chauvat@logilab.fr>
+Build-Depends: debhelper (>= 5.0.37.1), python-support, python-all-dev (>=2.4), python-all (>=2.4), libgecode12-dev, python-sphinx, g++ (>= 4)
 XS-Python-Version: >= 2.4
-Standards-Version: 3.8.0
+Standards-Version: 3.9.1
 Homepage: http://www.logilab.org/project/rql
 
 Package: python-rql
 Architecture: any
 XB-Python-Version: ${python:Versions}
 Depends: ${python:Depends}, ${misc:Depends}, ${shlibs:Depends}, python-logilab-common (>= 0.35.3-1), yapps2-runtime, python-logilab-database
-Conflicts: cubicweb-common (< 3.8.0)
+Conflicts: cubicweb-common (<= 3.8.3)
 Provides: ${python:Provides}
 Description: relationship query language (RQL) utilities
  A library providing the base utilities to handle RQL queries,
