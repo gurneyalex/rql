@@ -81,7 +81,7 @@ else:
 
 install_requires = [
     'logilab-common >= 0.47.0',
-    'logilab-database',
+    'logilab-database >= 1.6.0',
     'yapps == 2.1.1', # XXX to ensure we don't use the broken pypi version
     'constraint', # fallback if the gecode compiled module is missing
     ]

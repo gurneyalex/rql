@@ -564,6 +564,12 @@ class NodesTest(TestCase):
         tree = sparse('Any X,R,D,Y WHERE X work_for R, R creation_date D, Y connait X')
         self.assertEqual(tree.get_description(0), [['Person, Student', 'work_for', 'creation_date', 'connait']])
 
+    def test_get_description_cast(self):
+        tree = sparse('Any CAST(String, Y) WHERE X creation_date Y')
+        select = tree.children[0]
+        self.assertEqual(select.selection[0].get_type(), 'String')
+        self.assertEqual(tree.get_description(0), [['String']])
+
 
 class GetNodesFunctionTest(TestCase):
     def test_known_values_1(self):

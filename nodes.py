@@ -28,6 +28,8 @@ from decimal import Decimal
 from datetime import datetime, date, time, timedelta
 from time import localtime
 
+from logilab.database import DYNAMIC_RTYPE
+
 from rql import CoercionError
 from rql.base import BaseNode, Node, BinaryNode, LeafNode
 from rql.utils import (function_description, quote, uquote, build_visitor_stub,
@@ -440,12 +442,7 @@ class Relation(Node):
             return False
         rhs = self.children[1]
         if isinstance(rhs, Comparison):
-            try:
-                rhs = rhs.children[0]
-            except:
-                print 'opppp', rhs
-                print rhs.root
-                raise
+            rhs = rhs.children[0]
         # else: relation used in SET OR DELETE selection
         return ((isinstance(rhs, Constant) and rhs.type == 'etype')
                 or (isinstance(rhs, Function) and rhs.name == 'IN'))
@@ -625,7 +622,8 @@ class Function(HSMixin, Node):
 
         solution is an optional variable/etype mapping
         """
-        rtype = self.descr().rtype
+        func_descr = self.descr()
+        rtype = func_descr.rql_return_type(self)
         if rtype is None:
             # XXX support one variable ref child
             try:
