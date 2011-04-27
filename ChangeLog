@@ -2,7 +2,9 @@ ChangeLog for RQL
 =================
 
 --
-* suport != operator for non equality
+* support != operator for non equality
+* support for CAST function
+
 
 2011-01-12  --  0.28.0
     * enhance rewrite_shared_optional so one can specify where the new identity
