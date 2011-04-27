@@ -4,7 +4,7 @@ ChangeLog for RQL
 --
 * support != operator for non equality
 * support for CAST function
-
+* support for regexp-based pattern matching using a REGEXP operator
 
 2011-01-12  --  0.28.0
     * enhance rewrite_shared_optional so one can specify where the new identity

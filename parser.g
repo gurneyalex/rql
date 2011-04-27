@@ -88,7 +88,7 @@ parser Hercule:
     token FALSE:       r'(?i)FALSE'
     token NULL:        r'(?i)NULL'
     token EXISTS:      r'(?i)EXISTS'
-    token CMP_OP:      r'(?i)<=|<|>=|>|!=|=|~=|LIKE|ILIKE'
+    token CMP_OP:      r'(?i)<=|<|>=|>|!=|=|~=|LIKE|ILIKE|REGEXP'
     token ADD_OP:      r'\+|-'
     token MUL_OP:      r'\*|/'
     token FUNCTION:    r'[A-Za-z_]+\s*(?=\()'

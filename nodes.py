@@ -481,7 +481,7 @@ class Relation(Node):
         self.optional= value
 
 
-OPERATORS = frozenset(('=', '!=', '<', '<=', '>=', '>', 'ILIKE', 'LIKE'))
+OPERATORS = frozenset(('=', '!=', '<', '<=', '>=', '>', 'ILIKE', 'LIKE', 'REGEXP'))
 
 class Comparison(HSMixin, Node):
     """handle comparisons:
