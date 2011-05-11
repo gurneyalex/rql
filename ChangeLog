@@ -1,6 +1,93 @@
 ChangeLog for RQL
 =================
 
+--
+* suport != operator for non equality
+
+2011-01-12  --  0.28.0
+    * enhance rewrite_shared_optional so one can specify where the new identity
+      relation should be added (used by cw multi-sources planner)
+
+
+
+2010-10-13  --  0.27.0
+    * select.undefine_variable properly cleanup solutions (and restore them on
+      undo)
+
+    * fix potential crash in Referenceable.get_description
+
+    * introduce make_constant_restriction function, useful to build a
+      restriction without adding it yet to the tree
+
+
+
+2010-09-10  --  0.26.6
+    * enhance bad rql query detection with ordered distinct (can't use distinct
+      if an attribute is selected and we sort on another attribute)
+
+    * fix subquery_selection_index responsability mess-up: it wasn't doing what
+      it should have done (see cw.rset related_entity implementation)
+
+    * consider subquery aliases in Select.clean_solutions
+
+    * add constraint package to setuptools dependencies so we've fallback
+      opportunity if gecode is not installed
+
+    * fix setuptools dependency on yapps by forcing install of our custom
+      package, so it don't try to install pypi's one which doesn't work well
+      with both pip and easy_install
+
+
+
+2010-08-02  --  0.26.5
+    * fix solutions computation crash with some query using sub-queries (closes #37423)
+
+
+
+2010-07-28  --  0.26.4
+    * fix re-annotation pb: some stinfo keys were not properly reinitialized
+      which may cause pb later (at sql generation time for instance)
+
+
+
+2010-06-21  --  0.26.3
+    * support for node from having in Select.remove
+
+    * enhanced Select.replace method
+
+    * rql st checker now checks function avaibility according to backend (if specified)
+
+
+
+2010-06-11  --  0.26.2
+    * totally remove 'IS' operator
+
+    * replace get_variable_variables by get_variable_indicies
+
+    * fix rule order so 'HAVING (X op Y)' is now parseable while 'HAVING (1+2) op Y' isn't anymore parseable
+
+    * fix simplification bug with ored uid relations
+
+
+
+2010-06-04  --  0.26.1
+    * normalize NOT() to NOT EXISTS() when it makes sense
+
+    * fix grammar bug in HAVING clause: should all arbitrary expression and fix to deal with IN() hack
+
+
+
+2010-04-20  --  0.26.0
+    * setuptools support
+
+    * variable and column alias stinfo optimization
+
+    * analyzer return key used in args to unambiguify solutions
+
+    * rewrite_shared_optional refactoring
+
+
+
 2010-03-16  --  0.25.0
     * depends on logilab-database
 

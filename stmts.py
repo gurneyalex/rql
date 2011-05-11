@@ -19,8 +19,8 @@
 
 This module defines only first level nodes (i.e. statements). Child nodes are
 defined in the nodes module
-
 """
+
 __docformat__ = "restructuredtext en"
 
 from copy import deepcopy
@@ -101,10 +101,7 @@ class ScopeNode(BaseNode):
             self._varmaker = rqlvar_maker(defined=self.defined_vars,
                                           # XXX only on Select node
                                           aliases=getattr(self, 'aliases', None))
-        name =  self._varmaker.next()
-        while name in self.defined_vars:
-            name =  self._varmaker.next()
-        return name
+        return self._varmaker.next()
 
     def make_variable(self):
         """create a new variable with an unique name for this tree"""
@@ -146,6 +143,7 @@ class ScopeNode(BaseNode):
             raise
         return True
 
+
 class Statement(object):
     """base class for statement nodes"""
 
@@ -168,7 +166,6 @@ class Statement(object):
     @property
     def scope(self):
         return self
-    sqlscope = scope
 
     def ored(self, traverse_scope=False, _fromnode=None):
         return None
@@ -272,14 +269,27 @@ class Union(Statement, Node):
 
     # union specific methods ##################################################
 
+    # XXX for bw compat, should now use get_variable_indices (cw > 3.8.4)
     def get_variable_variables(self):
-        """return the set of variable names which take different type according
-        to the solutions
+        change = set()
+        for idx in self.get_variable_indices():
+            for vref in self.children[0].selection[idx].iget_nodes(nodes.VariableRef):
+                change.add(vref.name)
+        return change
+
+    def get_variable_indices(self):
+        """return the set of selection indexes which take different types
+        according to the solutions
         """
         change = set()
         values = {}
         for select in self.children:
-            change.update(select.get_variable_variables(values))
+            for descr in select.get_selection_solutions():
+                for i, etype in enumerate(descr):
+                    values.setdefault(i, set()).add(etype)
+        for idx, etypes in values.iteritems():
+            if len(etypes) > 1:
+                change.add(idx)
         return change
 
     def _locate_subquery(self, col, etype, kwargs):
@@ -315,14 +325,16 @@ class Union(Statement, Node):
         return self._subq_cache[(col, etype)]
 
     def subquery_selection_index(self, subselect, col):
-        """given a select sub-query and a column index in this sub-query, return
-        the selection index for this column in the root query
+        """given a select sub-query and a column index in the root query, return
+        the selection index for this column in the sub-query
         """
-        while col is not None and subselect.parent.parent:
+        selectpath = []
+        while subselect.parent.parent is not None:
             subq = subselect.parent.parent
             subselect = subq.parent
-            termvar = subselect.aliases[subq.aliases[col].name]
-            col = termvar.selected_index()
+            selectpath.insert(0, subselect)
+        for select in selectpath:
+            col = select.selection[col].variable.colnum
         return col
 
     # recoverable modification methods ########################################
@@ -386,7 +398,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
     # select clauses
     groupby = ()
     orderby = ()
-    having = ()
+    having = () # XXX now a single node
     with_ = ()
     # set by the annotator
     has_aggregat = False
@@ -612,7 +624,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             solutions = self.solutions
         # this may occurs with rql optimization, for instance on
         # 'Any X WHERE X eid 12' query
-        if not self.defined_vars:
+        if not (self.defined_vars or self.aliases):
             self.solutions = [{}]
         else:
             newsolutions = []
@@ -620,24 +632,26 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
                 asol = {}
                 for var in self.defined_vars:
                     asol[var] = origsol[var]
+                for var in self.aliases:
+                    asol[var] = origsol[var]
                 if not asol in newsolutions:
                     newsolutions.append(asol)
             self.solutions = newsolutions
 
-    def get_variable_variables(self, _values=None):
+    def get_selection_solutions(self):
         """return the set of variable names which take different type according
         to the solutions
         """
-        change = set()
-        if _values is None:
-            _values = {}
+        descriptions = set()
         for solution in self.solutions:
-            for vname, etype in solution.iteritems():
-                if not vname in _values:
-                    _values[vname] = etype
-                elif _values[vname] != etype:
-                    change.add(vname)
-        return change
+            descr = []
+            for term in self.selection:
+                try:
+                    descr.append(term.get_type(solution=solution))
+                except CoercionError:
+                    pass
+            descriptions.add(tuple(descr))
+        return descriptions
 
     # quick accessors #########################################################
 
@@ -665,17 +679,28 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         term.parent = self
         self.selection.append(term)
 
+    # XXX proprify edition, we should specify if we want:
+    # * undo support
+    # * references handling
     def replace(self, oldnode, newnode):
-        assert oldnode is self.where
-        self.where = newnode
+        if oldnode is self.where:
+            self.where = newnode
+        elif oldnode in self.selection:
+            self.selection[self.selection.index(oldnode)] = newnode
+        elif oldnode in self.orderby:
+            self.orderby[self.orderby.index(oldnode)] = newnode
+        elif oldnode in self.groupby:
+            self.groupby[self.groupby.index(oldnode)] = newnode
+        elif oldnode in self.having:
+            self.having[self.having.index(oldnode)] = newnode
+        else:
+            raise Exception('duh XXX %s' % oldnode)
+        # XXX no undo/reference support 'by design' (eg breaks things if you add
+        # it...)
+        # XXX resetting oldnode parent cause pb with cw.test_views (w/ facets)
+        #oldnode.parent = None
         newnode.parent = self
-#         # XXX no vref handling ?
-#         try:
-#             Statement.replace(self, oldnode, newnode)
-#         except ValueError:
-#             i = self.selection.index(oldnode)
-#             self.selection.pop(i)
-#             self.selection.insert(i, newnode)
+        return oldnode, self, None
 
     def remove(self, node):
         if node is self.where:
@@ -684,9 +709,13 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             self.remove_sort_term(node)
         elif node in self.groupby:
             self.remove_group_var(node)
+        elif node in self.having:
+            self.having.remove(node)
+        # XXX selection
         else:
             raise Exception('duh XXX')
         node.parent = None
+        return node, self, None
 
     def undefine_variable(self, var):
         """undefine the given variable and remove all relations where it appears"""
@@ -707,7 +736,10 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         # effective undefine operation
         if self.should_register_op:
             from rql.undo import UndefineVarOperation
-            self.undo_manager.add_operation(UndefineVarOperation(var))
+            solutions = [d.copy() for d in self.solutions]
+            self.undo_manager.add_operation(UndefineVarOperation(var, self, solutions))
+        for sol in self.solutions:
+            sol.pop(var.name, None)
         del self.defined_vars[var.name]
 
     def _var_index(self, var):
