@@ -63,6 +63,7 @@ SPEC_QUERIES = (
     'Any X WHERE X eid 53;',
     'Any X WHERE X eid -53;',
     "Document X WHERE X occurence_of F, F class C, C name 'Bande dessinée', X owned_by U, U login 'syt', X available true;",
+    u"Document X WHERE X occurence_of F, F class C, C name 'Bande dessinée', X owned_by U, U login 'syt', X available true;",
     "Personne P WHERE P travaille_pour S, S nom 'Eurocopter', P interesse_par T, T nom 'formation';",
     "Note N WHERE N ecrit_le D, D day > (today -10), N ecrit_par P, P nom 'jphc' or P nom 'ocy';",
     "Personne P WHERE (P interesse_par T, T nom 'formation') or (P ville 'Paris');",
@@ -116,7 +117,42 @@ SPEC_QUERIES = (
     ' WITH T1,T2 BEING ('
     '      (Any X,N WHERE X name N, X transition_of E, E name %(name)s)'
     '       UNION '
-    '      (Any X,N WHERE X name N, X state_of E, E name %(name)s))',
+    '      (Any X,N WHERE X name N, X state_of E, E name %(name)s));',
+
+
+    'Any T2'
+    ' GROUPBY T2'
+    ' WHERE T1 relation T2'
+    ' HAVING COUNT(T1) IN (1,2);',
+
+    'Any T2'
+    ' GROUPBY T2'
+    ' WHERE T1 relation T2'
+    ' HAVING COUNT(T1) IN (1,2) OR COUNT(T1) IN (3,4);',
+
+    'Any T2'
+    ' GROUPBY T2'
+    ' WHERE T1 relation T2'
+    ' HAVING 1 < COUNT(T1) OR COUNT(T1) IN (3,4);',
+
+    'Any T2'
+    ' GROUPBY T2'
+    ' WHERE T1 relation T2'
+    ' HAVING (COUNT(T1) IN (1,2)) OR (COUNT(T1) IN (3,4));',
+
+    'Any T2'
+    ' GROUPBY T2'
+    ' WHERE T1 relation T2'
+    ' HAVING (1 < COUNT(T1) OR COUNT(T1) IN (3,4));',
+
+    'Any T2'
+    ' GROUPBY T2'
+    ' WHERE T1 relation T2'
+    ' HAVING 1+2 < COUNT(T1);',
+
+    'Any X,Y,A ORDERBY Y '
+    'WHERE A done_for Y, X split_into Y, A diem D '
+    'HAVING MIN(D) < "2010-07-01", MAX(D) >= "2010-07-01";',
     )
 
 class ParserHercule(TestCase):
@@ -136,6 +172,14 @@ class ParserHercule(TestCase):
             if print_errors:
                 print string, ex
             raise
+
+    def test_unicode_constant(self):
+        tree = self.parse(u"Any X WHERE X name 'Ångström';")
+        base = tree.children[0].where
+        comparison = base.children[1]
+        self.failUnless(isinstance(comparison, nodes.Comparison))
+        rhs = comparison.children[0]
+        self.assertEqual(type(rhs.value), unicode)
 
     def test_precedence_1(self):
         tree = self.parse("Any X WHERE X firstname 'lulu' AND X name 'toto' OR X name 'tutu';")
@@ -228,22 +272,22 @@ class ParserHercule(TestCase):
         tree = self.parse("Any X WHERE X firstname %(firstname)s;")
         cste = tree.children[0].where.children[1].children[0]
         self.assert_(isinstance(cste, nodes.Constant))
-        self.assertEquals(cste.type, 'Substitute')
-        self.assertEquals(cste.value, 'firstname')
+        self.assertEqual(cste.type, 'Substitute')
+        self.assertEqual(cste.value, 'firstname')
 
     def test_optional_relation(self):
         tree = self.parse(r'Any X WHERE X related Y;')
         related = tree.children[0].where
-        self.assertEquals(related.optional, None)
+        self.assertEqual(related.optional, None)
         tree = self.parse(r'Any X WHERE X? related Y;')
         related = tree.children[0].where
-        self.assertEquals(related.optional, 'left')
+        self.assertEqual(related.optional, 'left')
         tree = self.parse(r'Any X WHERE X related Y?;')
         related = tree.children[0].where
-        self.assertEquals(related.optional, 'right')
+        self.assertEqual(related.optional, 'right')
         tree = self.parse(r'Any X WHERE X? related Y?;')
         related = tree.children[0].where
-        self.assertEquals(related.optional, 'both')
+        self.assertEqual(related.optional, 'both')
 
     def test_exists(self):
         tree = self.parse("Any X WHERE X firstname 'lulu',"
@@ -257,9 +301,9 @@ class ParserHercule(TestCase):
 
     def test_etype(self):
         tree = self.parse('EmailAddress X;')
-        self.assertEquals(tree.as_string(), 'Any X WHERE X is EmailAddress')
+        self.assertEqual(tree.as_string(), 'Any X WHERE X is EmailAddress')
         tree = self.parse('EUser X;')
-        self.assertEquals(tree.as_string(), 'Any X WHERE X is EUser')
+        self.assertEqual(tree.as_string(), 'Any X WHERE X is EUser')
 
     def test_spec(self):
         """test all RQL string found in the specification and test they are well parsed"""

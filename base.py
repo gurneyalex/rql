@@ -18,8 +18,8 @@
 """Base classes for RQL syntax tree nodes.
 
 Note: this module uses __slots__ to limit memory usage.
-
 """
+
 __docformat__ = "restructuredtext en"
 
 class BaseNode(object):
@@ -56,13 +56,6 @@ class BaseNode(object):
         node)
         """
         return self.parent.scope
-
-    @property
-    def sqlscope(self):
-        """Return the SQL scope node to which this node belong (eg Select,
-        Exists or Not node)
-        """
-        return self.parent.sqlscope
 
     def get_nodes(self, klass):
         """Return the list of nodes of a given class in the subtree.
@@ -147,9 +140,14 @@ class Node(BaseNode):
         child.parent = self
 
     def remove(self, child):
-        """remove a child node"""
-        self.children.remove(child)
+        """Remove a child node. Return the removed node, its old parent and
+        index in the children list.
+        """
+        index = self.children.index(child)
+        del self.children[index]
+        parent = child.parent
         child.parent = None
+        return child, parent, index
 
     def insert(self, index, child):
         """insert a child node"""
@@ -162,7 +160,7 @@ class Node(BaseNode):
         self.children.pop(i)
         self.children.insert(i, new_child)
         new_child.parent = self
-
+        return old_child, self, i
 
 class BinaryNode(Node):
     __slots__ = ()
@@ -176,8 +174,8 @@ class BinaryNode(Node):
 
     def remove(self, child):
         """Remove the child and replace this node with the other child."""
-        self.children.remove(child)
-        self.parent.replace(self, self.children[0])
+        index = self.children.index(child)
+        return self.parent.replace(self, self.children[not index])
 
     def get_parts(self):
         """Return the left hand side and the right hand side of this node."""

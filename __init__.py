@@ -38,7 +38,7 @@ class RQLHelper(object):
       - comparison of two queries
     """
     def __init__(self, schema, uid_func_mapping=None, special_relations=None,
-                 resolver_class=None):
+                 resolver_class=None, backend=None):
         # chech schema
         #for e_type in REQUIRED_TYPES:
         #    if not schema.has_entity(e_type):
@@ -49,7 +49,7 @@ class RQLHelper(object):
         if uid_func_mapping:
             for key in uid_func_mapping:
                 special_relations[key] = 'uid'
-        self._checker = RQLSTChecker(schema)
+        self._checker = RQLSTChecker(schema, special_relations, backend)
         self._annotator = RQLSTAnnotator(schema, special_relations)
         self._analyser_lock = threading.Lock()
         if resolver_class is None:
@@ -76,6 +76,12 @@ class RQLHelper(object):
         self._annotator.schema = schema
         self._analyser.set_schema(schema)
 
+    def get_backend(self):
+        return self._checker.backend
+    def set_backend(self, backend):
+        self._checker.backend = backend
+    backend = property(get_backend, set_backend)
+
     def parse(self, rqlstring, annotate=True):
         """Return a syntax tree created from a RQL string."""
         rqlst = parse(rqlstring, False)
@@ -97,8 +103,8 @@ class RQLHelper(object):
         """
         self._analyser_lock.acquire()
         try:
-            self._analyser.visit(rqlst, uid_func_mapping, kwargs,
-                                 debug)
+            return self._analyser.visit(rqlst, uid_func_mapping, kwargs,
+                                        debug)
         finally:
             self._analyser_lock.release()
 
@@ -135,17 +141,13 @@ class RQLHelper(object):
         rewritten = False
         for var in select.defined_vars.values():
             stinfo = var.stinfo
-            if stinfo['constnode'] and not stinfo['blocsimplification']:
-                #assert len(stinfo['uidrels']) == 1, var
-                uidrel = stinfo['uidrels'].pop()
+            if stinfo['constnode'] and not stinfo.get('blocsimplification'):
+                uidrel = stinfo['uidrel']
                 var = uidrel.children[0].variable
                 vconsts = []
                 rhs = uidrel.children[1].children[0]
-                #from rql.nodes import Constant
-                #assert isinstance(rhs, nodes.Constant), rhs
                 for vref in var.references():
                     rel = vref.relation()
-                    #assert vref.parent
                     if rel is None:
                         term = vref
                         while not term.parent is select:
@@ -168,19 +170,15 @@ class RQLHelper(object):
                             select.groupby[select.groupby.index(vref)] = rhs
                             rhs.parent = select
                     elif rel is uidrel:
-                        # drop this relation
-                        rel.parent.remove(rel)
+                        uidrel.parent.remove(uidrel)
                     elif rel.is_types_restriction():
-                        stinfo['typerels'].remove(rel)
-                        rel.parent.remove(rel)
-                    elif rel in stinfo['uidrels']:
-                        # XXX check equivalence not necessary else we wouldn't be here right?
-                        stinfo['uidrels'].remove(rel)
+                        stinfo['typerel'] = None
                         rel.parent.remove(rel)
                     else:
                         rhs = copy_uid_node(select, rhs, vconsts)
                         vref.parent.replace(vref, rhs)
                 del select.defined_vars[var.name]
+                stinfo['uidrel'] = None
                 rewritten = True
                 if vconsts:
                     select.stinfo['rewritten'][var.name] = vconsts

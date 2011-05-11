@@ -19,8 +19,8 @@
 
 This module defines all the nodes we can find in a RQL Syntax tree, except
 root nodes, defined in the `stmts` module.
-
 """
+
 __docformat__ = "restructuredtext en"
 
 from itertools import chain
@@ -105,6 +105,19 @@ def make_relation(var, rel, rhsargs, rhsclass, operator='='):
     relation.append(cmpop)
     return relation
 
+def make_constant_restriction(var, rtype, value, ctype, operator='='):
+    if ctype is None:
+        ctype = etype_from_pyobj(value)
+    if isinstance(value, (set, frozenset, tuple, list, dict)):
+        if len(value) > 1:
+            rel = make_relation(var, rtype, ('IN',), Function, operator)
+            infunc = rel.children[1].children[0]
+            for atype in sorted(value):
+                infunc.append(Constant(atype, ctype))
+            return rel
+        value = iter(value).next()
+    return make_relation(var, rtype, (value, ctype), Constant, operator)
+
 
 class EditableMixIn(object):
     """mixin class to add edition functionalities to some nodes, eg root nodes
@@ -129,14 +142,17 @@ class EditableMixIn(object):
         handling
         """
         # unregister variable references in the removed subtree
+        parent = node.parent
+        stmt = parent.stmt
         for varref in node.iget_nodes(VariableRef):
             varref.unregister_reference()
             if undefine and not varref.variable.stinfo['references']:
-                node.stmt.undefine_variable(varref.variable)
+                stmt.undefine_variable(varref.variable)
+        # remove return actually removed node and its parent
+        node, parent, index = parent.remove(node)
         if self.should_register_op:
             from rql.undo import RemoveNodeOperation
-            self.undo_manager.add_operation(RemoveNodeOperation(node))
-        node.parent.remove(node)
+            self.undo_manager.add_operation(RemoveNodeOperation(node, parent, stmt, index))
 
     def add_restriction(self, relation):
         """add a restriction relation"""
@@ -160,18 +176,8 @@ class EditableMixIn(object):
 
         variable rtype = value
         """
-        if ctype is None:
-            ctype = etype_from_pyobj(value)
-        if isinstance(value, (set, frozenset, tuple, list, dict)):
-            if len(value) > 1:
-                rel = make_relation(var, rtype, ('IN',), Function, operator=operator)
-                infunc = rel.children[1].children[0]
-                for atype in sorted(value):
-                    infunc.append(Constant(atype, ctype))
-                return self.add_restriction(rel)
-            value = iter(value).next()
-        return self.add_restriction(make_relation(var, rtype, (value, ctype),
-                                                  Constant, operator))
+        restr = make_constant_restriction(var, rtype, value, ctype, operator)
+        return self.add_restriction(restr)
 
     def add_relation(self, lhsvar, rtype, rhsvar):
         """builds a restriction node to express '<var> eid <eid>'"""
@@ -259,6 +265,10 @@ class Or(BinaryNode):
 class Not(Node):
     """a logical NOT node (unary)"""
     __slots__ = ()
+    def __init__(self, expr=None):
+        Node.__init__(self)
+        if expr is not None:
+            self.append(expr)
 
     def as_string(self, encoding=None, kwargs=None):
         if isinstance(self.children[0], (Exists, Relation)):
@@ -268,16 +278,15 @@ class Not(Node):
     def __repr__(self, encoding=None, kwargs=None):
         return 'NOT (%s)' % repr(self.children[0])
 
-    @property
-    def sqlscope(self):
-        return self
-
     def ored(self, traverse_scope=False, _fromnode=None):
         # XXX consider traverse_scope ?
         return self.parent.ored(traverse_scope, _fromnode or self)
 
     def neged(self, traverse_scope=False, _fromnode=None, strict=False):
         return self
+
+    def remove(self, child):
+        return self.parent.remove(self)
 
 # def parent_scope_property(attr):
 #     def _get_parent_attr(self, attr=attr):
@@ -334,11 +343,14 @@ class Exists(EditableMixIn, BaseNode):
         assert oldnode is self.query
         self.query = newnode
         newnode.parent = self
+        return oldnode, self, None
+
+    def remove(self, child):
+        return self.parent.remove(self)
 
     @property
     def scope(self):
         return self
-    sqlscope = scope
 
     def ored(self, traverse_scope=False, _fromnode=None):
         if not traverse_scope:
@@ -428,7 +440,12 @@ class Relation(Node):
             return False
         rhs = self.children[1]
         if isinstance(rhs, Comparison):
-            rhs = rhs.children[0]
+            try:
+                rhs = rhs.children[0]
+            except:
+                print 'opppp', rhs
+                print rhs.root
+                raise
         # else: relation used in SET OR DELETE selection
         return ((isinstance(rhs, Constant) and rhs.type == 'etype')
                 or (isinstance(rhs, Function) and rhs.name == 'IN'))
@@ -467,6 +484,8 @@ class Relation(Node):
         self.optional= value
 
 
+OPERATORS = frozenset(('=', '!=', '<', '<=', '>=', '>', 'ILIKE', 'LIKE'))
+
 class Comparison(HSMixin, Node):
     """handle comparisons:
 
@@ -478,10 +497,7 @@ class Comparison(HSMixin, Node):
         Node.__init__(self)
         if operator == '~=':
             operator = 'ILIKE'
-        elif operator == '=' and isinstance(value, Constant) and \
-                 value.type is None:
-            operator = 'IS'
-        assert operator in ('=', '<', '<=', '>=', '>', 'ILIKE', 'LIKE', 'IS'), operator
+        assert operator in OPERATORS, operator
         self.operator = operator.encode()
         if value is not None:
             self.append(value)
@@ -503,7 +519,7 @@ class Comparison(HSMixin, Node):
             return '%s %s %s' % (self.children[0].as_string(encoding, kwargs),
                                  self.operator.encode(),
                                  self.children[1].as_string(encoding, kwargs))
-        if self.operator in ('=', 'IS'):
+        if self.operator == '=':
             return self.children[0].as_string(encoding, kwargs)
         return '%s %s' % (self.operator.encode(),
                           self.children[0].as_string(encoding, kwargs))
@@ -850,33 +866,35 @@ class Referenceable(object):
             # relations where this variable is used on the lhs/rhs
             'relations': set(),
             'rhsrelations': set(),
-            'optrelations': set(),
-            # empty if this variable may be simplified (eg not used in optional
-            # relations and no final relations where this variable is used on
-            # the lhs)
-            'blocsimplification': set(),
-            # type relations (e.g. "is") where this variable is used on the lhs
-            'typerels': set(),
-            # uid relations (e.g. "eid") where this variable is used on the lhs
-            'uidrels': set(),
             # selection indexes if any
             'selected': set(),
-            # if this variable is an attribute variable (ie final entity),
-            # link to the (prefered) attribute owner variable
+            # type restriction (e.g. "is" / "is_instance_of") where this
+            # variable is used on the lhs
+            'typerel': None,
+            # uid relations (e.g. "eid") where this variable is used on the lhs
+            'uidrel': None,
+            # if this variable is an attribute variable (ie final entity), link
+            # to the (prefered) attribute owner variable
             'attrvar': None,
-            # set of couple (lhs variable name, relation name) where this
-            # attribute variable is used
-            'attrvars': set(),
             # constant node linked to an uid variable if any
             'constnode': None,
             })
+        # remove optional st infos
+        for key in ('optrelations', 'blocsimplification', 'ftirels'):
+            self.stinfo.pop(key, None)
+
+    def add_optional_relation(self, relation):
+        try:
+            self.stinfo['optrelations'].add(relation)
+        except KeyError:
+            self.stinfo['optrelations'] = set((relation,))
 
     def get_type(self, solution=None, kwargs=None):
         """return entity type of this object, 'Any' if not found"""
         if solution:
             return solution[self.name]
-        for rel in self.stinfo['typerels']:
-            return str(rel.children[1].children[0].value)
+        if self.stinfo['typerel']:
+            return str(self.stinfo['typerel'].children[1].children[0].value)
         schema = self.schema
         if schema is not None:
             for rel in self.stinfo['rhsrelations']:
@@ -913,13 +931,13 @@ class Referenceable(object):
             rtype = rel.r_type
             lhs, rhs = rel.get_variable_parts()
             # use getattr, may not be a variable ref (rewritten, constant...)
-            lhsvar = getattr(lhs, 'variable', None)
             rhsvar = getattr(rhs, 'variable', None)
             if mainindex is not None:
                 # relation to the main variable, stop searching
-                if mainindex in lhsvar.stinfo['selected']:
+                lhsvar = getattr(lhs, 'variable', None)
+                if lhsvar is not None and mainindex in lhsvar.stinfo['selected']:
                     return tr(rtype)
-                if mainindex in rhsvar.stinfo['selected']:
+                if rhsvar is not None and mainindex in rhsvar.stinfo['selected']:
                     if schema is not None and rschema.symmetric:
                         return tr(rtype)
                     return tr(rtype + '_object')
@@ -1001,8 +1019,6 @@ class ColumnAlias(Referenceable):
     def get_scope(self):
         return self.query
     scope = property(get_scope, set_scope)
-    sqlscope = scope
-    set_sqlscope = set_scope
 
 
 class Variable(Referenceable):
@@ -1030,7 +1046,6 @@ class Variable(Referenceable):
     def prepare_annotation(self):
         super(Variable, self).prepare_annotation()
         self.stinfo['scope'] = None
-        self.stinfo['sqlscope'] = None
 
     def _set_scope(self, key, scopenode):
         if scopenode is self.stmt or self.stinfo[key] is None:
@@ -1043,12 +1058,6 @@ class Variable(Referenceable):
     def get_scope(self):
         return self.stinfo['scope']
     scope = property(get_scope, set_scope)
-
-    def set_sqlscope(self, sqlscopenode):
-        self._set_scope('sqlscope', sqlscopenode)
-    def get_sqlscope(self):
-        return self.stinfo['sqlscope']
-    sqlscope = property(get_sqlscope, set_sqlscope)
 
     def valuable_references(self):
         """return the number of "valuable" references :

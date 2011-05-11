@@ -16,13 +16,11 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with rql. If not, see <http://www.gnu.org/licenses/>.
-"""RQL packaging information.
-
-"""
+"""RQL packaging information."""
 __docformat__ = "restructuredtext en"
 
 modname = "rql"
-numversion = (0, 25, 0)
+numversion = (0, 28, 0)
 version = '.'.join(str(num) for num in numversion)
 
 license = 'LGPL'
@@ -30,14 +28,12 @@ license = 'LGPL'
 author = "Logilab"
 author_email = "contact@logilab.fr"
 
-short_desc = "relationship query language (RQL) utilities"
+description = "relationship query language (RQL) utilities"
 long_desc = """A library providing the base utilities to handle RQL queries,
 such as a parser, a type inferencer.
 """
 web = "http://www.logilab.org/project/rql"
 ftp = "ftp://ftp.logilab.org/pub/rql"
-
-pyversions = ['2.4']
 
 
 import os, subprocess, sys
@@ -73,8 +69,8 @@ if sys.platform != 'win32':
 else:
     ext_modules = [ Extension('rql_solve',
                               ['gecode_solver.cpp'],
-                              libraries=['GecodeInt-3-3-1-r-x86', 
-                                         'GecodeKernel-3-3-1-r-x86', 
+                              libraries=['GecodeInt-3-3-1-r-x86',
+                                         'GecodeKernel-3-3-1-r-x86',
                                          'GecodeSearch-3-3-1-r-x86',
                                          'GecodeSupport-3-3-1-r-x86',
                                          ],
@@ -82,3 +78,15 @@ else:
                               #extra_link_args=['-static-libgcc'],
                               )
                     ]
+
+install_requires = [
+    'logilab-common >= 0.47.0',
+    'logilab-database',
+    'yapps == 2.1.1', # XXX to ensure we don't use the broken pypi version
+    'constraint', # fallback if the gecode compiled module is missing
+    ]
+
+# links to download yapps2 package that is not (yet) registered in pypi
+dependency_links = [
+    "http://ftp.logilab.org/pub/yapps/yapps2-2.1.1.zip#egg=yapps-2.1.1",
+    ]

@@ -88,7 +88,7 @@ parser Hercule:
     token FALSE:       r'(?i)FALSE'
     token NULL:        r'(?i)NULL'
     token EXISTS:      r'(?i)EXISTS'
-    token CMP_OP:      r'(?i)<=|<|>=|>|~=|=|LIKE|ILIKE|IS'
+    token CMP_OP:      r'(?i)<=|<|>=|>|!=|=|~=|LIKE|ILIKE'
     token ADD_OP:      r'\+|-'
     token MUL_OP:      r'\*|/'
     token FUNCTION:    r'[A-Za-z_]+\s*(?=\()'
@@ -176,10 +176,7 @@ rule dlimit_offset<<S>>: limit_offset<<S>> {{ if limit_offset: warn('LIMIT/OFFSE
 rule groupby<<S>>: GROUPBY variables<<S>> {{ S.set_groupby(variables); return True }}
                  |
 
-rule having<<S>>: HAVING               {{ nodes = [] }}
-                   expr_cmp<<S>>       {{ nodes.append(expr_cmp) }}
-                   ( ',' expr_cmp<<S>> {{ nodes.append(expr_cmp) }}
-                   )*                  {{ S.set_having(nodes) }}
+rule having<<S>>: HAVING logical_expr<<S>> {{ S.set_having([logical_expr]) }}
                 |
 
 rule orderby<<S>>: ORDERBY              {{ nodes = [] }}
@@ -196,11 +193,6 @@ rule with_<<S>>: WITH                {{ nodes = [] }}
 
 rule subquery<<S>>: variables<<S>>                     {{ node = SubQuery() ; node.set_aliases(variables) }}
                     BEING r"\(" union<<Union()>> r"\)" {{ node.set_query(union); return node }}
-
-
-rule expr_cmp<<S>>: expr_add<<S>>  {{ c1 = expr_add }}
-                    CMP_OP         {{ cmp = Comparison(CMP_OP.upper(), c1) }}
-                    expr_add<<S>>  {{ cmp.append(expr_add); return cmp }}
 
 
 rule sort_term<<S>>: expr_add<<S>> sort_meth {{ return SortTerm(expr_add, sort_meth) }}
@@ -241,7 +233,7 @@ rule rels_and<<S>>: rels_not<<S>>        {{ node = rels_not }}
                     (  AND rels_not<<S>> {{ node = And(node, rels_not) }}
                     )*                   {{ return node }}
 
-rule rels_not<<S>>: NOT rel<<S>> {{ node = Not(); node.append(rel); return node }}
+rule rels_not<<S>>: NOT rel<<S>> {{ return Not(rel) }}
                   | rel<<S>>     {{ return rel }}
 
 rule rel<<S>>: rel_base<<S>>                {{ return rel_base }}
@@ -258,6 +250,39 @@ rule opt_left<<S>>: QMARK  {{ return 'left' }}
                   |
 rule opt_right<<S>>: QMARK  {{ return 'right' }}
                    |
+
+#// restriction expressions ####################################################
+
+rule logical_expr<<S>>: exprs_or<<S>>       {{ node = exprs_or }}
+                        ( ',' exprs_or<<S>> {{ node = And(node, exprs_or) }}
+                        )*                  {{ return node }}
+
+rule exprs_or<<S>>: exprs_and<<S>>      {{ node = exprs_and }}
+                    ( OR exprs_and<<S>> {{ node = Or(node, exprs_and) }}
+                    )*                  {{ return node }}
+
+rule exprs_and<<S>>: exprs_not<<S>>        {{ node = exprs_not }}
+                     (  AND exprs_not<<S>> {{ node = And(node, exprs_not) }}
+                     )*                    {{ return node }}
+
+rule exprs_not<<S>>: NOT balanced_expr<<S>> {{ return Not(balanced_expr) }}
+                   | balanced_expr<<S>>     {{ return balanced_expr }}
+
+#// XXX ambiguity, expr_add may also have '(' as first token. Hence
+#// put "(" logical_expr<<S>> ")" rule first. We can then parse:
+#//
+#//   Any T2 WHERE T1 relation T2 HAVING (1 < COUNT(T1));
+#//
+#// but not
+#//
+#//   Any T2 WHERE T1 relation T2 HAVING (1+2) < COUNT(T1);
+rule balanced_expr<<S>>: r"\(" logical_expr<<S>> r"\)" {{ return logical_expr }}
+                       | expr_add<<S>> expr_op<<S>>    {{ expr_op.insert(0, expr_add); return expr_op }}
+
+# // cant use expr<<S>> without introducing some ambiguities
+rule expr_op<<S>>: CMP_OP expr_add<<S>> {{ return Comparison(CMP_OP.upper(), expr_add) }}
+                 | in_expr<<S>>      {{ return Comparison('=', in_expr) }}
+
 
 #// common statements ###########################################################
 
@@ -301,6 +326,13 @@ rule expr_base<<S>>: const                     {{ return const }}
 
 
 rule func<<S>>: FUNCTION r"\("        {{ F = Function(FUNCTION) }}
+                   ( expr_add<<S>> (     {{ F.append(expr_add) }}
+                      ',' expr_add<<S>>
+                     )*                  {{ F.append(expr_add) }}
+                   )?
+                r"\)"                 {{ return F }}
+
+rule in_expr<<S>>: 'IN' r"\("        {{ F = Function('IN') }}
                    ( expr_add<<S>> (     {{ F.append(expr_add) }}
                       ',' expr_add<<S>>
                      )*                  {{ F.append(expr_add) }}
