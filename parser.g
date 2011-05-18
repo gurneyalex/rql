@@ -99,7 +99,7 @@ parser Hercule:
     token QMARK:       r'\?'
 
     token STRING:      r"'([^\'\\]|\\.)*'|\"([^\\\"\\]|\\.)*\""
-    token FLOAT:       r'\d+\.\d*'
+    token FLOAT:       r'-?\d+\.\d*'
     token INT:         r'-?\d+'
     token SUBSTITUTE:  r'%\([A-Za-z_0-9]+\)s'
 
