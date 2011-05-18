@@ -157,6 +157,7 @@ SPEC_QUERIES = (
     'Any YEAR(XD),COUNT(X) GROUPBY YEAR(XD) ORDERBY YEAR(XD) WHERE X date XD;',
     'Any YEAR(XD),COUNT(X) GROUPBY 1 ORDERBY 1 WHERE X date XD;',
 
+    'Any -1.0;',
     )
 
 class ParserHercule(TestCase):
