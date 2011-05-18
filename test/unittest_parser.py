@@ -153,6 +153,10 @@ SPEC_QUERIES = (
     'Any X,Y,A ORDERBY Y '
     'WHERE A done_for Y, X split_into Y, A diem D '
     'HAVING MIN(D) < "2010-07-01", MAX(D) >= "2010-07-01";',
+
+    'Any YEAR(XD),COUNT(X) GROUPBY YEAR(XD) ORDERBY YEAR(XD) WHERE X date XD;',
+    'Any YEAR(XD),COUNT(X) GROUPBY 1 ORDERBY 1 WHERE X date XD;',
+
     )
 
 class ParserHercule(TestCase):

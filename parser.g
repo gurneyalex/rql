@@ -173,7 +173,10 @@ rule dorderby<<S>>: orderby<<S>> {{ if orderby: warn('ORDERBY is now before WHER
 rule dgroupby<<S>>: groupby<<S>> {{ if groupby: warn('GROUPBY is now before WHERE clause') }}
 rule dlimit_offset<<S>>: limit_offset<<S>> {{ if limit_offset: warn('LIMIT/OFFSET are now before WHERE clause') }}
 
-rule groupby<<S>>: GROUPBY variables<<S>> {{ S.set_groupby(variables); return True }}
+rule groupby<<S>>: GROUPBY              {{ nodes = [] }}
+                   expr_add<<S>>        {{ nodes.append(expr_add) }}
+                   ( ',' expr_add<<S>>  {{ nodes.append(expr_add) }}
+                   )*                   {{ S.set_groupby(nodes); return True }}
                  |
 
 rule having<<S>>: HAVING logical_expr<<S>> {{ S.set_having([logical_expr]) }}
