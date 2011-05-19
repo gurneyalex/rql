@@ -1,4 +1,4 @@
-# copyright 2004-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2004-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of rql.
@@ -665,6 +665,9 @@ class RQLSTAnnotator(object):
                 update_attrvars(var, relation, lhs)
 
 def update_attrvars(var, relation, lhs):
+    if var.stinfo['relations'] - var.stinfo['rhsrelations']:
+        raise BadRQLQuery('variable %s should not be used as rhs of attribute relation %s'
+                          % (var.name, relation))
     # stinfo['attrvars'] is set of couple (lhs variable name, relation name)
     # where the `var` attribute variable is used
     lhsvar = getattr(lhs, 'variable', None)
