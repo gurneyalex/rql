@@ -1,4 +1,4 @@
-# copyright 2004-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2004-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of rql.
@@ -19,7 +19,7 @@
 
 __docformat__ = "restructuredtext en"
 
-from rql.nodes import VariableRef, Variable, BinaryNode
+from rql.nodes import Exists, VariableRef, Variable, BinaryNode
 from rql.stmts import Select
 
 class SelectionManager(object):
@@ -142,8 +142,8 @@ class RemoveNodeOperation(NodeOperation):
     def __init__(self, node, parent, stmt, index):
         NodeOperation.__init__(self, node, stmt)
         self.node_parent = parent
-        #if isinstance(parent, Select):
-        #    assert self.node is parent.where
+        if index is None:
+            assert isinstance(parent, (Exists, Select)), (node, parent)
         self.index = index
         # XXX FIXME : find a better way to do that
         self.binary_remove = isinstance(node, BinaryNode)
@@ -152,9 +152,11 @@ class RemoveNodeOperation(NodeOperation):
         """undo the operation on the selection"""
         parent = self.node_parent
         if self.index is None:
-            assert isinstance(parent, Select)
-            sibling = parent.where = self.node
-            parent.where = self.node
+            if isinstance(parent, Select):
+                parent.where = self.node
+            else: # Exists
+                parent.query = self.node
+            sibling = self.node
         if self.binary_remove:
             # if 'parent' was a BinaryNode, then first reinsert the removed node
             # at the same pos in the original 'parent' Binary Node, and then
