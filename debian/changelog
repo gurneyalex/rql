@@ -1,10 +1,11 @@
-rql (0.28.0-2) UNRELEASED; urgency=low
+rql (0.29.0-1) unstable; urgency=low
 
   * debian/control:
     - remove Ludovic Aubry from Uploaders
   * lintian fixes
-
- -- 
+  * new upstream release
+  
+ -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Thu, 09 Jun 2011 16:57:56 +0200
 
 rql (0.28.0-1) unstable; urgency=low
 
