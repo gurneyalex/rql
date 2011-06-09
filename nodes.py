@@ -186,9 +186,10 @@ class EditableMixIn(object):
         return self.add_restriction(make_relation(lhsvar, rtype, (rhsvar,),
                                                   VariableRef))
 
-    def add_eid_restriction(self, var, eid):
+    def add_eid_restriction(self, var, eid, c_type='Int'):
         """builds a restriction node to express '<var> eid <eid>'"""
-        return self.add_constant_restriction(var, 'eid', eid, 'Int')
+        assert c_type in ('Int', 'Substitute'), "Error got c_type=%r in eid restriction" % c_type
+        return self.add_constant_restriction(var, 'eid', eid, c_type)
 
     def add_type_restriction(self, var, etype):
         """builds a restriction node to express : variable is etype"""
@@ -475,7 +476,7 @@ class Relation(Node):
 
     def change_optional(self, value):
         root = self.root
-        if root.should_register_op and value != self.optional:
+        if root is not None and root.should_register_op and value != self.optional:
             from rql.undo import SetOptionalOperation
             root.undo_manager.add_operation(SetOptionalOperation(self, self.optional))
         self.optional= value
