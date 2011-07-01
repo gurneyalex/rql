@@ -48,6 +48,13 @@ def _check_references(defined, varrefs):
             raise AssertionError('vref %r is not referenced (%r)' % (vref, vref.stmt))
     return True
 
+class undo_modification(object):
+    def __init__(self, select):
+        self.select = select
+    def __enter__(self):
+        self.select.save_state()
+    def __exit__(self):
+        self.select.recover()
 
 class ScopeNode(BaseNode):
     solutions = ()   # list of possibles solutions for used variables
@@ -354,6 +361,9 @@ class Union(Statement, Node):
     @property
     def should_register_op(self):
         return self.memorizing and not self.undoing
+
+    def undo_modification(self):
+        return undo_modification(self)
 
     def save_state(self):
         """save the current tree"""
