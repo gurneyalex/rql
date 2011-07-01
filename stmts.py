@@ -1,4 +1,4 @@
-# copyright 2004-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2004-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of rql.
@@ -27,6 +27,7 @@ from copy import deepcopy
 from warnings import warn
 
 from logilab.common.decorators import cached
+from logilab.common.deprecation import deprecated
 
 from rql import BadRQLQuery, CoercionError, nodes
 from rql.base import BaseNode, Node
@@ -708,7 +709,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         elif node in self.orderby:
             self.remove_sort_term(node)
         elif node in self.groupby:
-            self.remove_group_var(node)
+            self.remove_group_term(node)
         elif node in self.having:
             self.having.remove(node)
         # XXX selection
@@ -730,7 +731,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             elif isinstance(vref.parent, nodes.SortTerm):
                 self.remove_sort_term(vref.parent)
             elif vref in self.groupby:
-                self.remove_group_var(vref)
+                self.remove_group_term(vref)
             else: # selected variable
                 self.remove_selected(vref)
         # effective undefine operation
@@ -796,17 +797,19 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             from rql.undo import AddGroupOperation
             self.undo_manager.add_operation(AddGroupOperation(vref))
 
-    def remove_group_var(self, vref):
+    def remove_group_term(self, term):
         """remove the group variable and the group node if necessary"""
         if self.should_register_op:
             from rql.undo import RemoveGroupOperation
-            self.undo_manager.add_operation(RemoveGroupOperation(vref))
-        vref.unregister_reference()
-        self.groupby.remove(vref)
+            self.undo_manager.add_operation(RemoveGroupOperation(term))
+        for vref in term.iget_nodes(nodes.VariableRef):
+            vref.unregister_reference()
+        self.groupby.remove(term)
+    remove_group_var = deprecated('[rql 0.29] use remove_group_term instead')(remove_group_term)
 
     def remove_groups(self):
         for vref in self.groupby[:]:
-            self.remove_group_var(vref)
+            self.remove_group_term(vref)
 
     def add_sort_var(self, var, asc=True):
         """add var in 'orderby' constraints
