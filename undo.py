@@ -196,7 +196,7 @@ class AddGroupOperation(NodeOperation):
 
     def undo(self, selection):
         """undo the operation on the selection"""
-        self.stmt.remove_group_var(self.node)
+        self.stmt.remove_group_term(self.node)
 
 class RemoveGroupOperation(NodeOperation):
     """Defines how to undo 'remove group'."""
