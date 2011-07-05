@@ -2,8 +2,12 @@ ChangeLog for RQL
 =================
 
 --
+    * remove_group_var renamed into remove_group_term and fixed implementation
 
-	* fix remove_group_var renamed into remove_group_term and fixed implementation
+    * rql annotator add 'having' list into variable's stinfo, and
+      properly update variable graph
+
+    * new undo_modification context manager on select nodes
 
 2011-06-09  --  0.29.0
     * support != operator for non equality
