@@ -27,7 +27,7 @@ from logilab.database import UnknownFunction
 from rql._exceptions import BadRQLQuery
 from rql.utils import function_description
 from rql.nodes import (Relation, VariableRef, Constant, Not, Exists, Function,
-                       And, Variable, variable_refs, make_relation)
+                       And, Variable, Comparison, variable_refs, make_relation)
 from rql.stmts import Union
 
 
@@ -521,6 +521,23 @@ class RQLSTAnnotator(object):
             for term in node.groupby:
                 for vref in term.get_nodes(VariableRef):
                     bloc_simplification(vref.variable, term)
+            try:
+                vargraph = node.vargraph
+            except AttributeError:
+                vargraph = None
+            # XXX node.having is a list of size 1
+            assert len(node.having) == 1
+            for term in node.having[0].get_nodes(Comparison):
+                for vref in term.iget_nodes(VariableRef):
+                    vref.variable.stinfo.setdefault('having', []).append(term)
+                if vargraph is not None:
+                    lhsvariables = set(vref.name for vref in term.children[0].get_nodes(VariableRef))
+                    rhsvariables = set(vref.name for vref in term.children[1].get_nodes(VariableRef))
+                    for v1 in lhsvariables:
+                        for v2 in rhsvariables:
+                            if v1 != v2:
+                                vargraph.setdefault(v1, []).append(v2)
+                                vargraph.setdefault(v2, []).append(v1)
 
     def rewrite_shared_optional(self, exists, var, identity_rel_scope=None):
         """if variable is shared across multiple scopes, need some tree
