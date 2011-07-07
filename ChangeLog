@@ -2,11 +2,19 @@ ChangeLog for RQL
 =================
 
 --
-* support != operator for non equality
-* support for CAST function
-* support for regexp-based pattern matching using a REGEXP operator
-* may now GROUPBY functions / column number
-* fix parsing of negative float
+    * remove_group_var renamed into remove_group_term and fixed implementation
+
+    * rql annotator add 'having' list into variable's stinfo, and
+      properly update variable graph
+
+    * new undo_modification context manager on select nodes
+
+2011-06-09  --  0.29.0
+    * support != operator for non equality
+    * support for CAST function
+    * support for regexp-based pattern matching using a REGEXP operator
+    * may now GROUPBY functions / column number
+    * fix parsing of negative float
 
 2011-01-12  --  0.28.0
     * enhance rewrite_shared_optional so one can specify where the new identity
