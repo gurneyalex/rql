@@ -195,6 +195,7 @@ class EditableMixIn(object):
         """builds a restriction node to express : variable is etype"""
         return self.add_constant_restriction(var, 'is', etype, 'etype')
 
+
 # base RQL nodes ##############################################################
 
 class SubQuery(BaseNode):
@@ -224,7 +225,7 @@ class SubQuery(BaseNode):
 
     def as_string(self, encoding=None, kwargs=None):
         return '%s BEING (%s)' % (','.join(v.name for v in self.aliases),
-                                  self.query.as_string())
+                                  self.query.as_string(encoding, kwargs))
     def __repr__(self):
         return '%s BEING (%s)' % (','.join(repr(v) for v in self.aliases),
                                   repr(self.query))
