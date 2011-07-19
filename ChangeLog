@@ -7,6 +7,8 @@ ChangeLog for RQL
     * rql annotator add 'having' list into variable's stinfo, and
       properly update variable graph
 
+    * #71131: as_string doesn't  propagate encoding/kwargs to subqueries
+
     * Select.replace must properly reset old node's parent attribute
 
     * new undo_modification context manager on select nodes
