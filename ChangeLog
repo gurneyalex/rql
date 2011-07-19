@@ -2,9 +2,10 @@ ChangeLog for RQL
 =================
 
 --
-    * remove_group_var renamed into remove_group_term and fixed implementation
+    * #70264: remove_group_var renamed into remove_group_term and fixed
+      implementation
 
-    * rql annotator add 'having' list into variable's stinfo, and
+    * #70416: rql annotator add 'having' list into variable's stinfo, and
       properly update variable graph
 
     * #71131: as_string doesn't  propagate encoding/kwargs to subqueries
