@@ -484,7 +484,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             s.append('WHERE ' + as_string(self.where))
         if self.having:
             s.append('HAVING ' + ','.join(as_string(term)
-                                           for term in self.having))
+                                          for term in self.having))
         if self.with_:
             s.append('WITH ' + ','.join(as_string(term)
                                         for term in self.with_))
