@@ -618,6 +618,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             return self.aliases[name]
         if colnum is not None: # take care, may be 0
             self.aliases[name] = calias = nodes.ColumnAlias(name, colnum)
+            calias.stmt = self
             # alias may already have been used as a regular variable, replace it
             if name in self.defined_vars:
                 var = self.defined_vars.pop(name)

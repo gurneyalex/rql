@@ -314,6 +314,8 @@ class AnnotateTest(TestCase):
         C = rqlst.with_[0].query.children[0].defined_vars['C']
         self.failUnless(C.scope is rqlst.with_[0].query.children[0], C.scope)
         self.assertEqual(len(C.stinfo['relations']), 2)
+        X = rqlst.get_variable('X')
+        self.failUnless(X.scope is rqlst, X.scope)
 
     def test_no_attr_var_if_uid_rel(self):
         with self.assertRaises(BadRQLQuery) as cm:
