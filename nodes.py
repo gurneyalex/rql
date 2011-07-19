@@ -826,7 +826,7 @@ class SortTerm(Node):
 ###############################################################################
 
 class Referenceable(object):
-    __slots__ = ('name', 'stinfo')
+    __slots__ = ('name', 'stinfo', 'stmt')
 
     def __init__(self, name):
         self.name = name.strip().encode()
@@ -835,6 +835,12 @@ class Referenceable(object):
             # link to VariableReference objects in the syntax tree
             'references': set(),
             }
+        # reference to the selection
+        self.stmt = None
+
+    @property
+    def schema(self):
+        return self.stmt.root.schema
 
     def init_copy(self, old):
         # should copy variable's possibletypes on copy
@@ -863,6 +869,7 @@ class Referenceable(object):
 
     def prepare_annotation(self):
         self.stinfo.update({
+            'scope': None,
             # relations where this variable is used on the lhs/rhs
             'relations': set(),
             'rhsrelations': set(),
@@ -882,6 +889,18 @@ class Referenceable(object):
         # remove optional st infos
         for key in ('optrelations', 'blocsimplification', 'ftirels'):
             self.stinfo.pop(key, None)
+
+    def _set_scope(self, key, scopenode):
+        if scopenode is self.stmt or self.stinfo[key] is None:
+            self.stinfo[key] = scopenode
+        elif not (self.stinfo[key] is self.stmt or scopenode is self.stinfo[key]):
+            self.stinfo[key] = common_parent(self.stinfo[key], scopenode).scope
+
+    def set_scope(self, scopenode):
+        self._set_scope('scope', scopenode)
+    def get_scope(self):
+        return self.stinfo['scope']
+    scope = property(get_scope, set_scope)
 
     def add_optional_relation(self, relation):
         try:
@@ -986,10 +1005,6 @@ class ColumnAlias(Referenceable):
     def __repr__(self):
         return 'alias %s(%#X)' % (self.name, id(self))
 
-    @property
-    def schema(self):
-        return self.query.root.schema
-
     def get_type(self, solution=None, kwargs=None):
         """return entity type of this object, 'Any' if not found"""
         vtype = super(ColumnAlias, self).get_type(solution, kwargs)
@@ -1014,12 +1029,6 @@ class ColumnAlias(Referenceable):
                 return ', '.join(sorted(vtype for vtype in vtypes))
         return vtype
 
-    def set_scope(self, scopenode):
-        pass
-    def get_scope(self):
-        return self.query
-    scope = property(get_scope, set_scope)
-
 
 class Variable(Referenceable):
     """
@@ -1028,36 +1037,10 @@ class Variable(Referenceable):
 
     collects information about a variable use in a syntax tree
     """
-    __slots__ = ('stmt',
-                 '_q_invariant', '_q_sql', '_q_sqltable') # XXX ginco specific
-
-    def __init__(self, name):
-        super(Variable, self).__init__(name)
-        # reference to the selection
-        self.stmt = None
+    __slots__ = ('_q_invariant', '_q_sql', '_q_sqltable') # XXX ginco specific
 
     def __repr__(self):
         return '%s(%#X)' % (self.name, id(self))
-
-    @property
-    def schema(self):
-        return self.stmt.root.schema
-
-    def prepare_annotation(self):
-        super(Variable, self).prepare_annotation()
-        self.stinfo['scope'] = None
-
-    def _set_scope(self, key, scopenode):
-        if scopenode is self.stmt or self.stinfo[key] is None:
-            self.stinfo[key] = scopenode
-        elif not (self.stinfo[key] is self.stmt or scopenode is self.stinfo[key]):
-            self.stinfo[key] = common_parent(self.stinfo[key], scopenode).scope
-
-    def set_scope(self, scopenode):
-        self._set_scope('scope', scopenode)
-    def get_scope(self):
-        return self.stinfo['scope']
-    scope = property(get_scope, set_scope)
 
     def valuable_references(self):
         """return the number of "valuable" references :
