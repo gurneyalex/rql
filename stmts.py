@@ -708,8 +708,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             raise Exception('duh XXX %s' % oldnode)
         # XXX no undo/reference support 'by design' (eg breaks things if you add
         # it...)
-        # XXX resetting oldnode parent cause pb with cw.test_views (w/ facets)
-        #oldnode.parent = None
+        oldnode.parent = None
         newnode.parent = self
         return oldnode, self, None
 
