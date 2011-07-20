@@ -493,45 +493,33 @@ class ETypeResolver(object):
             if not isinstance(lhs, nodes.VariableRef) or rhs.type is None:
                 return True
             self._extract_constraint(constraints, lhs.name, rhs, rschema.subjects)
-        else:
-            if not isinstance(lhs, nodes.VariableRef):
-                # XXX: check relation is valid
-                return True
+        elif not isinstance(lhs, nodes.VariableRef):
+            # XXX: check relation is valid
+            return True
+        elif isinstance(rhs, nodes.VariableRef):
             lhsvar = lhs.name
-            rhsvars = []
-            samevar = False
-            if not isinstance(rhs, nodes.MathExpression):
-                # rhs type is the result of the math expression, not of
-                # individual variables, so don't add constraints on rhs
-                # variables
-                for v in rhs.iget_nodes(nodes.VariableRef):
-                    if v.name == lhsvar:
-                        samevar = True
-                    else:
-                        rhsvars.append(v.name)
+            rhsvar = rhs.name
             lhsdomain = constraints.domains[lhsvar]
-            if rhsvars:
-                s2 = '=='.join(rhsvars)
-                # filter according to domain necessary for column aliases
-                rhsdomain = constraints.domains[rhsvars[0]]
-                res = []
-                for fromtype, totypes in rschema.associations():
-                    if not fromtype in lhsdomain:
-                        continue
-                    ptypes = [str(t) for t in totypes if t in rhsdomain]
-                    res.append( [ ( [lhsvar], [str(fromtype)]), (rhsvars, ptypes) ] )
-                constraints.or_and( res )
-            else:
-                ptypes = [str(subj) for subj in rschema.subjects()
-                          if subj in lhsdomain]
-                constraints.var_has_types( lhsvar, ptypes )
-            if samevar:
-                res = []
-                for fromtype, totypes in rschema.associations():
-                    if not (fromtype in totypes and fromtype in lhsdomain):
-                        continue
-                    res.append(str(fromtype))
+            # filter according to domain necessary for column aliases
+            rhsdomain = constraints.domains[rhsvar]
+            res = []
+            for fromtype, totypes in rschema.associations():
+                if not fromtype in lhsdomain:
+                    continue
+                ptypes = [str(t) for t in totypes if t in rhsdomain]
+                res.append( [ ([lhsvar], [str(fromtype)]),
+                              ([rhsvar], ptypes) ] )
+            constraints.or_and(res)
+            if rhsvar == lhsvar:
+                res = [str(fromtype) for fromtype, totypes in rschema.associations()
+                       if (fromtype in totypes and fromtype in lhsdomain)]
                 constraints.var_has_types( lhsvar, res )
+        else:
+            # XXX consider rhs.get_type?
+            lhsdomain = constraints.domains[lhs.name]
+            ptypes = [str(subj) for subj in rschema.subjects()
+                      if subj in lhsdomain]
+            constraints.var_has_types( lhs.name, ptypes )
         return True
 
     def visit_type_restriction(self, relation, constraints):

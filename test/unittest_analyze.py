@@ -531,7 +531,7 @@ class AnalyzerClassTest(TestCase):
                                 {'P': 'Student', 'S': 'Company', 'N': 'Int'}])
 
 
-    def test_nongrer_not_u_ownedby_u(self):
+    def test_nonregr_not_u_ownedby_u(self):
         node = self.helper.parse('Any U WHERE NOT U owned_by U')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = sorted(node.children[0].solutions)

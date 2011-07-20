@@ -13,6 +13,8 @@ ChangeLog for RQL
     * #71132: column alias scope should be handled as variable scope, not bound
       to subquery
 
+    * #71157: bad analyze when using functions
+
     * Select.replace must properly reset old node's parent attribute
 
     * new undo_modification context manager on select nodes
