@@ -158,6 +158,10 @@ SPEC_QUERIES = (
     'Any YEAR(XD),COUNT(X) GROUPBY 1 ORDERBY 1 WHERE X date XD;',
 
     'Any -1.0;',
+
+    'Any U,G WHERE U login UL, G name GL, G is CWGroup HAVING UPPER(UL)=UPPER(GL)?;',
+
+    'Any U,G WHERE U login UL, G name GL, G is CWGroup HAVING UPPER(UL)?=UPPER(GL);',
     )
 
 class ParserHercule(TestCase):
@@ -315,7 +319,7 @@ class ParserHercule(TestCase):
         for rql in SPEC_QUERIES:
 #            print "Orig:", rql
 #            print "Resu:", rqltree
-            yield self.assert_, self.parse(rql, True)
+            yield self.parse, rql, True
 
     def test_raise_badsyntax_error(self):
         for rql in BAD_SYNTAX_QUERIES:
