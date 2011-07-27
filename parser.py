@@ -1,7 +1,7 @@
 """yapps input grammar for RQL.
 
 :organization: Logilab
-:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:copyright: 2003-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 
 
@@ -451,16 +451,16 @@ class Hercule(runtime.Parser):
 
     def opt_left(self, S, _parent=None):
         _context = self.Context(_parent, self._scanner, 'opt_left', [S])
-        _token = self._peek('QMARK', 'R_TYPE', context=_context)
+        _token = self._peek('QMARK', 'R_TYPE', 'CMP_OP', "'IN'", context=_context)
         if _token == 'QMARK':
             QMARK = self._scan('QMARK', context=_context)
             return 'left'
-        else: # == 'R_TYPE'
+        else: # in ['R_TYPE', 'CMP_OP', "'IN'"]
             pass
 
     def opt_right(self, S, _parent=None):
         _context = self.Context(_parent, self._scanner, 'opt_right', [S])
-        _token = self._peek('QMARK', 'AND', 'OR', "','", 'r"\\)"', 'HAVING', "';'", 'WITH', 'GROUPBY', 'ORDERBY', 'LIMIT', 'OFFSET', 'WHERE', context=_context)
+        _token = self._peek('QMARK', 'AND', 'OR', "','", 'r"\\)"', 'WITH', 'GROUPBY', 'HAVING', 'ORDERBY', "';'", 'LIMIT', 'OFFSET', 'WHERE', context=_context)
         if _token == 'QMARK':
             QMARK = self._scan('QMARK', context=_context)
             return 'right'
@@ -518,8 +518,10 @@ class Hercule(runtime.Parser):
             return logical_expr
         elif 1:
             expr_add = self.expr_add(S, _context)
+            opt_left = self.opt_left(S, _context)
             expr_op = self.expr_op(S, _context)
-            expr_op.insert(0, expr_add); return expr_op
+            opt_right = self.opt_right(S, _context)
+            expr_op.insert(0, expr_add); expr_op.set_optional(opt_left, opt_right); return expr_op
         else:
             raise runtime.SyntaxError(_token[0], 'Could not match balanced_expr')
 
@@ -549,7 +551,7 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'decl_vars', [R])
         E_TYPE = self._scan('E_TYPE', context=_context)
         var = self.var(R, _context)
-        while self._peek("','", 'R_TYPE', 'QMARK', 'WHERE', '":"', 'HAVING', "';'", 'MUL_OP', 'BEING', 'WITH', 'GROUPBY', 'ORDERBY', 'ADD_OP', 'LIMIT', 'OFFSET', 'r"\\)"', 'SORT_DESC', 'SORT_ASC', 'CMP_OP', "'IN'", 'AND', 'OR', context=_context) == "','":
+        while self._peek("','", 'R_TYPE', 'QMARK', 'WHERE', '":"', 'CMP_OP', "'IN'", 'HAVING', "';'", 'MUL_OP', 'BEING', 'WITH', 'GROUPBY', 'ORDERBY', 'ADD_OP', 'LIMIT', 'OFFSET', 'r"\\)"', 'SORT_DESC', 'SORT_ASC', 'AND', 'OR', context=_context) == "','":
             R.add_main_variable(E_TYPE, var)
             self._scan("','", context=_context)
             E_TYPE = self._scan('E_TYPE', context=_context)
@@ -588,7 +590,7 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'expr_add', [S])
         expr_mul = self.expr_mul(S, _context)
         node = expr_mul
-        while self._peek('ADD_OP', 'r"\\)"', "','", 'SORT_DESC', 'SORT_ASC', 'CMP_OP', "'IN'", 'GROUPBY', 'QMARK', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', "';'", 'WITH', 'AND', 'OR', context=_context) == 'ADD_OP':
+        while self._peek('ADD_OP', 'QMARK', 'r"\\)"', "','", 'SORT_DESC', 'SORT_ASC', 'CMP_OP', 'R_TYPE', "'IN'", 'GROUPBY', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', "';'", 'WITH', 'AND', 'OR', context=_context) == 'ADD_OP':
             ADD_OP = self._scan('ADD_OP', context=_context)
             expr_mul = self.expr_mul(S, _context)
             node = MathExpression( ADD_OP, node, expr_mul )
@@ -598,7 +600,7 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'expr_mul', [S])
         expr_base = self.expr_base(S, _context)
         node = expr_base
-        while self._peek('MUL_OP', 'ADD_OP', 'r"\\)"', "','", 'SORT_DESC', 'SORT_ASC', 'CMP_OP', "'IN'", 'GROUPBY', 'QMARK', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', "';'", 'WITH', 'AND', 'OR', context=_context) == 'MUL_OP':
+        while self._peek('MUL_OP', 'ADD_OP', 'QMARK', 'r"\\)"', "','", 'SORT_DESC', 'SORT_ASC', 'CMP_OP', 'R_TYPE', "'IN'", 'GROUPBY', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', "';'", 'WITH', 'AND', 'OR', context=_context) == 'MUL_OP':
             MUL_OP = self._scan('MUL_OP', context=_context)
             expr_base = self.expr_base(S, _context)
             node = MathExpression( MUL_OP, node, expr_base)
@@ -632,7 +634,7 @@ class Hercule(runtime.Parser):
         F = Function(FUNCTION)
         if self._peek('r"\\)"', 'r"\\("', 'NULL', 'DATE', 'DATETIME', 'TRUE', 'FALSE', 'FLOAT', 'INT', 'STRING', 'SUBSTITUTE', 'VARIABLE', 'E_TYPE', 'FUNCTION', context=_context) != 'r"\\)"':
             expr_add = self.expr_add(S, _context)
-            while self._peek("','", 'r"\\)"', 'SORT_DESC', 'SORT_ASC', 'CMP_OP', "'IN'", 'GROUPBY', 'QMARK', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', "';'", 'WITH', 'AND', 'OR', context=_context) == "','":
+            while self._peek("','", 'QMARK', 'r"\\)"', 'SORT_DESC', 'SORT_ASC', 'CMP_OP', 'R_TYPE', "'IN'", 'GROUPBY', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', "';'", 'WITH', 'AND', 'OR', context=_context) == "','":
                 F.append(expr_add)
                 self._scan("','", context=_context)
                 expr_add = self.expr_add(S, _context)
@@ -647,7 +649,7 @@ class Hercule(runtime.Parser):
         F = Function('IN')
         if self._peek('r"\\)"', 'r"\\("', 'NULL', 'DATE', 'DATETIME', 'TRUE', 'FALSE', 'FLOAT', 'INT', 'STRING', 'SUBSTITUTE', 'VARIABLE', 'E_TYPE', 'FUNCTION', context=_context) != 'r"\\)"':
             expr_add = self.expr_add(S, _context)
-            while self._peek("','", 'r"\\)"', 'SORT_DESC', 'SORT_ASC', 'CMP_OP', "'IN'", 'GROUPBY', 'QMARK', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', "';'", 'WITH', 'AND', 'OR', context=_context) == "','":
+            while self._peek("','", 'QMARK', 'r"\\)"', 'SORT_DESC', 'SORT_ASC', 'CMP_OP', 'R_TYPE', "'IN'", 'GROUPBY', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', "';'", 'WITH', 'AND', 'OR', context=_context) == "','":
                 F.append(expr_add)
                 self._scan("','", context=_context)
                 expr_add = self.expr_add(S, _context)
@@ -701,7 +703,7 @@ def parse(rule, text):
     P = Hercule(HerculeScanner(text))
     return runtime.wrap_error_reporter(P, rule)
 
-if __name__ == 'old__main__':
+if __name__ == '__main__':
     from sys import argv, stdin
     if len(argv) >= 2:
         if len(argv) >= 3:

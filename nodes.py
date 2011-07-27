@@ -490,20 +490,29 @@ class Comparison(HSMixin, Node):
 
      <, <=, =, >=, > LIKE and ILIKE operators have a unique children.
     """
-    __slots__ = ('operator',)
+    __slots__ = ('operator', 'optional')
 
-    def __init__(self, operator, value=None):
+    def __init__(self, operator, value=None, optional=None):
         Node.__init__(self)
         if operator == '~=':
             operator = 'ILIKE'
         assert operator in OPERATORS, operator
         self.operator = operator.encode()
+        self.optional = optional
         if value is not None:
             self.append(value)
 
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node"""
-        return (self.operator,)
+        return (self.operator, None, self.optional)
+
+    def set_optional(self, left, right):
+        if left and right:
+            self.optional = 'both'
+        elif left:
+            self.optional = 'left'
+        elif right:
+            self.optional = 'right'
 
     def is_equivalent(self, other):
         if not Node.is_equivalent(self, other):
