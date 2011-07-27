@@ -1,7 +1,7 @@
 ChangeLog for RQL
 =================
 
---
+2011-07-27  --  0.29.1
     * #70264: remove_group_var renamed into remove_group_term and fixed
       implementation
 
@@ -15,16 +15,26 @@ ChangeLog for RQL
 
     * #71157: bad analyze when using functions
 
+    * #71415: needs to allow outer join on rhs of final relation and in HAVING express
+
     * Select.replace must properly reset old node's parent attribute
 
     * new undo_modification context manager on select nodes
 
+
+
 2011-06-09  --  0.29.0
     * support != operator for non equality
+
     * support for CAST function
+
     * support for regexp-based pattern matching using a REGEXP operator
+
     * may now GROUPBY functions / column number
+
     * fix parsing of negative float
+
+
 
 2011-01-12  --  0.28.0
     * enhance rewrite_shared_optional so one can specify where the new identity

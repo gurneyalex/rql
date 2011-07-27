@@ -372,9 +372,9 @@ class RQLSTChecker(object):
             except KeyError:
                 state.error('unknown relation `%s`' % rtype)
             else:
-                if relation.optional and rschema.final:
-                    state.error("shouldn't use optional on final relation `%s`"
-                                % relation.r_type)
+                if rschema.final and relation.optional not in (None, 'right'):
+                     state.error("optional may only be set on the rhs on final relation `%s`"
+                                 % relation.r_type)
                 if self.special_relations.get(rtype) == 'uid':
                     if state.var_info.get(lhsvar, 0) & VAR_HAS_UID_REL:
                         state.error('can only one uid restriction per variable '

@@ -233,7 +233,7 @@ rule rels_or<<S>>: rels_and<<S>>      {{ node = rels_and }}
                    )*                 {{ return node }}
 
 rule rels_and<<S>>: rels_not<<S>>        {{ node = rels_not }}
-                    (  AND rels_not<<S>> {{ node = And(node, rels_not) }}
+                    ( AND rels_not<<S>>  {{ node = And(node, rels_not) }}
                     )*                   {{ return node }}
 
 rule rels_not<<S>>: NOT rel<<S>> {{ return Not(rel) }}
@@ -265,7 +265,7 @@ rule exprs_or<<S>>: exprs_and<<S>>      {{ node = exprs_and }}
                     )*                  {{ return node }}
 
 rule exprs_and<<S>>: exprs_not<<S>>        {{ node = exprs_not }}
-                     (  AND exprs_not<<S>> {{ node = And(node, exprs_not) }}
+                     ( AND exprs_not<<S>>  {{ node = And(node, exprs_not) }}
                      )*                    {{ return node }}
 
 rule exprs_not<<S>>: NOT balanced_expr<<S>> {{ return Not(balanced_expr) }}
@@ -280,11 +280,12 @@ rule exprs_not<<S>>: NOT balanced_expr<<S>> {{ return Not(balanced_expr) }}
 #//
 #//   Any T2 WHERE T1 relation T2 HAVING (1+2) < COUNT(T1);
 rule balanced_expr<<S>>: r"\(" logical_expr<<S>> r"\)" {{ return logical_expr }}
-                       | expr_add<<S>> expr_op<<S>>    {{ expr_op.insert(0, expr_add); return expr_op }}
+                       | expr_add<<S>> opt_left<<S>>
+                         expr_op<<S>> opt_right<<S>> {{ expr_op.insert(0, expr_add); expr_op.set_optional(opt_left, opt_right); return expr_op }}
 
 # // cant use expr<<S>> without introducing some ambiguities
 rule expr_op<<S>>: CMP_OP expr_add<<S>> {{ return Comparison(CMP_OP.upper(), expr_add) }}
-                 | in_expr<<S>>      {{ return Comparison('=', in_expr) }}
+                 | in_expr<<S>>         {{ return Comparison('=', in_expr) }}
 
 
 #// common statements ###########################################################
