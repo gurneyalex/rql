@@ -524,9 +524,14 @@ class Comparison(HSMixin, Node):
         if len(self.children) == 0:
             return self.operator
         if len(self.children) == 2:
-            return '%s %s %s' % (self.children[0].as_string(encoding, kwargs),
-                                 self.operator.encode(),
-                                 self.children[1].as_string(encoding, kwargs))
+            lhsopt = rhsopt = ''
+            if self.optional in ('left', 'both'):
+                lhsopt = '?'
+            if self.optional in ('right', 'both'):
+                rhsopt = '?'
+            return '%s%s %s %s%s' % (self.children[0].as_string(encoding, kwargs),
+                                     lhsopt, self.operator.encode(),
+                                     self.children[1].as_string(encoding, kwargs), rhsopt)
         if self.operator == '=':
             return self.children[0].as_string(encoding, kwargs)
         return '%s %s' % (self.operator.encode(),
