@@ -92,6 +92,7 @@ parser Hercule:
     token ADD_OP:      r'\+|-|\||#'
     token MUL_OP:      r'\*|/|%|&'
     token POW_OP:      r'\^|>>|<<'
+    token UNARY_OP:    r'-|~'
     token FUNCTION:    r'[A-Za-z_]+\s*(?=\()'
     token R_TYPE:      r'[a-z_][a-z0-9_]*'
     token E_TYPE:      r'[A-Z][A-Za-z0-9]*[a-z]+[0-9]*'
@@ -314,6 +315,9 @@ rule expr<<S>>: CMP_OP expr_add<<S>> {{ return Comparison(CMP_OP.upper(), expr_a
 
 
 rule expr_add<<S>>: expr_mul<<S>>          {{ node = expr_mul }}
+                    ( ADD_OP expr_mul<<S>> {{ node = MathExpression( ADD_OP, node, expr_mul ) }}
+                    )*                     {{ return node }}
+                  | UNARY_OP expr_mul<<S>> {{ node = UnaryExpression( UNARY_OP, expr_mul ) }}
                     ( ADD_OP expr_mul<<S>> {{ node = MathExpression( ADD_OP, node, expr_mul ) }}
                     )*                     {{ return node }}
 
