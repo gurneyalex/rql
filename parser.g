@@ -157,10 +157,7 @@ rule select_<<S>>: E_TYPE selection<<S>>
                    limit_offset<<S>>
                    where<<S>>
                    having<<S>>
-                   with_<<S>>
-                   dgroupby<<S>>
-                   dorderby<<S>>
-                   dlimit_offset<<S>>    {{ S.set_statement_type(E_TYPE); return S }}
+                   with_<<S>>             {{ S.set_statement_type(E_TYPE); return S }}
 
 rule selection<<S>>: expr_add<<S>>        {{ S.append_selected(expr_add) }}
                      (  ',' expr_add<<S>> {{ S.append_selected(expr_add) }}
@@ -169,11 +166,6 @@ rule selection<<S>>: expr_add<<S>>        {{ S.append_selected(expr_add) }}
 
 
 #// other clauses (groupby, orderby, with, having) ##############################
-
-#// to remove in rql 1.0
-rule dorderby<<S>>: orderby<<S>> {{ if orderby: warn('ORDERBY is now before WHERE clause') }}
-rule dgroupby<<S>>: groupby<<S>> {{ if groupby: warn('GROUPBY is now before WHERE clause') }}
-rule dlimit_offset<<S>>: limit_offset<<S>> {{ if limit_offset: warn('LIMIT/OFFSET are now before WHERE clause') }}
 
 rule groupby<<S>>: GROUPBY              {{ nodes = [] }}
                    expr_add<<S>>        {{ nodes.append(expr_add) }}

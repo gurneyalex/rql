@@ -20,6 +20,8 @@ ChangeLog for RQL
     * #69185: fix syntax error with unary operators by introducing
       `UnaryExpression` node
 
+    * drop old backward compat for ORDERBY/GROUPBY after where clause
+
     * fix Comparison.as_string to considerer its optional attribute
 
 2011-07-27  --  0.29.1
