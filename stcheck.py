@@ -528,16 +528,26 @@ class RQLSTAnnotator(object):
             # XXX node.having is a list of size 1
             assert len(node.having) == 1
             for term in node.having[0].get_nodes(Comparison):
-                for vref in term.iget_nodes(VariableRef):
-                    vref.variable.stinfo.setdefault('having', []).append(term)
+                lhsvariables = set(vref.variable for vref in term.children[0].get_nodes(VariableRef))
+                rhsvariables = set(vref.variable for vref in term.children[1].get_nodes(VariableRef))
+                for var in lhsvariables | rhsvariables:
+                    var.stinfo.setdefault('having', []).append(term)
                 if vargraph is not None:
-                    lhsvariables = set(vref.name for vref in term.children[0].get_nodes(VariableRef))
-                    rhsvariables = set(vref.name for vref in term.children[1].get_nodes(VariableRef))
                     for v1 in lhsvariables:
+                        v1 = v1.name
                         for v2 in rhsvariables:
+                            v2 = v2.name
                             if v1 != v2:
                                 vargraph.setdefault(v1, []).append(v2)
                                 vargraph.setdefault(v2, []).append(v1)
+                if term.optional in ('left', 'both'):
+                    for var in lhsvariables:
+                        optcomps = var.stinfo['attrvar'].stinfo.setdefault('optcomparisons', set())
+                        optcomps.add(term)
+                if term.optional in ('right', 'both'):
+                    for var in rhsvariables:
+                        optcomps = var.stinfo['attrvar'].stinfo.setdefault('optcomparisons', set())
+                        optcomps.add(term)
 
     def rewrite_shared_optional(self, exists, var, identity_rel_scope=None):
         """if variable is shared across multiple scopes, need some tree

@@ -2,7 +2,7 @@ ChangeLog for RQL
 =================
 
 	--
-    * fix Comparison.as_string to considerer its optional attribute
+
     * add some missing operators (#72295):
 
       * % (modulo),
@@ -12,6 +12,12 @@ ChangeLog for RQL
       * # (bitwise XOR),
       * << (bitwise left shift),
       * >> (bitwise right shift)
+
+    * new #72052: optional 'optcomparisons' key in variable stinfo, containing
+      HAVING comparison nodes where it's used and optional (eg outer
+      join)
+
+    * fix Comparison.as_string to considerer its optional attribute
 
 2011-07-27  --  0.29.1
     * #70264: remove_group_var renamed into remove_group_term and fixed
