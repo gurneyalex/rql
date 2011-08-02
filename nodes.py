@@ -483,7 +483,7 @@ class Relation(Node):
         self.optional= value
 
 
-OPERATORS = frozenset(('=', '!=', '<', '<=', '>=', '>', 'ILIKE', 'LIKE', 'REGEXP'))
+CMP_OPERATORS = frozenset(('=', '!=', '<', '<=', '>=', '>', 'ILIKE', 'LIKE', 'REGEXP'))
 
 class Comparison(HSMixin, Node):
     """handle comparisons:
@@ -496,7 +496,7 @@ class Comparison(HSMixin, Node):
         Node.__init__(self)
         if operator == '~=':
             operator = 'ILIKE'
-        assert operator in OPERATORS, operator
+        assert operator in CMP_OPERATORS, operator
         self.operator = operator.encode()
         self.optional = optional
         if value is not None:

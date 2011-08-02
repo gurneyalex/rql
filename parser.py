@@ -96,8 +96,9 @@ class HerculeScanner(runtime.Scanner):
         ('NULL', re.compile('(?i)NULL')),
         ('EXISTS', re.compile('(?i)EXISTS')),
         ('CMP_OP', re.compile('(?i)<=|<|>=|>|!=|=|~=|LIKE|ILIKE|REGEXP')),
-        ('ADD_OP', re.compile('\\+|-')),
-        ('MUL_OP', re.compile('\\*|/')),
+        ('ADD_OP', re.compile('\\+|-|\\||#')),
+        ('MUL_OP', re.compile('\\*|/|%|&')),
+        ('POW_OP', re.compile('\\^|>>|<<')),
         ('FUNCTION', re.compile('[A-Za-z_]+\\s*(?=\\()')),
         ('R_TYPE', re.compile('[a-z_][a-z0-9_]*')),
         ('E_TYPE', re.compile('[A-Z][A-Za-z0-9]*[a-z]+[0-9]*')),
@@ -551,7 +552,7 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'decl_vars', [R])
         E_TYPE = self._scan('E_TYPE', context=_context)
         var = self.var(R, _context)
-        while self._peek("','", 'R_TYPE', 'QMARK', 'WHERE', '":"', 'CMP_OP', "'IN'", 'HAVING', "';'", 'MUL_OP', 'BEING', 'WITH', 'GROUPBY', 'ORDERBY', 'ADD_OP', 'LIMIT', 'OFFSET', 'r"\\)"', 'SORT_DESC', 'SORT_ASC', 'AND', 'OR', context=_context) == "','":
+        while self._peek("','", 'R_TYPE', 'QMARK', 'WHERE', '":"', 'CMP_OP', "'IN'", 'HAVING', "';'", 'POW_OP', 'BEING', 'WITH', 'GROUPBY', 'ORDERBY', 'MUL_OP', 'LIMIT', 'OFFSET', 'ADD_OP', 'r"\\)"', 'SORT_DESC', 'SORT_ASC', 'AND', 'OR', context=_context) == "','":
             R.add_main_variable(E_TYPE, var)
             self._scan("','", context=_context)
             E_TYPE = self._scan('E_TYPE', context=_context)
@@ -598,10 +599,20 @@ class Hercule(runtime.Parser):
 
     def expr_mul(self, S, _parent=None):
         _context = self.Context(_parent, self._scanner, 'expr_mul', [S])
-        expr_base = self.expr_base(S, _context)
-        node = expr_base
+        expr_pow = self.expr_pow(S, _context)
+        node = expr_pow
         while self._peek('MUL_OP', 'ADD_OP', 'QMARK', 'r"\\)"', "','", 'SORT_DESC', 'SORT_ASC', 'CMP_OP', 'R_TYPE', "'IN'", 'GROUPBY', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', "';'", 'WITH', 'AND', 'OR', context=_context) == 'MUL_OP':
             MUL_OP = self._scan('MUL_OP', context=_context)
+            expr_pow = self.expr_pow(S, _context)
+            node = MathExpression( MUL_OP, node, expr_pow)
+        return node
+
+    def expr_pow(self, S, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'expr_pow', [S])
+        expr_base = self.expr_base(S, _context)
+        node = expr_base
+        while self._peek('POW_OP', 'MUL_OP', 'ADD_OP', 'QMARK', 'r"\\)"', "','", 'SORT_DESC', 'SORT_ASC', 'CMP_OP', 'R_TYPE', "'IN'", 'GROUPBY', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', "';'", 'WITH', 'AND', 'OR', context=_context) == 'POW_OP':
+            POW_OP = self._scan('POW_OP', context=_context)
             expr_base = self.expr_base(S, _context)
             node = MathExpression( MUL_OP, node, expr_base)
         return node

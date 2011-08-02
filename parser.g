@@ -71,7 +71,7 @@ parser Hercule:
     token DISTINCT:    r'(?i)DISTINCT'
     token WITH:        r'(?i)WITH'
     token WHERE:       r'(?i)WHERE'
-    token BEING:          r'(?i)BEING'
+    token BEING:       r'(?i)BEING'
     token OR:          r'(?i)OR'
     token AND:         r'(?i)AND'
     token NOT:         r'(?i)NOT'
@@ -89,8 +89,9 @@ parser Hercule:
     token NULL:        r'(?i)NULL'
     token EXISTS:      r'(?i)EXISTS'
     token CMP_OP:      r'(?i)<=|<|>=|>|!=|=|~=|LIKE|ILIKE|REGEXP'
-    token ADD_OP:      r'\+|-'
-    token MUL_OP:      r'\*|/'
+    token ADD_OP:      r'\+|-|\||#'
+    token MUL_OP:      r'\*|/|%|&'
+    token POW_OP:      r'\^|>>|<<'
     token FUNCTION:    r'[A-Za-z_]+\s*(?=\()'
     token R_TYPE:      r'[a-z_][a-z0-9_]*'
     token E_TYPE:      r'[A-Z][A-Za-z0-9]*[a-z]+[0-9]*'
@@ -317,8 +318,12 @@ rule expr_add<<S>>: expr_mul<<S>>          {{ node = expr_mul }}
                     )*                     {{ return node }}
 
 
-rule expr_mul<<S>>: expr_base<<S>>          {{ node = expr_base }}
-                    ( MUL_OP expr_base<<S>> {{ node = MathExpression( MUL_OP, node, expr_base) }}
+rule expr_mul<<S>>: expr_pow<<S>>          {{ node = expr_pow }}
+                    ( MUL_OP expr_pow<<S>> {{ node = MathExpression( MUL_OP, node, expr_pow) }}
+                    )*                     {{ return node }}
+
+rule expr_pow<<S>>: expr_base<<S>>          {{ node = expr_base }}
+                    ( POW_OP expr_base<<S>> {{ node = MathExpression( MUL_OP, node, expr_base) }}
                     )*                      {{ return node }}
 
 
