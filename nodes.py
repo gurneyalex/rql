@@ -76,6 +76,31 @@ def variable_refs(node):
             yield vref
 
 
+class OperatorExpressionMixin(object):
+
+    def initargs(self, stmt):
+        """return list of arguments to give to __init__ to clone this node"""
+        return (self.operator,)
+
+    def is_equivalent(self, other):
+        if not Node.is_equivalent(self, other):
+            return False
+        return self.operator == other.operator
+
+    def get_description(self, mainindex, tr):
+        """if there is a variable in the math expr used as rhs of a relation,
+        return the name of this relation, else return the type of the math
+        expression
+        """
+        try:
+            return tr(self.get_type())
+        except CoercionError:
+            for vref in self.iget_nodes(VariableRef):
+                vtype = vref.get_description(mainindex, tr)
+                if vtype != 'Any':
+                    return tr(vtype)
+
+
 class HSMixin(object):
     """mixin class for classes which may be the lhs or rhs of an expression"""
     __slots__ = ()
@@ -541,22 +566,13 @@ class Comparison(HSMixin, Node):
         return '%s %s' % (self.operator, ', '.join(repr(c) for c in self.children))
 
 
-class MathExpression(HSMixin, BinaryNode):
-    """Operators plus, minus, multiply, divide."""
+class MathExpression(OperatorExpressionMixin, HSMixin, BinaryNode):
+    """Mathematical Operators"""
     __slots__ = ('operator',)
 
     def __init__(self, operator, lhs=None, rhs=None):
         BinaryNode.__init__(self, lhs, rhs)
         self.operator = operator.encode()
-
-    def initargs(self, stmt):
-        """return list of arguments to give to __init__ to clone this node"""
-        return (self.operator,)
-
-    def is_equivalent(self, other):
-        if not Node.is_equivalent(self, other):
-            return False
-        return self.operator == other.operator
 
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
@@ -592,18 +608,31 @@ class MathExpression(HSMixin, BinaryNode):
                 return 'Float'
             raise CoercionError(key)
 
-    def get_description(self, mainindex, tr):
-        """if there is a variable in the math expr used as rhs of a relation,
-        return the name of this relation, else return the type of the math
-        expression
+
+class UnaryExpression(OperatorExpressionMixin, Node):
+    """Unary Operators"""
+    __slots__ = ('operator',)
+
+    def __init__(self, operator, child=None):
+        Node.__init__(self)
+        self.operator = operator.encode()
+        if child is not None:
+            self.append(child)
+
+    def as_string(self, encoding=None, kwargs=None):
+        """return the tree as an encoded rql string"""
+        return '%s%s' % (self.operator.encode(),
+                         self.children[0].as_string(encoding, kwargs))
+
+    def __repr__(self):
+        return '%s%r' % (self.operator, self.children[0])
+
+    def get_type(self, solution=None, kwargs=None):
+        """return the type of object returned by this expression if known
+
+        solution is an optional variable/etype mapping
         """
-        try:
-            return tr(self.get_type())
-        except CoercionError:
-            for vref in self.iget_nodes(VariableRef):
-                vtype = vref.get_description(mainindex, tr)
-                if vtype != 'Any':
-                    return tr(vtype)
+        return self.children[0].get_type(solution, kwargs)
 
 
 class Function(HSMixin, Node):
@@ -1065,5 +1094,5 @@ class Variable(Referenceable):
 
 
 build_visitor_stub((SubQuery, And, Or, Not, Exists, Relation,
-                    Comparison, MathExpression, Function, Constant,
-                    VariableRef, SortTerm, ColumnAlias, Variable))
+                    Comparison, MathExpression, UnaryExpression, Function,
+                    Constant, VariableRef, SortTerm, ColumnAlias, Variable))

@@ -408,6 +408,10 @@ class RQLSTChecker(object):
         pass #assert len(mathexpr.children) == 2, len(mathexpr.children)
     def leave_mathexpression(self, node, state):
         pass
+    def visit_unaryexpression(self, unaryexpr, state):
+        pass #assert len(unaryexpr.children) == 2, len(unaryexpr.children)
+    def leave_unaryexpression(self, node, state):
+        pass
 
     def visit_function(self, function, state):
         try:

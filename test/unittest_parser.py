@@ -82,6 +82,7 @@ SPEC_QUERIES = (
     "INSERT Person X: X nom 'bidule', X ami Y WHERE Y nom 'chouette';",
     "SET X nom 'toto', X prenom 'original' WHERE X is Person, X nom 'bidule';",
     "SET X know Y WHERE X ami Y;",
+    "SET X value -Y WHERE X value Y;",
     "DELETE Person X WHERE X nom 'toto';",
     "DELETE X ami Y WHERE X is Person, X nom 'toto';",
 

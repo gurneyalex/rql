@@ -3,7 +3,7 @@ ChangeLog for RQL
 
 	--
 
-    * add some missing operators (#72295):
+    * #72295: add some missing operators:
 
       * % (modulo),
       * ^ (power),
@@ -13,9 +13,12 @@ ChangeLog for RQL
       * << (bitwise left shift),
       * >> (bitwise right shift)
 
-    * new #72052: optional 'optcomparisons' key in variable stinfo, containing
+    * #72052: new optional 'optcomparisons' key in variable stinfo, containing
       HAVING comparison nodes where it's used and optional (eg outer
       join)
+
+    * #69185: fix syntax error with unary operators by introducing
+      `UnaryExpression` node
 
     * fix Comparison.as_string to considerer its optional attribute
 

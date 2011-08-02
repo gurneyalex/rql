@@ -1,4 +1,4 @@
-# copyright 2004-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2004-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of rql.
@@ -21,6 +21,7 @@ Note: this module uses __slots__ to limit memory usage.
 """
 
 __docformat__ = "restructuredtext en"
+
 
 class BaseNode(object):
     __slots__ = ('parent',)
@@ -196,4 +197,3 @@ class LeafNode(BaseNode):
         stmt is the root node, which should be use to get new variables.
         """
         return self.__class__(*self.initargs(stmt))
-
