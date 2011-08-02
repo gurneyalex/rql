@@ -3,6 +3,15 @@ ChangeLog for RQL
 
 	--
     * fix Comparison.as_string to considerer its optional attribute
+    * add some missing operators (#72295):
+
+      * % (modulo),
+      * ^ (power),
+      * & (bitwise AND),
+      * | (bitwise OR),
+      * # (bitwise XOR),
+      * << (bitwise left shift),
+      * >> (bitwise right shift)
 
 2011-07-27  --  0.29.1
     * #70264: remove_group_var renamed into remove_group_term and fixed
