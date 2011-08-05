@@ -1,17 +1,22 @@
 ChangeLog for RQL
 =================
 
-	--
-
+2011-08-05  --  0.30.0
     * #72295: add some missing operators:
 
-      * % (modulo),
-      * ^ (power),
-      * & (bitwise AND),
-      * | (bitwise OR),
-      * # (bitwise XOR),
-      * << (bitwise left shift),
-      * >> (bitwise right shift)
+    * % (modulo),
+
+    * ^ (power),
+
+    * & (bitwise AND),
+
+    * | (bitwise OR),
+
+    * # (bitwise XOR),
+
+    * << (bitwise left shift),
+
+    * >> (bitwise right shift)
 
     * #72052: new optional 'optcomparisons' key in variable stinfo, containing
       HAVING comparison nodes where it's used and optional (eg outer
@@ -23,6 +28,8 @@ ChangeLog for RQL
     * drop old backward compat for ORDERBY/GROUPBY after where clause
 
     * fix Comparison.as_string to considerer its optional attribute
+
+
 
 2011-07-27  --  0.29.1
     * #70264: remove_group_var renamed into remove_group_term and fixed
