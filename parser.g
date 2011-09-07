@@ -95,7 +95,7 @@ parser Hercule:
     token UNARY_OP:    r'-|~'
     token FUNCTION:    r'[A-Za-z_]+\s*(?=\()'
     token R_TYPE:      r'[a-z_][a-z0-9_]*'
-    token E_TYPE:      r'[A-Z][A-Za-z0-9]*[a-z]+[0-9]*'
+    token E_TYPE:      r'[A-Z][A-Za-z0-9]*[a-z]+[A-Z0-9]*'
     token VARIABLE:    r'[A-Z][A-Z0-9_]*'
     token COLALIAS:    r'[A-Z][A-Z0-9_]*\.\d+'
     token QMARK:       r'\?'
