@@ -1,22 +1,24 @@
 ChangeLog for RQL
 =================
+--
+   * #74727: allow entity types to end with a capitalized letter provided they contain a lower-cased letter
 
 2011-08-05  --  0.30.0
     * #72295: add some missing operators:
 
-    * % (modulo),
+      - % (modulo),
 
-    * ^ (power),
+      - ^ (power),
 
-    * & (bitwise AND),
+      - & (bitwise AND),
 
-    * | (bitwise OR),
+      - | (bitwise OR),
 
-    * # (bitwise XOR),
+      - # (bitwise XOR),
 
-    * << (bitwise left shift),
+      - << (bitwise left shift),
 
-    * >> (bitwise right shift)
+      - >> (bitwise right shift)
 
     * #72052: new optional 'optcomparisons' key in variable stinfo, containing
       HAVING comparison nodes where it's used and optional (eg outer

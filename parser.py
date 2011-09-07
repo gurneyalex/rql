@@ -102,7 +102,7 @@ class HerculeScanner(runtime.Scanner):
         ('UNARY_OP', re.compile('-|~')),
         ('FUNCTION', re.compile('[A-Za-z_]+\\s*(?=\\()')),
         ('R_TYPE', re.compile('[a-z_][a-z0-9_]*')),
-        ('E_TYPE', re.compile('[A-Z][A-Za-z0-9]*[a-z]+[0-9]*')),
+        ('E_TYPE', re.compile('[A-Z][A-Za-z0-9]*[a-z]+[A-Z0-9]*')),
         ('VARIABLE', re.compile('[A-Z][A-Z0-9_]*')),
         ('COLALIAS', re.compile('[A-Z][A-Z0-9_]*\\.\\d+')),
         ('QMARK', re.compile('\\?')),
