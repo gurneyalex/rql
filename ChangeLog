@@ -1,8 +1,14 @@
 ChangeLog for RQL
 =================
 
+--
+    * #78681: don't crash on column aliases used in outer join
+
+
 2011-09-07  --  0.30.1
-    * #74727: allow entity types to end with a capitalized letter provided they contain a lower-cased letter
+
+    * #74727: allow entity types to end with a capitalized letter
+      provided they contain a lower-cased letter
 
 
 
