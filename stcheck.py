@@ -546,12 +546,14 @@ class RQLSTAnnotator(object):
                                 vargraph.setdefault(v2, []).append(v1)
                 if term.optional in ('left', 'both'):
                     for var in lhsvariables:
-                        optcomps = var.stinfo['attrvar'].stinfo.setdefault('optcomparisons', set())
-                        optcomps.add(term)
+                        if var.stinfo['attrvar'] is not None:
+                            optcomps = var.stinfo['attrvar'].stinfo.setdefault('optcomparisons', set())
+                            optcomps.add(term)
                 if term.optional in ('right', 'both'):
                     for var in rhsvariables:
-                        optcomps = var.stinfo['attrvar'].stinfo.setdefault('optcomparisons', set())
-                        optcomps.add(term)
+                        if var.stinfo['attrvar'] is not None:
+                            optcomps = var.stinfo['attrvar'].stinfo.setdefault('optcomparisons', set())
+                            optcomps.add(term)
 
     def rewrite_shared_optional(self, exists, var, identity_rel_scope=None):
         """if variable is shared across multiple scopes, need some tree
