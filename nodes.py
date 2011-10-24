@@ -997,12 +997,17 @@ class Referenceable(object):
             if mainindex is not None:
                 # relation to the main variable, stop searching
                 lhsvar = getattr(lhs, 'variable', None)
+                context = None
                 if lhsvar is not None and mainindex in lhsvar.stinfo['selected']:
-                    return tr(rtype)
+                    if len(lhsvar.stinfo['possibletypes']) == 1:
+                        context = iter(lhsvar.stinfo['possibletypes']).next()
+                    return tr(rtype, context=context)
                 if rhsvar is not None and mainindex in rhsvar.stinfo['selected']:
+                    if len(rhsvar.stinfo['possibletypes']) == 1:
+                        context = iter(rhsvar.stinfo['possibletypes']).next()
                     if schema is not None and rschema.symmetric:
-                        return tr(rtype)
-                    return tr(rtype + '_object')
+                        return tr(rtype, context=context)
+                    return tr(rtype + '_object', context=context)
             if rhsvar is self:
                 rtype += '_object'
         if frtype is not None:
