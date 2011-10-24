@@ -119,9 +119,9 @@ rule goal: DELETE _delete<<Delete()>> ';'             {{ return _delete }}
 
 #// Deletion  ###################################################################
 
-rule _delete<<R>>: decl_rels<<R>> where<<R>> {{ return R }}
+rule _delete<<R>>: decl_rels<<R>> where<<R>> having<<R>> {{ return R }}
 
-                 | decl_vars<<R>> where<<R>> {{ return R }}
+                 | decl_vars<<R>> where<<R>> having<<R>> {{ return R }}
 
 
 #// Insertion  ##################################################################
@@ -129,14 +129,14 @@ rule _delete<<R>>: decl_rels<<R>> where<<R>> {{ return R }}
 rule _insert<<R>>: decl_vars<<R>> insert_rels<<R>> {{ return R }}
 
 
-rule insert_rels<<R>>: ":" decl_rels<<R>> where<<R>> {{ return R }}
+rule insert_rels<<R>>: ":" decl_rels<<R>> where<<R>> having<<R>> {{ return R }}
 
                      |
 
 
 #// Update  #####################################################################
 
-rule update<<R>>: decl_rels<<R>> where<<R>> {{ return R }}
+rule update<<R>>: decl_rels<<R>> where<<R>> having<<R>> {{ return R }}
 
 
 #// Selection  ##################################################################
