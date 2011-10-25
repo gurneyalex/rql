@@ -469,9 +469,11 @@ class ETypeResolver(object):
         """extract constraints for an relation according to it's  type"""
         if relation.is_types_restriction():
             self.visit_type_restriction(relation, constraints)
-            return True
+            return None
         rtype = relation.r_type
         lhs, rhs = relation.get_parts()
+        if rtype == 'identity' and relation.neged(strict=True):
+            return None
         if rtype in self.uid_func_mapping:
             if isinstance(relation.parent, nodes.Not) or relation.operator() != '=':
                 # non final entity types
@@ -480,22 +482,22 @@ class ETypeResolver(object):
                 etypes = self._uid_node_types(rhs)
             if etypes:
                 constraints.var_has_types( lhs.name, etypes )
-                return True
+                return None
         if isinstance(rhs, nodes.Comparison):
             rhs = rhs.children[0]
         rschema = self.schema.rschema(rtype)
         if isinstance(lhs, nodes.Constant): # lhs is a constant node (simplified tree)
             if not isinstance(rhs, nodes.VariableRef):
-                return True
+                return None
             self._extract_constraint(constraints, rhs.name, lhs, rschema.objects)
         elif isinstance(rhs, nodes.Constant) and not rschema.final:
             # rhs.type is None <-> NULL
             if not isinstance(lhs, nodes.VariableRef) or rhs.type is None:
-                return True
+                return None
             self._extract_constraint(constraints, lhs.name, rhs, rschema.subjects)
         elif not isinstance(lhs, nodes.VariableRef):
             # XXX: check relation is valid
-            return True
+            return None
         elif isinstance(rhs, nodes.VariableRef):
             lhsvar = lhs.name
             rhsvar = rhs.name
@@ -520,7 +522,7 @@ class ETypeResolver(object):
             ptypes = [str(subj) for subj in rschema.subjects()
                       if subj in lhsdomain]
             constraints.var_has_types( lhs.name, ptypes )
-        return True
+        return None
 
     def visit_type_restriction(self, relation, constraints):
         lhs, rhs = relation.get_parts()
