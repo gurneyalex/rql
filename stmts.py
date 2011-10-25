@@ -255,7 +255,7 @@ class Union(Statement, Node):
           returning a string
         """
         if tr is None:
-            tr = lambda x: x
+            tr = lambda x,**k: x
         return [c.get_description(mainindex, tr) for c in self.children]
 
     # repr / as_string / copy #################################################
