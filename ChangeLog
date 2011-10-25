@@ -3,6 +3,9 @@ ChangeLog for RQL
 
 --
     * #78681: don't crash on column aliases used in outer join
+    * #81394: HAVING support in write queries (INSERT,SET,DELETE)
+    * when possible, use entity type as translation context of relation
+      (break cw < 3.13.10 compat)
 
 
 2011-09-07  --  0.30.1
