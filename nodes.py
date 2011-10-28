@@ -956,7 +956,9 @@ class Referenceable(object):
         if solution:
             return solution[self.name]
         if self.stinfo['typerel']:
-            return str(self.stinfo['typerel'].children[1].children[0].value)
+            rhs = self.stinfo['typerel'].children[1].children[0]
+            if isinstance(rhs, Constant):
+                return str(rhs.value)
         schema = self.schema
         if schema is not None:
             for rel in self.stinfo['rhsrelations']:

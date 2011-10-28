@@ -508,6 +508,12 @@ class NodesTest(TestCase):
         tree = parse(u"Any X WHERE X creation_date TODAY")
         self.assertEqual(tree.as_string(), 'Any X WHERE X creation_date TODAY')
 
+
+    def test_get_type_is_in(self):
+        tree = sparse("Any X WHERE X is IN (Person, Company)")
+        select = tree.children[0]
+        self.assertEqual(select.defined_vars['X'].get_type(), 'Any')
+
     # sub-queries tests #######################################################
 
     def test_subq_colalias_compat(self):
@@ -603,6 +609,7 @@ class GetNodesFunctionTest(TestCase):
             self.assertIsInstance(varref, nodes.VariableRef)
         self.assertEqual(sorted(x.name for x in varrefs),
                           ['X', 'X', 'X', 'Y', 'Y'])
+
 
 if __name__ == '__main__':
     unittest_main()
