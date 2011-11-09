@@ -7,7 +7,7 @@ ChangeLog for RQL
     * #80799: fix wrong type analysis with 'NOT identity'
     * when possible, use entity type as translation context of relation
       (break cw < 3.13.10 compat)
-
+    * #81817: fix add_type_restriction for cases where some types restriction is already in there
 
 2011-09-07  --  0.30.1
 
