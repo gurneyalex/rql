@@ -1,5 +1,5 @@
 # -*- coding: iso-8859-1 -*-
-# copyright 2004-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2004-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of rql.
@@ -82,6 +82,7 @@ SPEC_QUERIES = (
     "INSERT Person X: X nom 'bidule', X ami Y WHERE Y nom 'chouette';",
     "SET X nom 'toto', X prenom 'original' WHERE X is Person, X nom 'bidule';",
     "SET X know Y WHERE X ami Y;",
+    "SET X value -Y WHERE X value Y;",
     "DELETE Person X WHERE X nom 'toto';",
     "DELETE X ami Y WHERE X is Person, X nom 'toto';",
 
@@ -153,6 +154,15 @@ SPEC_QUERIES = (
     'Any X,Y,A ORDERBY Y '
     'WHERE A done_for Y, X split_into Y, A diem D '
     'HAVING MIN(D) < "2010-07-01", MAX(D) >= "2010-07-01";',
+
+    'Any YEAR(XD),COUNT(X) GROUPBY YEAR(XD) ORDERBY YEAR(XD) WHERE X date XD;',
+    'Any YEAR(XD),COUNT(X) GROUPBY 1 ORDERBY 1 WHERE X date XD;',
+
+    'Any -1.0;',
+
+    'Any U,G WHERE U login UL, G name GL, G is CWGroup HAVING UPPER(UL)=UPPER(GL)?;',
+
+    'Any U,G WHERE U login UL, G name GL, G is CWGroup HAVING UPPER(UL)?=UPPER(GL);',
     )
 
 class ParserHercule(TestCase):
@@ -310,7 +320,7 @@ class ParserHercule(TestCase):
         for rql in SPEC_QUERIES:
 #            print "Orig:", rql
 #            print "Resu:", rqltree
-            yield self.assert_, self.parse(rql, True)
+            yield self.parse, rql, True
 
     def test_raise_badsyntax_error(self):
         for rql in BAD_SYNTAX_QUERIES:

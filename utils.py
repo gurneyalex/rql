@@ -68,7 +68,7 @@ KEYWORDS = set(('INSERT', 'SET', 'DELETE',
 
 
 from logilab.common.decorators import monkeypatch
-from logilab.database import SQL_FUNCTIONS_REGISTRY, FunctionDescr
+from logilab.database import SQL_FUNCTIONS_REGISTRY, FunctionDescr, CAST
 
 RQL_FUNCTIONS_REGISTRY = SQL_FUNCTIONS_REGISTRY.copy()
 
@@ -83,6 +83,19 @@ def st_description(self, funcnode, mainindex, tr):
 def st_check_backend(self, backend, funcnode):
     if not self.supports(backend):
         raise BadRQLQuery("backend %s doesn't support function %s" % (backend, self.name))
+
+
+@monkeypatch(FunctionDescr)
+def rql_return_type(self, funcnode):
+    return self.rtype
+
+@monkeypatch(CAST)
+def st_description(self, funcnode, mainindex, tr):
+    return self.rql_return_type(funcnode)
+
+@monkeypatch(CAST)
+def rql_return_type(self, funcnode):
+    return funcnode.children[0].value
 
 
 def iter_funcnode_variables(funcnode):

@@ -1,4 +1,4 @@
-# copyright 2004-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2004-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of rql.
@@ -27,6 +27,7 @@ from copy import deepcopy
 from warnings import warn
 
 from logilab.common.decorators import cached
+from logilab.common.deprecation import deprecated
 
 from rql import BadRQLQuery, CoercionError, nodes
 from rql.base import BaseNode, Node
@@ -47,6 +48,13 @@ def _check_references(defined, varrefs):
             raise AssertionError('vref %r is not referenced (%r)' % (vref, vref.stmt))
     return True
 
+class undo_modification(object):
+    def __init__(self, select):
+        self.select = select
+    def __enter__(self):
+        self.select.save_state()
+    def __exit__(self):
+        self.select.recover()
 
 class ScopeNode(BaseNode):
     solutions = ()   # list of possibles solutions for used variables
@@ -354,6 +362,9 @@ class Union(Statement, Node):
     def should_register_op(self):
         return self.memorizing and not self.undoing
 
+    def undo_modification(self):
+        return undo_modification(self)
+
     def save_state(self):
         """save the current tree"""
         self.undo_manager.push_state()
@@ -473,7 +484,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             s.append('WHERE ' + as_string(self.where))
         if self.having:
             s.append('HAVING ' + ','.join(as_string(term)
-                                           for term in self.having))
+                                          for term in self.having))
         if self.with_:
             s.append('WITH ' + ','.join(as_string(term)
                                         for term in self.with_))
@@ -607,6 +618,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             return self.aliases[name]
         if colnum is not None: # take care, may be 0
             self.aliases[name] = calias = nodes.ColumnAlias(name, colnum)
+            calias.stmt = self
             # alias may already have been used as a regular variable, replace it
             if name in self.defined_vars:
                 var = self.defined_vars.pop(name)
@@ -697,8 +709,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             raise Exception('duh XXX %s' % oldnode)
         # XXX no undo/reference support 'by design' (eg breaks things if you add
         # it...)
-        # XXX resetting oldnode parent cause pb with cw.test_views (w/ facets)
-        #oldnode.parent = None
+        oldnode.parent = None
         newnode.parent = self
         return oldnode, self, None
 
@@ -708,7 +719,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         elif node in self.orderby:
             self.remove_sort_term(node)
         elif node in self.groupby:
-            self.remove_group_var(node)
+            self.remove_group_term(node)
         elif node in self.having:
             self.having.remove(node)
         # XXX selection
@@ -730,7 +741,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             elif isinstance(vref.parent, nodes.SortTerm):
                 self.remove_sort_term(vref.parent)
             elif vref in self.groupby:
-                self.remove_group_var(vref)
+                self.remove_group_term(vref)
             else: # selected variable
                 self.remove_selected(vref)
         # effective undefine operation
@@ -796,17 +807,19 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             from rql.undo import AddGroupOperation
             self.undo_manager.add_operation(AddGroupOperation(vref))
 
-    def remove_group_var(self, vref):
+    def remove_group_term(self, term):
         """remove the group variable and the group node if necessary"""
         if self.should_register_op:
             from rql.undo import RemoveGroupOperation
-            self.undo_manager.add_operation(RemoveGroupOperation(vref))
-        vref.unregister_reference()
-        self.groupby.remove(vref)
+            self.undo_manager.add_operation(RemoveGroupOperation(term))
+        for vref in term.iget_nodes(nodes.VariableRef):
+            vref.unregister_reference()
+        self.groupby.remove(term)
+    remove_group_var = deprecated('[rql 0.29] use remove_group_term instead')(remove_group_term)
 
     def remove_groups(self):
         for vref in self.groupby[:]:
-            self.remove_group_var(vref)
+            self.remove_group_term(vref)
 
     def add_sort_var(self, var, asc=True):
         """add var in 'orderby' constraints

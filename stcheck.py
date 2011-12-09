@@ -1,4 +1,4 @@
-# copyright 2004-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2004-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of rql.
@@ -27,7 +27,7 @@ from logilab.database import UnknownFunction
 from rql._exceptions import BadRQLQuery
 from rql.utils import function_description
 from rql.nodes import (Relation, VariableRef, Constant, Not, Exists, Function,
-                       And, Variable, variable_refs, make_relation)
+                       And, Variable, Comparison, variable_refs, make_relation)
 from rql.stmts import Union
 
 
@@ -372,9 +372,9 @@ class RQLSTChecker(object):
             except KeyError:
                 state.error('unknown relation `%s`' % rtype)
             else:
-                if relation.optional and rschema.final:
-                    state.error("shouldn't use optional on final relation `%s`"
-                                % relation.r_type)
+                if rschema.final and relation.optional not in (None, 'right'):
+                     state.error("optional may only be set on the rhs on final relation `%s`"
+                                 % relation.r_type)
                 if self.special_relations.get(rtype) == 'uid':
                     if state.var_info.get(lhsvar, 0) & VAR_HAS_UID_REL:
                         state.error('can only one uid restriction per variable '
@@ -407,6 +407,10 @@ class RQLSTChecker(object):
     def visit_mathexpression(self, mathexpr, state):
         pass #assert len(mathexpr.children) == 2, len(mathexpr.children)
     def leave_mathexpression(self, node, state):
+        pass
+    def visit_unaryexpression(self, unaryexpr, state):
+        pass #assert len(unaryexpr.children) == 2, len(unaryexpr.children)
+    def leave_unaryexpression(self, node, state):
         pass
 
     def visit_function(self, function, state):
@@ -455,11 +459,16 @@ class RQLSTChecker(object):
     def visit_constant(self, constant, state):
         #assert len(constant.children)==0
         if constant.type == 'etype':
-            if constant.relation().r_type not in ('is', 'is_instance_of'):
-                msg ='using an entity type in only allowed with "is" relation'
-                state.error(msg)
-            if not constant.value in self.schema:
+            if constant.value not in self.schema:
                 state.error('unknown entity type %s' % constant.value)
+            rel = constant.relation()
+            if rel is not None:
+                if rel.r_type not in ('is', 'is_instance_of'):
+                    msg ='using an entity type in only allowed with "is" relation'
+                    state.error(msg)
+            elif not (isinstance(constant.parent, Function) and
+                      constant.parent.name == 'CAST'):
+                state.error('Entity types can only be used inside a CAST()')
 
     def leave_constant(self, node, state):
         pass
@@ -516,6 +525,35 @@ class RQLSTAnnotator(object):
             for term in node.groupby:
                 for vref in term.get_nodes(VariableRef):
                     bloc_simplification(vref.variable, term)
+            try:
+                vargraph = node.vargraph
+            except AttributeError:
+                vargraph = None
+            # XXX node.having is a list of size 1
+            assert len(node.having) == 1
+            for term in node.having[0].get_nodes(Comparison):
+                lhsvariables = set(vref.variable for vref in term.children[0].get_nodes(VariableRef))
+                rhsvariables = set(vref.variable for vref in term.children[1].get_nodes(VariableRef))
+                for var in lhsvariables | rhsvariables:
+                    var.stinfo.setdefault('having', []).append(term)
+                if vargraph is not None:
+                    for v1 in lhsvariables:
+                        v1 = v1.name
+                        for v2 in rhsvariables:
+                            v2 = v2.name
+                            if v1 != v2:
+                                vargraph.setdefault(v1, []).append(v2)
+                                vargraph.setdefault(v2, []).append(v1)
+                if term.optional in ('left', 'both'):
+                    for var in lhsvariables:
+                        if var.stinfo['attrvar'] is not None:
+                            optcomps = var.stinfo['attrvar'].stinfo.setdefault('optcomparisons', set())
+                            optcomps.add(term)
+                if term.optional in ('right', 'both'):
+                    for var in rhsvariables:
+                        if var.stinfo['attrvar'] is not None:
+                            optcomps = var.stinfo['attrvar'].stinfo.setdefault('optcomparisons', set())
+                            optcomps.add(term)
 
     def rewrite_shared_optional(self, exists, var, identity_rel_scope=None):
         """if variable is shared across multiple scopes, need some tree
@@ -660,6 +698,9 @@ class RQLSTAnnotator(object):
                 update_attrvars(var, relation, lhs)
 
 def update_attrvars(var, relation, lhs):
+    if var.stinfo['relations'] - var.stinfo['rhsrelations']:
+        raise BadRQLQuery('variable %s should not be used as rhs of attribute relation %s'
+                          % (var.name, relation))
     # stinfo['attrvars'] is set of couple (lhs variable name, relation name)
     # where the `var` attribute variable is used
     lhsvar = getattr(lhs, 'variable', None)
