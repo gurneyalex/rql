@@ -1,4 +1,4 @@
-# copyright 2004-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2004-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of rql.
@@ -15,6 +15,8 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with rql. If not, see <http://www.gnu.org/licenses/>.
+from __future__ import with_statement
+
 from logilab.common.testlib import TestCase, unittest_main
 
 from rql import RQLHelper, BadRQLQuery, stmts, nodes
@@ -312,6 +314,13 @@ class AnnotateTest(TestCase):
         C = rqlst.with_[0].query.children[0].defined_vars['C']
         self.failUnless(C.scope is rqlst.with_[0].query.children[0], C.scope)
         self.assertEqual(len(C.stinfo['relations']), 2)
+        X = rqlst.get_variable('X')
+        self.failUnless(X.scope is rqlst, X.scope)
+
+    def test_no_attr_var_if_uid_rel(self):
+        with self.assertRaises(BadRQLQuery) as cm:
+            self.parse('Any X, Y WHERE X work_for Z, Y work_for Z, X eid > Y')
+        self.assertEqual(str(cm.exception), 'variable Y should not be used as rhs of attribute relation X eid > Y')
 
 if __name__ == '__main__':
     unittest_main()

@@ -1,7 +1,7 @@
 """yapps input grammar for RQL.
 
 :organization: Logilab
-:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:copyright: 2003-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 :contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
 
 
@@ -71,7 +71,7 @@ parser Hercule:
     token DISTINCT:    r'(?i)DISTINCT'
     token WITH:        r'(?i)WITH'
     token WHERE:       r'(?i)WHERE'
-    token BEING:          r'(?i)BEING'
+    token BEING:       r'(?i)BEING'
     token OR:          r'(?i)OR'
     token AND:         r'(?i)AND'
     token NOT:         r'(?i)NOT'
@@ -88,18 +88,20 @@ parser Hercule:
     token FALSE:       r'(?i)FALSE'
     token NULL:        r'(?i)NULL'
     token EXISTS:      r'(?i)EXISTS'
-    token CMP_OP:      r'(?i)<=|<|>=|>|!=|=|~=|LIKE|ILIKE'
-    token ADD_OP:      r'\+|-'
-    token MUL_OP:      r'\*|/'
+    token CMP_OP:      r'(?i)<=|<|>=|>|!=|=|~=|LIKE|ILIKE|REGEXP'
+    token ADD_OP:      r'\+|-|\||#'
+    token MUL_OP:      r'\*|/|%|&'
+    token POW_OP:      r'\^|>>|<<'
+    token UNARY_OP:    r'-|~'
     token FUNCTION:    r'[A-Za-z_]+\s*(?=\()'
     token R_TYPE:      r'[a-z_][a-z0-9_]*'
-    token E_TYPE:      r'[A-Z][A-Za-z0-9]*[a-z]+[0-9]*'
+    token E_TYPE:      r'[A-Z][A-Za-z0-9]*[a-z]+[A-Z0-9]*'
     token VARIABLE:    r'[A-Z][A-Z0-9_]*'
     token COLALIAS:    r'[A-Z][A-Z0-9_]*\.\d+'
     token QMARK:       r'\?'
 
     token STRING:      r"'([^\'\\]|\\.)*'|\"([^\\\"\\]|\\.)*\""
-    token FLOAT:       r'\d+\.\d*'
+    token FLOAT:       r'-?\d+\.\d*'
     token INT:         r'-?\d+'
     token SUBSTITUTE:  r'%\([A-Za-z_0-9]+\)s'
 
@@ -155,10 +157,7 @@ rule select_<<S>>: E_TYPE selection<<S>>
                    limit_offset<<S>>
                    where<<S>>
                    having<<S>>
-                   with_<<S>>
-                   dgroupby<<S>>
-                   dorderby<<S>>
-                   dlimit_offset<<S>>    {{ S.set_statement_type(E_TYPE); return S }}
+                   with_<<S>>             {{ S.set_statement_type(E_TYPE); return S }}
 
 rule selection<<S>>: expr_add<<S>>        {{ S.append_selected(expr_add) }}
                      (  ',' expr_add<<S>> {{ S.append_selected(expr_add) }}
@@ -168,12 +167,10 @@ rule selection<<S>>: expr_add<<S>>        {{ S.append_selected(expr_add) }}
 
 #// other clauses (groupby, orderby, with, having) ##############################
 
-#// to remove in rql 1.0
-rule dorderby<<S>>: orderby<<S>> {{ if orderby: warn('ORDERBY is now before WHERE clause') }}
-rule dgroupby<<S>>: groupby<<S>> {{ if groupby: warn('GROUPBY is now before WHERE clause') }}
-rule dlimit_offset<<S>>: limit_offset<<S>> {{ if limit_offset: warn('LIMIT/OFFSET are now before WHERE clause') }}
-
-rule groupby<<S>>: GROUPBY variables<<S>> {{ S.set_groupby(variables); return True }}
+rule groupby<<S>>: GROUPBY              {{ nodes = [] }}
+                   expr_add<<S>>        {{ nodes.append(expr_add) }}
+                   ( ',' expr_add<<S>>  {{ nodes.append(expr_add) }}
+                   )*                   {{ S.set_groupby(nodes); return True }}
                  |
 
 rule having<<S>>: HAVING logical_expr<<S>> {{ S.set_having([logical_expr]) }}
@@ -230,7 +227,7 @@ rule rels_or<<S>>: rels_and<<S>>      {{ node = rels_and }}
                    )*                 {{ return node }}
 
 rule rels_and<<S>>: rels_not<<S>>        {{ node = rels_not }}
-                    (  AND rels_not<<S>> {{ node = And(node, rels_not) }}
+                    ( AND rels_not<<S>>  {{ node = And(node, rels_not) }}
                     )*                   {{ return node }}
 
 rule rels_not<<S>>: NOT rel<<S>> {{ return Not(rel) }}
@@ -262,7 +259,7 @@ rule exprs_or<<S>>: exprs_and<<S>>      {{ node = exprs_and }}
                     )*                  {{ return node }}
 
 rule exprs_and<<S>>: exprs_not<<S>>        {{ node = exprs_not }}
-                     (  AND exprs_not<<S>> {{ node = And(node, exprs_not) }}
+                     ( AND exprs_not<<S>>  {{ node = And(node, exprs_not) }}
                      )*                    {{ return node }}
 
 rule exprs_not<<S>>: NOT balanced_expr<<S>> {{ return Not(balanced_expr) }}
@@ -277,11 +274,12 @@ rule exprs_not<<S>>: NOT balanced_expr<<S>> {{ return Not(balanced_expr) }}
 #//
 #//   Any T2 WHERE T1 relation T2 HAVING (1+2) < COUNT(T1);
 rule balanced_expr<<S>>: r"\(" logical_expr<<S>> r"\)" {{ return logical_expr }}
-                       | expr_add<<S>> expr_op<<S>>    {{ expr_op.insert(0, expr_add); return expr_op }}
+                       | expr_add<<S>> opt_left<<S>>
+                         expr_op<<S>> opt_right<<S>> {{ expr_op.insert(0, expr_add); expr_op.set_optional(opt_left, opt_right); return expr_op }}
 
 # // cant use expr<<S>> without introducing some ambiguities
 rule expr_op<<S>>: CMP_OP expr_add<<S>> {{ return Comparison(CMP_OP.upper(), expr_add) }}
-                 | in_expr<<S>>      {{ return Comparison('=', in_expr) }}
+                 | in_expr<<S>>         {{ return Comparison('=', in_expr) }}
 
 
 #// common statements ###########################################################
@@ -311,10 +309,17 @@ rule expr<<S>>: CMP_OP expr_add<<S>> {{ return Comparison(CMP_OP.upper(), expr_a
 rule expr_add<<S>>: expr_mul<<S>>          {{ node = expr_mul }}
                     ( ADD_OP expr_mul<<S>> {{ node = MathExpression( ADD_OP, node, expr_mul ) }}
                     )*                     {{ return node }}
+                  | UNARY_OP expr_mul<<S>> {{ node = UnaryExpression( UNARY_OP, expr_mul ) }}
+                    ( ADD_OP expr_mul<<S>> {{ node = MathExpression( ADD_OP, node, expr_mul ) }}
+                    )*                     {{ return node }}
 
 
-rule expr_mul<<S>>: expr_base<<S>>          {{ node = expr_base }}
-                    ( MUL_OP expr_base<<S>> {{ node = MathExpression( MUL_OP, node, expr_base) }}
+rule expr_mul<<S>>: expr_pow<<S>>          {{ node = expr_pow }}
+                    ( MUL_OP expr_pow<<S>> {{ node = MathExpression( MUL_OP, node, expr_pow) }}
+                    )*                     {{ return node }}
+
+rule expr_pow<<S>>: expr_base<<S>>          {{ node = expr_base }}
+                    ( POW_OP expr_base<<S>> {{ node = MathExpression( MUL_OP, node, expr_base) }}
                     )*                      {{ return node }}
 
 

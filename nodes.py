@@ -1,4 +1,4 @@
-# copyright 2004-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2004-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of rql.
@@ -27,6 +27,8 @@ from itertools import chain
 from decimal import Decimal
 from datetime import datetime, date, time, timedelta
 from time import localtime
+
+from logilab.database import DYNAMIC_RTYPE
 
 from rql import CoercionError
 from rql.base import BaseNode, Node, BinaryNode, LeafNode
@@ -72,6 +74,31 @@ def variable_refs(node):
     for vref in node.iget_nodes(VariableRef):
         if isinstance(vref.variable, Variable):
             yield vref
+
+
+class OperatorExpressionMixin(object):
+
+    def initargs(self, stmt):
+        """return list of arguments to give to __init__ to clone this node"""
+        return (self.operator,)
+
+    def is_equivalent(self, other):
+        if not Node.is_equivalent(self, other):
+            return False
+        return self.operator == other.operator
+
+    def get_description(self, mainindex, tr):
+        """if there is a variable in the math expr used as rhs of a relation,
+        return the name of this relation, else return the type of the math
+        expression
+        """
+        try:
+            return tr(self.get_type())
+        except CoercionError:
+            for vref in self.iget_nodes(VariableRef):
+                vtype = vref.get_description(mainindex, tr)
+                if vtype != 'Any':
+                    return tr(vtype)
 
 
 class HSMixin(object):
@@ -184,13 +211,15 @@ class EditableMixIn(object):
         return self.add_restriction(make_relation(lhsvar, rtype, (rhsvar,),
                                                   VariableRef))
 
-    def add_eid_restriction(self, var, eid):
+    def add_eid_restriction(self, var, eid, c_type='Int'):
         """builds a restriction node to express '<var> eid <eid>'"""
-        return self.add_constant_restriction(var, 'eid', eid, 'Int')
+        assert c_type in ('Int', 'Substitute'), "Error got c_type=%r in eid restriction" % c_type
+        return self.add_constant_restriction(var, 'eid', eid, c_type)
 
     def add_type_restriction(self, var, etype):
         """builds a restriction node to express : variable is etype"""
         return self.add_constant_restriction(var, 'is', etype, 'etype')
+
 
 # base RQL nodes ##############################################################
 
@@ -221,7 +250,7 @@ class SubQuery(BaseNode):
 
     def as_string(self, encoding=None, kwargs=None):
         return '%s BEING (%s)' % (','.join(v.name for v in self.aliases),
-                                  self.query.as_string())
+                                  self.query.as_string(encoding, kwargs))
     def __repr__(self):
         return '%s BEING (%s)' % (','.join(repr(v) for v in self.aliases),
                                   repr(self.query))
@@ -440,12 +469,7 @@ class Relation(Node):
             return False
         rhs = self.children[1]
         if isinstance(rhs, Comparison):
-            try:
-                rhs = rhs.children[0]
-            except:
-                print 'opppp', rhs
-                print rhs.root
-                raise
+            rhs = rhs.children[0]
         # else: relation used in SET OR DELETE selection
         return ((isinstance(rhs, Constant) and rhs.type == 'etype')
                 or (isinstance(rhs, Function) and rhs.name == 'IN'))
@@ -478,33 +502,42 @@ class Relation(Node):
 
     def change_optional(self, value):
         root = self.root
-        if root.should_register_op and value != self.optional:
+        if root is not None and root.should_register_op and value != self.optional:
             from rql.undo import SetOptionalOperation
             root.undo_manager.add_operation(SetOptionalOperation(self, self.optional))
         self.optional= value
 
 
-OPERATORS = frozenset(('=', '!=', '<', '<=', '>=', '>', 'ILIKE', 'LIKE'))
+CMP_OPERATORS = frozenset(('=', '!=', '<', '<=', '>=', '>', 'ILIKE', 'LIKE', 'REGEXP'))
 
 class Comparison(HSMixin, Node):
     """handle comparisons:
 
      <, <=, =, >=, > LIKE and ILIKE operators have a unique children.
     """
-    __slots__ = ('operator',)
+    __slots__ = ('operator', 'optional')
 
-    def __init__(self, operator, value=None):
+    def __init__(self, operator, value=None, optional=None):
         Node.__init__(self)
         if operator == '~=':
             operator = 'ILIKE'
-        assert operator in OPERATORS, operator
+        assert operator in CMP_OPERATORS, operator
         self.operator = operator.encode()
+        self.optional = optional
         if value is not None:
             self.append(value)
 
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node"""
-        return (self.operator,)
+        return (self.operator, None, self.optional)
+
+    def set_optional(self, left, right):
+        if left and right:
+            self.optional = 'both'
+        elif left:
+            self.optional = 'left'
+        elif right:
+            self.optional = 'right'
 
     def is_equivalent(self, other):
         if not Node.is_equivalent(self, other):
@@ -516,9 +549,14 @@ class Comparison(HSMixin, Node):
         if len(self.children) == 0:
             return self.operator
         if len(self.children) == 2:
-            return '%s %s %s' % (self.children[0].as_string(encoding, kwargs),
-                                 self.operator.encode(),
-                                 self.children[1].as_string(encoding, kwargs))
+            lhsopt = rhsopt = ''
+            if self.optional in ('left', 'both'):
+                lhsopt = '?'
+            if self.optional in ('right', 'both'):
+                rhsopt = '?'
+            return '%s%s %s %s%s' % (self.children[0].as_string(encoding, kwargs),
+                                     lhsopt, self.operator.encode(),
+                                     self.children[1].as_string(encoding, kwargs), rhsopt)
         if self.operator == '=':
             return self.children[0].as_string(encoding, kwargs)
         return '%s %s' % (self.operator.encode(),
@@ -528,22 +566,13 @@ class Comparison(HSMixin, Node):
         return '%s %s' % (self.operator, ', '.join(repr(c) for c in self.children))
 
 
-class MathExpression(HSMixin, BinaryNode):
-    """Operators plus, minus, multiply, divide."""
+class MathExpression(OperatorExpressionMixin, HSMixin, BinaryNode):
+    """Mathematical Operators"""
     __slots__ = ('operator',)
 
     def __init__(self, operator, lhs=None, rhs=None):
         BinaryNode.__init__(self, lhs, rhs)
         self.operator = operator.encode()
-
-    def initargs(self, stmt):
-        """return list of arguments to give to __init__ to clone this node"""
-        return (self.operator,)
-
-    def is_equivalent(self, other):
-        if not Node.is_equivalent(self, other):
-            return False
-        return self.operator == other.operator
 
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
@@ -579,18 +608,31 @@ class MathExpression(HSMixin, BinaryNode):
                 return 'Float'
             raise CoercionError(key)
 
-    def get_description(self, mainindex, tr):
-        """if there is a variable in the math expr used as rhs of a relation,
-        return the name of this relation, else return the type of the math
-        expression
+
+class UnaryExpression(OperatorExpressionMixin, Node):
+    """Unary Operators"""
+    __slots__ = ('operator',)
+
+    def __init__(self, operator, child=None):
+        Node.__init__(self)
+        self.operator = operator.encode()
+        if child is not None:
+            self.append(child)
+
+    def as_string(self, encoding=None, kwargs=None):
+        """return the tree as an encoded rql string"""
+        return '%s%s' % (self.operator.encode(),
+                         self.children[0].as_string(encoding, kwargs))
+
+    def __repr__(self):
+        return '%s%r' % (self.operator, self.children[0])
+
+    def get_type(self, solution=None, kwargs=None):
+        """return the type of object returned by this expression if known
+
+        solution is an optional variable/etype mapping
         """
-        try:
-            return tr(self.get_type())
-        except CoercionError:
-            for vref in self.iget_nodes(VariableRef):
-                vtype = vref.get_description(mainindex, tr)
-                if vtype != 'Any':
-                    return tr(vtype)
+        return self.children[0].get_type(solution, kwargs)
 
 
 class Function(HSMixin, Node):
@@ -625,7 +667,8 @@ class Function(HSMixin, Node):
 
         solution is an optional variable/etype mapping
         """
-        rtype = self.descr().rtype
+        func_descr = self.descr()
+        rtype = func_descr.rql_return_type(self)
         if rtype is None:
             # XXX support one variable ref child
             try:
@@ -826,7 +869,7 @@ class SortTerm(Node):
 ###############################################################################
 
 class Referenceable(object):
-    __slots__ = ('name', 'stinfo')
+    __slots__ = ('name', 'stinfo', 'stmt')
 
     def __init__(self, name):
         self.name = name.strip().encode()
@@ -835,6 +878,12 @@ class Referenceable(object):
             # link to VariableReference objects in the syntax tree
             'references': set(),
             }
+        # reference to the selection
+        self.stmt = None
+
+    @property
+    def schema(self):
+        return self.stmt.root.schema
 
     def init_copy(self, old):
         # should copy variable's possibletypes on copy
@@ -863,6 +912,7 @@ class Referenceable(object):
 
     def prepare_annotation(self):
         self.stinfo.update({
+            'scope': None,
             # relations where this variable is used on the lhs/rhs
             'relations': set(),
             'rhsrelations': set(),
@@ -882,6 +932,18 @@ class Referenceable(object):
         # remove optional st infos
         for key in ('optrelations', 'blocsimplification', 'ftirels'):
             self.stinfo.pop(key, None)
+
+    def _set_scope(self, key, scopenode):
+        if scopenode is self.stmt or self.stinfo[key] is None:
+            self.stinfo[key] = scopenode
+        elif not (self.stinfo[key] is self.stmt or scopenode is self.stinfo[key]):
+            self.stinfo[key] = common_parent(self.stinfo[key], scopenode).scope
+
+    def set_scope(self, scopenode):
+        self._set_scope('scope', scopenode)
+    def get_scope(self):
+        return self.stinfo['scope']
+    scope = property(get_scope, set_scope)
 
     def add_optional_relation(self, relation):
         try:
@@ -986,10 +1048,6 @@ class ColumnAlias(Referenceable):
     def __repr__(self):
         return 'alias %s(%#X)' % (self.name, id(self))
 
-    @property
-    def schema(self):
-        return self.query.root.schema
-
     def get_type(self, solution=None, kwargs=None):
         """return entity type of this object, 'Any' if not found"""
         vtype = super(ColumnAlias, self).get_type(solution, kwargs)
@@ -1014,12 +1072,6 @@ class ColumnAlias(Referenceable):
                 return ', '.join(sorted(vtype for vtype in vtypes))
         return vtype
 
-    def set_scope(self, scopenode):
-        pass
-    def get_scope(self):
-        return self.query
-    scope = property(get_scope, set_scope)
-
 
 class Variable(Referenceable):
     """
@@ -1028,36 +1080,10 @@ class Variable(Referenceable):
 
     collects information about a variable use in a syntax tree
     """
-    __slots__ = ('stmt',
-                 '_q_invariant', '_q_sql', '_q_sqltable') # XXX ginco specific
-
-    def __init__(self, name):
-        super(Variable, self).__init__(name)
-        # reference to the selection
-        self.stmt = None
+    __slots__ = ('_q_invariant', '_q_sql', '_q_sqltable') # XXX ginco specific
 
     def __repr__(self):
         return '%s(%#X)' % (self.name, id(self))
-
-    @property
-    def schema(self):
-        return self.stmt.root.schema
-
-    def prepare_annotation(self):
-        super(Variable, self).prepare_annotation()
-        self.stinfo['scope'] = None
-
-    def _set_scope(self, key, scopenode):
-        if scopenode is self.stmt or self.stinfo[key] is None:
-            self.stinfo[key] = scopenode
-        elif not (self.stinfo[key] is self.stmt or scopenode is self.stinfo[key]):
-            self.stinfo[key] = common_parent(self.stinfo[key], scopenode).scope
-
-    def set_scope(self, scopenode):
-        self._set_scope('scope', scopenode)
-    def get_scope(self):
-        return self.stinfo['scope']
-    scope = property(get_scope, set_scope)
 
     def valuable_references(self):
         """return the number of "valuable" references :
@@ -1068,5 +1094,5 @@ class Variable(Referenceable):
 
 
 build_visitor_stub((SubQuery, And, Or, Not, Exists, Relation,
-                    Comparison, MathExpression, Function, Constant,
-                    VariableRef, SortTerm, ColumnAlias, Variable))
+                    Comparison, MathExpression, UnaryExpression, Function,
+                    Constant, VariableRef, SortTerm, ColumnAlias, Variable))

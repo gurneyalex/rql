@@ -1,5 +1,5 @@
 # -*- coding: iso-8859-1 -*-
-# copyright 2004-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2004-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of rql.
@@ -232,11 +232,11 @@ class NodesTest(TestCase):
         tree.check_references()
         self.assertEqual(tree.as_string(), 'Any X')
 
-    def test_select_remove_group_var(self):
+    def test_select_remove_group_term(self):
         tree = self._parse('Any X GROUPBY X')
         tree.save_state()
         select = tree.children[0]
-        select.remove_group_var(select.groupby[0])
+        select.remove_group_term(select.groupby[0])
         tree.check_references()
         self.assertEqual(tree.as_string(), 'Any X')
         tree.recover()
@@ -563,6 +563,12 @@ class NodesTest(TestCase):
     def test_get_description_mainvar_symrel(self):
         tree = sparse('Any X,R,D,Y WHERE X work_for R, R creation_date D, Y connait X')
         self.assertEqual(tree.get_description(0), [['Person, Student', 'work_for', 'creation_date', 'connait']])
+
+    def test_get_description_cast(self):
+        tree = sparse('Any CAST(String, Y) WHERE X creation_date Y')
+        select = tree.children[0]
+        self.assertEqual(select.selection[0].get_type(), 'String')
+        self.assertEqual(tree.get_description(0), [['String']])
 
 
 class GetNodesFunctionTest(TestCase):

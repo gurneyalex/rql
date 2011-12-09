@@ -1,4 +1,4 @@
-# copyright 2004-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2004-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of rql.
@@ -19,10 +19,11 @@
 from logilab.common.testlib import TestCase, unittest_main
 
 from rql import parse
+from rql.nodes import Exists
 from rql.editextensions import *
 
 class RQLUndoTestCase(TestCase):
-    
+
     def test_selected(self):
         rqlst = parse('Person X')
         orig = rqlst.as_string()
@@ -40,7 +41,7 @@ class RQLUndoTestCase(TestCase):
         self.assertEqual(rqlst.as_string(), orig)
         # check references after recovering
         rqlst.check_references()
-    
+
     def test_selected3(self):
         rqlst = parse('Any lower(N) WHERE X is Person, X name N')
         orig = rqlst.as_string()
@@ -58,7 +59,7 @@ class RQLUndoTestCase(TestCase):
         self.assertEqual(rqlst.as_string(), orig)
         # check references after recovering
         rqlst.check_references()
-        
+
     def test_undefine_1(self):
         rqlst = parse('Person X, Y WHERE X travaille_pour Y')
         orig = rqlst.as_string()
@@ -73,7 +74,7 @@ class RQLUndoTestCase(TestCase):
         self.assertEqual(rqlst.as_string(), orig)
         # check references after recovering
         rqlst.check_references()
-        
+
     def test_undefine_2(self):
         rqlst = parse('Person X')
         orig = rqlst.as_string()
@@ -90,7 +91,24 @@ class RQLUndoTestCase(TestCase):
         self.assertEqual(rqlst.as_string(), orig)
         # check references after recovering
         rqlst.check_references()
-        
-        
+
+
+    def test_remove_exists(self):
+        rqlst = parse('Any U,COUNT(P) GROUPBY U WHERE U is CWUser, P? patch_reviewer U, EXISTS(P in_state S AND S name "pouet")').children[0]
+        orig = rqlst.as_string()
+        rqlst.save_state()
+        n = [r for r in rqlst.get_nodes(Exists)][0].query
+        rqlst.remove_node(n)
+        # check operations
+        self.assertEqual(rqlst.as_string(), 'Any U,COUNT(P) GROUPBY U WHERE U is CWUser, P? patch_reviewer U')
+        # check references before recovering
+        rqlst.check_references()
+        rqlst.recover()
+        # check equivalence
+        self.assertEqual(rqlst.as_string(), orig)
+        # check references after recovering
+        rqlst.check_references()
+
+
 if __name__ == '__main__':
     unittest_main()
