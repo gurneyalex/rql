@@ -21,7 +21,7 @@ from datetime import date, datetime
 
 from logilab.common.testlib import TestCase, unittest_main
 
-from rql import nodes, stmts, parse, BadRQLQuery, RQLHelper
+from rql import nodes, stmts, parse, BadRQLQuery, RQLHelper, RQLException
 
 from unittest_analyze import DummySchema
 schema = DummySchema()
@@ -54,6 +54,43 @@ class EtypeFromPyobjTC(TestCase):
         self.assertEqual(nodes.etype_from_pyobj('hop'), 'String')
         self.assertEqual(nodes.etype_from_pyobj(u'hop'), 'String')
 
+
+class TypesRestrictionNodesTest(TestCase):
+
+    def setUp(self):
+        self.parse = helper.parse
+        self.simplify = helper.simplify
+
+    def test_add_is_type_restriction(self):
+        tree = self.parse('Any X WHERE X is Person')
+        select = tree.children[0]
+        x = select.get_selected_variables().next()
+        self.assertRaises(RQLException, select.add_type_restriction, x.variable, 'Babar')
+        select.add_type_restriction(x.variable, 'Person')
+        self.assertEqual(tree.as_string(), 'Any X WHERE X is Person')
+
+    def test_add_new_is_type_restriction_in(self):
+        tree = self.parse('Any X WHERE X is IN(Person, Company)')
+        select = tree.children[0]
+        x = select.get_selected_variables().next()
+        select.add_type_restriction(x.variable, 'Company')
+        # implementation is KISS (the IN remains)
+        self.assertEqual(tree.as_string(), 'Any X WHERE X is IN(Company)')
+
+    def test_add_is_in_type_restriction(self):
+        tree = self.parse('Any X WHERE X is IN(Person, Company)')
+        select = tree.children[0]
+        x = select.get_selected_variables().next()
+        self.assertRaises(RQLException, select.add_type_restriction, x.variable, 'Babar')
+        self.assertEqual(tree.as_string(), 'Any X WHERE X is IN(Person, Company)')
+
+    # XXX a full schema is needed, see test in cw/server/test/unittest_security
+    # def test_add_is_against_isintance_type_restriction(self):
+    #     tree = self.parse('Any X WHERE X is_instance_of Person')
+    #     select = tree.children[0]
+    #     x = select.get_selected_variables().next()
+    #     select.add_type_restriction(x.variable, 'Student')
+    #     self.parse(tree.as_string())
 
 class NodesTest(TestCase):
     def _parse(self, rql, normrql=None):
@@ -508,6 +545,12 @@ class NodesTest(TestCase):
         tree = parse(u"Any X WHERE X creation_date TODAY")
         self.assertEqual(tree.as_string(), 'Any X WHERE X creation_date TODAY')
 
+
+    def test_get_type_is_in(self):
+        tree = sparse("Any X WHERE X is IN (Person, Company)")
+        select = tree.children[0]
+        self.assertEqual(select.defined_vars['X'].get_type(), 'Any')
+
     # sub-queries tests #######################################################
 
     def test_subq_colalias_compat(self):
@@ -527,8 +570,8 @@ class NodesTest(TestCase):
         self.assertEqual(X.get_type(), 'Company')
         self.assertEqual(X.get_type({'X': 'Person'}), 'Person')
         #self.assertEqual(N.get_type(), 'String')
-        self.assertEqual(X.get_description(0, lambda x:x), 'Company, Person, Student')
-        self.assertEqual(N.get_description(0, lambda x:x), 'firstname, name')
+        self.assertEqual(X.get_description(0, lambda x,**k:x), 'Company, Person, Student')
+        self.assertEqual(N.get_description(0, lambda x,**k:x), 'firstname, name')
         self.assertEqual(X.selected_index(), 0)
         self.assertEqual(N.selected_index(), None)
         self.assertEqual(X.main_relation(), None)
@@ -603,6 +646,7 @@ class GetNodesFunctionTest(TestCase):
             self.assertIsInstance(varref, nodes.VariableRef)
         self.assertEqual(sorted(x.name for x in varrefs),
                           ['X', 'X', 'X', 'Y', 'Y'])
+
 
 if __name__ == '__main__':
     unittest_main()

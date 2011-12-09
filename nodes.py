@@ -30,7 +30,7 @@ from time import localtime
 
 from logilab.database import DYNAMIC_RTYPE
 
-from rql import CoercionError
+from rql import CoercionError, RQLException
 from rql.base import BaseNode, Node, BinaryNode, LeafNode
 from rql.utils import (function_description, quote, uquote, build_visitor_stub,
                        common_parent)
@@ -218,6 +218,39 @@ class EditableMixIn(object):
 
     def add_type_restriction(self, var, etype):
         """builds a restriction node to express : variable is etype"""
+        typerel = var.stinfo.get('typerel', None)
+        if typerel:
+            istarget = typerel.children[1].children[0]
+            if typerel.r_type == 'is':
+                if isinstance(istarget, Constant):
+                    etypes = (istarget.value,)
+                else: # Function (IN)
+                    etypes = [et.value for et in istarget.children]
+                if etype not in etypes:
+                    raise RQLException('%r not in %r' % (etype, etypes))
+                if len(etypes) > 1:
+                    for child in istarget.children:
+                        if child.value != etype:
+                            istarget.remove(child)
+            else:
+                # let's botte en touche IN cases (who would do that anyway ?)
+                if isinstance(istarget, Function):
+                    msg = 'adding type restriction over is_instance_of IN is not supported'
+                    raise NotImplementedError(msg)
+                schema = self.root.schema
+                if schema is None:
+                    msg = 'restriction with is_instance_of cannot be done without a schema'
+                    raise RQLException(msg)
+                # let's check the restriction is compatible
+                eschema = schema[etype]
+                ancestors = set(eschema.ancestors())
+                ancestors.add(etype) # let's be unstrict
+                if istarget.value in ancestors:
+                    istarget.value = etype
+                else:
+                    raise RQLException('type restriction %s-%s cannot be made on %s' %
+                                       (var, etype, self))
+            return typerel
         return self.add_constant_restriction(var, 'is', etype, 'etype')
 
 
@@ -956,7 +989,9 @@ class Referenceable(object):
         if solution:
             return solution[self.name]
         if self.stinfo['typerel']:
-            return str(self.stinfo['typerel'].children[1].children[0].value)
+            rhs = self.stinfo['typerel'].children[1].children[0]
+            if isinstance(rhs, Constant):
+                return str(rhs.value)
         schema = self.schema
         if schema is not None:
             for rel in self.stinfo['rhsrelations']:
@@ -997,12 +1032,17 @@ class Referenceable(object):
             if mainindex is not None:
                 # relation to the main variable, stop searching
                 lhsvar = getattr(lhs, 'variable', None)
+                context = None
                 if lhsvar is not None and mainindex in lhsvar.stinfo['selected']:
-                    return tr(rtype)
+                    if len(lhsvar.stinfo['possibletypes']) == 1:
+                        context = iter(lhsvar.stinfo['possibletypes']).next()
+                    return tr(rtype, context=context)
                 if rhsvar is not None and mainindex in rhsvar.stinfo['selected']:
+                    if len(rhsvar.stinfo['possibletypes']) == 1:
+                        context = iter(rhsvar.stinfo['possibletypes']).next()
                     if schema is not None and rschema.symmetric:
-                        return tr(rtype)
-                    return tr(rtype + '_object')
+                        return tr(rtype, context=context)
+                    return tr(rtype + '_object', context=context)
             if rhsvar is self:
                 rtype += '_object'
         if frtype is not None:
