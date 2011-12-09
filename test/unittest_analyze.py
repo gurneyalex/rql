@@ -300,6 +300,7 @@ class AnalyzerClassTest(TestCase):
                                 {'X': 'Person', 'T': 'Eetype'},
                                 {'X': 'Student', 'T': 'Eetype'}])
 
+
     def test_not(self):
         node = self.helper.parse('Any X WHERE NOT X is Person')
         self.helper.compute_solutions(node, debug=DEBUG)
@@ -307,6 +308,15 @@ class AnalyzerClassTest(TestCase):
         expected = ALL_SOLS[:]
         expected.remove({'X': 'Person'})
         self.assertEqual(sols, expected)
+
+    def test_not_identity(self):
+        node = self.helper.parse('Any X WHERE X located A, P is Person, NOT X identity P')
+        self.helper.compute_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(sols, [{'X': 'Company', 'A': 'Address', 'P': 'Person'},
+                                {'X': 'Person', 'A': 'Address', 'P': 'Person'},
+                                {'X': 'Student', 'A': 'Address', 'P': 'Person'},
+                                ])
 
     def test_uid_func_mapping(self):
         h = self.helper

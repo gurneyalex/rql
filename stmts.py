@@ -60,6 +60,7 @@ class ScopeNode(BaseNode):
     solutions = ()   # list of possibles solutions for used variables
     _varmaker = None # variable names generator, built when necessary
     where = None     # where clause node
+    having = ()      # XXX now a single node
 
     def __init__(self):
         # dictionnary of defined variables in the original RQL syntax tree
@@ -71,6 +72,11 @@ class ScopeNode(BaseNode):
     def set_where(self, node):
         self.where = node
         node.parent = self
+
+    def set_having(self, terms):
+        self.having = terms
+        for node in terms:
+            node.parent = self
 
     def copy(self, copy_solutions=True, solutions=None):
         new = self.__class__()
@@ -249,7 +255,7 @@ class Union(Statement, Node):
           returning a string
         """
         if tr is None:
-            tr = lambda x: x
+            tr = lambda x,**k: x
         return [c.get_description(mainindex, tr) for c in self.children]
 
     # repr / as_string / copy #################################################
@@ -409,7 +415,6 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
     # select clauses
     groupby = ()
     orderby = ()
-    having = () # XXX now a single node
     with_ = ()
     # set by the annotator
     has_aggregat = False
@@ -574,11 +579,6 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
 
     def set_groupby(self, terms):
         self.groupby = terms
-        for node in terms:
-            node.parent = self
-
-    def set_having(self, terms):
-        self.having = terms
         for node in terms:
             node.parent = self
 
@@ -888,6 +888,8 @@ class Delete(Statement, ScopeNode):
         children += self.main_relations
         if self.where:
             children.append(self.where)
+        if self.having:
+            children += self.having
         return children
 
     @property
@@ -922,6 +924,8 @@ class Delete(Statement, ScopeNode):
             result.append(', '.join([repr(rel) for rel in self.main_relations]))
         if self.where is not None:
             result.append(repr(self.where))
+        if self.having:
+            result.append('HAVING ' + ','.join(repr(term) for term in self.having))
         return ' '.join(result)
 
     def as_string(self, encoding=None, kwargs=None):
@@ -937,6 +941,9 @@ class Delete(Statement, ScopeNode):
                                      for rel in self.main_relations]))
         if self.where is not None:
             result.append('WHERE ' + self.where.as_string(encoding, kwargs))
+        if self.having:
+            result.append('HAVING ' + ','.join(term.as_string(encoding, kwargs)
+                                          for term in self.having))
         return ' '.join(result)
 
     def copy(self):
@@ -948,6 +955,8 @@ class Delete(Statement, ScopeNode):
             new.add_main_relation(child.copy(new))
         if self.where:
             new.set_where(self.where.copy(new))
+        if self.having:
+            new.set_having([sq.copy(new) for sq in self.having])
         return new
 
 
@@ -969,6 +978,8 @@ class Insert(Statement, ScopeNode):
         children += self.main_relations
         if self.where:
             children.append(self.where)
+        if self.having:
+            children += self.having
         return children
 
     @property
@@ -1006,6 +1017,8 @@ insertion variable'
             result.append(', '.join([repr(rel) for rel in self.main_relations]))
         if self.where is not None:
             result.append('WHERE ' + repr(self.where))
+        if self.having:
+            result.append('HAVING ' + ','.join(repr(term) for term in self.having))
         return ' '.join(result)
 
     def as_string(self, encoding=None, kwargs=None):
@@ -1019,6 +1032,9 @@ insertion variable'
                                      for rel in self.main_relations]))
         if self.where is not None:
             result.append('WHERE ' + self.where.as_string(encoding, kwargs))
+        if self.having:
+            result.append('HAVING ' + ','.join(term.as_string(encoding, kwargs)
+                                               for term in self.having))
         return ' '.join(result)
 
     def copy(self):
@@ -1030,6 +1046,8 @@ insertion variable'
             new.add_main_relation(child.copy(new))
         if self.where:
             new.set_where(self.where.copy(new))
+        if self.having:
+            new.set_having([sq.copy(new) for sq in self.having])
         return new
 
 
@@ -1048,6 +1066,8 @@ class Set(Statement, ScopeNode):
         children = self.main_relations[:]
         if self.where:
             children.append(self.where)
+        if self.having:
+            children += self.having
         return children
 
     @property
@@ -1066,6 +1086,8 @@ class Set(Statement, ScopeNode):
         result.append(', '.join(repr(rel) for rel in self.main_relations))
         if self.where is not None:
             result.append('WHERE ' + repr(self.where))
+        if self.having:
+            result.append('HAVING ' + ','.join(repr(term) for term in self.having))
         return ' '.join(result)
 
     def as_string(self, encoding=None, kwargs=None):
@@ -1075,6 +1097,9 @@ class Set(Statement, ScopeNode):
                                 for rel in self.main_relations))
         if self.where is not None:
             result.append('WHERE ' + self.where.as_string(encoding, kwargs))
+        if self.having:
+            result.append('HAVING ' + ','.join(term.as_string(encoding, kwargs)
+                                               for term in self.having))
         return ' '.join(result)
 
     def copy(self):
@@ -1083,6 +1108,8 @@ class Set(Statement, ScopeNode):
             new.add_main_relation(child.copy(new))
         if self.where:
             new.set_where(self.where.copy(new))
+        if self.having:
+            new.set_having([sq.copy(new) for sq in self.having])
         return new
 
 
