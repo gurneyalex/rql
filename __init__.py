@@ -136,8 +136,8 @@ class RQLHelper(object):
     def _simplify(self, select):
         # recurse on subqueries first
         for subquery in select.with_:
-            for select in subquery.query.children:
-                self._simplify(select)
+            for subselect in subquery.query.children:
+                self._simplify(subselect)
         rewritten = False
         for var in select.defined_vars.values():
             stinfo = var.stinfo

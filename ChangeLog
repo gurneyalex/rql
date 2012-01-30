@@ -1,7 +1,13 @@
 ChangeLog for RQL
 =================
 
---
+	--
+
+    * #87988: fixed bug in simplify with sub-queries
+
+
+2012-11-09 -- 0.31.0
+
     * #78681: don't crash on column aliases used in outer join
     * #81394: HAVING support in write queries (INSERT,SET,DELETE)
     * #80799: fix wrong type analysis with 'NOT identity'
