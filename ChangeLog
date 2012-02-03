@@ -1,22 +1,26 @@
 ChangeLog for RQL
 =================
 
-	--
-
+2012-02-03  --  0.31.1
     * #87988: fixed bug in simplify with sub-queries
 
 
-2012-11-09 -- 0.31.0
 
+2011-11-09  --  0.31.0
     * #78681: don't crash on column aliases used in outer join
+
     * #81394: HAVING support in write queries (INSERT,SET,DELETE)
+
     * #80799: fix wrong type analysis with 'NOT identity'
+
     * when possible, use entity type as translation context of relation
       (break cw < 3.13.10 compat)
+
     * #81817: fix add_type_restriction for cases where some types restriction is already in there
 
-2011-09-07  --  0.30.1
 
+
+2011-09-07  --  0.30.1
     * #74727: allow entity types to end with a capitalized letter
       provided they contain a lower-cased letter
 
