@@ -1,5 +1,5 @@
 # pylint: disable-msg=W0622
-# copyright 2004-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2004-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of rql.
@@ -20,7 +20,7 @@
 __docformat__ = "restructuredtext en"
 
 modname = "rql"
-numversion = (0, 31, 0)
+numversion = (0, 31, 1)
 version = '.'.join(str(num) for num in numversion)
 
 license = 'LGPL'
