@@ -316,9 +316,9 @@ class ETypeResolver(object):
     def set_schema(self, schema):
         self.schema = schema
         # default domains for a variable
-        self._base_domain = [str(etype) for etype in schema.entities()]
-        self._nonfinal_domain = [str(etype) for etype in schema.entities()
-                                 if not etype.final]
+        self._base_domain = set(str(etype) for etype in schema.entities())
+        self._nonfinal_domain = set(str(etype) for etype in schema.entities()
+                                    if not etype.final)
 
     def solve(self, node, constraints):
         # debug info
@@ -339,7 +339,11 @@ class ETypeResolver(object):
         node.set_possible_types(sols, self.kwargs, self.var_solkey)
 
     def _visit(self, node, constraints=None):
-        """Recurse down the tree."""
+        """Recurse down the tree.
+
+            * node: rql node to process
+            * constraints: a XxxCSPProblem object.
+        """
         func = getattr(self, 'visit_%s' % node.__class__.__name__.lower())
         if constraints is None:
             func(node)
@@ -505,17 +509,21 @@ class ETypeResolver(object):
             # filter according to domain necessary for column aliases
             rhsdomain = constraints.domains[rhsvar]
             res = []
-            for fromtype, totypes in rschema.associations():
-                if not fromtype in lhsdomain:
-                    continue
-                ptypes = [str(t) for t in totypes if t in rhsdomain]
-                res.append( [ ([lhsvar], [str(fromtype)]),
-                              ([rhsvar], ptypes) ] )
+            var_types = []
+            same_var = (rhsvar == lhsvar)
+
+            for frometype, toetypes in rschema.associations():
+                fromtype = str(frometype)
+                if fromtype in lhsdomain:
+                    totypes = set(str(t) for t in toetypes)
+                    ptypes = totypes & rhsdomain
+                    res.append( [ ([lhsvar], [str(fromtype)]),
+                                  ([rhsvar], list(ptypes)) ] )
+                    if same_var and (fromtype in totypes): #ptypes ?
+                        var_types.append(fromtype)
             constraints.or_and(res)
-            if rhsvar == lhsvar:
-                res = [str(fromtype) for fromtype, totypes in rschema.associations()
-                       if (fromtype in totypes and fromtype in lhsdomain)]
-                constraints.var_has_types( lhsvar, res )
+            if same_var:
+                constraints.var_has_types( lhsvar, var_types)
         else:
             # XXX consider rhs.get_type?
             lhsdomain = constraints.domains[lhs.name]
