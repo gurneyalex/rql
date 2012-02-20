@@ -1,6 +1,10 @@
 ChangeLog for RQL
 =================
 
+--
+* #88559: speed up query solutions analysis
+
+
 2012-02-03  --  0.31.1
     * #87988: fixed bug in simplify with sub-queries
 
