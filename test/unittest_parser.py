@@ -187,7 +187,7 @@ class ParserHercule(TestCase):
         tree = self.parse(u"Any X WHERE X name 'Ångström';")
         base = tree.children[0].where
         comparison = base.children[1]
-        self.failUnless(isinstance(comparison, nodes.Comparison))
+        self.assertTrue(isinstance(comparison, nodes.Comparison))
         rhs = comparison.children[0]
         self.assertEqual(type(rhs.value), unicode)
 
@@ -306,8 +306,8 @@ class ParserHercule(TestCase):
                          "Any X WHERE X firstname 'lulu', "
                          "EXISTS(X owned_by U, U in_group G, (G name 'lulufanclub') OR (G name 'managers'))")
         exists = tree.children[0].where.get_nodes(nodes.Exists)[0]
-        self.failUnless(exists.children[0].parent is exists)
-        self.failUnless(exists.parent)
+        self.assertTrue(exists.children[0].parent is exists)
+        self.assertTrue(exists.parent)
 
     def test_etype(self):
         tree = self.parse('EmailAddress X;')
