@@ -347,10 +347,9 @@ class ETypeResolver(object):
         func = getattr(self, 'visit_%s' % node.__class__.__name__.lower())
         if constraints is None:
             func(node)
-        else:
-            if func(node, constraints) is None:
-                for c in node.children:
-                    self._visit(c, constraints)
+        elif func(node, constraints) is None:
+            for c in node.children:
+                self._visit(c, constraints)
 
     def _uid_node_types(self, valnode):
         types = set()
