@@ -22,8 +22,10 @@ Note: this module uses __slots__ to limit memory usage.
 
 __docformat__ = "restructuredtext en"
 
+from rql.utils import VisitableMixIn
 
-class BaseNode(object):
+
+class BaseNode(VisitableMixIn):
     __slots__ = ('parent',)
 
     def __str__(self):
