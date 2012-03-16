@@ -31,7 +31,7 @@ from logilab.common.deprecation import deprecated
 
 from rql import BadRQLQuery, CoercionError, nodes
 from rql.base import BaseNode, Node
-from rql.utils import rqlvar_maker, build_visitor_stub
+from rql.utils import rqlvar_maker
 
 _MARKER = object()
 
@@ -1113,4 +1113,3 @@ class Set(Statement, ScopeNode):
         return new
 
 
-build_visitor_stub((Union, Select, Insert, Delete, Set))

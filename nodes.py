@@ -32,8 +32,8 @@ from logilab.database import DYNAMIC_RTYPE
 
 from rql import CoercionError, RQLException
 from rql.base import BaseNode, Node, BinaryNode, LeafNode
-from rql.utils import (function_description, quote, uquote, build_visitor_stub,
-                       common_parent)
+from rql.utils import (function_description, quote, uquote, common_parent,
+                       VisitableMixIn)
 
 CONSTANT_TYPES = frozenset((None, 'Date', 'Datetime', 'Boolean', 'Float', 'Int',
                             'String', 'Substitute', 'etype'))
@@ -901,7 +901,7 @@ class SortTerm(Node):
 
 ###############################################################################
 
-class Referenceable(object):
+class Referenceable(VisitableMixIn):
     __slots__ = ('name', 'stinfo', 'stmt')
 
     def __init__(self, name):
@@ -1133,6 +1133,3 @@ class Variable(Referenceable):
         return len(stinfo['selected']) + len(stinfo['relations'])
 
 
-build_visitor_stub((SubQuery, And, Or, Not, Exists, Relation,
-                    Comparison, MathExpression, UnaryExpression, Function,
-                    Constant, VariableRef, SortTerm, ColumnAlias, Variable))

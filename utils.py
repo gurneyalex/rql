@@ -156,14 +156,19 @@ def uquote(value):
     res.append(u'"')
     return u''.join(res)
 
-# Visitor #####################################################################
 
-_accept = 'lambda self, visitor, *args, **kwargs: visitor.visit_%s(self, *args, **kwargs)'
-_leave = 'lambda self, visitor, *args, **kwargs: visitor.leave_%s(self, *args, **kwargs)'
-def build_visitor_stub(classes):
-    for cls in classes:
-        cls.accept = eval(_accept % (cls.__name__.lower()))
-        cls.leave = eval(_leave % (cls.__name__.lower()))
+
+class VisitableMixIn(object):
+
+    def accept(self, visitor, *args, **kwargs):
+        visit_id = self.__class__.__name__.lower()
+        visit_method = getattr(visitor, 'visit_%s' % visit_id)
+        return visit_method(self, *args, **kwargs)
+
+    def leave(self, visitor, *args, **kwargs):
+        visit_id = self.__class__.__name__.lower()
+        visit_method = getattr(visitor, 'leave_%s' % visit_id)
+        return visit_method(self, *args, **kwargs)
 
 class RQLVisitorHandler(object):
     """Handler providing a dummy implementation of all callbacks necessary
