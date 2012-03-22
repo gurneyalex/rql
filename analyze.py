@@ -22,6 +22,7 @@ __docformat__ = "restructuredtext en"
 
 from cStringIO import StringIO
 
+import os, sys
 from rql import TypeResolverException, nodes
 from pprint import pprint
 
@@ -29,6 +30,9 @@ from copy import deepcopy
 from itertools import izip
 
 try:
+    pure = bool(os.environ.get('RQL_USE_PURE_PYTHON_ANALYSE', 0))
+    if pure:
+        raise ImportError
     import rql_solve
 except ImportError:
     rql_solve = None
