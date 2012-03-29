@@ -1,8 +1,14 @@
 ChangeLog for RQL
 =================
 
---
-* #88559: speed up query solutions analysis
+2012-03-29  --  0.31.2
+    * #88559: speed up query solutions analysis
+
+    * moved valuable_references from Variable to Referencable, it makes sense for
+      ColumnAliases as well
+
+    * various cleanups
+
 
 
 2012-02-03  --  0.31.1
