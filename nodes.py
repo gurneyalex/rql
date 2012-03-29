@@ -1,4 +1,4 @@
-# copyright 2004-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2004-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of rql.
@@ -1076,6 +1076,13 @@ class Referenceable(VisitableMixIn):
                 return rel
         return None
 
+    def valuable_references(self):
+        """return the number of "valuable" references :
+        references is in selection or in a non type (is) relations
+        """
+        stinfo = self.stinfo
+        return len(stinfo['selected']) + len(stinfo['relations'])
+
 
 class ColumnAlias(Referenceable):
     __slots__ = ('colnum', 'query',
@@ -1124,12 +1131,5 @@ class Variable(Referenceable):
 
     def __repr__(self):
         return '%s(%#X)' % (self.name, id(self))
-
-    def valuable_references(self):
-        """return the number of "valuable" references :
-        references is in selection or in a non type (is) relations
-        """
-        stinfo = self.stinfo
-        return len(stinfo['selected']) + len(stinfo['relations'])
 
 
