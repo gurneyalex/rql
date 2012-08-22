@@ -133,7 +133,7 @@ def register_function(funcdef):
     SQL_FUNCTIONS_REGISTRY.register_function(funcdef)
 
 def function_description(funcname):
-    """Return the description (`FunctionDescription`) for a RQL function."""
+    """Return the description (:class:`FunctionDescr`) for a RQL function."""
     return RQL_FUNCTIONS_REGISTRY.get_function(funcname)
 
 def quote(value):
