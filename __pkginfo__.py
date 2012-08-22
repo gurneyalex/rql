@@ -88,5 +88,5 @@ install_requires = [
 
 # links to download yapps2 package that is not (yet) registered in pypi
 dependency_links = [
-    "http://ftp.logilab.org/pub/yapps/yapps2-2.1.1.zip#egg=yapps-2.1.1",
+    "http://download.logilab.org/pub/yapps/yapps2-2.1.1.zip#egg=yapps-2.1.1",
     ]
