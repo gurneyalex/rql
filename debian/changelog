@@ -1,3 +1,9 @@
+rql (0.31.3-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Aurélien Campéas <aurelien.campeas@logilab.fr>  Wed, 30 Jan 2013 18:54:00 +0100
+
 rql (0.31.2-1) unstable; urgency=low
 
   * new upstream release
