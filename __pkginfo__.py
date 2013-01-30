@@ -20,7 +20,7 @@
 __docformat__ = "restructuredtext en"
 
 modname = "rql"
-numversion = (0, 31, 2)
+numversion = (0, 31, 3)
 version = '.'.join(str(num) for num in numversion)
 
 license = 'LGPL'
