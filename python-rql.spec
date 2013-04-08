@@ -7,21 +7,21 @@
 %define __python /usr/bin/python
 %endif
 
-Name: %{python}-rql
-Version: 0.31.2
-Release: logilab.1%{?dist}
-Summary: relationship query language (RQL) utilities
+Name:           %{python}-rql
+Version:        0.31.2
+Release:        logilab.1%{?dist}
+Summary:        relationship query language (RQL) utilities
 
-Group: Development/Languages/Python
-License: LGPLv2+
-URL: http://www.logilab.org/project/rql
-Source0: http://download.logilab.org/pub/rql/rql-%{version}.tar.gz
-BuildArch: noarch
-BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
+Group:          Development/Languages/Python
+License:        LGPLv2+
+URL:            http://www.logilab.org/project/rql
+Source0:        http://download.logilab.org/pub/rql/rql-%{version}.tar.gz
+BuildArch:      noarch
+BuildRoot:      %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
-BuildRequires: %{python}-devel
-BuildRequires: gecode-devel
-Requires: %{python}, %{python}-logilab-common >= 0.47.0, %{python}-logilab-database >= 1.6.0, %{python}-yapps2 >= 2.1.1, %{python}-logilab-constraint >= 0.5.0
+BuildRequires:  %{python}-devel
+BuildRequires:  gecode-devel
+Requires:       %{python}, %{python}-logilab-common >= 0.47.0, %{python}-logilab-database >= 1.6.0, %{python}-yapps2 >= 2.1.1, %{python}-logilab-constraint >= 0.5.0
 
 
 %description
@@ -38,7 +38,7 @@ find . -name '*.py' -type f -print0 |  xargs -0 sed -i '1,3s;^#!.*python.*$;#! /
 %endif
 
 %install
-NO_SETUPTOOLS=1 %{__python} setup.py --quiet install --no-compile --prefix=%{_prefix} --root="$RPM_BUILD_ROOT" %{?python_scriptarch: --install-scripts=%{python_scriptarch}}
+NO_SETUPTOOLS=1 %{__python} setup.py install -O1 --skip-build --root $RPM_BUILD_ROOT %{?python_scriptarch: --install-scripts=%{python_scriptarch}}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
