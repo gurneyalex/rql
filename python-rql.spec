@@ -8,7 +8,7 @@
 %endif
 
 Name:           %{python}-rql
-Version:        0.31.2
+Version:        0.31.3
 Release:        logilab.1%{?dist}
 Summary:        relationship query language (RQL) utilities
 
@@ -16,12 +16,15 @@ Group:          Development/Languages/Python
 License:        LGPLv2+
 URL:            http://www.logilab.org/project/rql
 Source0:        http://download.logilab.org/pub/rql/rql-%{version}.tar.gz
-BuildArch:      noarch
 BuildRoot:      %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 BuildRequires:  %{python}-devel
 BuildRequires:  gecode-devel
-Requires:       %{python}, %{python}-logilab-common >= 0.47.0, %{python}-logilab-database >= 1.6.0, %{python}-yapps2 >= 2.1.1, %{python}-logilab-constraint >= 0.5.0
+Requires:       %{python}
+Requires:       %{python}-logilab-common >= 0.47.0
+Requires:       %{python}-logilab-database >= 1.6.0
+Requires:       %{python}-yapps2 >= 2.1.1
+Requires:       %{python}-logilab-constraint >= 0.5.0
 
 
 %description
