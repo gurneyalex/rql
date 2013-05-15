@@ -229,7 +229,8 @@ class EditableMixIn(object):
                 if etype not in etypes:
                     raise RQLException('%r not in %r' % (etype, etypes))
                 if len(etypes) > 1:
-                    for child in istarget.children:
+                    # iterate a copy of children because it's modified inplace
+                    for child in istarget.children[:]:
                         if child.value != etype:
                             istarget.remove(child)
             else:
