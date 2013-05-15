@@ -70,12 +70,12 @@ class TypesRestrictionNodesTest(TestCase):
         self.assertEqual(tree.as_string(), 'Any X WHERE X is Person')
 
     def test_add_new_is_type_restriction_in(self):
-        tree = self.parse('Any X WHERE X is IN(Person, Company)')
+        tree = self.parse('Any X WHERE X is IN(Person, Company, Student)')
         select = tree.children[0]
         x = select.get_selected_variables().next()
-        select.add_type_restriction(x.variable, 'Company')
+        select.add_type_restriction(x.variable, 'Person')
         # implementation is KISS (the IN remains)
-        self.assertEqual(tree.as_string(), 'Any X WHERE X is IN(Company)')
+        self.assertEqual(tree.as_string(), 'Any X WHERE X is IN(Person)')
 
     def test_add_is_in_type_restriction(self):
         tree = self.parse('Any X WHERE X is IN(Person, Company)')
