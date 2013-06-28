@@ -44,7 +44,7 @@ def _check_references(defined, varrefs):
                 raise AssertionError('vref %r is not in the tree' % vref)
             refs[id(vref)] = 1
     for vref in varrefs:
-        if not refs.has_key(id(vref)):
+        if id(vref) not in refs:
             raise AssertionError('vref %r is not referenced (%r)' % (vref, vref.stmt))
     return True
 
@@ -998,7 +998,7 @@ class Insert(Statement, ScopeNode):
         """add a relation to the list of inserted relations"""
         var = relation.children[0].variable
         rhs = relation.children[1]
-        if not self.inserted_variables.has_key(var):
+        if var not in self.inserted_variables:
             if isinstance(rhs, nodes.Constant):
                 msg = 'Using variable %s in declaration but %s is not an \
 insertion variable'
