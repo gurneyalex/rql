@@ -116,7 +116,7 @@ class RQLCanonizer(object):
         r_list = canon['restriction'].setdefault(r_type, [])
         done = {}
         for key in keys:
-            if done.has_key(key):
+            if key in done:
                 continue
             done[key] = None
             for expr in canon_dict[key]:

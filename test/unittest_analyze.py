@@ -170,10 +170,10 @@ class DummySchema(object):
         return self._relations.keys()
 
     def has_entity(self, e_type):
-        return self._types.has_key(e_type)
+        return e_type in self._types
 
     def has_relation(self, r_type):
-        return self._relations.has_key(r_type)
+        return r_type in self._relations
 
     def __contains__(self, ertype):
         return self.has_entity(ertype) or self.has_relation(ertype)
