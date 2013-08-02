@@ -166,10 +166,9 @@ class MyBuildExt(build_ext.build_ext):
     In fact, if gecode extension fail, rql will use logilab.constraint
     """
     def run(self):
-        from distutils.errors import CompileError
         try:
             build_ext.build_ext.run(self)
-        except CompileError:
+        except Exception:
             import traceback
             traceback.print_exc()
             sys.stderr.write('================================\n'
