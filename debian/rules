@@ -14,10 +14,11 @@
 build: build-stamp
 build-stamp:
 	dh_testdir
-	(for PYTHON in `pyversions -r`; do \
-	    NO_SETUPTOOLS=1 $${PYTHON} setup.py build ; done )
-	${MAKE} -C doc html || true
+	for PYTHON in `pyversions -r`; do \
+	    NO_SETUPTOOLS=1 $${PYTHON} setup.py build || exit; done
+	$(MAKE) -C doc html || true
 	touch build-stamp
+
 clean:
 	dh_testdir
 	dh_testroot
@@ -32,13 +33,13 @@ install: build
 	dh_testroot
 	dh_clean -k
 	dh_installdirs
-	(for PYTHON in `pyversions -r`; do \
-		NO_SETUPTOOLS=1 $${PYTHON} setup.py install --no-compile --prefix=debian/python-rql/usr/ ; \
-	done)
+	for PYTHON in `pyversions -r`; do \
+		NO_SETUPTOOLS=1 $${PYTHON} setup.py install --no-compile --prefix=debian/python-rql/usr/ || exit; \
+	done
 	# remove test directory (installed in in the doc directory)
 	rm -rf debian/python-rql/usr/lib/python*/site-packages/rql/test
 	# install tests
-	(cd test && find . -type f -not \( -name '*.pyc' \) -exec install -D --mode=644 {} ../debian/python-rql/usr/share/doc/python-rql/test/{} \;)
+	cd test && find . -type f -not \( -name '*.pyc' \) -exec install -D --mode=644 {} ../debian/python-rql/usr/share/doc/python-rql/test/{} \;
 
 # Build architecture-independent files here.
 binary-indep:
