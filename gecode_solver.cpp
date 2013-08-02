@@ -40,6 +40,11 @@
 #define convexHull convex
 #endif
 
+#if GE_VERSION >= PM_VERSION(4, 0, 0)
+#define INT_VAR_NONE INT_VAR_NONE()
+#define INT_VAL_MIN INT_VAL_MIN()
+#endif
+
 using namespace std;
 using namespace Gecode;
 
