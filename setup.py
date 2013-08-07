@@ -161,25 +161,27 @@ class MyInstallLib(install_lib.install_lib):
                 dest = join(self.install_dir, base, directory)
                 export(directory, dest, verbose=False)
 
-class MyBuildExt(build_ext.build_ext):
-    """Extend build_ext command to pass through compilation error.
-    In fact, if gecode extension fail, rql will use logilab.constraint
-    """
-    def run(self):
-        try:
-            build_ext.build_ext.run(self)
-        except Exception:
-            import traceback
-            traceback.print_exc()
-            sys.stderr.write('================================\n'
-                             'The compilation of the gecode C extension failed. '
-                             'rql will use logilab.constraint which is a pure '
-                             'python implementation. '
-                             'Please note that the C extension run faster. '
-                             'So, install a compiler then install rql again with'
-                             ' the "force" option for better performance.\n'
-                             '================================\n')
-            pass
+if os.environ.get('RQL_FORCE_GECODE'):
+    MyBuildExt = build_ext.build_ext
+else:
+    class MyBuildExt(build_ext.build_ext):
+        """Extend build_ext command to pass through compilation error.
+        In fact, if gecode extension fail, rql will use logilab.constraint
+        """
+        def run(self):
+            try:
+                build_ext.build_ext.run(self)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                sys.stderr.write('================================\n'
+                                 'The compilation of the gecode C extension failed. '
+                                 'rql will use logilab.constraint which is a pure '
+                                 'python implementation. '
+                                 'Please note that the C extension run faster. '
+                                 'So, install a compiler then install rql again with'
+                                 ' the "force" option for better performance.\n'
+                                 '================================\n')
 
 def install(**kwargs):
     """setup entry point"""

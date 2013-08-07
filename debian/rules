@@ -15,7 +15,7 @@ build: build-stamp
 build-stamp:
 	dh_testdir
 	for PYTHON in `pyversions -r`; do \
-	    NO_SETUPTOOLS=1 $${PYTHON} setup.py build || exit; done
+	    RQL_FORCE_GECODE=1 NO_SETUPTOOLS=1 $${PYTHON} setup.py build || exit; done
 	$(MAKE) -C doc html || true
 	touch build-stamp
 
