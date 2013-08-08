@@ -415,9 +415,12 @@ public:
 		 << "\tdepth:        " << stat.depth << endl
 		 << "\tnode:       " << stat.node << endl
 #endif
+#if GE_VERSION < PM_VERSION(4,2,0)
 		 << "\tpeak memory:   "
 		 << static_cast<int>((stat.memory+1023) / 1024) << " KB"
-		 << endl;
+		 << endl
+#endif
+		    ;
 	}
     }
 
