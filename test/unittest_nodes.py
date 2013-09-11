@@ -1,5 +1,5 @@
 # -*- coding: iso-8859-1 -*-
-# copyright 2004-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2004-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of rql.
@@ -290,6 +290,18 @@ class NodesTest(TestCase):
         tree.recover()
         tree.check_references()
         self.assertEqual(tree.as_string(), 'Any X,Y GROUPBY X,Y')
+
+    def test_recover_add_type_restriction_is_in(self):
+        tree = self._parse("Any X WHERE X is IN(Person, Company), X name ILIKE 'A%'")
+        annotator.annotate(tree) # needed to get typerel index
+        tree.save_state()
+        select = tree.children[0]
+        x = select.get_selected_variables().next()
+        select.add_type_restriction(x.variable, 'Company')
+        self.assertEqual(tree.as_string(), "Any X WHERE X is IN(Company), X name ILIKE 'A%'")
+        tree.recover()
+        tree.check_references()
+        self.assertEqual(tree.as_string(), "Any X WHERE X is IN(Person, Company), X name ILIKE 'A%'")
 
     def test_select_base_1(self):
         tree = self._parse("Any X WHERE X is Person")

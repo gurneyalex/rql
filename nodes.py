@@ -1,4 +1,4 @@
-# copyright 2004-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2004-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of rql.
@@ -232,7 +232,7 @@ class EditableMixIn(object):
                     # iterate a copy of children because it's modified inplace
                     for child in istarget.children[:]:
                         if child.value != etype:
-                            istarget.remove(child)
+                            typerel.stmt.remove_node(child)
             else:
                 # let's botte en touche IN cases (who would do that anyway ?)
                 if isinstance(istarget, Function):
