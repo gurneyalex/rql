@@ -91,13 +91,19 @@ class TypesRestrictionNodesTest(TestCase):
         self.assertRaises(RQLException, select.add_type_restriction, x.variable, 'Babar')
         self.assertEqual(tree.as_string(), "Any X WHERE X is IN(Person, Company), X name ILIKE 'A%'")
 
-    # XXX a full schema is needed, see test in cw/server/test/unittest_security
-    # def test_add_is_against_isintance_type_restriction(self):
-    #     tree = self.parse('Any X WHERE X is_instance_of Person')
-    #     select = tree.children[0]
-    #     x = select.get_selected_variables().next()
-    #     select.add_type_restriction(x.variable, 'Student')
-    #     self.parse(tree.as_string())
+    def test_add_is_type_restriction_on_is_instance_of(self):
+        select = self.parse("Any X WHERE X is_instance_of Person, X name ILIKE 'A%'").children[0]
+        x = select.get_selected_variables().next()
+        select.add_type_restriction(x.variable, 'Person')
+        self.assertEqual(select.as_string(), "Any X WHERE X name ILIKE 'A%', X is Person")
+
+    def test_add_new_is_type_restriction_in_on_is_instance_of(self):
+        tree = self.parse("Any X WHERE X is_instance_of IN(Person, Company), X name ILIKE 'A%'")
+        select = tree.children[0]
+        x = select.get_selected_variables().next()
+        select.add_type_restriction(x.variable, 'Company')
+        self.assertEqual(tree.as_string(), "Any X WHERE X name ILIKE 'A%', X is Company")
+
 
 class NodesTest(TestCase):
     def _parse(self, rql, normrql=None):
@@ -309,6 +315,18 @@ class NodesTest(TestCase):
         tree.recover()
         tree.check_references()
         self.assertEqual(tree.as_string(), "Any X WHERE X is IN(Person, Company), X name ILIKE 'A%'")
+
+    def test_recover_add_type_restriction_is_instance_of(self):
+        tree = self._parse("Any X WHERE X is_instance_of IN(Person, Company), X name ILIKE 'A%'")
+        annotator.annotate(tree) # needed to get typerel index
+        tree.save_state()
+        select = tree.children[0]
+        x = select.get_selected_variables().next()
+        select.add_type_restriction(x.variable, 'Company')
+        self.assertEqual(tree.as_string(), "Any X WHERE X name ILIKE 'A%', X is Company")
+        tree.recover()
+        tree.check_references()
+        self.assertEqual(tree.as_string(), "Any X WHERE X is_instance_of IN(Person, Company), X name ILIKE 'A%'")
 
     def test_select_base_1(self):
         tree = self._parse("Any X WHERE X is Person")
