@@ -524,7 +524,7 @@ class Relation(Node):
         if root is not None and root.should_register_op and value != self.optional:
             from rql.undo import SetOptionalOperation
             root.undo_manager.add_operation(SetOptionalOperation(self, self.optional))
-        self.optional= value
+        self.set_optional(value)
 
 
 CMP_OPERATORS = frozenset(('=', '!=', '<', '<=', '>=', '>', 'ILIKE', 'LIKE', 'REGEXP'))
