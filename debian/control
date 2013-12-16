@@ -22,6 +22,7 @@ Depends: ${python:Depends}, ${misc:Depends}, ${shlibs:Depends},
          python-logilab-database (>= 1.6.0)
 Conflicts: cubicweb-common (<= 3.13.9)
 Provides: ${python:Provides}
+Suggests: python-pygments
 Description: relationship query language (RQL) utilities
  A library providing the base utilities to handle RQL queries,
  such as a parser, a type inferencer.
