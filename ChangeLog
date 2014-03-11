@@ -1,6 +1,13 @@
 ChangeLog for RQL
 =================
 
+2014-03-11  --  0.31.5
+    * #176472: fix implementation of add_type_restriction vs is_instance_of
+
+    * #176469: add_type_restriction is not properly undoable in some cases
+
+
+
 2012-03-29  --  0.31.2
     * #88559: speed up query solutions analysis
 
