@@ -375,7 +375,7 @@ class RQLSTChecker(object):
                 if rschema.final and relation.optional not in (None, 'right'):
                      state.error("optional may only be set on the rhs on final relation `%s`"
                                  % relation.r_type)
-                if self.special_relations.get(rtype) == 'uid':
+                if self.special_relations.get(rtype) == 'uid' and relation.operator() == '=':
                     if state.var_info.get(lhsvar, 0) & VAR_HAS_UID_REL:
                         state.error('can only one uid restriction per variable '
                                     '(use IN for %s if desired)' % lhsvar.name)

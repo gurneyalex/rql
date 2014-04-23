@@ -81,6 +81,8 @@ OK_QUERIES = (
     'DISTINCT Any P ORDERBY PN WHERE P work_for X, P name PN',
     'DISTINCT Any P ORDERBY XN WHERE P work_for X, X name XN',
 
+    'Any X WHERE X eid > 0, X eid < 42',
+    'Any X WHERE X eid 1, X eid < 42',
 
 
     )
