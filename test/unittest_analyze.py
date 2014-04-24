@@ -548,5 +548,22 @@ class AnalyzerClassTest(TestCase):
         self.assertEqual(sols, [{'U': 'Person'}])
 
 
+    def test_selection_with_cast(self):
+        node = self.helper.parse('Any X WHERE X name CAST(String, E), Y eid E, X owned_by Y')
+        self.helper.compute_solutions(node, debug=DEBUG)
+        sols = sorted(node.children[0].solutions)
+        self.assertEqual(sols, [{'E': 'Int', 'X': 'Company', 'Y': 'Person'},
+                                {'E': 'Int', 'X': 'Person', 'Y': 'Person'},
+                                {'E': 'Int', 'X': 'Student', 'Y': 'Person'}])
+
+    def test_set_with_cast(self):
+        node = self.helper.parse('SET X name CAST(String, E), X work_for Y WHERE Y eid E')
+        self.helper.compute_solutions(node, debug=DEBUG)
+        sols = sorted(node.solutions)
+        self.assertEqual(sols, [{'X': 'Person', 'Y': 'Company', 'E': 'Int'},
+                                {'X': 'Student', 'Y': 'Company', 'E': 'Int'}])
+
+
+
 if __name__ == '__main__':
     unittest_main()

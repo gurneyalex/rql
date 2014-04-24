@@ -457,18 +457,18 @@ class RQLSTChecker(object):
         pass
 
     def visit_constant(self, constant, state):
-        #assert len(constant.children)==0
-        if constant.type == 'etype':
-            if constant.value not in self.schema:
-                state.error('unknown entity type %s' % constant.value)
-            rel = constant.relation()
-            if rel is not None:
-                if rel.r_type not in ('is', 'is_instance_of'):
-                    msg ='using an entity type in only allowed with "is" relation'
-                    state.error(msg)
-            elif not (isinstance(constant.parent, Function) and
-                      constant.parent.name == 'CAST'):
-                state.error('Entity types can only be used inside a CAST()')
+        if constant.type != 'etype':
+            return
+        if constant.value not in self.schema:
+            state.error('unknown entity type %s' % constant.value)
+        if (isinstance(constant.parent, Function) and
+            constant.parent.name == 'CAST'):
+            return
+        rel = constant.relation()
+        if rel is not None and rel.r_type in ('is', 'is_instance_of'):
+            return
+        state.error('Entity types can only be used inside a CAST() '
+                    'or with "is" relation')
 
     def leave_constant(self, node, state):
         pass
