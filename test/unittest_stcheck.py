@@ -80,11 +80,10 @@ OK_QUERIES = (
     # variable with only ?1 cardinality
     'DISTINCT Any P ORDERBY PN WHERE P work_for X, P name PN',
     'DISTINCT Any P ORDERBY XN WHERE P work_for X, X name XN',
-
     'Any X WHERE X eid > 0, X eid < 42',
     'Any X WHERE X eid 1, X eid < 42',
-
-
+    'Any X WHERE X number CAST(Int, Y), X name Y',
+    'SET X number CAST(Int, Y) WHERE X name Y',
     )
 
 class CheckClassTest(TestCase):
