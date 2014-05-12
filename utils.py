@@ -60,7 +60,7 @@ class rqlvar_maker(object):
 
 KEYWORDS = set(('INSERT', 'SET', 'DELETE',
                 'UNION', 'WITH', 'BEING',
-                'WHERE', 'AND', 'OR', 'NOT'
+                'WHERE', 'AND', 'OR', 'NOT',
                 'IN', 'LIKE', 'ILIKE', 'EXISTS', 'DISTINCT',
                 'TRUE', 'FALSE', 'NULL', 'TODAY',
                 'GROUPBY', 'HAVING', 'ORDERBY', 'ASC', 'DESC',
