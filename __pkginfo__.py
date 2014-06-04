@@ -82,11 +82,6 @@ else:
 install_requires = [
     'logilab-common >= 0.47.0',
     'logilab-database >= 1.6.0',
-    'yapps == 2.1.1', # XXX to ensure we don't use the broken pypi version
+    'yapps >= 2.2.0', # XXX to ensure we don't use the broken pypi version
     'logilab-constraint >= 0.5.0', # fallback if the gecode compiled module is missing
-    ]
-
-# links to download yapps2 package that is not (yet) registered in pypi
-dependency_links = [
-    "http://download.logilab.org/pub/yapps/yapps2-2.1.1.zip#egg=yapps-2.1.1",
     ]
