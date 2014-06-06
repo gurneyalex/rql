@@ -809,7 +809,7 @@ class VariableRef(HSMixin, LeafNode):
         return self.name
 
     def __repr__(self):
-        return 'VarRef(%#X) to %r' % (id(self), self.variable)
+        return 'VarRef(%r)' % self.variable
 
     def __cmp__(self, other):
         return not self.is_equivalent(other)
@@ -1079,7 +1079,7 @@ class ColumnAlias(Referenceable):
         self.query = query
 
     def __repr__(self):
-        return 'alias %s(%#X)' % (self.name, id(self))
+        return 'alias %s' % self.name
 
     def get_type(self, solution=None, kwargs=None):
         """return entity type of this object, 'Any' if not found"""
@@ -1116,6 +1116,6 @@ class Variable(Referenceable):
     __slots__ = ('_q_invariant', '_q_sql', '_q_sqltable') # XXX ginco specific
 
     def __repr__(self):
-        return '%s(%#X)' % (self.name, id(self))
+        return '%s' % self.name
 
 
