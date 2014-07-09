@@ -8,7 +8,7 @@
 %endif
 
 Name:           %{python}-rql
-Version:        0.32.0
+Version:        0.33.0
 Release:        logilab.1%{?dist}
 Summary:        relationship query language (RQL) utilities
 
