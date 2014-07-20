@@ -20,14 +20,13 @@
 """
 __docformat__ = "restructuredtext en"
 
+
+import os
 from cStringIO import StringIO
-
-import os, sys
-from rql import TypeResolverException, nodes
-from pprint import pprint
-
-from copy import deepcopy
 from itertools import izip
+
+from rql import TypeResolverException, nodes
+
 
 try:
     pure = bool(os.environ.get('RQL_USE_PURE_PYTHON_ANALYSE', 0))
