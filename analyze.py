@@ -22,8 +22,9 @@ __docformat__ = "restructuredtext en"
 
 
 import os
-from cStringIO import StringIO
 from itertools import izip
+
+from six import StringIO
 
 from rql import TypeResolverException, nodes
 
