@@ -23,9 +23,9 @@ from __future__ import print_function
 __docformat__ = "restructuredtext en"
 
 import os
-from itertools import izip
 
 from six import StringIO
+from six.moves import zip
 
 from rql import TypeResolverException, nodes
 
@@ -205,7 +205,7 @@ class GecodeCSPProblem(object):
         rql_sols = []
         for s in sols:
             r={}
-            for var, val in izip(self.ivariables, s):
+            for var, val in zip(self.ivariables, s):
                 r[var] = self.all_values[val]
             rql_sols.append(r)
         #print "RUNTIME:", time.time()-t0
