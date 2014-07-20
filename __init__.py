@@ -23,7 +23,8 @@ from math import log
 
 import sys
 import threading
-from cStringIO import StringIO
+
+from six import StringIO
 
 from rql._exceptions import *
 
