@@ -227,7 +227,9 @@ def parse(rqlstring, print_errors=True):
                 msg = '%s\nat: %r\n%s' % (rqlstring, ex.pos,  ex.msg)
             else:
                 msg = '%s\n%s' % (rqlstring, ex.msg)
-            raise RQLSyntaxError(msg), None, sys.exc_info()[-1]
+            exc = RQLSyntaxError(msg)
+            exc.__traceback__ = sys.exc_info()[-1]
+            raise exc
         # try to get error message from yapps
         try:
             out = sys.stdout
@@ -236,13 +238,19 @@ def parse(rqlstring, print_errors=True):
                 print_error(ex, parser._scanner)
             finally:
                 sys.stdout = out
-            raise RQLSyntaxError(stream.getvalue()), None, sys.exc_info()[-1]
+            exc = RQLSyntaxError(stream.getvalue())
+            exc.__traceback__ = sys.exc_info()[-1]
+            raise exc
         except ImportError: # duh?
             sys.stdout = out
-            raise RQLSyntaxError('Syntax Error', ex.msg, 'on line',
-                                 1 + pinput.count('\n', 0, ex.pos)), None, sys.exc_info()[-1]
+            exc = RQLSyntaxError('Syntax Error', ex.msg, 'on line',
+                                 1 + pinput.count('\n', 0, ex.pos))
+            exc.__traceback__ = sys.exc_info()[-1]
+            raise exc
     except NoMoreTokens:
         msg = 'Could not complete parsing; stopped around here: \n%s'
-        raise RQLSyntaxError(msg  % parser._scanner), None, sys.exc_info()[-1]
+        exc = RQLSyntaxError(msg  % parser._scanner)
+        exc.__traceback__ = sys.exc_info()[-1]
+        raise exc
 
 pyparse = parse
