@@ -172,13 +172,13 @@ class ParserHercule(TestCase):
         try:
             parser = Hercule(HerculeScanner(string))
             return parser.goal()
-        except SyntaxError, ex:
+        except SyntaxError as ex:
             if print_errors:
                 # try to get error message from yapps
                 print_error(ex, parser._scanner)
                 print
             raise
-        except Exception, ex:
+        except Exception as ex:
             if print_errors:
                 print string, ex
             raise

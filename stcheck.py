@@ -98,7 +98,7 @@ class RQLSTChecker(object):
     def _visit(self, node, state):
         try:
             node.accept(self, state)
-        except GoTo, ex:
+        except GoTo as ex:
             self._visit(ex.node, state)
         else:
             for c in node.children:
@@ -420,12 +420,12 @@ class RQLSTChecker(object):
         else:
             try:
                 funcdescr.check_nbargs(len(function.children))
-            except BadRQLQuery, ex:
+            except BadRQLQuery as ex:
                 state.error(str(ex))
             if self.backend is not None:
                 try:
                     funcdescr.st_check_backend(self.backend, function)
-                except BadRQLQuery, ex:
+                except BadRQLQuery as ex:
                     state.error(str(ex))
             if funcdescr.aggregat:
                 if isinstance(function.children[0], Function) and \
