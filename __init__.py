@@ -214,7 +214,7 @@ def parse(rqlstring, print_errors=True):
     parser = Hercule(HerculeScanner(rqlstring))
     try:
         return parser.goal()
-    except SyntaxError, ex:
+    except SyntaxError as ex:
         if not print_errors:
             if ex.pos is not None:
                 multi_lines_rql = rqlstring.splitlines()
