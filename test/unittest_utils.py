@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with rql. If not, see <http://www.gnu.org/licenses/>.
 
+from six.moves import range
+
 from logilab.common.testlib import TestCase, unittest_main
 
 from rql import utils, nodes, parse

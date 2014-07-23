@@ -20,6 +20,8 @@
 """
 __docformat__ = "restructuredtext en"
 
+from six.moves import range
+
 NOT = 1
 
 class RQLGenerator(object):

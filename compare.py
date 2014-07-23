@@ -21,6 +21,8 @@
 __docformat__ = "restructuredtext en"
 
 
+from six.moves import range
+
 from rql.nodes import VariableRef, Variable, Function, Relation, Comparison
 
 def compare_tree(request1, request2):

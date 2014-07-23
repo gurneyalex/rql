@@ -26,6 +26,8 @@ __docformat__ = "restructuredtext en"
 from copy import deepcopy
 from warnings import warn
 
+from six.moves import range
+
 from logilab.common.decorators import cached
 from logilab.common.deprecation import deprecated
 
@@ -206,7 +208,7 @@ class Union(Statement, Node):
             self.remove_select(select)
         newselect = Select()
         aliases = [nodes.VariableRef(newselect.make_variable())
-                   for i in xrange(len(select.selection))]
+                   for i in range(len(select.selection))]
         newselect.add_subquery(nodes.SubQuery(aliases, child), check=False)
         for vref in aliases:
             newselect.append_selected(nodes.VariableRef(vref.variable))
