@@ -128,7 +128,7 @@ class NodesTest(TestCase):
         #d2 = tree2.__dict__.copy()
         #del d2['parent']; del d2['children']
         self.assertNotEqual(id(tree1), id(tree2))
-        self.assert_(tree1.is_equivalent(tree2))
+        self.assertTrue(tree1.is_equivalent(tree2))
         #self.assertEqual(len(tree1.children), len(tree2.children))
         #for i in range(len(tree1.children)):
         #    self.check_equal_but_not_same(tree1.children[i], tree2.children[i])
@@ -332,13 +332,13 @@ class NodesTest(TestCase):
         tree = self._parse("Any X WHERE X is Person")
         self.assertIsInstance(tree, stmts.Union)
         select = tree.children[0]
-        self.assertEqual(select.limit, None)
+        self.assertIsNone(select.limit)
         self.assertEqual(select.offset, 0)
         self.assertIsInstance(select, stmts.Select)
         self.assertEqual(select.distinct, False)
         self.assertEqual(len(select.children), 2)
-        self.assert_(select.children[0] is select.selection[0])
-        self.assert_(select.children[1] is select.where)
+        self.assertIs(select.children[0], select.selection[0])
+        self.assertIs(select.children[1], select.where)
         self.assertIsInstance(select.where, nodes.Relation)
 
     def test_select_base_2(self):
