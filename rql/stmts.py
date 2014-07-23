@@ -911,7 +911,7 @@ class Delete(Statement, ScopeNode):
         #if etype == 'Any':
         #    raise BadRQLQuery('"Any" is not supported in DELETE statement')
         vref.parent = self
-        self.main_variables.append( (etype.encode(), vref) )
+        self.main_variables.append( (etype, vref) )
 
     def add_main_relation(self, relation):
         """add a relation to the list of deleted relations"""
@@ -1000,7 +1000,7 @@ class Insert(Statement, ScopeNode):
         """add a variable to the list of inserted variables"""
         if etype == 'Any':
             raise BadRQLQuery('"Any" is not supported in INSERT statement')
-        self.main_variables.append( (etype.encode(), vref) )
+        self.main_variables.append( (etype, vref) )
         vref.parent = self
         self.inserted_variables[vref.variable] = 1
 
