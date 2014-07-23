@@ -428,7 +428,7 @@ class Relation(Node):
 
     def __init__(self, r_type, optional=None):
         Node.__init__(self)
-        self.r_type = r_type.encode()
+        self.r_type = r_type
         self.optional = None
         self.set_optional(optional)
 
@@ -545,7 +545,7 @@ class Comparison(HSMixin, Node):
         if operator == '~=':
             operator = 'ILIKE'
         assert operator in CMP_OPERATORS, operator
-        self.operator = operator.encode()
+        self.operator = operator
         self.optional = optional
         if value is not None:
             self.append(value)
@@ -578,11 +578,11 @@ class Comparison(HSMixin, Node):
             if self.optional in ('right', 'both'):
                 rhsopt = '?'
             return '%s%s %s %s%s' % (self.children[0].as_string(encoding, kwargs),
-                                     lhsopt, self.operator.encode(),
+                                     lhsopt, self.operator,
                                      self.children[1].as_string(encoding, kwargs), rhsopt)
         if self.operator == '=':
             return self.children[0].as_string(encoding, kwargs)
-        return '%s %s' % (self.operator.encode(),
+        return '%s %s' % (self.operator,
                           self.children[0].as_string(encoding, kwargs))
 
     def __repr__(self):
@@ -595,12 +595,12 @@ class MathExpression(OperatorExpressionMixin, HSMixin, BinaryNode):
 
     def __init__(self, operator, lhs=None, rhs=None):
         BinaryNode.__init__(self, lhs, rhs)
-        self.operator = operator.encode()
+        self.operator = operator
 
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
         return '(%s %s %s)' % (self.children[0].as_string(encoding, kwargs),
-                               self.operator.encode(),
+                               self.operator,
                                self.children[1].as_string(encoding, kwargs))
 
     def __repr__(self):
@@ -638,13 +638,13 @@ class UnaryExpression(OperatorExpressionMixin, Node):
 
     def __init__(self, operator, child=None):
         Node.__init__(self)
-        self.operator = operator.encode()
+        self.operator = operator
         if child is not None:
             self.append(child)
 
     def as_string(self, encoding=None, kwargs=None):
         """return the tree as an encoded rql string"""
-        return '%s%s' % (self.operator.encode(),
+        return '%s%s' % (self.operator,
                          self.children[0].as_string(encoding, kwargs))
 
     def __repr__(self):
@@ -666,7 +666,7 @@ class Function(HSMixin, Node):
 
     def __init__(self, name):
         Node.__init__(self)
-        self.name = name.strip().upper().encode()
+        self.name = name.strip().upper()
 
     def initargs(self, stmt):
         """return list of arguments to give to __init__ to clone this node"""
@@ -734,6 +734,7 @@ class Constant(HSMixin, LeafNode):
         """return the tree as an encoded rql string (an unicode string is
         returned if encoding is None)
         """
+        u = str if sys.version_info >= (3,) else unicode
         if self.type is None:
             return 'NULL'
         if self.type in ('etype', 'Date', 'Datetime', 'Int', 'Float'):
@@ -745,7 +746,7 @@ class Constant(HSMixin, LeafNode):
             #     and linked relation
             if kwargs is not None:
                 value = kwargs.get(self.value, '???')
-                if isinstance(value, unicode):
+                if sys.version_info < (3,) and isinstance(value, u):
                     if encoding:
                         value = quote(value.encode(encoding))
                     else:
@@ -756,7 +757,7 @@ class Constant(HSMixin, LeafNode):
                     value = repr(value)
                 return value
             return '%%(%s)s' % self.value
-        if isinstance(self.value, unicode):
+        if sys.version_info < (3,) and isinstance(self.value, u):
             if encoding is not None:
                 return quote(self.value.encode(encoding))
             return uquote(self.value)
@@ -892,7 +893,7 @@ class Referenceable(VisitableMixIn):
     __slots__ = ('name', 'stinfo', 'stmt')
 
     def __init__(self, name):
-        self.name = name.strip().encode()
+        self.name = name.strip()
         # used to collect some global information about the syntax tree
         self.stinfo = {
             # link to VariableReference objects in the syntax tree
