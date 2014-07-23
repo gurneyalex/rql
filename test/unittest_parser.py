@@ -187,7 +187,7 @@ class ParserHercule(TestCase):
         tree = self.parse(u"Any X WHERE X name 'Ångström';")
         base = tree.children[0].where
         comparison = base.children[1]
-        self.assertTrue(isinstance(comparison, nodes.Comparison))
+        self.assertIsInstance(comparison, nodes.Comparison)
         rhs = comparison.children[0]
         self.assertEqual(type(rhs.value), unicode)
 
@@ -257,31 +257,31 @@ class ParserHercule(TestCase):
     def test_math_1(self):
         tree = self.parse(r'Any X WHERE X date (TODAY + 1);')
         math = tree.children[0].where.children[1].children[0]
-        self.assert_(isinstance(math, nodes.MathExpression))
+        self.assertIsInstance(math, nodes.MathExpression)
         self.assertEqual(math.operator, '+')
 
     def test_math_2(self):
         tree = self.parse(r'Any X WHERE X date (TODAY + 1 * 2);')
         math = tree.children[0].where.children[1].children[0]
-        self.assert_(isinstance(math, nodes.MathExpression))
+        self.assertIsInstance(math, nodes.MathExpression)
         self.assertEqual(math.operator, '+')
         math2 = math.children[1]
-        self.assert_(isinstance(math2, nodes.MathExpression))
+        self.assertIsInstance(math2, nodes.MathExpression)
         self.assertEqual(math2.operator, '*')
 
     def test_math_3(self):
         tree = self.parse(r'Any X WHERE X date (TODAY + 1) * 2;')
         math = tree.children[0].where.children[1].children[0]
-        self.assert_(isinstance(math, nodes.MathExpression))
+        self.assertIsInstance(math, nodes.MathExpression)
         self.assertEqual(math.operator, '*')
         math2 = math.children[0]
-        self.assert_(isinstance(math2, nodes.MathExpression))
+        self.assertIsInstance(math2, nodes.MathExpression)
         self.assertEqual(math2.operator, '+')
 
     def test_substitute(self):
         tree = self.parse("Any X WHERE X firstname %(firstname)s;")
         cste = tree.children[0].where.children[1].children[0]
-        self.assert_(isinstance(cste, nodes.Constant))
+        self.assertIsInstance(cste, nodes.Constant)
         self.assertEqual(cste.type, 'Substitute')
         self.assertEqual(cste.value, 'firstname')
 
