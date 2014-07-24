@@ -44,18 +44,6 @@ variables:
 * P -> parent node
 
 """
-
-from warnings import warn
-from rql.stmts import Union, Select, Delete, Insert, Set
-from rql.nodes import *
-
-
-def unquote(string):
-    """Remove quotes from a string."""
-    if string.startswith('"'):
-        return string[1:-1].replace('\\\\', '\\').replace('\\"', '"')
-    elif string.startswith("'"):
-        return string[1:-1].replace('\\\\', '\\').replace("\\'", "'")
 %%
 
 parser Hercule:
@@ -359,4 +347,16 @@ rule const: NULL       {{ return Constant(None, None) }}
           | INT        {{ return Constant(int(INT), 'Int') }}
           | STRING     {{ return Constant(unquote(STRING), 'String') }}
           | SUBSTITUTE {{ return Constant(SUBSTITUTE[2:-2], 'Substitute') }}
+%%
 
+from warnings import warn
+from rql.stmts import Union, Select, Delete, Insert, Set
+from rql.nodes import *
+
+
+def unquote(string):
+    """Remove quotes from a string."""
+    if string.startswith('"'):
+        return string[1:-1].replace('\\\\', '\\').replace('\\"', '"')
+    elif string.startswith("'"):
+        return string[1:-1].replace('\\\\', '\\').replace("\\'", "'")

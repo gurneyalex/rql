@@ -18,8 +18,9 @@
 """Analyze of the RQL syntax tree to get possible types for RQL variables.
 
 """
-__docformat__ = "restructuredtext en"
+from __future__ import print_function
 
+__docformat__ = "restructuredtext en"
 
 import os
 from itertools import izip
@@ -51,9 +52,9 @@ class ConstraintCSPProblem(object):
         self.output = StringIO()
 
     def debug(self):
-        print "Domains:", self.domains
-        print "Constraints:", self.constraints
-        print "Scons:", self.scons
+        print("Domains:", self.domains)
+        print("Constraints:", self.constraints)
+        print("Scons:", self.scons)
 
     def get_output(self):
         return self.output.getvalue()
@@ -170,10 +171,10 @@ class GecodeCSPProblem(object):
         self.ivalues = {}
         for val_name, val_num in self.values.items():
             self.ivalues[val_num] = val_name
-        print "Domains:", self.domains
-        print "Ops:", self.pretty_print_ops(self.op)
-        print "Variables:", self.variables
-        print "Values:", self.values
+        print("Domains:", self.domains)
+        print("Ops:", self.pretty_print_ops(self.op))
+        print("Variables:", self.variables)
+        print("Values:", self.values)
 
 
     def pretty_print_ops(self, ops):
@@ -327,9 +328,9 @@ class ETypeResolver(object):
     def solve(self, node, constraints):
         # debug info
         if self.debug > 1:
-            print "- AN1 -"+'-'*80
-            print node
-            print "CONSTRAINTS:"
+            print("- AN1 -"+'-'*80)
+            print(node)
+            print("CONSTRAINTS:")
             constraints.debug()
 
         sols = constraints.solve()
