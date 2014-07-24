@@ -64,12 +64,12 @@ class RQLVarMakerTC(TestCase):
 
     def test_rqlvar_maker_dontstop(self):
         varlist = utils.rqlvar_maker()
-        self.assertEqual(varlist.next(), 'A')
-        self.assertEqual(varlist.next(), 'B')
+        self.assertEqual(next(varlist), 'A')
+        self.assertEqual(next(varlist), 'B')
         for i in range(24):
-            varlist.next()
-        self.assertEqual(varlist.next(), 'AA')
-        self.assertEqual(varlist.next(), 'AB')
+            next(varlist)
+        self.assertEqual(next(varlist), 'AA')
+        self.assertEqual(next(varlist), 'AB')
 
         
 if __name__ == '__main__':

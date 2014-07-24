@@ -144,7 +144,7 @@ def make_constant_restriction(var, rtype, value, ctype, operator='='):
             for atype in sorted(value):
                 infunc.append(Constant(atype, ctype))
             return rel
-        value = iter(value).next()
+        value = next(iter(value))
     return make_relation(var, rtype, (value, ctype), Constant, operator)
 
 
@@ -1023,11 +1023,11 @@ class Referenceable(VisitableMixIn):
                 context = None
                 if lhsvar is not None and mainindex in lhsvar.stinfo['selected']:
                     if len(lhsvar.stinfo['possibletypes']) == 1:
-                        context = iter(lhsvar.stinfo['possibletypes']).next()
+                        context = next(iter(lhsvar.stinfo['possibletypes']))
                     return tr(rtype, context=context)
                 if rhsvar is not None and mainindex in rhsvar.stinfo['selected']:
                     if len(rhsvar.stinfo['possibletypes']) == 1:
-                        context = iter(rhsvar.stinfo['possibletypes']).next()
+                        context = next(iter(rhsvar.stinfo['possibletypes']))
                     if schema is not None and rschema.symmetric:
                         return tr(rtype, context=context)
                     return tr(rtype + '_object', context=context)
@@ -1048,7 +1048,7 @@ class Referenceable(VisitableMixIn):
         """
         if not self.stinfo['selected']:
             return None
-        return iter(self.stinfo['selected']).next()
+        return next(iter(self.stinfo['selected']))
 
     def main_relation(self):
         """Return the relation where this variable is used in the rhs.

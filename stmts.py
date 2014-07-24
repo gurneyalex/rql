@@ -120,7 +120,7 @@ class ScopeNode(BaseNode):
             self._varmaker = rqlvar_maker(defined=self.defined_vars,
                                           # XXX only on Select node
                                           aliases=getattr(self, 'aliases', None))
-        return self._varmaker.next()
+        return next(self._varmaker)
 
     def make_variable(self):
         """create a new variable with an unique name for this tree"""

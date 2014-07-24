@@ -579,7 +579,7 @@ class RQLSTAnnotator(object):
                         stinfo['attrvars'].remove( (lhsvar, rel.r_type) )
                         if stinfo['attrvar'] is lhsvar:
                             if stinfo['attrvars']:
-                                stinfo['attrvar'] = iter(stinfo['attrvars']).next()
+                                stinfo['attrvar'] = next(iter(stinfo['attrvars']))
                             else:
                                 stinfo['attrvar'] = None
                     stinfo['rhsrelations'].remove(rel)
