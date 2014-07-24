@@ -67,7 +67,7 @@ class TypesRestrictionNodesTest(TestCase):
     def test_add_is_type_restriction(self):
         tree = self.parse("Any X WHERE X is Person, X name ILIKE 'A%'")
         select = tree.children[0]
-        x = select.get_selected_variables().next()
+        x = next(select.get_selected_variables())
         self.assertRaises(RQLException, select.add_type_restriction, x.variable, 'Babar')
         select.add_type_restriction(x.variable, 'Person')
         self.assertEqual(tree.as_string(), "Any X WHERE X is Person, X name ILIKE 'A%'")
@@ -75,7 +75,7 @@ class TypesRestrictionNodesTest(TestCase):
     def test_add_new_is_type_restriction_in(self):
         tree = self.parse("Any X WHERE X is IN(Person, Company), X name ILIKE 'A%'")
         select = tree.children[0]
-        x = select.get_selected_variables().next()
+        x = next(select.get_selected_variables())
         select.add_type_restriction(x.variable, 'Company')
         # implementation is KISS (the IN remains)
         self.assertEqual(tree.as_string(), "Any X WHERE X is IN(Company), X name ILIKE 'A%'")
@@ -83,27 +83,27 @@ class TypesRestrictionNodesTest(TestCase):
     def test_add_new_is_type_restriction_in_nonregr(self):
         tree = self.parse('Any X WHERE X is IN(Person, Company, Student)')
         select = tree.children[0]
-        x = select.get_selected_variables().next()
+        x = next(select.get_selected_variables())
         select.add_type_restriction(x.variable, 'Person')
         self.assertEqual(tree.as_string(), 'Any X WHERE X is IN(Person)')
 
     def test_add_is_in_type_restriction(self):
         tree = self.parse("Any X WHERE X is IN(Person, Company), X name ILIKE 'A%'")
         select = tree.children[0]
-        x = select.get_selected_variables().next()
+        x = next(select.get_selected_variables())
         self.assertRaises(RQLException, select.add_type_restriction, x.variable, 'Babar')
         self.assertEqual(tree.as_string(), "Any X WHERE X is IN(Person, Company), X name ILIKE 'A%'")
 
     def test_add_is_type_restriction_on_is_instance_of(self):
         select = self.parse("Any X WHERE X is_instance_of Person, X name ILIKE 'A%'").children[0]
-        x = select.get_selected_variables().next()
+        x = next(select.get_selected_variables())
         select.add_type_restriction(x.variable, 'Person')
         self.assertEqual(select.as_string(), "Any X WHERE X name ILIKE 'A%', X is Person")
 
     def test_add_new_is_type_restriction_in_on_is_instance_of(self):
         tree = self.parse("Any X WHERE X is_instance_of IN(Person, Company), X name ILIKE 'A%'")
         select = tree.children[0]
-        x = select.get_selected_variables().next()
+        x = next(select.get_selected_variables())
         select.add_type_restriction(x.variable, 'Company')
         self.assertEqual(tree.as_string(), "Any X WHERE X name ILIKE 'A%', X is Company")
 
@@ -312,7 +312,7 @@ class NodesTest(TestCase):
         annotator.annotate(tree) # needed to get typerel index
         tree.save_state()
         select = tree.children[0]
-        x = select.get_selected_variables().next()
+        x = next(select.get_selected_variables())
         select.add_type_restriction(x.variable, 'Company')
         self.assertEqual(tree.as_string(), "Any X WHERE X is IN(Company), X name ILIKE 'A%'")
         tree.recover()
@@ -324,7 +324,7 @@ class NodesTest(TestCase):
         annotator.annotate(tree) # needed to get typerel index
         tree.save_state()
         select = tree.children[0]
-        x = select.get_selected_variables().next()
+        x = next(select.get_selected_variables())
         select.add_type_restriction(x.variable, 'Company')
         self.assertEqual(tree.as_string(), "Any X WHERE X name ILIKE 'A%', X is Company")
         tree.recover()
