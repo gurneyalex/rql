@@ -28,6 +28,7 @@ __docformat__ = "restructuredtext en"
 from copy import deepcopy
 from warnings import warn
 
+from six import integer_types
 from six.moves import range
 
 from logilab.common.decorators import cached
@@ -561,7 +562,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         self.distinct = value
 
     def set_limit(self, limit):
-        if limit is not None and (not isinstance(limit, (int, long)) or limit <= 0):
+        if limit is not None and (not isinstance(limit, integer_types) or limit <= 0):
             raise BadRQLQuery('bad limit %s' % limit)
         if self.should_register_op and limit != self.limit:
             from rql.undo import SetLimitOperation
@@ -569,7 +570,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         self.limit = limit
 
     def set_offset(self, offset):
-        if offset is not None and (not isinstance(offset, (int, long)) or offset < 0):
+        if offset is not None and (not isinstance(offset, integer_types) or offset < 0):
             raise BadRQLQuery('bad offset %s' % offset)
         if self.should_register_op and offset != self.offset:
             from rql.undo import SetOffsetOperation

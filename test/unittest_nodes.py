@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with rql. If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 from datetime import date, datetime
 
 from logilab.common.testlib import TestCase, unittest_main
@@ -41,7 +42,9 @@ class EtypeFromPyobjTC(TestCase):
 
     def test_int(self):
         self.assertEqual(nodes.etype_from_pyobj(0), 'Int')
-        self.assertEqual(nodes.etype_from_pyobj(1L), 'Int')
+        if sys.version_info < (3,):
+            l = long
+            self.assertEqual(nodes.etype_from_pyobj(l('1L')), 'Int')
 
     def test_float(self):
         self.assertEqual(nodes.etype_from_pyobj(0.), 'Float')

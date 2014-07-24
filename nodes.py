@@ -23,6 +23,7 @@ root nodes, defined in the `stmts` module.
 
 __docformat__ = "restructuredtext en"
 
+import sys
 from itertools import chain
 from decimal import Decimal
 from datetime import datetime, date, time, timedelta
@@ -41,16 +42,17 @@ CONSTANT_TYPES = frozenset((None, 'Date', 'Datetime', 'Boolean', 'Float', 'Int',
 
 ETYPE_PYOBJ_MAP = { bool: 'Boolean',
                     int: 'Int',
-                    long: 'Int',
                     float: 'Float',
                     Decimal: 'Decimal',
-                    unicode: 'String',
                     str: 'String',
                     datetime: 'Datetime',
                     date: 'Date',
                     time: 'Time',
                     timedelta: 'Interval',
                     }
+if sys.version_info < (3,):
+    ETYPE_PYOBJ_MAP[long] = 'Int'
+    ETYPE_PYOBJ_MAP[unicode] = 'String'
 
 KEYWORD_MAP = {'NOW' : datetime.now,
                'TODAY': date.today}
