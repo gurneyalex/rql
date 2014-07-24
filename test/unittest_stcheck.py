@@ -15,6 +15,8 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with rql. If not, see <http://www.gnu.org/licenses/>.
+from __future__ import print_function
+
 from logilab.common.testlib import TestCase, unittest_main
 
 from rql import RQLHelper, BadRQLQuery, stmts, nodes
@@ -96,7 +98,7 @@ class CheckClassTest(TestCase):
         try:
             self.assertRaises(BadRQLQuery, self.parse, rql)
         except:
-            print rql
+            print(rql)
             raise
 
     def test_raise(self):

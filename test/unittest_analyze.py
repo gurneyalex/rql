@@ -15,6 +15,8 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with rql. If not, see <http://www.gnu.org/licenses/>.
+from __future__ import print_function
+
 from logilab.common.testlib import TestCase, unittest_main, mock_object as mock
 
 from rql import RQLHelper, TypeResolverException
@@ -207,7 +209,7 @@ class AnalyzerClassTest(TestCase):
     def test_raise(self):
         for rql in UNRESOLVABLE_QUERIES:
             if DEBUG:
-                print rql
+                print(rql)
             node = self.helper.parse(rql)
             self.assertRaises(TypeResolverException,
                               self.helper.compute_solutions, node, debug=DEBUG)

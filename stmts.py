@@ -21,6 +21,8 @@ This module defines only first level nodes (i.e. statements). Child nodes are
 defined in the nodes module
 """
 
+from __future__ import print_function
+
 __docformat__ = "restructuredtext en"
 
 from copy import deepcopy
@@ -155,7 +157,7 @@ class ScopeNode(BaseNode):
         try:
             _check_references(defined, varrefs)
         except:
-            print repr(self)
+            print(repr(self))
             raise
         return True
 
