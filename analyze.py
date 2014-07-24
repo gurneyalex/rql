@@ -24,7 +24,7 @@ __docformat__ = "restructuredtext en"
 
 import os
 
-from six import StringIO
+from six import StringIO, string_types
 from six.moves import zip
 
 from rql import TypeResolverException, nodes
@@ -90,13 +90,13 @@ class ConstraintCSPProblem(object):
         self.scons.append(expr)
 
     def var_has_type(self, var, etype):
-        assert isinstance(etype, (str,unicode))
+        assert isinstance(etype, string_types)
         self.add_expr( (var,), '%s == %r' % (var, etype) )
 
     def var_has_types(self, var, etypes):
         etypes = tuple(etypes)
         for t in etypes:
-            assert isinstance( t, (str,unicode))
+            assert isinstance(t, string_types)
         if len(etypes) == 1:
             cstr = '%s == "%s"' % (var, etypes[0])
         else:
@@ -114,7 +114,7 @@ class ConstraintCSPProblem(object):
             for vars, types in orred_expr:
                 types=tuple(types)
                 for t in types:
-                    assert isinstance(t, (str,unicode))
+                    assert isinstance(t, string_types)
                 if len(types)==1:
                     anded.add( '%s == "%s"' % ( '=='.join(vars), types[0]) )
                 else:
@@ -242,7 +242,7 @@ class GecodeCSPProblem(object):
 
     def var_has_types(self, var, etypes):
         for t in etypes:
-            assert isinstance( t, (str,unicode))
+            assert isinstance(t, string_types)
         if len(etypes) == 1:
             self.and_eq( var, tuple(etypes)[0] )
         else:
@@ -268,7 +268,7 @@ class GecodeCSPProblem(object):
             for vars, types in orred_expr:
                 self.equal_vars( vars )
                 for t in types:
-                    assert isinstance(t, (str,unicode))
+                    assert isinstance(t, string_types)
                 for var in vars:
                     if len(types)==1:
                         anded.append( [ _EQ, self.variables[var], self.values[types[0]] ] )
