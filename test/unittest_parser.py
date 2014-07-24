@@ -18,6 +18,8 @@
 # with rql. If not, see <http://www.gnu.org/licenses/>.
 from __future__ import print_function
 
+from six import text_type
+
 from logilab.common.testlib import TestCase, unittest_main
 
 from yapps.runtime import print_error, SyntaxError
@@ -190,7 +192,7 @@ class ParserHercule(TestCase):
         comparison = base.children[1]
         self.assertIsInstance(comparison, nodes.Comparison)
         rhs = comparison.children[0]
-        self.assertEqual(type(rhs.value), unicode)
+        self.assertIsInstance(rhs.value, text_type)
 
     def test_precedence_1(self):
         tree = self.parse("Any X WHERE X firstname 'lulu' AND X name 'toto' OR X name 'tutu';")
