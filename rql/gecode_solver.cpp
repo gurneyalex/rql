@@ -216,7 +216,7 @@ public:
 	    int* vals = new int[nval];
 	    for(i=0;i<nval;++i) {
 		//refcount ok, borrowed ref
-		vals[i] = PyInt_AsLong( PyList_GetItem( ovalues, i ) );
+		vals[i] = PyLong_AsLong( PyList_GetItem( ovalues, i ) );
 		if (vals[i]<0) {
 		    /* we don't have negative values and PyInt_AsLong returns
 		       -1 if the object is not an Int */
@@ -241,7 +241,7 @@ public:
 	/* the first element of each list (node) is 
 	   a symbolic Int from _AND, _OR, _EQ, _EQV
 	*/
-	type = PyInt_AsLong( PyList_GetItem( desc, 0 ) );
+	type = PyLong_AsLong( PyList_GetItem( desc, 0 ) );
 	
 	switch(type) {
 	case _AND:
@@ -268,7 +268,7 @@ public:
 	if (val<0) {
 	    throw RqlError();
 	}
-	return PyInt_AsLong(val);
+	return PyLong_AsLong(val);
     }
 
     /* post gecode condition for Var == Value
@@ -434,7 +434,7 @@ public:
 	tuple = PyTuple_New( pb.nvars );
 
 	for(int i=0;i<pb.nvars;++i) {
-	    ival = PyInt_FromLong( variables[i].val() );
+	    ival = PyLong_FromLong( variables[i].val() );
 	    PyTuple_SetItem( tuple, i, ival );
 	}
 	PyList_Append( pb.sols, tuple );
@@ -533,12 +533,40 @@ static PyMethodDef SolveRqlMethods[] = {
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "rql_solve",
+    NULL,
+    0,
+    SolveRqlMethods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+#endif
 
 PyMODINIT_FUNC
+#if PY_MAJOR_VERSION >= 3
+PyInit_rql_solve(void)
+#else
 initrql_solve(void)
+#endif
 {
     PyObject* m;
+#if PY_MAJOR_VERSION >= 3
+    m = PyModule_Create(&moduledef);
+#else
     m = Py_InitModule("rql_solve", SolveRqlMethods);
+#endif
     if (m == NULL)
+#if PY_MAJOR_VERSION >= 3
+        return NULL;
+#else
         return;
+#endif
+#if PY_MAJOR_VERSION >= 3
+    return m;
+#endif
 }
