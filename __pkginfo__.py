@@ -48,7 +48,7 @@ def gecode_version():
         try:
             res = os.system("g++ -o gecode_version data/gecode_version.cc")
             p = subprocess.Popen("./gecode_version", stdout=subprocess.PIPE)
-            vers = p.stdout.read()
+            vers = p.stdout.read().decode('ascii')
             version = [int(c) for c in vers.strip().split('.')]
         except OSError:
             pass
