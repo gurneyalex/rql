@@ -140,7 +140,7 @@ class RQLHelper(object):
             for subselect in subquery.query.children:
                 self._simplify(subselect)
         rewritten = False
-        for var in select.defined_vars.values():
+        for var in list(select.defined_vars.values()):
             stinfo = var.stinfo
             if stinfo['constnode'] and not stinfo.get('blocsimplification'):
                 uidrel = stinfo['uidrel']

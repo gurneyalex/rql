@@ -316,7 +316,7 @@ class ETypeResolver(object):
             self.uid_func = None
         else:
             self.uid_func_mapping = uid_func_mapping
-            self.uid_func = uid_func_mapping.values()[0]
+            self.uid_func = next(iter(uid_func_mapping.values()))
 
     def set_schema(self, schema):
         self.schema = schema
@@ -394,7 +394,7 @@ class ETypeResolver(object):
         if uid_func_mapping is not None:
             assert len(uid_func_mapping) <= 1
             self.uid_func_mapping = uid_func_mapping
-            self.uid_func = uid_func_mapping.values()[0]
+            self.uid_func = next(iter(uid_func_mapping.values()))
         self.kwargs = kwargs
         self.deambiguifiers = set()
         self._visit(node)
