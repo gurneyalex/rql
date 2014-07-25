@@ -44,7 +44,7 @@ class RelationSchema(ERSchema):
         for e_type, dest_types in assoc_types:
             for e_type in dest_types:
                 d[e_type] = 1
-        self.obj_types = d.keys()
+        self.obj_types = list(d.keys())
         self.symmetric = symmetric
         self.inlined = False
         if card is None:
