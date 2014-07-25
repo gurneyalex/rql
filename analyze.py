@@ -372,7 +372,7 @@ class ETypeResolver(object):
     def _init_stmt(self, node):
         pb = CSPProblem()
         # set domain for all the variables
-        for var in node.defined_vars.itervalues():
+        for var in node.defined_vars.values():
             pb.add_var( var.name, self._base_domain )
         # no variable short cut
         return pb
@@ -448,7 +448,7 @@ class ETypeResolver(object):
         for subquery in node.with_: # resolve subqueries first
             self.visit_union(subquery.query)
         constraints = self._init_stmt(node)
-        for ca in node.aliases.itervalues():
+        for ca in node.aliases.values():
             etypes = set(stmt.selection[ca.colnum].get_type(sol, self.kwargs)
                          for stmt in ca.query.children for sol in stmt.solutions)
             constraints.add_var( ca.name, etypes )
