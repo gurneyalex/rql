@@ -147,7 +147,7 @@ class RQLSTChecker(object):
                 self._check_selected(term, 'selection', state)
                 for vref in term.iget_nodes(VariableRef):
                     state.add_var_info(vref.variable, VAR_SELECTED)
-        for var in node.defined_vars.itervalues():
+        for var in node.defined_vars.values():
             vinfo = state.var_info.get(var, 0)
             if not (vinfo & VAR_HAS_REL) and (vinfo & VAR_HAS_TYPE_REL) \
                    and not (vinfo & VAR_SELECTED):
@@ -194,7 +194,7 @@ class RQLSTChecker(object):
                 rtype = graph[(var, fromvar)]
                 cardidx = 1
             rschema = self.schema.rschema(rtype)
-            for rdef in rschema.rdefs.itervalues():
+            for rdef in rschema.rdefs.values():
                 # XXX aggregats handling needs much probably some enhancements...
                 if not (var in select.aggregated
                         or (rdef.cardinality[cardidx] in '?1' and
@@ -250,7 +250,7 @@ class RQLSTChecker(object):
                     # XXX ok for MIN, MAX, but what about COUNT, AVG...
                     trmap[subvref.children[0].name] = vref.name
                     node.parent.aggregated.add(vref.name)
-            for key, val in select.vargraph.iteritems():
+            for key, val in select.vargraph.items():
                 if isinstance(key, tuple):
                     key = (_var_graphid(key[0], trmap, select),
                            _var_graphid(key[1], trmap, select))
@@ -490,7 +490,7 @@ class RQLSTAnnotator(object):
         node.annotated = True
 
     def _visit_stmt(self, node):
-        for var in node.defined_vars.itervalues():
+        for var in node.defined_vars.values():
             var.prepare_annotation()
         for i, term in enumerate(node.selection):
             for func in term.iget_nodes(Function):
@@ -511,7 +511,7 @@ class RQLSTAnnotator(object):
             self.visit_select(select)
 
     def visit_select(self, node):
-        for var in node.aliases.itervalues():
+        for var in node.aliases.values():
             var.prepare_annotation()
         if node.with_ is not None:
             for subquery in node.with_:

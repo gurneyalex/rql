@@ -134,7 +134,7 @@ class ScopeNode(BaseNode):
         if key == 'possibletypes':
             self.solutions = solutions
         defined = self.defined_vars
-        for var in defined.itervalues():
+        for var in defined.values():
             var.stinfo[key] = set()
             for solution in solutions:
                 var.stinfo[key].add(solution[var.name])
@@ -306,7 +306,7 @@ class Union(Statement, Node):
             for descr in select.get_selection_solutions():
                 for i, etype in enumerate(descr):
                     values.setdefault(i, set()).add(etype)
-        for idx, etypes in values.iteritems():
+        for idx, etypes in values.items():
             if len(etypes) > 1:
                 change.add(idx)
         return change
@@ -526,7 +526,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
 
     def set_possible_types(self, solutions, kwargs=_MARKER, key='possibletypes'):
         super(Select, self).set_possible_types(solutions, kwargs, key)
-        for ca in self.aliases.itervalues():
+        for ca in self.aliases.values():
             ca.stinfo[key] = capt = set()
             for solution in solutions:
                 capt.add(solution[ca.name])

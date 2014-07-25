@@ -162,7 +162,7 @@ class DummySchema(object):
                                       )
                                     ),
             }
-        for rtype, rschema in self._relations.iteritems():
+        for rtype, rschema in self._relations.items():
             rschema.type = rtype
 
     def entities(self):
