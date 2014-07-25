@@ -47,7 +47,7 @@ class rqlvar_maker(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         while self.stop is None or self.index < self.stop:
             var = decompose_b26(self.index)
             self.index += 1
@@ -57,6 +57,9 @@ class rqlvar_maker(object):
                 continue
             return var
         raise StopIteration()
+
+    next = __next__
+
 
 KEYWORDS = set(('INSERT', 'SET', 'DELETE',
                 'UNION', 'WITH', 'BEING',
