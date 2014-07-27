@@ -20,7 +20,6 @@
 __docformat__ = "restructuredtext en"
 
 from itertools import chain
-from logilab.common.compat import any
 from logilab.common.graph import has_path
 from logilab.database import UnknownFunction
 
