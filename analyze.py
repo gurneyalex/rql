@@ -34,7 +34,7 @@ try:
     pure = bool(os.environ.get('RQL_USE_PURE_PYTHON_ANALYSE', 0))
     if pure:
         raise ImportError
-    import rql_solve
+    from rql import rql_solve
 except ImportError:
     rql_solve = None
     import warnings
