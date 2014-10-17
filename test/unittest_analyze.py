@@ -217,12 +217,12 @@ class AnalyzerClassTest(TestCase):
     def test_base_1(self):
         node = self.helper.parse('Any X')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'X': 'Address'},
-                                {'X': 'Company'},
-                                {'X': 'Eetype'},
-                                {'X': 'Person'},
-                                {'X': 'Student'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'X': 'Address'},
+                                     {'X': 'Company'},
+                                     {'X': 'Eetype'},
+                                     {'X': 'Person'},
+                                     {'X': 'Student'}])
 
     def test_base_2(self):
         node = self.helper.parse('Person X')
@@ -246,25 +246,25 @@ class AnalyzerClassTest(TestCase):
     def test_base_guess_1(self):
         node = self.helper.parse('Person X WHERE X work_for Y')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'X': 'Person', 'Y': 'Company'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'X': 'Person', 'Y': 'Company'}])
 
     def test_base_guess_2(self):
         node = self.helper.parse('Any X WHERE X name "Logilab"')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'X': 'Company'}, {'X': 'Person'}, {'X': 'Student'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'X': 'Company'}, {'X': 'Person'}, {'X': 'Student'}])
 
     def test_non_regr_no_final_type(self):
         """https://www.logilab.net/elo/ticket/9042"""
         node = self.helper.parse('Any X WHERE X creation_date > ((2009 - 4) - 16)')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'X': 'Address'},
-                                {'X': 'Company'},
-                                {'X': 'Eetype'},
-                                {'X': 'Person'},
-                                {'X': 'Student'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'X': 'Address'},
+                                     {'X': 'Company'},
+                                     {'X': 'Eetype'},
+                                     {'X': 'Person'},
+                                     {'X': 'Student'}])
 
     def test_is_instance_of_1(self):
         node = self.helper.parse('Any X WHERE X is_instance_of Person')
@@ -273,7 +273,7 @@ class AnalyzerClassTest(TestCase):
                          'etype')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = node.children[0].solutions
-        self.assertEqual(sols, [{'X': 'Person'}, {'X': 'Student'}])
+        self.assertCountEqual(sols, [{'X': 'Person'}, {'X': 'Student'}])
 
     def test_is_instance_of_2(self):
         node = self.helper.parse('Any X WHERE X is_instance_of Student')
@@ -287,38 +287,38 @@ class AnalyzerClassTest(TestCase):
     def test_is_query(self):
         node = self.helper.parse('Any T WHERE X name "logilab", X is T')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'X': 'Company', 'T': 'Eetype'},
-                                {'X': 'Person', 'T': 'Eetype'},
-                                {'X': 'Student', 'T': 'Eetype'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'X': 'Company', 'T': 'Eetype'},
+                                     {'X': 'Person', 'T': 'Eetype'},
+                                     {'X': 'Student', 'T': 'Eetype'}])
 
     def test_is_query_const(self):
         node = self.helper.parse('Any X WHERE X is T, T eid 10')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'X': 'Address', 'T': 'Eetype'},
-                                {'X': 'Company', 'T': 'Eetype'},
-                                {'X': 'Eetype', 'T': 'Eetype'},
-                                {'X': 'Person', 'T': 'Eetype'},
-                                {'X': 'Student', 'T': 'Eetype'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'X': 'Address', 'T': 'Eetype'},
+                                     {'X': 'Company', 'T': 'Eetype'},
+                                     {'X': 'Eetype', 'T': 'Eetype'},
+                                     {'X': 'Person', 'T': 'Eetype'},
+                                     {'X': 'Student', 'T': 'Eetype'}])
 
 
     def test_not(self):
         node = self.helper.parse('Any X WHERE NOT X is Person')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
+        sols = node.children[0].solutions
         expected = ALL_SOLS[:]
         expected.remove({'X': 'Person'})
-        self.assertEqual(sols, expected)
+        self.assertCountEqual(sols, expected)
 
     def test_not_identity(self):
         node = self.helper.parse('Any X WHERE X located A, P is Person, NOT X identity P')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'X': 'Company', 'A': 'Address', 'P': 'Person'},
-                                {'X': 'Person', 'A': 'Address', 'P': 'Person'},
-                                {'X': 'Student', 'A': 'Address', 'P': 'Person'},
-                                ])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'X': 'Company', 'A': 'Address', 'P': 'Person'},
+                                     {'X': 'Person', 'A': 'Address', 'P': 'Person'},
+                                     {'X': 'Student', 'A': 'Address', 'P': 'Person'},
+                                    ])
 
     def test_uid_func_mapping(self):
         h = self.helper
@@ -329,21 +329,21 @@ class AnalyzerClassTest(TestCase):
         # constant as rhs of the uid relation
         node = h.parse('Any X WHERE X name "Logilab"')
         h.compute_solutions(node, uid_func_mapping, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'X': 'Company'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'X': 'Company'}])
         # variable as rhs of the uid relation
         node = h.parse('Any N WHERE X name N')
         h.compute_solutions(node, uid_func_mapping, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'X': 'Company', 'N': 'String'},
-                                 {'X': 'Person', 'N': 'String'},
-                                 {'X': 'Student', 'N': 'String'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'X': 'Company', 'N': 'String'},
+                                     {'X': 'Person', 'N': 'String'},
+                                     {'X': 'Student', 'N': 'String'}])
         # substitute as rhs of the uid relation
         node = h.parse('Any X WHERE X name %(company)s')
         h.compute_solutions(node, uid_func_mapping, {'company': 'Logilab'},
                         debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'X': 'Company'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'X': 'Company'}])
 
     def test_non_regr_subjobj1(self):
         h = self.helper
@@ -354,12 +354,12 @@ class AnalyzerClassTest(TestCase):
         # constant as rhs of the uid relation
         node = h.parse('Any X WHERE X name "Societe", X is ISOBJ, ISSIBJ is X')
         h.compute_solutions(node, uid_func_mapping, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'X': 'Eetype', 'ISOBJ': 'Eetype', 'ISSIBJ': 'Address'},
-                                 {'X': 'Eetype', 'ISOBJ': 'Eetype', 'ISSIBJ': 'Company'},
-                                 {'X': 'Eetype', 'ISOBJ': 'Eetype', 'ISSIBJ': 'Eetype'},
-                                 {'X': 'Eetype', 'ISOBJ': 'Eetype', 'ISSIBJ': 'Person'},
-                                 {'X': 'Eetype', 'ISOBJ': 'Eetype', 'ISSIBJ': 'Student'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'X': 'Eetype', 'ISOBJ': 'Eetype', 'ISSIBJ': 'Address'},
+                                     {'X': 'Eetype', 'ISOBJ': 'Eetype', 'ISSIBJ': 'Company'},
+                                     {'X': 'Eetype', 'ISOBJ': 'Eetype', 'ISSIBJ': 'Eetype'},
+                                     {'X': 'Eetype', 'ISOBJ': 'Eetype', 'ISSIBJ': 'Person'},
+                                     {'X': 'Eetype', 'ISOBJ': 'Eetype', 'ISSIBJ': 'Student'}])
 
     def test_non_regr_subjobj2(self):
         h = self.helper
@@ -370,7 +370,7 @@ class AnalyzerClassTest(TestCase):
         node = h.parse('Any X WHERE X name "Societe", X is ISOBJ, ISSUBJ is X, X is_instance_of ISIOOBJ, ISIOSUBJ is_instance_of X')
         h.compute_solutions(node, uid_func_mapping, debug=DEBUG)
         select = node.children[0]
-        sols = sorted(select.solutions)
+        sols = select.solutions
         self.assertEqual(len(sols), 25)
         def var_sols(var):
             s = set()
@@ -397,82 +397,82 @@ class AnalyzerClassTest(TestCase):
         node = h.parse('Any X WHERE NOT X name %(company)s')
         h.compute_solutions(node, uid_func_mapping, {'company': 'Logilab'},
                             debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, ALL_SOLS)
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, ALL_SOLS)
         node = h.parse('Any X WHERE X name > %(company)s')
         h.compute_solutions(node, uid_func_mapping, {'company': 'Logilab'},
                             debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, ALL_SOLS)
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, ALL_SOLS)
 
 
     def test_base_guess_3(self):
         node = self.helper.parse('Any Z GROUPBY Z WHERE X name Z')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'X': 'Company', 'Z': 'String'},
-                                {'X': 'Person', 'Z': 'String'},
-                                {'X': 'Student', 'Z': 'String'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'X': 'Company', 'Z': 'String'},
+                                     {'X': 'Person', 'Z': 'String'},
+                                     {'X': 'Student', 'Z': 'String'}])
 
     def test_var_name(self):
         node = self.helper.parse('Any E1 GROUPBY E1 WHERE E2 is Person, E2 name E1')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'E2': 'Person', 'E1': 'String'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'E2': 'Person', 'E1': 'String'}])
 
     def test_relation_eid(self):
         node = self.helper.parse('Any E2 WHERE E2 work_for E1, E2 eid 2')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'E1': 'Company', 'E2': 'Person'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'E1': 'Company', 'E2': 'Person'}])
         self.helper.simplify(node)
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'E1': 'Company'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'E1': 'Company'}])
 
         node = self.helper.parse('Any E1 WHERE E2 work_for E1, E2 eid 2')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'E1': 'Company', 'E2': 'Person'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'E1': 'Company', 'E2': 'Person'}])
         self.helper.simplify(node)
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'E1': 'Company'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'E1': 'Company'}])
 
     def test_not_symmetric_relation_eid(self):
         node = self.helper.parse('Any P WHERE X eid 0, NOT X connait P')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'P': 'Person', 'X': 'Person'},
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'P': 'Person', 'X': 'Person'},
                                 {'P': 'Student', 'X': 'Person'}])
         self.helper.simplify(node)
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'P': 'Person'}, {'P': 'Student'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'P': 'Person'}, {'P': 'Student'}])
 
     def test_union(self):
         node = self.helper.parse('(Any P WHERE X eid 0, X is Person, NOT X connait P) UNION (Any E1 WHERE E2 work_for E1, E2 eid 2)')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'P': 'Person', 'X': 'Person'}, {'P': 'Student', 'X': 'Person'}])
-        sols = sorted(node.children[1].solutions)
-        self.assertEqual(sols, [{'E1': 'Company', 'E2': 'Person'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'P': 'Person', 'X': 'Person'}, {'P': 'Student', 'X': 'Person'}])
+        sols = node.children[1].solutions
+        self.assertCountEqual(sols, [{'E1': 'Company', 'E2': 'Person'}])
         self.helper.simplify(node)
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'P': 'Person'}, {'P': 'Student'}],)
-        sols = sorted(node.children[1].solutions)
-        self.assertEqual(sols, [{'E1': 'Company'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'P': 'Person'}, {'P': 'Student'}],)
+        sols = node.children[1].solutions
+        self.assertCountEqual(sols, [{'E1': 'Company'}])
 
     def test_exists(self):
         node = self.helper.parse("Any X WHERE X firstname 'lulu',"
                                  "EXISTS (X owned_by U, U name 'lulufanclub' OR U name 'managers');")
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'X': 'Person',
-                                 'U': 'Person'},
-                                {'X': 'Student',
-                                 'U': 'Person'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'X': 'Person',
+                                      'U': 'Person'},
+                                     {'X': 'Student',
+                                      'U': 'Person'}])
 
     def test_subqueries_base(self):
         node = self.helper.parse('Any L, Y, F WHERE Y located L '
@@ -483,18 +483,17 @@ class AnalyzerClassTest(TestCase):
                          [{'X': 'Person', 'F': 'String'}])
         self.assertEqual(node.children[0].with_[0].query.children[1].solutions,
                          [{'X': 'Company', 'F': 'String'}])
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'Y': 'Company', 'L': 'Address',
-                                 'F': 'String'},
-                                {'Y': 'Person', 'L': 'Address',
-                                 'F': 'String'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'Y': 'Company', 'L': 'Address',
+                                      'F': 'String'},
+                                     {'Y': 'Person', 'L': 'Address',
+                                      'F': 'String'}])
 
     def test_subqueries_aggregat(self):
         node = self.helper.parse('Any L, SUM(X)*100/Y GROUPBY L '
                                  'WHERE X is Person, X located L '
                                  'WITH Y BEING (Any SUM(X) WHERE X is Person)')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
         self.assertEqual(node.children[0].with_[0].query.children[0].solutions, [{'X': 'Person'}])
         self.assertEqual(node.children[0].solutions, [{'X': 'Person', 'Y': 'Person',
                                                        'L': 'Address'}])
@@ -505,9 +504,9 @@ class AnalyzerClassTest(TestCase):
                                  'WITH Y,F BEING ((Any X,F WHERE X is Person, X firstname F) '
                                  'UNION (Any X,F WHERE X is Company, X name F))')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'Y': 'Person', 'L': 'Address',
-                                 'F': 'String'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'Y': 'Person', 'L': 'Address',
+                                      'F': 'String'}])
         self.assertEqual(node.children[0].with_[0].query.children[0].solutions,
                          [{'X': 'Person', 'F': 'String'}])
         # auto-simplification
@@ -519,51 +518,51 @@ class AnalyzerClassTest(TestCase):
     def test_insert(self):
         node = self.helper.parse('INSERT Person X : X name "toto", X work_for Y WHERE Y name "logilab"')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.solutions)
-        self.assertEqual(sols, [{'X': 'Person', 'Y': 'Company'}])
+        sols = node.solutions
+        self.assertCountEqual(sols, [{'X': 'Person', 'Y': 'Company'}])
 
     def test_delete(self):
         node = self.helper.parse('DELETE Person X WHERE X name "toto", X work_for Y')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.solutions)
-        self.assertEqual(sols, [{'X': 'Person', 'Y': 'Company'}])
+        sols = node.solutions
+        self.assertCountEqual(sols, [{'X': 'Person', 'Y': 'Company'}])
 
     def test_set(self):
         node = self.helper.parse('SET X name "toto", X work_for Y WHERE Y name "logilab"')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.solutions)
-        self.assertEqual(sols, [{'X': 'Person', 'Y': 'Company'},
-                                {'X': 'Student', 'Y': 'Company'}])
+        sols = node.solutions
+        self.assertCountEqual(sols, [{'X': 'Person', 'Y': 'Company'},
+                                     {'X': 'Student', 'Y': 'Company'}])
 
     def test_set_mathexpr(self):
         node = self.helper.parse('SET S number N/4 WHERE P work_for S, P number N')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.solutions)
-        self.assertEqual(sols, [{'P': 'Person', 'S': 'Company', 'N': 'Int'},
-                                {'P': 'Student', 'S': 'Company', 'N': 'Int'}])
+        sols = node.solutions
+        self.assertCountEqual(sols, [{'P': 'Person', 'S': 'Company', 'N': 'Int'},
+                                     {'P': 'Student', 'S': 'Company', 'N': 'Int'}])
 
 
     def test_nonregr_not_u_ownedby_u(self):
         node = self.helper.parse('Any U WHERE NOT U owned_by U')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'U': 'Person'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'U': 'Person'}])
 
 
     def test_selection_with_cast(self):
         node = self.helper.parse('Any X WHERE X name CAST(String, E), Y eid E, X owned_by Y')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.children[0].solutions)
-        self.assertEqual(sols, [{'E': 'Int', 'X': 'Company', 'Y': 'Person'},
-                                {'E': 'Int', 'X': 'Person', 'Y': 'Person'},
-                                {'E': 'Int', 'X': 'Student', 'Y': 'Person'}])
+        sols = node.children[0].solutions
+        self.assertCountEqual(sols, [{'E': 'Int', 'X': 'Company', 'Y': 'Person'},
+                                     {'E': 'Int', 'X': 'Person', 'Y': 'Person'},
+                                     {'E': 'Int', 'X': 'Student', 'Y': 'Person'}])
 
     def test_set_with_cast(self):
         node = self.helper.parse('SET X name CAST(String, E), X work_for Y WHERE Y eid E')
         self.helper.compute_solutions(node, debug=DEBUG)
-        sols = sorted(node.solutions)
-        self.assertEqual(sols, [{'X': 'Person', 'Y': 'Company', 'E': 'Int'},
-                                {'X': 'Student', 'Y': 'Company', 'E': 'Int'}])
+        sols = node.solutions
+        self.assertCountEqual(sols, [{'X': 'Person', 'Y': 'Company', 'E': 'Int'},
+                                     {'X': 'Student', 'Y': 'Company', 'E': 'Int'}])
 
 
 
