@@ -18,7 +18,8 @@ XB-Python-Version: ${python:Versions}
 Depends: ${python:Depends}, ${misc:Depends}, ${shlibs:Depends},
          python-logilab-common (>= 0.35.3-1),
          yapps2-runtime,
-         python-logilab-database (>= 1.6.0)
+         python-logilab-database (>= 1.6.0),
+         python-six (>= 1.4.0),
 Conflicts: cubicweb-common (<= 3.13.9)
 Provides: ${python:Provides}
 Suggests: python-pygments

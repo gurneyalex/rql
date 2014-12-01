@@ -25,6 +25,7 @@ Requires:       %{python}-logilab-common >= 0.47.0
 Requires:       %{python}-logilab-database >= 1.6.0
 Requires:       %{python}-yapps2 >= 2.1.1
 Requires:       %{python}-logilab-constraint >= 0.5.0
+Requires:       %{python}-six >= 1.4.0
 
 
 %description
