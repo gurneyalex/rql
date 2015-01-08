@@ -36,21 +36,20 @@ web = "http://www.logilab.org/project/rql"
 ftp = "ftp://ftp.logilab.org/pub/rql"
 
 
-import os, subprocess, sys
+import os.path as osp, subprocess, sys
 from distutils.core import Extension
 
 include_dirs = []
 
 def gecode_version():
-    import os, subprocess
     version = [3,3,1]
-    if os.path.exists('data/gecode_version.cc'):
+    if osp.exists('data/gecode_version.cc'):
         try:
-            res = os.system("g++ -o gecode_version data/gecode_version.cc")
+            subprocess.check_call(['g++', '-o', 'gecode_version', 'data/gecode_version.cc'])
             p = subprocess.Popen("./gecode_version", stdout=subprocess.PIPE)
-            vers = p.stdout.read().decode('ascii')
+            vers = p.communicate()[0].decode('ascii')
             version = [int(c) for c in vers.strip().split('.')]
-        except OSError:
+        except subprocess.CalledProcessError:
             pass
     return version
 
