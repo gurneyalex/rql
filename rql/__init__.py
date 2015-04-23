@@ -105,25 +105,18 @@ class RQLHelper(object):
         Each solution is a dictionary with variable's name as key and
         variable's type as value.
         """
-        self._analyser_lock.acquire()
-        try:
+        with self._analyser_lock:
             return self._analyser.visit(rqlst, uid_func_mapping, kwargs,
                                         debug)
-        finally:
-            self._analyser_lock.release()
 
     def compute_all_solutions(self, rqlst, uid_func_mapping=None, kwargs=None,
                           debug=False):
-        """compute syntaxe tree solutions with all types restriction (eg
+        """compute syntax tree solutions with all types restriction (eg
         is/instance_of relations) ignored
         """
-        self._itr_analyser_lock.acquire()
-        try:
+        with self._itr_analyser_lock:
             self._itr_analyser.visit(rqlst, uid_func_mapping, kwargs,
-                                 debug)
-        finally:
-            self._itr_analyser_lock.release()
-
+                                     debug)
 
     def simplify(self, rqlst):
         """Simplify `rqlst` by rewriting non-final variables associated to a const
