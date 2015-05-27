@@ -18,17 +18,20 @@
 """RQL library (implementation independant)."""
 __docformat__ = "restructuredtext en"
 
-from rql.__pkginfo__ import version as __version__
 from math import log
 
 import sys
 import threading
 
+import pkg_resources
 from six import StringIO
 
 from rql._exceptions import *
 
+
+__version__ = pkg_resources.get_distribution('rql').version
 #REQUIRED_TYPES = ['String', 'Float', 'Int', 'Boolean', 'Date']
+
 
 class RQLHelper(object):
     """Helper class for RQL handling

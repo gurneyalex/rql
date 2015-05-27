@@ -19,206 +19,40 @@
 # with rql. If not, see <http://www.gnu.org/licenses/>.
 """Generic Setup script, takes package info from __pkginfo__.py file.
 """
-__docformat__ = "restructuredtext en"
 
-import os
-import sys
-import shutil
-from os.path import isdir, exists, join, walk
+from setuptools import setup, find_packages
+from io import open
+from os import path
 
-try:
-    if os.environ.get('NO_SETUPTOOLS'):
-        raise ImportError()
-    from setuptools import setup
-    from setuptools.command import install_lib, build_ext
-    USE_SETUPTOOLS = 1
-except ImportError:
-    from distutils.core import setup
-    from distutils.command import install_lib, build_ext
-    USE_SETUPTOOLS = 0
+here = path.abspath(path.dirname(__file__))
 
+pkginfo = {}
+with open(path.join(here, '__pkginfo__.py')) as f:
+    exec(f.read(), pkginfo)
 
-sys.modules.pop('__pkginfo__', None)
-# import required features
-from __pkginfo__ import modname, version, license, description, long_desc, \
-     web, author, author_email
-# import optional features
-import __pkginfo__
-distname = getattr(__pkginfo__, 'distname', modname)
-scripts = getattr(__pkginfo__, 'scripts', [])
-data_files = getattr(__pkginfo__, 'data_files', None)
-subpackage_of = getattr(__pkginfo__, 'subpackage_of', None)
-include_dirs = getattr(__pkginfo__, 'include_dirs', [])
-ext_modules = getattr(__pkginfo__, 'ext_modules', None)
-install_requires = getattr(__pkginfo__, 'install_requires', None)
-dependency_links = getattr(__pkginfo__, 'dependency_links', [])
+# Get the long description from the relevant file
+with open(path.join(here, 'README'), encoding='utf-8') as f:
+    long_description = f.read()
 
-STD_BLACKLIST = ('CVS', '.svn', '.hg', 'debian', 'dist', 'build')
+kwargs = {}
+if 'subpackage_of' in pkginfo:
+    kwargs['namespace_packages'] = [pkginfo['subpackage_of']],
 
-IGNORED_EXTENSIONS = ('.pyc', '.pyo', '.elc', '~')
-
-
-
-def ensure_scripts(linux_scripts):
-    """
-    Creates the proper script names required for each platform
-    (taken from 4Suite)
-    """
-    from distutils import util
-    if util.get_platform()[:3] == 'win':
-        scripts_ = [script + '.bat' for script in linux_scripts]
-    else:
-        scripts_ = linux_scripts
-    return scripts_
-
-
-def get_packages(directory, prefix):
-    """return a list of subpackages for the given directory
-    """
-    result = []
-    for package in os.listdir(directory):
-        absfile = join(directory, package)
-        if isdir(absfile):
-            if exists(join(absfile, '__init__.py')) or \
-                   package in ('test', 'tests'):
-                if prefix:
-                    result.append('%s.%s' % (prefix, package))
-                else:
-                    result.append(package)
-                result += get_packages(absfile, result[-1])
-    return result
-
-def export(from_dir, to_dir,
-           blacklist=STD_BLACKLIST,
-           ignore_ext=IGNORED_EXTENSIONS,
-           verbose=True):
-    """make a mirror of from_dir in to_dir, omitting directories and files
-    listed in the black list
-    """
-    def make_mirror(arg, directory, fnames):
-        """walk handler"""
-        for norecurs in blacklist:
-            try:
-                fnames.remove(norecurs)
-            except ValueError:
-                pass
-        for filename in fnames:
-            # don't include binary files
-            if filename[-4:] in ignore_ext:
-                continue
-            if filename[-1] == '~':
-                continue
-            src = join(directory, filename)
-            dest = to_dir + src[len(from_dir):]
-            if verbose:
-                print >> sys.stderr, src, '->', dest
-            if os.path.isdir(src):
-                if not exists(dest):
-                    os.mkdir(dest)
-            else:
-                if exists(dest):
-                    os.remove(dest)
-                shutil.copy2(src, dest)
-    try:
-        os.mkdir(to_dir)
-    except OSError as ex:
-        # file exists ?
-        import errno
-        if ex.errno != errno.EEXIST:
-            raise
-    walk(from_dir, make_mirror, None)
-
-
-EMPTY_FILE = '''"""generated file, don\'t modify or your data will be lost"""
-try:
-    __import__('pkg_resources').declare_namespace(__name__)
-except ImportError:
-    pass
-'''
-
-class MyInstallLib(install_lib.install_lib):
-    """extend install_lib command to handle  package __init__.py and
-    include_dirs variable if necessary
-    """
-    def run(self):
-        """overridden from install_lib class"""
-        install_lib.install_lib.run(self)
-        # create Products.__init__.py if needed
-        if subpackage_of:
-            product_init = join(self.install_dir, subpackage_of, '__init__.py')
-            if not exists(product_init):
-                self.announce('creating %s' % product_init)
-                stream = open(product_init, 'w')
-                stream.write(EMPTY_FILE)
-                stream.close()
-        # manually install included directories if any
-        if include_dirs:
-            if subpackage_of:
-                base = join(subpackage_of, modname)
-            else:
-                base = modname
-            for directory in include_dirs:
-                dest = join(self.install_dir, base, directory)
-                export(directory, dest, verbose=False)
-
-if os.environ.get('RQL_FORCE_GECODE'):
-    MyBuildExt = build_ext.build_ext
-else:
-    class MyBuildExt(build_ext.build_ext):
-        """Extend build_ext command to pass through compilation error.
-        In fact, if gecode extension fail, rql will use logilab.constraint
-        """
-        def run(self):
-            try:
-                build_ext.build_ext.run(self)
-            except Exception:
-                import traceback
-                traceback.print_exc()
-                sys.stderr.write('================================\n'
-                                 'The compilation of the gecode C extension failed. '
-                                 'rql will use logilab.constraint which is a pure '
-                                 'python implementation. '
-                                 'Please note that the C extension run faster. '
-                                 'So, install a compiler then install rql again with'
-                                 ' the "force" option for better performance.\n'
-                                 '================================\n')
-
-def install(**kwargs):
-    """setup entry point"""
-    if USE_SETUPTOOLS:
-        if '--force-manifest' in sys.argv:
-            sys.argv.remove('--force-manifest')
-    # install-layout option was introduced in 2.5.3-1~exp1
-    elif sys.version_info < (2, 5, 4) and '--install-layout=deb' in sys.argv:
-        sys.argv.remove('--install-layout=deb')
-    if subpackage_of:
-        package = subpackage_of + '.' + modname
-        kwargs['package_dir'] = {package : '.'}
-        packages = [package] + get_packages(os.getcwd(), package)
-        if USE_SETUPTOOLS:
-            kwargs['namespace_packages'] = [subpackage_of]
-    else:
-        kwargs['package_dir'] = {modname : '.'}
-        packages = [modname] + get_packages(os.getcwd(), modname)
-    if USE_SETUPTOOLS and install_requires:
-        kwargs['install_requires'] = install_requires
-        kwargs['dependency_links'] = dependency_links
-    kwargs['packages'] = packages
-    return setup(name = distname,
-                 version = version,
-                 license = license,
-                 description = description,
-                 long_description = long_desc,
-                 author = author,
-                 author_email = author_email,
-                 url = web,
-                 scripts = ensure_scripts(scripts),
-                 data_files = data_files,
-                 ext_modules = ext_modules,
-                 cmdclass = {'install_lib': MyInstallLib,
-                             'build_ext':MyBuildExt},
-                 **kwargs
-                 )
-
-if __name__ == '__main__' :
-    install()
+setup(
+    name=pkginfo.get('distname', pkginfo['modname']),
+    version=pkginfo['version'],
+    description=pkginfo['description'],
+    long_description=long_description,
+    url=pkginfo['web'],
+    author=pkginfo['author'],
+    author_email=pkginfo['author_email'],
+    license=pkginfo['license'],
+    # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
+    classifiers=pkginfo.get('classifiers', []),
+    packages=find_packages(exclude=['contrib', 'docs', 'test*']),
+    install_requires=pkginfo.get('install_requires'),
+    tests_require=pkginfo.get('tests_require'),
+    scripts=pkginfo.get('scripts', []),
+    ext_modules=pkginfo.get('ext_modules'),
+    **kwargs
+)
