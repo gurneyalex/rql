@@ -60,15 +60,15 @@ def encode_version(a,b,c):
 GECODE_VERSION = encode_version(*gecode_version())
 
 if sys.platform != 'win32':
-    ext_modules = [Extension('rql_solve',
-                             ['gecode_solver.cpp'],
+    ext_modules = [Extension('rql.rql_solve',
+                             ['rql/gecode_solver.cpp'],
                               libraries=['gecodeint', 'gecodekernel', 'gecodesearch',],
                              extra_compile_args=['-DGE_VERSION=%s' % GECODE_VERSION],
                          )
                    ]
 else:
-    ext_modules = [ Extension('rql_solve',
-                              ['gecode_solver.cpp'],
+    ext_modules = [ Extension('rql.rql_solve',
+                              ['rql/gecode_solver.cpp'],
                               libraries=['GecodeInt-3-3-1-r-x86',
                                          'GecodeKernel-3-3-1-r-x86',
                                          'GecodeSearch-3-3-1-r-x86',
@@ -85,4 +85,5 @@ install_requires = [
     'yapps >= 2.2.0', # XXX to ensure we don't use the broken pypi version
     'logilab-constraint >= 0.5.0', # fallback if the gecode compiled module is missing
     'six >= 1.4.0',
+    'setuptools',
     ]
