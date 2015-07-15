@@ -1,6 +1,6 @@
 YAPPS=yapps
 
-parser.py: parser.g parser_main.py
-	${YAPPS} parser.g
-	#sed -i "s/__main__/old__main__/" parser.py
-	#cat parser_main.py >> parser.py
+rql/parser.py: rql/parser.g rql/parser_main.py
+	${YAPPS} rql/parser.g
+	#sed -i "s/__main__/old__main__/" rql/parser.py
+	#cat rql/parser_main.py >> rql/parser.py
