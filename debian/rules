@@ -8,3 +8,7 @@ export RQL_FORCE_GECODE=1
 override_dh_auto_build:
 	dh_auto_build
 	$(MAKE) -C doc html
+
+override_dh_auto_clean:
+	dh_auto_clean
+	$(MAKE) -C doc clean
