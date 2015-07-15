@@ -1,6 +1,24 @@
 ChangeLog for RQL
 =================
 
+2015-07-15  --  0.33.1
+    * #297522: misc fixes towards python3 compatibility
+
+    * #278637: package layout change for better setuptools compatibility
+
+
+2014-07-09  --  0.33.0
+    * #79232: fix syntax checking for CAST
+
+
+2014-06-06  --  0.32.0
+    * #245540: compatibility with yapps2, as released on pypi
+
+    * #34252: add pygments plugin for RQL
+
+    * #240176: allow more than one non-"=" uid restriction
+
+
 2014-03-11  --  0.31.5
     * #176472: fix implementation of add_type_restriction vs is_instance_of
 
