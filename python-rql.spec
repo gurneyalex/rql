@@ -19,6 +19,7 @@ Source0:        http://download.logilab.org/pub/rql/rql-%{version}.tar.gz
 BuildRoot:      %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 BuildRequires:  %{python}-devel
+BuildRequires:  %{python}-setuptools
 BuildRequires:  gecode-devel
 Requires:       %{python}
 Requires:       %{python}-logilab-common >= 0.47.0
@@ -26,6 +27,7 @@ Requires:       %{python}-logilab-database >= 1.6.0
 Requires:       %{python}-yapps2 >= 2.1.1
 Requires:       %{python}-logilab-constraint >= 0.5.0
 Requires:       %{python}-six >= 1.4.0
+Requires:       %{python}-setuptools
 
 
 %description
