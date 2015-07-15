@@ -1,3 +1,9 @@
+rql (0.33.1-1) unstable; urgency=medium
+
+  * new upstream release
+
+ -- Julien Cristau <julien.cristau@logilab.fr>  Wed, 15 Jul 2015 09:37:50 +0200
+
 rql (0.33.0-1) unstable; urgency=low
 
   * new upstream release
