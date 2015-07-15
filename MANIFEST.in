@@ -5,7 +5,9 @@ include doc/.static/*
 include doc/.templates/*
 
 include makefile
-include parser.g
+include rql/parser.g
+
+include __pkginfo__.py
 
 include README
 include TODO 
