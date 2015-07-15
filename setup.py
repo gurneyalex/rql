@@ -21,22 +21,48 @@
 """
 
 from setuptools import setup, find_packages
+from setuptools.command import build_ext
 from io import open
-from os import path
+import os
+import os.path as osp
+import sys
 
-here = path.abspath(path.dirname(__file__))
+here = osp.abspath(osp.dirname(__file__))
 
 pkginfo = {}
-with open(path.join(here, '__pkginfo__.py')) as f:
+with open(osp.join(here, '__pkginfo__.py')) as f:
     exec(f.read(), pkginfo)
 
 # Get the long description from the relevant file
-with open(path.join(here, 'README'), encoding='utf-8') as f:
+with open(osp.join(here, 'README'), encoding='utf-8') as f:
     long_description = f.read()
 
 kwargs = {}
 if 'subpackage_of' in pkginfo:
     kwargs['namespace_packages'] = [pkginfo['subpackage_of']],
+
+if os.environ.get('RQL_FORCE_GECODE'):
+    MyBuildExt = build_ext.build_ext
+else:
+    class MyBuildExt(build_ext.build_ext):
+        """Extend build_ext command to pass through compilation error.
+        In fact, if gecode extension fail, rql will use logilab.constraint
+        """
+        def run(self):
+            try:
+                build_ext.build_ext.run(self)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                sys.stderr.write('================================\n'
+                                 'The compilation of the gecode C extension failed. '
+                                 'rql will use logilab.constraint which is a pure '
+                                 'python implementation. '
+                                 'Please note that the C extension run faster. '
+                                 'So, install a compiler then install rql again with'
+                                 ' the "force" option for better performance.\n'
+                                 '================================\n')
+
 
 setup(
     name=pkginfo.get('distname', pkginfo['modname']),
@@ -54,5 +80,6 @@ setup(
     tests_require=pkginfo.get('tests_require'),
     scripts=pkginfo.get('scripts', []),
     ext_modules=pkginfo.get('ext_modules'),
+    cmdclass={'build_ext':MyBuildExt},
     **kwargs
 )
