@@ -1,3 +1,9 @@
+rql (0.33.1-2) unstable; urgency=medium
+
+  * Fix binary package dependencies.
+
+ -- Julien Cristau <julien.cristau@logilab.fr>  Fri, 17 Jul 2015 15:10:54 +0200
+
 rql (0.33.1-1) unstable; urgency=medium
 
   * new upstream release
