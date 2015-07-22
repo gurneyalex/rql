@@ -49,7 +49,7 @@ def gecode_version():
             p = subprocess.Popen("./gecode_version", stdout=subprocess.PIPE)
             vers = p.communicate()[0].decode('ascii')
             version = [int(c) for c in vers.strip().split('.')]
-        except subprocess.CalledProcessError:
+        except (EnvironmentError, subprocess.CalledProcessError):
             pass
     return version
 
