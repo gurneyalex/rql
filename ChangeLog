@@ -1,6 +1,10 @@
 ChangeLog for RQL
 =================
 
+2015-09-07  --  0.33.2
+    * #298337: don't crash in setup.py if we don't have g++
+
+
 2015-07-15  --  0.33.1
     * #297522: misc fixes towards python3 compatibility
 
