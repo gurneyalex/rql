@@ -268,9 +268,9 @@ class Union(Statement, Node):
     def __repr__(self):
         return '\nUNION\n'.join(repr(select) for select in self.children)
 
-    def as_string(self, encoding=None, kwargs=None):
+    def as_string(self, kwargs=None):
         """return the tree as an encoded rql string"""
-        strings = [select.as_string(encoding, kwargs)
+        strings = [select.as_string(kwargs=kwargs)
                    for select in self.children]
         if len(strings) == 1:
             return strings[0]
@@ -473,12 +473,12 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
     def __repr__(self):
         return self.as_string(userepr=True)
 
-    def as_string(self, encoding=None, kwargs=None, userepr=False):
+    def as_string(self, kwargs=None, userepr=False):
         """return the tree as an encoded rql string"""
         if userepr:
             as_string = repr
         else:
-            as_string = lambda x: x.as_string(encoding, kwargs)
+            as_string = lambda x: x.as_string(kwargs=kwargs)
         s = [','.join(as_string(term) for term in self.selection)]
         if self.groupby:
             s.append('GROUPBY ' + ','.join(as_string(term)
@@ -938,7 +938,7 @@ class Delete(Statement, ScopeNode):
             result.append('HAVING ' + ','.join(repr(term) for term in self.having))
         return ' '.join(result)
 
-    def as_string(self, encoding=None, kwargs=None):
+    def as_string(self, kwargs=None):
         """return the tree as an encoded rql string"""
         result = ['DELETE']
         if self.main_variables:
@@ -947,12 +947,12 @@ class Delete(Statement, ScopeNode):
         if self.main_relations:
             if self.main_variables:
                 result.append(',')
-            result.append(', '.join([rel.as_string(encoding, kwargs)
+            result.append(', '.join([rel.as_string(kwargs=kwargs)
                                      for rel in self.main_relations]))
         if self.where is not None:
-            result.append('WHERE ' + self.where.as_string(encoding, kwargs))
+            result.append('WHERE ' + self.where.as_string(kwargs=kwargs))
         if self.having:
-            result.append('HAVING ' + ','.join(term.as_string(encoding, kwargs)
+            result.append('HAVING ' + ','.join(term.as_string(kwargs=kwargs)
                                           for term in self.having))
         return ' '.join(result)
 
@@ -1031,19 +1031,19 @@ insertion variable'
             result.append('HAVING ' + ','.join(repr(term) for term in self.having))
         return ' '.join(result)
 
-    def as_string(self, encoding=None, kwargs=None):
+    def as_string(self, kwargs=None):
         """return the tree as an encoded rql string"""
         result = ['INSERT']
         result.append(', '.join(['%s %s' % (etype, var)
                                  for etype, var in self.main_variables]))
         if self.main_relations:
             result.append(':')
-            result.append(', '.join([rel.as_string(encoding, kwargs)
+            result.append(', '.join([rel.as_string(kwargs=kwargs)
                                      for rel in self.main_relations]))
         if self.where is not None:
-            result.append('WHERE ' + self.where.as_string(encoding, kwargs))
+            result.append('WHERE ' + self.where.as_string(kwargs=kwargs))
         if self.having:
-            result.append('HAVING ' + ','.join(term.as_string(encoding, kwargs)
+            result.append('HAVING ' + ','.join(term.as_string(kwargs=kwargs)
                                                for term in self.having))
         return ' '.join(result)
 
@@ -1100,15 +1100,15 @@ class Set(Statement, ScopeNode):
             result.append('HAVING ' + ','.join(repr(term) for term in self.having))
         return ' '.join(result)
 
-    def as_string(self, encoding=None, kwargs=None):
+    def as_string(self, kwargs=None):
         """return the tree as an encoded rql string"""
         result = ['SET']
-        result.append(', '.join(rel.as_string(encoding, kwargs)
+        result.append(', '.join(rel.as_string(kwargs=kwargs)
                                 for rel in self.main_relations))
         if self.where is not None:
-            result.append('WHERE ' + self.where.as_string(encoding, kwargs))
+            result.append('WHERE ' + self.where.as_string(kwargs=kwargs))
         if self.having:
-            result.append('HAVING ' + ','.join(term.as_string(encoding, kwargs)
+            result.append('HAVING ' + ','.join(term.as_string(kwargs=kwargs)
                                                for term in self.having))
         return ' '.join(result)
 

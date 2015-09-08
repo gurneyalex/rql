@@ -70,7 +70,7 @@ class TypesRestrictionNodesTest(TestCase):
         x = next(select.get_selected_variables())
         self.assertRaises(RQLException, select.add_type_restriction, x.variable, 'Babar')
         select.add_type_restriction(x.variable, 'Person')
-        self.assertEqual(tree.as_string(), "Any X WHERE X is Person, X name ILIKE 'A%'")
+        self.assertEqual(tree.as_string(), 'Any X WHERE X is Person, X name ILIKE "A%"')
 
     def test_add_new_is_type_restriction_in(self):
         tree = self.parse("Any X WHERE X is IN(Person, Company), X name ILIKE 'A%'")
@@ -78,7 +78,7 @@ class TypesRestrictionNodesTest(TestCase):
         x = next(select.get_selected_variables())
         select.add_type_restriction(x.variable, 'Company')
         # implementation is KISS (the IN remains)
-        self.assertEqual(tree.as_string(), "Any X WHERE X is IN(Company), X name ILIKE 'A%'")
+        self.assertEqual(tree.as_string(), 'Any X WHERE X is IN(Company), X name ILIKE "A%"')
 
     def test_add_new_is_type_restriction_in_nonregr(self):
         tree = self.parse('Any X WHERE X is IN(Person, Company, Student)')
@@ -92,20 +92,20 @@ class TypesRestrictionNodesTest(TestCase):
         select = tree.children[0]
         x = next(select.get_selected_variables())
         self.assertRaises(RQLException, select.add_type_restriction, x.variable, 'Babar')
-        self.assertEqual(tree.as_string(), "Any X WHERE X is IN(Person, Company), X name ILIKE 'A%'")
+        self.assertEqual(tree.as_string(), 'Any X WHERE X is IN(Person, Company), X name ILIKE "A%"')
 
     def test_add_is_type_restriction_on_is_instance_of(self):
         select = self.parse("Any X WHERE X is_instance_of Person, X name ILIKE 'A%'").children[0]
         x = next(select.get_selected_variables())
         select.add_type_restriction(x.variable, 'Person')
-        self.assertEqual(select.as_string(), "Any X WHERE X name ILIKE 'A%', X is Person")
+        self.assertEqual(select.as_string(), 'Any X WHERE X name ILIKE "A%", X is Person')
 
     def test_add_new_is_type_restriction_in_on_is_instance_of(self):
         tree = self.parse("Any X WHERE X is_instance_of IN(Person, Company), X name ILIKE 'A%'")
         select = tree.children[0]
         x = next(select.get_selected_variables())
         select.add_type_restriction(x.variable, 'Company')
-        self.assertEqual(tree.as_string(), "Any X WHERE X name ILIKE 'A%', X is Company")
+        self.assertEqual(tree.as_string(), 'Any X WHERE X name ILIKE "A%", X is Company')
 
 
 class NodesTest(TestCase):
@@ -309,28 +309,28 @@ class NodesTest(TestCase):
         self.assertEqual(tree.as_string(), 'Any X,Y GROUPBY X,Y')
 
     def test_recover_add_type_restriction_is_in(self):
-        tree = self._parse("Any X WHERE X is IN(Person, Company), X name ILIKE 'A%'")
+        tree = self._parse('Any X WHERE X is IN(Person, Company), X name ILIKE "A%"')
         annotator.annotate(tree) # needed to get typerel index
         tree.save_state()
         select = tree.children[0]
         x = next(select.get_selected_variables())
         select.add_type_restriction(x.variable, 'Company')
-        self.assertEqual(tree.as_string(), "Any X WHERE X is IN(Company), X name ILIKE 'A%'")
+        self.assertEqual(tree.as_string(), 'Any X WHERE X is IN(Company), X name ILIKE "A%"')
         tree.recover()
         tree.check_references()
-        self.assertEqual(tree.as_string(), "Any X WHERE X is IN(Person, Company), X name ILIKE 'A%'")
+        self.assertEqual(tree.as_string(), 'Any X WHERE X is IN(Person, Company), X name ILIKE "A%"')
 
     def test_recover_add_type_restriction_is_instance_of(self):
-        tree = self._parse("Any X WHERE X is_instance_of IN(Person, Company), X name ILIKE 'A%'")
+        tree = self._parse('Any X WHERE X is_instance_of IN(Person, Company), X name ILIKE "A%"')
         annotator.annotate(tree) # needed to get typerel index
         tree.save_state()
         select = tree.children[0]
         x = next(select.get_selected_variables())
         select.add_type_restriction(x.variable, 'Company')
-        self.assertEqual(tree.as_string(), "Any X WHERE X name ILIKE 'A%', X is Company")
+        self.assertEqual(tree.as_string(), 'Any X WHERE X name ILIKE "A%", X is Company')
         tree.recover()
         tree.check_references()
-        self.assertEqual(tree.as_string(), "Any X WHERE X is_instance_of IN(Person, Company), X name ILIKE 'A%'")
+        self.assertEqual(tree.as_string(), 'Any X WHERE X is_instance_of IN(Person, Company), X name ILIKE "A%"')
 
     def test_select_base_1(self):
         tree = self._parse("Any X WHERE X is Person")
@@ -488,7 +488,7 @@ class NodesTest(TestCase):
         self.assertEqual(tree.main_variables[0][1].name, 'X')
 
     def test_insert_base_2(self):
-        tree = self._parse("INSERT Person X : X name 'bidule'")
+        tree = self._parse('INSERT Person X : X name "bidule"')
         # test specific attributes
         self.assertEqual(len(tree.main_relations), 1)
         self.assertIsInstance(tree.main_relations[0], nodes.Relation)
@@ -498,7 +498,7 @@ class NodesTest(TestCase):
         self.assertEqual(tree.main_variables[0][1].name, 'X')
 
     def test_insert_multi(self):
-        tree = self._parse("INSERT Person X, Person Y : X name 'bidule', Y name 'chouette', X friend Y")
+        tree = self._parse('INSERT Person X, Person Y : X name "bidule", Y name "chouette", X friend Y')
         # test specific attributes
         self.assertEqual(len(tree.main_relations), 3)
         for relation in tree.main_relations:
@@ -512,7 +512,7 @@ class NodesTest(TestCase):
         self.assertEqual(tree.main_variables[1][1].name, 'Y')
 
     def test_insert_where(self):
-        tree = self._parse("INSERT Person X : X name 'bidule', X friend Y WHERE Y name 'chouette'")
+        tree = self._parse('INSERT Person X : X name "bidule", X friend Y WHERE Y name "chouette"')
         self.assertEqual(len(tree.children), 4)
         self.assertIsInstance(tree.where, nodes.Relation)
         # test specific attributes
@@ -527,7 +527,7 @@ class NodesTest(TestCase):
     # update tests ############################################################
 
     def test_update_1(self):
-        tree = self._parse("SET X name 'toto' WHERE X is Person, X name 'bidule'")
+        tree = self._parse('SET X name "toto" WHERE X is Person, X name "bidule"')
         self.assertIsInstance(tree, stmts.Set)
         self.assertEqual(len(tree.children), 2)
         self.assertIsInstance(tree.where, nodes.And)
@@ -536,13 +536,13 @@ class NodesTest(TestCase):
     # deletion tests #########################################################
 
     def test_delete_1(self):
-        tree = self._parse("DELETE Person X WHERE X name 'toto'")
+        tree = self._parse('DELETE Person X WHERE X name "toto"')
         self.assertIsInstance(tree, stmts.Delete)
         self.assertEqual(len(tree.children), 2)
         self.assertIsInstance(tree.where, nodes.Relation)
 
     def test_delete_2(self):
-        tree = self._parse("DELETE X friend Y WHERE X name 'toto'")
+        tree = self._parse('DELETE X friend Y WHERE X name "toto"')
         self.assertIsInstance(tree, stmts.Delete)
         self.assertEqual(len(tree.children), 2)
         self.assertIsInstance(tree.where, nodes.Relation)
@@ -558,17 +558,17 @@ class NodesTest(TestCase):
                           'Any X WHERE X is Person')
 
         tree = parse(u"Any X WHERE X has_text 'héhé'")
-        self.assertEqual(tree.as_string('utf8'),
-                          u'Any X WHERE X has_text "héhé"'.encode('utf8'))
+        self.assertEqual(tree.as_string(),
+                          u'Any X WHERE X has_text "héhé"')
         tree = parse(u"Any X WHERE X has_text %(text)s")
-        self.assertEqual(tree.as_string('utf8', {'text': u'héhé'}),
-                          u'Any X WHERE X has_text "héhé"'.encode('utf8'))
+        self.assertEqual(tree.as_string({'text': u'héhé'}),
+                          u'Any X WHERE X has_text "héhé"')
         tree = parse(u"Any X WHERE X has_text %(text)s")
-        self.assertEqual(tree.as_string('utf8', {'text': u'hé"hé'}),
-                          u'Any X WHERE X has_text "hé\\"hé"'.encode('utf8'))
+        self.assertEqual(tree.as_string({'text': u'hé"hé'}),
+                          u'Any X WHERE X has_text "hé\\"hé"')
         tree = parse(u"Any X WHERE X has_text %(text)s")
-        self.assertEqual(tree.as_string('utf8', {'text': u'hé"\'hé'}),
-                          u'Any X WHERE X has_text "hé\\"\'hé"'.encode('utf8'))
+        self.assertEqual(tree.as_string({'text': u'hé"\'hé'}),
+                          u'Any X WHERE X has_text "hé\\"\'hé"')
 
     def test_as_string_no_encoding(self):
         tree = parse(u"Any X WHERE X has_text 'héhé'")

@@ -336,7 +336,7 @@ class ETypeResolver(object):
         sols = constraints.solve()
 
         if not sols:
-            rql = node.as_string('utf8', self.kwargs)
+            rql = node.as_string(kwargs=self.kwargs)
             ex_msg = 'Unable to resolve variables types in "%s"' % (rql,)
             if True or self.debug:
                 ex_msg += '\n%s' % (constraints.get_output(),)

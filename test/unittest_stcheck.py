@@ -119,7 +119,7 @@ class CheckClassTest(TestCase):
             ('Person X',
              'Any X WHERE X is Person'),
             ("Any X WHERE X eid IN (12), X name 'toto'",
-             "Any X WHERE X eid 12, X name 'toto'"),
+             'Any X WHERE X eid 12, X name "toto"'),
             ('Any X WHERE X work_for Y, Y eid 12',
              'Any X WHERE X work_for 12'),
             ('Any X WHERE Y work_for X, Y eid 12',
@@ -139,7 +139,7 @@ class CheckClassTest(TestCase):
 #            ('Any X,Y WHERE NOT X work_for Y OR X work_for Y', 'Any X,Y WHERE X? work_for Y?'),
             # test symmetric OR rewrite
             ("DISTINCT Any P WHERE P connait S OR S connait P, S name 'chouette'",
-             "DISTINCT Any P WHERE P connait S, S name 'chouette'"),
+             'DISTINCT Any P WHERE P connait S, S name "chouette"'),
             # queries that should not be rewritten
             ('DELETE Person X WHERE X eid 12',
              'DELETE Person X WHERE X eid 12'),
@@ -162,11 +162,11 @@ class CheckClassTest(TestCase):
 
             ("Any X WHERE X firstname 'lulu',"
              "EXISTS (X owned_by U, U name 'lulufanclub' OR U name 'managers');",
-             "Any X WHERE X firstname 'lulu', "
-             "EXISTS(X owned_by U, (U name 'lulufanclub') OR (U name 'managers'))"),
+             'Any X WHERE X firstname "lulu", '
+             'EXISTS(X owned_by U, (U name "lulufanclub") OR (U name "managers"))'),
 
             ('Any X WHERE X eid 12, EXISTS(X name "hop" OR X work_for Y?)',
-             "Any 12 WHERE EXISTS((A name 'hop') OR (A work_for Y?), 12 identity A)"),
+             'Any 12 WHERE EXISTS((A name "hop") OR (A work_for Y?), 12 identity A)'),
 
             ('(Any X WHERE X eid 12) UNION (Any X ORDERBY X WHERE X eid 13)',
              '(Any 12) UNION (Any 13)'),
@@ -287,19 +287,19 @@ class AnnotateTest(TestCase):
 
     def test_not_rel_normalization_3(self):
         rqlst = self.parse('Any X WHERE C is Company, X work_for C, NOT C name "World Company"').children[0]
-        self.assertEqual(rqlst.as_string(), "Any X WHERE C is Company, X work_for C, NOT C name 'World Company'")
+        self.assertEqual(rqlst.as_string(), 'Any X WHERE C is Company, X work_for C, NOT C name "World Company"')
         C = rqlst.defined_vars['C']
         self.assertTrue(C.scope is rqlst, C.scope)
 
     def test_not_rel_normalization_4(self):
         rqlst = self.parse('Any X WHERE C is Company, NOT (X work_for C, C name "World Company")').children[0]
-        self.assertEqual(rqlst.as_string(), "Any X WHERE C is Company, NOT EXISTS(X work_for C, C name 'World Company')")
+        self.assertEqual(rqlst.as_string(), 'Any X WHERE C is Company, NOT EXISTS(X work_for C, C name "World Company")')
         C = rqlst.defined_vars['C']
         self.assertFalse(C.scope is rqlst, C.scope)
 
     def test_not_rel_normalization_5(self):
         rqlst = self.parse('Any X WHERE X work_for C, EXISTS(C identity D, NOT Y work_for D, D name "World Company")').children[0]
-        self.assertEqual(rqlst.as_string(), "Any X WHERE X work_for C, EXISTS(C identity D, NOT EXISTS(Y work_for D), D name 'World Company')")
+        self.assertEqual(rqlst.as_string(), 'Any X WHERE X work_for C, EXISTS(C identity D, NOT EXISTS(Y work_for D), D name "World Company")')
         D = rqlst.defined_vars['D']
         self.assertFalse(D.scope is rqlst, D.scope)
         self.assertTrue(D.scope.parent.scope is rqlst, D.scope.parent.scope)

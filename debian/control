@@ -23,7 +23,8 @@ Depends:
  yapps2-runtime,
  python-logilab-database (>= 1.6.0),
  python-six (>= 1.4.0),
-Conflicts: cubicweb-common (<= 3.13.9)
+Breaks:
+ cubicweb-common (<= 3.21.0),
 Suggests: python-pygments
 Description: relationship query language (RQL) utilities
  A library providing the base utilities to handle RQL queries,
