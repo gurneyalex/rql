@@ -22,6 +22,8 @@ Note: this module uses __slots__ to limit memory usage.
 
 __docformat__ = "restructuredtext en"
 
+import sys
+
 from rql.utils import VisitableMixIn
 
 
@@ -29,9 +31,11 @@ class BaseNode(VisitableMixIn):
     __slots__ = ('parent',)
 
     def __str__(self):
-        return self.as_string(encoding='utf-8')
+        s = self.as_string()
+        s = s.encode('unicode_escape') if sys.version_info < (3,) else s
+        return s
 
-    def as_string(self, encoding=None, kwargs=None):
+    def as_string(self, kwargs=None):
         """Return the tree as an encoded rql string."""
         raise NotImplementedError()
 

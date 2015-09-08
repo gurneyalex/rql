@@ -29,6 +29,8 @@ from decimal import Decimal
 from datetime import datetime, date, time, timedelta
 from time import localtime
 
+from six import string_types
+
 from logilab.database import DYNAMIC_RTYPE
 
 from rql import CoercionError, RQLException
@@ -269,9 +271,9 @@ class SubQuery(BaseNode):
     def children(self):
         return self.aliases + [self.query]
 
-    def as_string(self, encoding=None, kwargs=None):
+    def as_string(self, kwargs=None):
         return '%s BEING (%s)' % (','.join(v.name for v in self.aliases),
-                                  self.query.as_string(encoding, kwargs))
+                                  self.query.as_string(kwargs=kwargs))
     def __repr__(self):
         return '%s BEING (%s)' % (','.join(repr(v) for v in self.aliases),
                                   repr(self.query))
@@ -280,10 +282,10 @@ class And(BinaryNode):
     """a logical AND node (binary)"""
     __slots__ = ()
 
-    def as_string(self, encoding=None, kwargs=None):
+    def as_string(self, kwargs=None):
         """return the tree as an encoded rql string"""
-        return '%s, %s' % (self.children[0].as_string(encoding, kwargs),
-                           self.children[1].as_string(encoding, kwargs))
+        return '%s, %s' % (self.children[0].as_string(kwargs=kwargs),
+                           self.children[1].as_string(kwargs=kwargs))
     def __repr__(self):
         return '%s AND %s' % (repr(self.children[0]), repr(self.children[1]))
 
@@ -298,9 +300,9 @@ class Or(BinaryNode):
     """a logical OR node (binary)"""
     __slots__ = ()
 
-    def as_string(self, encoding=None, kwargs=None):
-        return '(%s) OR (%s)' % (self.children[0].as_string(encoding, kwargs),
-                                 self.children[1].as_string(encoding, kwargs))
+    def as_string(self, kwargs=None):
+        return '(%s) OR (%s)' % (self.children[0].as_string(kwargs=kwargs),
+                                 self.children[1].as_string(kwargs=kwargs))
 
     def __repr__(self):
         return '%s OR %s' % (repr(self.children[0]), repr(self.children[1]))
@@ -320,10 +322,10 @@ class Not(Node):
         if expr is not None:
             self.append(expr)
 
-    def as_string(self, encoding=None, kwargs=None):
+    def as_string(self, kwargs=None):
         if isinstance(self.children[0], (Exists, Relation)):
-            return 'NOT %s' % self.children[0].as_string(encoding, kwargs)
-        return 'NOT (%s)' % self.children[0].as_string(encoding, kwargs)
+            return 'NOT %s' % self.children[0].as_string(kwargs=kwargs)
+        return 'NOT (%s)' % self.children[0].as_string(kwargs=kwargs)
 
     def __repr__(self, encoding=None, kwargs=None):
         return 'NOT (%s)' % repr(self.children[0])
@@ -376,8 +378,8 @@ class Exists(EditableMixIn, BaseNode):
             return True
         raise NotImplementedError
 
-    def as_string(self, encoding=None, kwargs=None):
-        content = self.query and self.query.as_string(encoding, kwargs)
+    def as_string(self, kwargs=None):
+        content = self.query and self.query.as_string(kwargs=kwargs)
         return 'EXISTS(%s)' % content
 
     def __repr__(self):
@@ -443,13 +445,13 @@ class Relation(Node):
             return False
         return True
 
-    def as_string(self, encoding=None, kwargs=None):
+    def as_string(self, kwargs=None):
         """return the tree as an encoded rql string"""
         try:
-            lhs = self.children[0].as_string(encoding, kwargs)
+            lhs = self.children[0].as_string(kwargs=kwargs)
             if self.optional in ('left', 'both'):
                 lhs += '?'
-            rhs = self.children[1].as_string(encoding, kwargs)
+            rhs = self.children[1].as_string(kwargs=kwargs)
             if self.optional in ('right', 'both'):
                 rhs += '?'
         except IndexError:
@@ -567,7 +569,7 @@ class Comparison(HSMixin, Node):
             return False
         return self.operator == other.operator
 
-    def as_string(self, encoding=None, kwargs=None):
+    def as_string(self, kwargs=None):
         """return the tree as an encoded rql string"""
         if len(self.children) == 0:
             return self.operator
@@ -577,13 +579,13 @@ class Comparison(HSMixin, Node):
                 lhsopt = '?'
             if self.optional in ('right', 'both'):
                 rhsopt = '?'
-            return '%s%s %s %s%s' % (self.children[0].as_string(encoding, kwargs),
+            return '%s%s %s %s%s' % (self.children[0].as_string(kwargs=kwargs),
                                      lhsopt, self.operator,
-                                     self.children[1].as_string(encoding, kwargs), rhsopt)
+                                     self.children[1].as_string(kwargs=kwargs), rhsopt)
         if self.operator == '=':
-            return self.children[0].as_string(encoding, kwargs)
+            return self.children[0].as_string(kwargs=kwargs)
         return '%s %s' % (self.operator,
-                          self.children[0].as_string(encoding, kwargs))
+                          self.children[0].as_string(kwargs=kwargs))
 
     def __repr__(self):
         return '%s %s' % (self.operator, ', '.join(repr(c) for c in self.children))
@@ -597,11 +599,11 @@ class MathExpression(OperatorExpressionMixin, HSMixin, BinaryNode):
         BinaryNode.__init__(self, lhs, rhs)
         self.operator = operator
 
-    def as_string(self, encoding=None, kwargs=None):
+    def as_string(self, kwargs=None):
         """return the tree as an encoded rql string"""
-        return '(%s %s %s)' % (self.children[0].as_string(encoding, kwargs),
+        return '(%s %s %s)' % (self.children[0].as_string(kwargs=kwargs),
                                self.operator,
-                               self.children[1].as_string(encoding, kwargs))
+                               self.children[1].as_string(kwargs=kwargs))
 
     def __repr__(self):
         return '(%r %s %r)' % (self.children[0], self.operator,
@@ -642,10 +644,10 @@ class UnaryExpression(OperatorExpressionMixin, Node):
         if child is not None:
             self.append(child)
 
-    def as_string(self, encoding=None, kwargs=None):
+    def as_string(self, kwargs=None):
         """return the tree as an encoded rql string"""
         return '%s%s' % (self.operator,
-                         self.children[0].as_string(encoding, kwargs))
+                         self.children[0].as_string(kwargs=kwargs))
 
     def __repr__(self):
         return '%s%r' % (self.operator, self.children[0])
@@ -677,9 +679,9 @@ class Function(HSMixin, Node):
             return False
         return self.name == other.name
 
-    def as_string(self, encoding=None, kwargs=None):
+    def as_string(self, kwargs=None):
         """return the tree as an encoded rql string"""
-        return '%s(%s)' % (self.name, ', '.join(c.as_string(encoding, kwargs)
+        return '%s(%s)' % (self.name, ', '.join(c.as_string(kwargs=kwargs)
                                                 for c in self.children))
 
     def __repr__(self):
@@ -730,11 +732,10 @@ class Constant(HSMixin, LeafNode):
             return False
         return self.type == other.type and self.value == other.value
 
-    def as_string(self, encoding=None, kwargs=None):
+    def as_string(self, kwargs=None):
         """return the tree as an encoded rql string (an unicode string is
         returned if encoding is None)
         """
-        u = str if sys.version_info >= (3,) else unicode
         if self.type is None:
             return 'NULL'
         if self.type in ('etype', 'Date', 'Datetime', 'Int', 'Float'):
@@ -746,25 +747,20 @@ class Constant(HSMixin, LeafNode):
             #     and linked relation
             if kwargs is not None:
                 value = kwargs.get(self.value, '???')
-                if sys.version_info < (3,) and isinstance(value, u):
-                    if encoding:
-                        value = quote(value.encode(encoding))
-                    else:
-                        value = uquote(value)
-                elif isinstance(value, str):
-                    value = quote(value)
+                if isinstance(value, string_types):
+                    value = uquote(value)
                 else:
                     value = repr(value)
                 return value
             return '%%(%s)s' % self.value
-        if sys.version_info < (3,) and isinstance(self.value, u):
-            if encoding is not None:
-                return quote(self.value.encode(encoding))
+        if isinstance(self.value, string_types):
             return uquote(self.value)
         return repr(self.value)
 
     def __repr__(self):
-        return self.as_string('utf8')
+        s = self.as_string()
+        s = s.encode('unicode_escape') if sys.version_info < (3,) else s
+        return s
 
     def eval(self, kwargs):
         if self.type == 'Substitute':
@@ -809,7 +805,7 @@ class VariableRef(HSMixin, LeafNode):
             return False
         return self.name == other.name
 
-    def as_string(self, encoding=None, kwargs=None):
+    def as_string(self, kwargs=None):
         """return the tree as an encoded rql string"""
         return self.name
 
@@ -871,7 +867,7 @@ class SortTerm(Node):
             return False
         return self.asc == other.asc
 
-    def as_string(self, encoding=None, kwargs=None):
+    def as_string(self, kwargs=None):
         if self.asc:
             return '%s' % self.term
         return '%s DESC' % self.term
@@ -911,7 +907,7 @@ class Referenceable(VisitableMixIn):
         if not self.stinfo.get('possibletypes'):
             self.stinfo['possibletypes'] = old.stinfo.get('possibletypes')
 
-    def as_string(self, encoding=None, kwargs=None):
+    def as_string(self, kwargs=None):
         """return the tree as an encoded rql string"""
         return self.name
 

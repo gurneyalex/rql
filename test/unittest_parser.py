@@ -200,7 +200,7 @@ class ParserHercule(TestCase):
         self.assertEqual(isinstance(base, nodes.Or), 1)
         self.assertEqual(isinstance(base.children[0], nodes.And), 1)
         self.assertEqual(isinstance(base.children[1], nodes.Relation), 1)
-        self.assertEqual(str(tree), "Any X WHERE (X firstname 'lulu', X name 'toto') OR (X name 'tutu')")
+        self.assertEqual(str(tree), 'Any X WHERE (X firstname "lulu", X name "toto") OR (X name "tutu")')
 
     def test_precedence_2(self):
         tree = self.parse("Any X WHERE X firstname 'lulu', X name 'toto' OR X name 'tutu';")
@@ -208,7 +208,7 @@ class ParserHercule(TestCase):
         self.assertEqual(isinstance(base, nodes.And), 1)
         self.assertEqual(isinstance(base.children[0], nodes.Relation), 1)
         self.assertEqual(isinstance(base.children[1], nodes.Or), 1)
-        self.assertEqual(str(tree), "Any X WHERE X firstname 'lulu', (X name 'toto') OR (X name 'tutu')")
+        self.assertEqual(str(tree), 'Any X WHERE X firstname "lulu", (X name "toto") OR (X name "tutu")')
 
     def test_precedence_3(self):
         tree = self.parse("Any X WHERE X firstname 'lulu' AND (X name 'toto' or X name 'tutu');")
@@ -216,7 +216,7 @@ class ParserHercule(TestCase):
         self.assertEqual(isinstance(base, nodes.And), 1)
         self.assertEqual(isinstance(base.children[0], nodes.Relation), 1)
         self.assertEqual(isinstance(base.children[1], nodes.Or), 1)
-        self.assertEqual(str(tree), "Any X WHERE X firstname 'lulu', (X name 'toto') OR (X name 'tutu')")
+        self.assertEqual(str(tree), 'Any X WHERE X firstname "lulu", (X name "toto") OR (X name "tutu")')
 
     def test_precedence_4(self):
         tree = self.parse("Any X WHERE X firstname 'lulu' OR X name 'toto' AND X name 'tutu';")
@@ -227,15 +227,15 @@ class ParserHercule(TestCase):
 
     def test_not_precedence_0(self):
         tree = self.parse("Any X WHERE NOT X firstname 'lulu', X name 'toto';")
-        self.assertEqual(str(tree), "Any X WHERE NOT X firstname 'lulu', X name 'toto'")
+        self.assertEqual(str(tree), 'Any X WHERE NOT X firstname "lulu", X name "toto"')
 
     def test_not_precedence_1(self):
         tree = self.parse("Any X WHERE NOT X firstname 'lulu' AND X name 'toto';")
-        self.assertEqual(str(tree), "Any X WHERE NOT X firstname 'lulu', X name 'toto'")
+        self.assertEqual(str(tree), 'Any X WHERE NOT X firstname "lulu", X name "toto"')
 
     def test_not_precedence_2(self):
         tree = self.parse("Any X WHERE NOT X firstname 'lulu' OR X name 'toto';")
-        self.assertEqual(str(tree), "Any X WHERE (NOT X firstname 'lulu') OR (X name 'toto')")
+        self.assertEqual(str(tree), 'Any X WHERE (NOT X firstname "lulu") OR (X name "toto")')
 
     def test_string_1(self):
         tree = self.parse(r"Any X WHERE X firstname 'lu\"lu';")
@@ -306,8 +306,8 @@ class ParserHercule(TestCase):
         tree = self.parse("Any X WHERE X firstname 'lulu',"
                           "EXISTS (X owned_by U, U in_group G, G name 'lulufanclub' OR G name 'managers');")
         self.assertEqual(tree.as_string(),
-                         "Any X WHERE X firstname 'lulu', "
-                         "EXISTS(X owned_by U, U in_group G, (G name 'lulufanclub') OR (G name 'managers'))")
+                         'Any X WHERE X firstname "lulu", '
+                         'EXISTS(X owned_by U, U in_group G, (G name "lulufanclub") OR (G name "managers"))')
         exists = tree.children[0].where.get_nodes(nodes.Exists)[0]
         self.assertTrue(exists.children[0].parent is exists)
         self.assertTrue(exists.parent)
