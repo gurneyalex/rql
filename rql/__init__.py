@@ -149,14 +149,15 @@ class RQLHelper(object):
                         term = vref
                         while not term.parent is select:
                             term = term.parent
-                        if term in select.selection:
+                        if any(term.is_equivalent(t) for t in select.selection):
                             rhs = copy_uid_node(select, rhs, vconsts)
                             if vref is term:
-                                select.selection[select.selection.index(vref)] = rhs
+                                index = next(i for i, var in enumerate(select.selection) if vref.is_equivalent(var))
+                                select.selection[index] = rhs
                                 rhs.parent = select
                             else:
                                 vref.parent.replace(vref, rhs)
-                        elif term in select.orderby:
+                        elif any(term.is_equivalent(o) for o in select.orderby):
                             # remove from orderby
                             select.remove(term)
                         elif not select.having:

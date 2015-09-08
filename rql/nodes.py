@@ -372,6 +372,8 @@ class Exists(EditableMixIn, BaseNode):
         node.parent = self
 
     def is_equivalent(self, other):
+        if self is other:
+            return True
         raise NotImplementedError
 
     def as_string(self, encoding=None, kwargs=None):
@@ -812,9 +814,6 @@ class VariableRef(HSMixin, LeafNode):
 
     def __repr__(self):
         return 'VarRef(%r)' % self.variable
-
-    def __cmp__(self, other):
-        return not self.is_equivalent(other)
 
     def register_reference(self):
         self.variable.register_reference(self)

@@ -155,7 +155,7 @@ class RQLSTChecker(object):
         if node.groupby:
             # check that selected variables are used in groups
             for var in node.selection:
-                if isinstance(var, VariableRef) and not var in node.groupby:
+                if isinstance(var, VariableRef) and not any(var.is_equivalent(g) for g in node.groupby):
                     state.error('variable %s should be grouped' % var)
             for group in node.groupby:
                 self._check_selected(group, 'group', state)
@@ -269,7 +269,7 @@ class RQLSTChecker(object):
             stmt = term.stmt
             for tvref in variable_refs(term):
                 for vref in tvref.variable.references():
-                    if vref.relation() or vref in stmt.selection:
+                    if vref.relation() or any(vref.is_equivalent(s) for s in stmt.selection):
                         break
                 else:
                     msg = 'sort variable %s is not referenced any where else'
