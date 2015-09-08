@@ -702,17 +702,21 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
     def replace(self, oldnode, newnode):
         if oldnode is self.where:
             self.where = newnode
-        elif oldnode in self.selection:
-            self.selection[self.selection.index(oldnode)] = newnode
-        elif oldnode in self.orderby:
-            self.orderby[self.orderby.index(oldnode)] = newnode
-        elif oldnode in self.groupby:
-            self.groupby[self.groupby.index(oldnode)] = newnode
-        elif oldnode in self.having:
-            self.having[self.having.index(oldnode)] = newnode
+        elif any(oldnode.is_equivalent(s) for s in self.selection):
+            index = next(i for i, s in enumerate(self.selection) if oldnode.is_equivalent(s))
+            self.selection[index] = newnode
+        elif any(oldnode.is_equivalent(o) for o in self.orderby):
+            index = next(i for i, o in enumerate(self.orderby) if oldnode.is_equivalent(o))
+            self.orderby[index] = newnode
+        elif any(oldnode.is_equivalent(g) for g in self.groupby):
+            index = next(i for i, g in enumerate(self.groupby) if oldnode.is_equivalent(g))
+            self.groupby[index] = newnode
+        elif any(oldnode.is_equivalent(h) for h in self.having):
+            index = next(i for i, h in enumerate(self.having) if oldnode.is_equivalent(h))
+            self.having[index] = newnode
         else:
             raise Exception('duh XXX %s' % oldnode)
-        # XXX no undo/reference support 'by design' (eg breaks things if you add
+        # XXX no undo/reference support 'by design' (i.e. breaks things if you add
         # it...)
         oldnode.parent = None
         newnode.parent = self
@@ -721,11 +725,11 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
     def remove(self, node):
         if node is self.where:
             self.where = None
-        elif node in self.orderby:
+        elif any(node.is_equivalent(o) for o in self.orderby):
             self.remove_sort_term(node)
-        elif node in self.groupby:
+        elif any(node.is_equivalent(g) for g in self.groupby):
             self.remove_group_term(node)
-        elif node in self.having:
+        elif any(node.is_equivalent(h) for h in self.having):
             self.having.remove(node)
         # XXX selection
         else:
@@ -819,7 +823,8 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             self.undo_manager.add_operation(RemoveGroupOperation(term))
         for vref in term.iget_nodes(nodes.VariableRef):
             vref.unregister_reference()
-        self.groupby.remove(term)
+        index = next(i for i, g in enumerate(self.groupby) if term.is_equivalent(g))
+        del self.groupby[index]
     remove_group_var = deprecated('[rql 0.29] use remove_group_term instead')(remove_group_term)
 
     def remove_groups(self):
@@ -870,7 +875,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         selection = []
         for term in self.selection:
             for vref in term.iget_nodes(nodes.VariableRef):
-                if not vref in selection:
+                if not any(vref.is_equivalent(s) for s in selection):
                     vref.parent = self
                     selection.append(vref)
         self.selection = selection
