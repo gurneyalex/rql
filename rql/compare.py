@@ -18,6 +18,8 @@
 """Comparing syntax trees.
 
 """
+from __future__ import print_function
+
 __docformat__ = "restructuredtext en"
 
 
@@ -50,7 +52,7 @@ def make_canon_dict(rql_tree, verbose=0):
         var.name = ':'.join(name_parts)
     sort(canon)
     if verbose:
-        print 'CANON FOR', rql_tree
+        print('CANON FOR', rql_tree)
         from pprint import pprint
         pprint(canon)
     return canon

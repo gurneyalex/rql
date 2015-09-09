@@ -124,7 +124,7 @@ class RQLHelper(object):
 
         The tree is modified in-place.
         """
-        #print 'simplify', rqlst.as_string(encoding='UTF8')
+        #print('simplify', rqlst.as_string())
         if rqlst.TYPE == 'select':
             from rql import nodes
             for select in rqlst.children:

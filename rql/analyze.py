@@ -70,7 +70,7 @@ class ConstraintCSPProblem(object):
         #import time
         #t0=time.time()
         sols = solver.solve(repo, verbose=(True or self.debug))
-        #print "RUNTIME:", time.time()-t0
+        #print("RUNTIME:", time.time()-t0)
         return sols
 
     def add_var(self, name, values):
@@ -208,7 +208,7 @@ class GecodeCSPProblem(object):
             for var, val in zip(self.ivariables, s):
                 r[var] = self.all_values[val]
             rql_sols.append(r)
-        #print "RUNTIME:", time.time()-t0
+        #print("RUNTIME:", time.time()-t0)
         return rql_sols
 
     def add_var(self, name, values):
@@ -223,8 +223,8 @@ class GecodeCSPProblem(object):
         self.all_values = list(self.all_values)
         # maps value->integer
         self.values = dict( [ (v,i) for i,v in enumerate(self.all_values)] )
-        #print self.values
-        #print self.domains
+        #print(self.values)
+        #print(self.domains)
         for var_name in self.ivariables:
             val_domain = self.domains[var_name]
             idx_domain = [ self.values[val] for val in val_domain ]

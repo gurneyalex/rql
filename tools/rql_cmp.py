@@ -15,6 +15,8 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with rql. If not, see <http://www.gnu.org/licenses/>.
+from __future__ import print_function
+
 from rql.rqlparse import parse as cparse
 from rql import parse
 from rql.compare2 import compare_tree, RQLCanonizer, make_canon_dict
@@ -43,17 +45,17 @@ builder = {
 
 f = file(sys.argv[1])
 for l in f:
-    #print l,
+    #print(l, end="")
     x1 = cparse(l, builder)
     x2 = parse(l)
     l = l.strip()
     d1 = make_canon_dict( x1 )
     d2 = make_canon_dict( x2 )
     t = d1==d2
-    print '%s : "%s"' % (t,l)
+    print('%s : "%s"' % (t,l))
     if not t:
-        print "CPP",x1
+        print("CPP",x1)
         pprint(d1)
-        print "PYT",x2
+        print("PYT",x2)
         pprint(d2)
 

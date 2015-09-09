@@ -15,6 +15,8 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with rql. If not, see <http://www.gnu.org/licenses/>.
+from __future__ import print_function
+
 from rql.rqlparse import parse
 import sys
 
@@ -39,13 +41,13 @@ builder = {
 }
 
 if len(sys.argv)<2:
-    print "Usage: bench_cpprql file"
-    print "     file: a file containing rql queries"
+    print("Usage: bench_cpprql file")
+    print("     file: a file containing rql queries")
     sys.exit(1)
 
-f = file(sys.argv[1])
+f = open(sys.argv[1])
 for l in f:
-    #print l,
+    #print(l, end="")
     x = parse(l, builder)
-    print ".",
+    print(".", end="")
 

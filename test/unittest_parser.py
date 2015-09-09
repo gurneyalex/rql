@@ -321,8 +321,8 @@ class ParserHercule(TestCase):
     def test_spec(self):
         """test all RQL string found in the specification and test they are well parsed"""
         for rql in SPEC_QUERIES:
-#            print "Orig:", rql
-#            print "Resu:", rqltree
+#            print("Orig:", rql)
+#            print("Resu:", rqltree)
             yield self.parse, rql, True
 
     def test_raise_badsyntax_error(self):
