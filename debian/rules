@@ -3,7 +3,7 @@
 export RQL_FORCE_GECODE=1
 
 %:
-	dh $@ --with python2 --buildsystem python_distutils
+	dh $@ --with python2,python3 --buildsystem pybuild
 
 override_dh_auto_build:
 	dh_auto_build
@@ -17,3 +17,6 @@ override_dh_auto_clean:
 # or python-logilab-constraint (unnecessary with gecode)
 override_dh_python2:
 	dh_python2 --no-guessing-deps
+
+override_dh_python3:
+	dh_python3 --no-guessing-deps

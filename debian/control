@@ -6,10 +6,13 @@ Uploaders: Sylvain Thenault <sylvain.thenault@logilab.fr>, Nicolas Chauvat <nico
 Build-Depends:
  debhelper (>= 9),
  python-all-dev (>= 2.6.5),
+ python3-all-dev (>= 2.6.5),
  libgecode-dev,
  python-sphinx,
  python-setuptools,
+ python3-setuptools,
 X-Python-Version: >= 2.6
+X-Python3-Version: >= 3.3
 Standards-Version: 3.9.6
 Homepage: http://www.logilab.org/project/rql
 
@@ -26,7 +29,25 @@ Depends:
 Breaks:
  cubicweb-common (<= 3.21.0),
 Suggests: python-pygments
-Description: relationship query language (RQL) utilities
+Description: relationship query language (RQL) utilities - Python 2
  A library providing the base utilities to handle RQL queries,
  such as a parser, a type inferencer.
+ .
+ This package contains the Python 2 version of the RQL library.
 
+Package: python3-rql
+Architecture: any
+Depends:
+ ${python3:Depends},
+ ${misc:Depends},
+ ${shlibs:Depends},
+ python3-logilab-common,
+ python3-yapps2-runtime,
+ python3-logilab-database (>= 1.6.0),
+ python3-six (>= 1.4.0),
+Suggests: python3-pygments
+Description: relationship query language (RQL) utilities - Python 3
+ A library providing the base utilities to handle RQL queries,
+ such as a parser, a type inferencer.
+ .
+ This package contains the Python 3 version of the RQL library.
