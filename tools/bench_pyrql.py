@@ -15,10 +15,12 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with rql. If not, see <http://www.gnu.org/licenses/>.
+from __future__ import print_function
+
 from rql import parse
 import sys
-f = file(sys.argv[1])
+f = open(sys.argv[1])
 for l in f:
     parse(l)
-    print ".",
+    print(".", end="")
 
