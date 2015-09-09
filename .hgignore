@@ -2,4 +2,4 @@
 build/
 rql_solve.so$
 \.pytest\.restart$
-
+\.tox
