@@ -837,7 +837,7 @@ class VariableRef(HSMixin, LeafNode):
             return myidx
         # first .parent is the SubQuery node, we want the Select node
         parentselect = union.parent.parent
-        for ca in parentselect.aliases.itervalues():
+        for ca in parentselect.aliases.values():
             if ca.query is union and ca.colnum == myidx:
                 caidx = ca.selected_index()
                 if caidx is None:
