@@ -654,6 +654,30 @@ class NodesTest(TestCase):
         self.assertEqual(select.selection[0].get_type(), 'String')
         self.assertEqual(tree.get_description(0), [['String']])
 
+    def test_replace_node_select(self):
+        tree = sparse(u'Any X, MAX(X) WHERE X name "toto tata"')
+        select = tree.children[0]
+        funcnode = sparse(u'Any MAX(X)').children[0].selection[0]
+        select.replace(funcnode, nodes.Constant(1.0, 'Float'))
+
+    def test_replace_node_orderby(self):
+        tree = sparse(u'Any X ORDERBY MAX(X) WHERE X name "toto tata"')
+        select = tree.children[0]
+        funcnode = sparse(u'Any X ORDERBY MAX(X)').children[0].orderby[0]
+        select.replace(funcnode, nodes.Constant(1.0, 'Float'))
+
+    def test_replace_node_groupby(self):
+        tree = sparse(u'Any X GROUPBY X, MAX(X) WHERE X name "toto tata"')
+        select = tree.children[0]
+        funcnode = sparse(u'Any MAX(X)').children[0].selection[0]
+        select.replace(funcnode, nodes.Constant(1.0, 'Float'))
+
+    def test_replace_node_having(self):
+        tree = sparse(u'Any X WHERE X name "toto tata" HAVING MAX(X) > 1')
+        select = tree.children[0]
+        funcnode = sparse(u'Any X HAVING MAX(X) > 1').children[0].having[0]
+        select.replace(funcnode, nodes.Constant(1.0, 'Float'))
+
 
 class GetNodesFunctionTest(TestCase):
     def test_known_values_1(self):
