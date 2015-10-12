@@ -28,6 +28,7 @@ Requires:       %{python}-yapps2 >= 2.1.1
 Requires:       %{python}-logilab-constraint >= 0.5.0
 Requires:       %{python}-six >= 1.4.0
 Requires:       %{python}-setuptools
+Conflicts:      cubicweb < 3.22.0
 
 
 %description

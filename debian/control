@@ -27,7 +27,7 @@ Depends:
  python-logilab-database (>= 1.6.0),
  python-six (>= 1.4.0),
 Breaks:
- cubicweb-common (<= 3.21.0),
+ cubicweb-common (<< 3.22.0),
 Suggests: python-pygments
 Description: relationship query language (RQL) utilities - Python 2
  A library providing the base utilities to handle RQL queries,
