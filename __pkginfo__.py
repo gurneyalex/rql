@@ -35,6 +35,14 @@ such as a parser, a type inferencer.
 web = "http://www.logilab.org/project/rql"
 ftp = "ftp://ftp.logilab.org/pub/rql"
 
+classifiers = [
+    'License :: OSI Approved :: GNU Lesser General Public License v2 or later (LGPLv2+)',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 2',
+    'Programming Language :: Python :: 3',
+    'Topic :: Database',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+]
 
 import os.path as osp, subprocess, sys
 from distutils.core import Extension
