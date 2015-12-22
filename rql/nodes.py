@@ -1,4 +1,4 @@
-# copyright 2004-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2004-2015 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of rql.
@@ -618,16 +618,25 @@ class MathExpression(OperatorExpressionMixin, HSMixin, BinaryNode):
         rhstype = self.children[1].get_type(solution, kwargs)
         key = (self.operator, lhstype, rhstype)
         try:
-            return {('-', 'Date', 'Datetime'):     'Interval',
+            return {('-', 'Date', 'Datetime'): 'Interval',
+                    ('-', 'Date', 'TZDatetime'): 'Interval',
+                    ('-', 'Date', 'Date'): 'Interval',
                     ('-', 'Datetime', 'Datetime'): 'Interval',
-                    ('-', 'Date', 'Date'):         'Interval',
-                    ('-', 'Date', 'Time'):     'Datetime',
-                    ('+', 'Date', 'Time'):     'Datetime',
-                    ('-', 'Datetime', 'Time'): 'Datetime',
-                    ('+', 'Datetime', 'Time'): 'Datetime',
+                    ('-', 'Datetime', 'TZDatetime'): 'Interval',
+                    ('-', 'Datetime', 'Date'): 'Interval',
+                    ('-', 'TZDatetime', 'Datetime'): 'Interval',
+                    ('-', 'TZDatetime', 'TZDatetime'): 'Interval',
+                    ('-', 'TZDatetime', 'Date'): 'Interval',
+
+                    ('-', 'Date', 'Interval'):     'Datetime',
+                    ('+', 'Date', 'Interval'):     'Datetime',
+                    ('-', 'Datetime', 'Interval'): 'Datetime',
+                    ('+', 'Datetime', 'Interval'): 'Datetime',
+                    ('-', 'TZDatetime', 'Interval'): 'TZDatetime',
+                    ('+', 'TZDatetime', 'Interval'): 'TZDatetime',
                     }[key]
         except KeyError:
-            if lhstype == rhstype:
+            if lhstype == rhstype and not 'Date' in lhstype:
                 return rhstype
             if sorted((lhstype, rhstype)) == ['Float', 'Int']:
                 return 'Float'
@@ -1115,5 +1124,3 @@ class Variable(Referenceable):
 
     def __repr__(self):
         return '%s' % self.name
-
-

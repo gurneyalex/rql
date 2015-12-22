@@ -1,5 +1,5 @@
 # -*- coding: iso-8859-1 -*-
-# copyright 2004-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2004-2015 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of rql.
@@ -18,11 +18,12 @@
 # with rql. If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+import itertools
 from datetime import date, datetime
 
 from logilab.common.testlib import TestCase, unittest_main
 
-from rql import nodes, stmts, parse, BadRQLQuery, RQLHelper, RQLException
+from rql import nodes, stmts, parse, BadRQLQuery, RQLHelper, RQLException, CoercionError
 
 from unittest_analyze import DummySchema
 schema = DummySchema()
@@ -628,6 +629,18 @@ class NodesTest(TestCase):
         self.assertEqual(select.selection[1].get_type(), 'Int')
         self.assertEqual(select.defined_vars['D'].get_type({'D': 'Datetime'}), 'Datetime')
         self.assertEqual(select.selection[2].get_type({'D': 'Datetime'}), 'Interval')
+
+    def test_date_arithmetic(self):
+        minus_expr = sparse("Any D1-D2;").children[0].selection[0]
+        plus_expr = sparse("Any D1+D2;").children[0].selection[0]
+        for d1t, d2t in itertools.combinations_with_replacement(['Date', 'Datetime', 'TZDatetime'], 2):
+            self.assertEqual(minus_expr.get_type({'D1': d1t, 'D2': d2t}), 'Interval')
+            with self.assertRaises(CoercionError):
+                plus_expr.get_type({'D1': d1t, 'D2': d2t})
+        for d1t in ('Date', 'Datetime', 'TZDatetime'):
+            expected_type = 'Datetime' if d1t == 'Date' else d1t
+            self.assertEqual(minus_expr.get_type({'D1': d1t, 'D2': 'Interval'}), expected_type)
+            self.assertEqual(plus_expr.get_type({'D1': d1t, 'D2': 'Interval'}), expected_type)
 
     def test_get_description_simplified(self):
         tree = sparse('Any X,R,D WHERE X eid 2, X work_for R, R creation_date D')
