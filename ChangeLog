@@ -1,6 +1,15 @@
 ChangeLog for RQL
 =================
 
+2016-01-04  --  0.34.0
+    * #1167312: python3 compatibility.
+      WARNING: the as_string() method no longer accepts an "encoding"
+      argument.
+
+    * #3248236: test and fix implementation of get_type for date arithmetic,
+      including support for TZDatetime.
+
+
 2015-09-07  --  0.33.2
     * #298337: don't crash in setup.py if we don't have g++
 
