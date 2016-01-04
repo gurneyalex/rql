@@ -8,7 +8,7 @@
 %endif
 
 Name:           %{python}-rql
-Version:        0.33.2
+Version:        0.34.0
 Release:        logilab.1%{?dist}
 Summary:        relationship query language (RQL) utilities
 
@@ -28,7 +28,7 @@ Requires:       %{python}-yapps2 >= 2.1.1
 Requires:       %{python}-logilab-constraint >= 0.5.0
 Requires:       %{python}-six >= 1.4.0
 Requires:       %{python}-setuptools
-Conflicts:      cubicweb < 3.22.0
+Conflicts:      cubicweb < 3.21.99
 
 
 %description
