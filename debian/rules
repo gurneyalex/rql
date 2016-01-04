@@ -13,6 +13,9 @@ override_dh_auto_clean:
 	dh_auto_clean
 	$(MAKE) -C doc clean
 
+override_dh_auto_test:
+	# nothing
+
 # prevent dh_python2 from generating bogus deps on python-yapps (nonexistent)
 # or python-logilab-constraint (unnecessary with gecode)
 override_dh_python2:
