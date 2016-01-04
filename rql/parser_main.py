@@ -35,7 +35,7 @@ if __name__ == '__main__':
         print('-'*80)
         print(repr(tree))
         print(e_types)
-    except SyntaxError, ex:
+    except SyntaxError as ex:
         # try to get error message from yapps
         from yapps.runtime import print_error
         print_error(ex, parser._scanner)
