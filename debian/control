@@ -11,6 +11,9 @@ Build-Depends:
  python-sphinx,
  python-setuptools,
  python3-setuptools,
+ python-six,
+ python3-six,
+ dh-python,
 X-Python-Version: >= 2.6
 X-Python3-Version: >= 3.3
 Standards-Version: 3.9.6
