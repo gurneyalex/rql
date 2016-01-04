@@ -2,8 +2,12 @@
 
 export RQL_FORCE_GECODE=1
 
+ifeq (,$(shell py3versions -r 2>/dev/null))
+    py3k = -Npython3-rql
+endif
+
 %:
-	dh $@ --with python2,python3 --buildsystem pybuild
+	dh $@ --with python2,python3 --buildsystem pybuild $(py3k)
 
 override_dh_auto_build:
 	dh_auto_build
