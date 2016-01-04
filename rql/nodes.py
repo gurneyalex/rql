@@ -636,7 +636,7 @@ class MathExpression(OperatorExpressionMixin, HSMixin, BinaryNode):
                     ('+', 'TZDatetime', 'Interval'): 'TZDatetime',
                     }[key]
         except KeyError:
-            if lhstype == rhstype and not 'Date' in lhstype:
+            if lhstype == rhstype and 'Date' not in str(lhstype):
                 return rhstype
             if sorted((lhstype, rhstype)) == ['Float', 'Int']:
                 return 'Float'
