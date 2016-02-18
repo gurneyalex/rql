@@ -6,8 +6,8 @@
 %define python python
 %define __python /usr/bin/python
 %endif
+%define libdir %{_prefix}/lib
 %define lib64dir %{_prefix}/lib64
-%define debugdir %{_libdir}/debug
 
 Name:           %{python}-rql
 Version:        0.34.0
@@ -54,7 +54,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %files 
 %defattr(-, root, root)
-%{_python_sitelib}/*
 %{_usrsrc}/*
-%{_lib64dir}/*
-%{_libdir}/*
+%{libdir}/*
+%{lib64dir}/*
