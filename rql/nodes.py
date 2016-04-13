@@ -31,8 +31,6 @@ from time import localtime
 
 from six import string_types
 
-from logilab.database import DYNAMIC_RTYPE
-
 from rql import CoercionError, RQLException
 from rql.base import BaseNode, Node, BinaryNode, LeafNode
 from rql.utils import (function_description, quote, uquote, common_parent,
