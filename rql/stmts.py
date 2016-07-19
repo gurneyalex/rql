@@ -551,7 +551,11 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         assert self.selection
         # Person P  ->  Any P where P is Person
         if etype != 'Any':
-            for var in self.get_selected_variables():
+            variables = list(self.get_selected_variables())
+            if not variables:
+                raise BadRQLQuery('Setting type in selection is only allowed '
+                                  'when some variable is selected')
+            for var in variables:
                 self.add_type_restriction(var.variable, etype)
 
     def set_distinct(self, value):

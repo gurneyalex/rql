@@ -59,6 +59,8 @@ BAD_QUERIES = (
     ' HAVING COUNT(X)>1 '
     ' WITH X,N BEING (Any X, N WHERE X name N, X is State UNION '
     '                 Any X, N WHERE X name N, X is Transition);',
+
+    'Machin 12',
     )
 
 # FIXME: this shoud be generated from the spec file
