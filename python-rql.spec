@@ -10,7 +10,7 @@
 %define lib64dir %{_prefix}/lib64
 
 Name:           %{python}-rql
-Version:        0.34.0
+Version:        0.34.1
 Release:        logilab.1%{?dist}
 Summary:        relationship query language (RQL) utilities
 

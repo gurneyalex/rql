@@ -1,3 +1,9 @@
+rql (0.34.1-1) unstable; urgency=medium
+
+  * new upstream release.
+
+ -- Denis Laxalde <denis.laxalde@logilab.fr>  Fri, 18 Nov 2016 14:13:06 +0100
+
 rql (0.34.0-1) unstable; urgency=medium
 
   * new upstream release
