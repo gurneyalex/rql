@@ -1,4 +1,4 @@
-# copyright 2004-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2004-2016 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of rql.
@@ -17,7 +17,12 @@
 # with rql. If not, see <http://www.gnu.org/licenses/>.
 from __future__ import print_function
 
-from logilab.common.testlib import TestCase, unittest_main
+import six
+
+if six.PY2:
+    import unittest2 as unittest
+else:
+    import unittest
 
 from rql import RQLHelper, BadRQLQuery, stmts, nodes
 
@@ -86,7 +91,8 @@ OK_QUERIES = (
     'SET X number CAST(Int, Y) WHERE X name Y',
     )
 
-class CheckClassTest(TestCase):
+
+class CheckClassTest(unittest.TestCase):
     """check wrong queries are correctly detected"""
 
     def setUp(self):
@@ -103,11 +109,13 @@ class CheckClassTest(TestCase):
 
     def test_raise(self):
         for rql in BAD_QUERIES:
-            yield self._test, rql
+            with self.subTest(rql=rql):
+                self._test(rql)
 
     def test_ok(self):
         for rql in OK_QUERIES:
-            yield self.parse, rql
+            with self.subTest(rql=rql):
+                self.parse(rql)
 
     def _test_rewrite(self, rql, expected):
         rqlst = self.parse(rql)
@@ -187,7 +195,8 @@ class CheckClassTest(TestCase):
             ('Any X WHERE EXISTS(X work_for Y, Y eid IN (12)) OR X eid IN (12)',
              'Any X WHERE (EXISTS(X work_for 12)) OR (X eid 12)'),
             ):
-            yield self._test_rewrite, rql, expected
+            with self.subTest(rql=rql):
+                self._test_rewrite(rql, expected)
 
     def test_subquery_graphdict(self):
         # test two things:
@@ -212,7 +221,7 @@ class CheckClassTest(TestCase):
 ##         self.annotate(rqlst)
 ##         self.assertEqual(rqlst.as_string(), 'Any X WHERE X eid 12')
 
-class CopyTest(TestCase):
+class CopyTest(unittest.TestCase):
 
     def setUp(self):
         helper = RQLHelper(DummySchema(), None, {'eid': 'uid'})
@@ -246,7 +255,7 @@ class CopyTest(TestCase):
         self.assertEqual(copy.defined_vars['U'].valuable_references(), 3)
 
 
-class AnnotateTest(TestCase):
+class AnnotateTest(unittest.TestCase):
 
     def setUp(self):
         helper = RQLHelper(DummySchema(), None, {'eid': 'uid'})
@@ -271,7 +280,6 @@ class AnnotateTest(TestCase):
         C = rqlst.defined_vars['C']
         self.assertTrue(C.scope is rqlst, C.scope)
         self.assertEqual(len(C.stinfo['relations']), 2)
-
 
     def test_not_rel_normalization_1(self):
         rqlst = self.parse('Any X WHERE C is Company, NOT X work_for C').children[0]
@@ -331,4 +339,4 @@ class AnnotateTest(TestCase):
 
 
 if __name__ == '__main__':
-    unittest_main()
+    unittest.main()

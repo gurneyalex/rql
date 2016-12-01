@@ -1,5 +1,5 @@
 # -*- coding: iso-8859-1 -*-
-# copyright 2004-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2004-2016 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of rql.
@@ -18,15 +18,19 @@
 # with rql. If not, see <http://www.gnu.org/licenses/>.
 from __future__ import print_function
 
-from six import text_type
-
-from logilab.common.testlib import TestCase, unittest_main
+from six import text_type, PY2
 
 from yapps.runtime import print_error, SyntaxError
 
 from rql.parser import Hercule, HerculeScanner
 from rql import BadRQLQuery, RQLSyntaxError, nodes, stmts, parse
 from rql import parse
+
+if PY2:
+    import unittest2 as unittest
+else:
+    import unittest
+
 
 BAD_SYNTAX_QUERIES = (
     'ANY X WHERE X name Nulll;',
@@ -170,7 +174,7 @@ SPEC_QUERIES = (
     'Any U,G WHERE U login UL, G name GL, G is CWGroup HAVING UPPER(UL)?=UPPER(GL);',
     )
 
-class ParserHercule(TestCase):
+class ParserHercule(unittest.TestCase):
     _syntaxerr = SyntaxError
 
     def parse(self, string, print_errors=False):
@@ -325,16 +329,20 @@ class ParserHercule(TestCase):
         for rql in SPEC_QUERIES:
 #            print("Orig:", rql)
 #            print("Resu:", rqltree)
-            yield self.parse, rql, True
+            with self.subTest(rql=rql):
+                self.parse(rql, True)
 
     def test_raise_badsyntax_error(self):
         for rql in BAD_SYNTAX_QUERIES:
-            yield self.assertRaises, self._syntaxerr, self.parse, rql
+            with self.subTest(rql=rql):
+                self.assertRaises(self._syntaxerr, self.parse, rql)
 
     def test_raise_badrqlquery(self):
         BAD_QUERIES = ('Person Marcou;',)
         for rql in BAD_QUERIES:
-            yield self.assertRaises, BadRQLQuery, self.parse, rql
+            with self.subTest(rql=rql):
+                self.assertRaises(BadRQLQuery, self.parse, rql)
+
 
 class ParserRQLHelper(ParserHercule):
     _syntaxerr = RQLSyntaxError
@@ -347,4 +355,4 @@ class ParserRQLHelper(ParserHercule):
 
 
 if __name__ == '__main__':
-    unittest_main()
+    unittest.main()

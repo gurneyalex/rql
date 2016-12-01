@@ -1,4 +1,4 @@
-# copyright 2004-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2004-2016 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of rql.
@@ -15,19 +15,19 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with rql. If not, see <http://www.gnu.org/licenses/>.
-"""
-Copyright (c) 2000-2008 LOGILAB S.A. (Paris, FRANCE).
-http://www.logilab.fr/ -- mailto:contact@logilab.fr
-"""
 
-from logilab.common.testlib import TestCase, DocTest, unittest_main
+import doctest
+import unittest
 
 from rql import rqlgen
 
-class RQLGenDocTest(DocTest):
-    module = rqlgen
 
-class RQLGenTC(TestCase):
+def load_tests(loader, tests, ignore):
+    tests.addTests(doctest.DocTestSuite(rqlgen))
+    return tests
+
+
+class RQLGenTC(unittest.TestCase):
     """tests the rqlgen behaviour
     """
 
@@ -130,4 +130,4 @@ class RQLGenTC(TestCase):
                           'X lastname "Kent"')
         
 if __name__ == '__main__':
-    unittest_main()
+    unittest.main()
