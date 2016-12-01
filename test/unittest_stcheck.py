@@ -31,9 +31,6 @@ from unittest_analyze import DummySchema
 BAD_QUERIES = (
     'Any X, Y GROUPBY X',
 
-    # this is now a valid query
-    #'DISTINCT Any X WHERE X work_for Y ORDERBY Y',
-
     'Any X WHERE X name Person',
 
     'Any X WHERE X name nofunction(Y)',
@@ -48,9 +45,8 @@ BAD_QUERIES = (
 
     'Any UPPER(Y) WHERE X name "toto"',
 
-    'Any C ORDERBY N where C located P, P eid %(x)s', #15066
+    'Any C ORDERBY N where C located P, P eid %(x)s',
 
-#    'Any COUNT(X),P WHERE X concerns P', #9726
     'Any X, MAX(COUNT(B)) GROUPBY X WHERE B concerns X;',
 
     '(Any X WHERE X nom "toto") UNION (Any X,F WHERE X firstname F);',
@@ -70,8 +66,7 @@ BAD_QUERIES = (
     # cant sort on XN, there may be different PF values for the same PF value
     'DISTINCT Any PF ORDERBY X WHERE P work_for X, P firstname PF',
     'DISTINCT Any PF ORDERBY XN WHERE P work_for X, P firstname PF, X name XN',
-
-    )
+)
 
 OK_QUERIES = (
     '(Any N,COUNT(X) GROUPBY N WHERE X name N)'
@@ -89,7 +84,7 @@ OK_QUERIES = (
     'Any X WHERE X eid 1, X eid < 42',
     'Any X WHERE X number CAST(Int, Y), X name Y',
     'SET X number CAST(Int, Y) WHERE X name Y',
-    )
+)
 
 
 class CheckClassTest(unittest.TestCase):
@@ -214,13 +209,6 @@ class CheckClassTest(unittest.TestCase):
         self.assertEqual(rqlst.children[0].aggregated, set(('VC',)))
 
 
-##     def test_rewriten_as_string(self):
-##         rqlst = self.parse('Any X WHERE X eid 12')
-##         self.assertEqual(rqlst.as_string(), 'Any X WHERE X eid 12')
-##         rqlst = rqlst.copy()
-##         self.annotate(rqlst)
-##         self.assertEqual(rqlst.as_string(), 'Any X WHERE X eid 12')
-
 class CopyTest(unittest.TestCase):
 
     def setUp(self):
@@ -260,11 +248,6 @@ class AnnotateTest(unittest.TestCase):
     def setUp(self):
         helper = RQLHelper(DummySchema(), None, {'eid': 'uid'})
         self.parse = helper.parse
-
-#     def test_simplified(self):
-#         rqlst = self.parse('Any L WHERE 5 name L')
-#         self.annotate(rqlst)
-#         self.assertTrue(rqlst.defined_vars['L'].stinfo['attrvar'])
 
     def test_is_rel_no_scope_1(self):
         """is relation used as type restriction should not affect variable's
