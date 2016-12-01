@@ -683,7 +683,8 @@ class RQLSTAnnotator(object):
                             relation.parent.ored()):
                         if isinstance(constnode, Constant):
                             lhsvar.stinfo['constnode'] = constnode
-                        lhsvar.stinfo['uidrel'] = relation
+                        if not isinstance(constnode, VariableRef):
+                            lhsvar.stinfo['uidrel'] = relation
                 else:
                     lhsvar.stinfo.setdefault(key, set()).add(relation)
             elif rschema.final or rschema.inlined:

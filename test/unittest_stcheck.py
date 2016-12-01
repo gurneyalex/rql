@@ -323,5 +323,12 @@ class AnnotateTest(TestCase):
             self.parse('Any X, Y WHERE X work_for Z, Y work_for Z, X eid > Y')
         self.assertEqual(str(cm.exception), 'variable Y should not be used as rhs of attribute relation X eid > Y')
 
+    def test_no_uid_rel_if_not_constant(self):
+        rqlst = self.parse('Any X,EID WHERE X eid EID').children[0]
+        self.assertEqual(rqlst.defined_vars['X'].stinfo['uidrel'], None)
+        rqlst = self.parse('Any X WHERE X eid IN (1,2,3)').children[0]
+        self.assertTrue(rqlst.defined_vars['X'].stinfo['uidrel'])
+
+
 if __name__ == '__main__':
     unittest_main()
