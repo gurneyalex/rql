@@ -228,12 +228,17 @@ class EditableMixIn(object):
                     etypes = (istarget.value,)
                 else: # Function (IN)
                     etypes = [et.value for et in istarget.children]
-                if etype not in etypes:
-                    raise RQLException('%r not in %r' % (etype, etypes))
+                if isinstance(etype, string_types):
+                    restr_etypes = {etype}
+                else:
+                    restr_etypes = set(etype)
+                if restr_etypes - set(etypes):
+                    raise RQLException('%r not a subset of %r'
+                                       % (restr_etypes, etypes))
                 if len(etypes) > 1:
                     # iterate a copy of children because it's modified inplace
                     for child in istarget.children[:]:
-                        if child.value != etype:
+                        if child.value not in restr_etypes:
                             typerel.stmt.remove_node(child)
                 return typerel
             else:

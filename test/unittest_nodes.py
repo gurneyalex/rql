@@ -95,6 +95,20 @@ class TypesRestrictionNodesTest(TestCase):
         self.assertRaises(RQLException, select.add_type_restriction, x.variable, 'Babar')
         self.assertEqual(tree.as_string(), 'Any X WHERE X is IN(Person, Company), X name ILIKE "A%"')
 
+    def test_add_is_in_type_restriction_multiple(self):
+        tree = self.parse("Any X WHERE X is IN(Person, Company, Student, Address), "
+                          " X name ILIKE 'A%'")
+        select = tree.children[0]
+        x = next(select.get_selected_variables())
+        add_restr = select.add_type_restriction
+        self.assertRaises(RQLException, add_restr, x.variable, 'Babar')
+        self.assertRaises(RQLException, add_restr, x.variable, ['Babar'])
+        self.assertRaises(RQLException, add_restr, x.variable,
+                          ['Babar', 'Person'])
+        add_restr(x.variable, ['Company', 'Student'])
+        self.assertEqual(tree.as_string(),
+                         'Any X WHERE X is IN(Company, Student), X name ILIKE "A%"')
+
     def test_add_is_type_restriction_on_is_instance_of(self):
         select = self.parse("Any X WHERE X is_instance_of Person, X name ILIKE 'A%'").children[0]
         x = next(select.get_selected_variables())
