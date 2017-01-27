@@ -28,6 +28,7 @@ Depends:
  python-logilab-common (>= 0.35.3-1),
  yapps2-runtime,
  python-logilab-database (>= 1.6.0),
+ python-logilab-constraint,
  python-six (>= 1.4.0),
 Breaks:
  cubicweb-common (<< 3.21.99),
@@ -47,6 +48,7 @@ Depends:
  python3-logilab-common,
  python3-yapps2-runtime,
  python3-logilab-database (>= 1.6.0),
+ python3-logilab-constraint,
  python3-six (>= 1.4.0),
 Suggests: python3-pygments
 Description: relationship query language (RQL) utilities - Python 3
