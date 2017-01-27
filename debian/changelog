@@ -1,3 +1,9 @@
+rql (0.34.2-1) unstable; urgency=medium
+
+  * new upstream release
+
+ -- Sylvain Thenault <sylvain.thenault@logilab.fr>  Fri, 27 Jan 2017 17:46:07 +0100
+
 rql (0.34.1-1) unstable; urgency=medium
 
   * new upstream release.
