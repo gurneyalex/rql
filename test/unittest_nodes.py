@@ -705,6 +705,21 @@ class NodesTest(TestCase):
         funcnode = sparse(u'Any X HAVING MAX(X) > 1').children[0].having[0]
         select.replace(funcnode, nodes.Constant(1.0, 'Float'))
 
+    def test_undo_node_having(self):
+        qs = u'Any X WHERE X name N'
+        tree = sparse(qs)
+        select = tree.children[0]
+        select.save_state()
+        namevar = select.where.relation().children[-1].children[-1].variable
+        comp = nodes.Comparison('>')
+        maxf = nodes.Function('MAX')
+        maxf.append(nodes.VariableRef(namevar))
+        comp.append(maxf)
+        comp.append(nodes.Constant(1, 'Int'))
+        select.set_having([comp])
+        select.recover()
+        self.assertEqual(select.as_string(), qs)
+
 
 class GetNodesFunctionTest(TestCase):
     def test_known_values_1(self):
