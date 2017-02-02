@@ -79,6 +79,10 @@ class ScopeNode(BaseNode):
         node.parent = self
 
     def set_having(self, terms):
+        if self.should_register_op:
+            from rql.undo import SetHavingOperation
+            self.undo_manager.add_operation(
+                SetHavingOperation(self, self.having))
         self.having = terms
         for node in terms:
             node.parent = self

@@ -247,6 +247,22 @@ class SetOptionalOperation(ChangeValueOperation):
         """undo the operation on the selection"""
         self.rel.optional = self.value
 
+class SetHavingOperation(object):
+    """Defines how to undo 'set_having'."""
+    def __init__(self, select, previous_value):
+        self.select = select
+        self.value = previous_value
+
+    def undo(self, selection):
+        """undo the operation on the selection"""
+        for term in self.select.having:
+            # Unregister any VariableRef in the HAVING clause which would
+            # otherwise be attempted to be undefined whereas they are not
+            # actually defined.
+            for varref in term.iget_nodes(VariableRef):
+                varref.unregister_reference()
+        self.select.having = self.value
+
 # Union operations ############################################################
 
 class AppendSelectOperation(object):
