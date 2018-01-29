@@ -369,11 +369,17 @@ public:
 	unsigned int n_p = 0;
 	unsigned int n_b = 0;
 	if (s->status() != SS_FAILED) {
-	    n_p = s->propagators();
 #if GE_VERSION<PM_VERSION(3,2,0)
+	    n_p = s->propagators();
 	    n_b = s->branchings();
 #else
+	#if GE_VERSION < PM_VERSION(5, 0, 0)
+	    n_p = s->propagators();
 	    n_b = s->branchers();
+	#else
+	    n_p = PropagatorGroup::all.size(*s);
+	    n_b = BrancherGroup::all.size(*s);
+	#endif
 #endif
 	}
 #if GE_VERSION<PM_VERSION(2,0,0)
