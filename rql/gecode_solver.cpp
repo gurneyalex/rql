@@ -169,13 +169,21 @@ class RqlSolver : public Space {
     }
 
     ~RqlSolver(){};
-
+#if GE_VERSION < PM_VERSION(6,0,0)
     RqlSolver(bool share, RqlSolver &s) : Space(share, s) {
         /* this is necessary for the solver to fork space
     while branching
     */
         variables.update(SELF, share, s.variables);
     }
+#else
+    RqlSolver(RqlSolver &s) : Space(s) {
+        /* this is necessary for the solver to fork space
+    while branching
+    */
+        variables.update(SELF, s.variables);
+    }
+#endif
 
     void set_domains(PyObject *domains) {
         PyObject *ovalues;
@@ -430,9 +438,12 @@ class RqlSolver : public Space {
         }
         PyList_Append(pb.sols, tuple);
     }
-
     /* another function need by gecode kernel */
+#if GE_VERSION < PM_VERSION(6,0,0)
     virtual Space *copy(bool share) { return new RqlSolver(share, *this); }
+#else
+    virtual Space *copy() { return new RqlSolver(*this); }
+#endif
 };
 
 class FailTimeStop : public Search::Stop {
