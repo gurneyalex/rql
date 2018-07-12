@@ -10,3 +10,13 @@ python setup.py install
 building rql binary extension in place:
 
 python setup.py build_ext --inplace
+
+BUILD
+-----
+
+To build a manylinux package for rql we use quay.io/pypa/manylinux1_x86_64
+docker image and a costum script `build_wheel.sh` so you just have to execute
+it and it will pull docker image and execute script in this image :
+
+  sh build_wheel.sh
+
