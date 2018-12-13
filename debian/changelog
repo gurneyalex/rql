@@ -1,3 +1,9 @@
+rql (0.35.0-1) unstable; urgency=medium
+
+  * new upstream release
+
+ -- Philippe Pepiot <philippe.pepiot@logilab.fr>  Thu, 13 Dec 2018 09:32:12 +0100
+
 rql (0.34.2-1) unstable; urgency=medium
 
   * new upstream release
