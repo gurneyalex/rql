@@ -41,14 +41,14 @@ CONSTANT_TYPES = frozenset((None, 'Date', 'Datetime', 'Boolean', 'Float', 'Int',
 
 
 ETYPE_PYOBJ_MAP = {bool: 'Boolean',
-                    int: 'Int',
-                    float: 'Float',
-                    Decimal: 'Decimal',
-                    str: 'String',
-                    datetime: 'Datetime',
-                    date: 'Date',
-                    time: 'Time',
-                    timedelta: 'Interval',
+                   int: 'Int',
+                   float: 'Float',
+                   Decimal: 'Decimal',
+                   str: 'String',
+                   datetime: 'Datetime',
+                   date: 'Date',
+                   time: 'Time',
+                   timedelta: 'Interval',
                    }
 if sys.version_info < (3,):
     ETYPE_PYOBJ_MAP[long] = 'Int'
