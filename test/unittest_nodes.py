@@ -46,7 +46,7 @@ class EtypeFromPyobjTC(TestCase):
     def test_int(self):
         self.assertEqual(nodes.etype_from_pyobj(0), 'Int')
         if sys.version_info < (3,):
-            l = long
+            l = long # noqa
             self.assertEqual(nodes.etype_from_pyobj(l('1L')), 'Int')
 
     def test_float(self):

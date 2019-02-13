@@ -26,10 +26,6 @@ FINAL_ETYPES = ('String', 'Boolean', 'Int', 'Float', 'Date', 'Datetime')
 
 class ERSchema(object):
 
-    def __cmp__(self, other):
-        other = getattr(other, 'type', other)
-        return cmp(self.type, other)
-
     def __hash__(self):
         return hash(self.type)
 
