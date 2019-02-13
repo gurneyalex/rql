@@ -172,7 +172,8 @@ class Hercule(runtime.Parser):
         _token = self._peek('r"\\("', 'DISTINCT', 'E_TYPE', context=_context)
         if _token != 'r"\\("':
             select = self.select(Select(), _context)
-            R.append(select); return R
+            R.append(select)
+            return R
         else: # == 'r"\\("'
             self._scan('r"\\("', context=_context)
             select = self.select(Select(), _context)
@@ -192,7 +193,8 @@ class Hercule(runtime.Parser):
         if _token == 'DISTINCT':
             DISTINCT = self._scan('DISTINCT', context=_context)
             select_ = self.select_(S, _context)
-            S.distinct = True ; return S
+            S.distinct = True
+            return S
         else: # == 'E_TYPE'
             select_ = self.select_(S, _context)
             return S
@@ -207,7 +209,8 @@ class Hercule(runtime.Parser):
         where = self.where(S, _context)
         having = self.having(S, _context)
         with_ = self.with_(S, _context)
-        S.set_statement_type(E_TYPE); return S
+        S.set_statement_type(E_TYPE)
+        return S
 
     def selection(self, S, _parent=None):
         _context = self.Context(_parent, self._scanner, 'selection', [S])
@@ -230,7 +233,8 @@ class Hercule(runtime.Parser):
                 self._scan("','", context=_context)
                 expr_add = self.expr_add(S, _context)
                 nodes.append(expr_add)
-            S.set_groupby(nodes); return True
+            S.set_groupby(nodes)
+            return True
         else:
             pass
 
@@ -256,7 +260,8 @@ class Hercule(runtime.Parser):
                 self._scan("','", context=_context)
                 sort_term = self.sort_term(S, _context)
                 nodes.append(sort_term)
-            S.set_orderby(nodes); return True
+            S.set_orderby(nodes)
+            return True
         else:
             pass
 
@@ -279,12 +284,14 @@ class Hercule(runtime.Parser):
     def subquery(self, S, _parent=None):
         _context = self.Context(_parent, self._scanner, 'subquery', [S])
         variables = self.variables(S, _context)
-        node = SubQuery() ; node.set_aliases(variables)
+        node = SubQuery()
+        node.set_aliases(variables)
         BEING = self._scan('BEING', context=_context)
         self._scan('r"\\("', context=_context)
         union = self.union(Union(), _context)
         self._scan('r"\\)"', context=_context)
-        node.set_query(union); return node
+        node.set_query(union)
+        return node
 
     def sort_term(self, S, _parent=None):
         _context = self.Context(_parent, self._scanner, 'sort_term', [S])
@@ -316,7 +323,8 @@ class Hercule(runtime.Parser):
         if _token == 'LIMIT':
             LIMIT = self._scan('LIMIT', context=_context)
             INT = self._scan('INT', context=_context)
-            R.set_limit(int(INT)); return True
+            R.set_limit(int(INT))
+            return True
         else: # in ['OFFSET', 'WHERE', 'HAVING', 'WITH', "';'", 'r"\\)"']
             pass
 
@@ -326,7 +334,8 @@ class Hercule(runtime.Parser):
         if _token == 'OFFSET':
             OFFSET = self._scan('OFFSET', context=_context)
             INT = self._scan('INT', context=_context)
-            R.set_offset(int(INT)); return True
+            R.set_offset(int(INT))
+            return True
         else: # in ['WHERE', 'HAVING', 'WITH', "';'", 'r"\\)"']
             pass
 
@@ -400,10 +409,13 @@ class Hercule(runtime.Parser):
             var = self.var(S, _context)
             opt_left = self.opt_left(S, _context)
             rtype = self.rtype(_context)
-            rtype.append(var) ; rtype.set_optional(opt_left)
+            rtype.append(var)
+            rtype.set_optional(opt_left)
             expr = self.expr(S, _context)
             opt_right = self.opt_right(S, _context)
-            rtype.append(expr) ; rtype.set_optional(opt_right) ; return rtype
+            rtype.append(expr)
+            rtype.set_optional(opt_right)
+            return rtype
         else: # == 'EXISTS'
             EXISTS = self._scan('EXISTS', context=_context)
             self._scan('r"\\("', context=_context)
@@ -488,7 +500,9 @@ class Hercule(runtime.Parser):
             opt_left = self.opt_left(S, _context)
             expr_op = self.expr_op(S, _context)
             opt_right = self.opt_right(S, _context)
-            expr_op.insert(0, expr_add); expr_op.set_optional(opt_left, opt_right); return expr_op
+            expr_op.insert(0, expr_add)
+            expr_op.set_optional(opt_left, opt_right)
+            return expr_op
         else:
             raise runtime.SyntaxError(_token[0], 'Could not match balanced_expr')
 
@@ -538,9 +552,11 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'simple_rel', [R])
         var = self.var(R, _context)
         R_TYPE = self._scan('R_TYPE', context=_context)
-        e = Relation(R_TYPE) ; e.append(var)
+        e = Relation(R_TYPE)
+        e.append(var)
         expr_add = self.expr_add(R, _context)
-        e.append(Comparison('=', expr_add)) ; return e
+        e.append(Comparison('=', expr_add))
+        return e
 
     def expr(self, S, _parent=None):
         _context = self.Context(_parent, self._scanner, 'expr', [S])
