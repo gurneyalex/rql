@@ -32,22 +32,22 @@ class Visitor(utils.RQLVisitorHandler):
 class RQLHandlerClassTest(TestCase):
     """tests that the default handler implements a method for each possible node
     """
-    
+
     def setUp(self):
         self.visitor = Visitor()
-        
+
     def test_methods_1(self):
         tree = parse('Any X where X name "turlututu", X born <= TODAY - 2 OR X born = NULL', {})
         self.visitor.visit(tree)
-        
+
     def test_methods_2(self):
         tree = parse('Insert Person X', {})
         self.visitor.visit(tree)
-        
+
     def test_methods_3(self):
         tree = parse('Set X nom "yo" WHERE X is Person', {'Person':nodes.Constant('Person', 'etype')})
         self.visitor.visit(tree)
-        
+
     def test_methods_4(self):
         tree = parse('Delete Person X', {})
         self.visitor.visit(tree)
@@ -71,6 +71,6 @@ class RQLVarMakerTC(TestCase):
         self.assertEqual(next(varlist), 'AA')
         self.assertEqual(next(varlist), 'AB')
 
-        
+
 if __name__ == '__main__':
     unittest_main()
