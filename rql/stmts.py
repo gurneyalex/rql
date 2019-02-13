@@ -920,7 +920,7 @@ class Delete(Statement, ScopeNode):
         #if etype == 'Any':
         #    raise BadRQLQuery('"Any" is not supported in DELETE statement')
         vref.parent = self
-        self.main_variables.append( (etype, vref) )
+        self.main_variables.append((etype, vref) )
 
     def add_main_relation(self, relation):
         """add a relation to the list of deleted relations"""
@@ -928,7 +928,7 @@ class Delete(Statement, ScopeNode):
         assert isinstance(relation.children[1], nodes.Comparison)
         assert isinstance(relation.children[1].children[0], nodes.VariableRef)
         relation.parent = self
-        self.main_relations.append( relation )
+        self.main_relations.append(relation )
 
     # repr / as_string / copy #################################################
 
@@ -1009,7 +1009,7 @@ class Insert(Statement, ScopeNode):
         """add a variable to the list of inserted variables"""
         if etype == 'Any':
             raise BadRQLQuery('"Any" is not supported in INSERT statement')
-        self.main_variables.append( (etype, vref) )
+        self.main_variables.append((etype, vref) )
         vref.parent = self
         self.inserted_variables[vref.variable] = 1
 
@@ -1023,7 +1023,7 @@ class Insert(Statement, ScopeNode):
 insertion variable'
                 raise BadRQLQuery(msg % (var, var))
         relation.parent = self
-        self.main_relations.append( relation )
+        self.main_relations.append(relation )
 
     # repr / as_string / copy #################################################
 
@@ -1096,7 +1096,7 @@ class Set(Statement, ScopeNode):
     def add_main_relation(self, relation):
         """add a relation to the list of modified relations"""
         relation.parent = self
-        self.main_relations.append( relation )
+        self.main_relations.append(relation )
 
     # repr / as_string / copy #################################################
 

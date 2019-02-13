@@ -31,7 +31,7 @@ schema = load_schema(SCHEMA_DIRECTORY, APP_NAME )
 
 #print(schema)
 
-def cmp_sol( sol1, sol2 ):
+def cmp_sol(sol1, sol2 ):
     ret = True
     for l in sol1:
         if l not in sol2:
@@ -43,14 +43,14 @@ def cmp_sol( sol1, sol2 ):
             print("Sol2", l)
     return ret
 
-def analyze_rq( rq ):
+def analyze_rq(rq ):
     print("RQL:", rq)
-    helper1 = RQLHelper( schema, Resolver=ETypeResolver  )
-    helper2 = RQLHelper( schema, Resolver=ETypeResolver2 )
-    node1 = helper1.parse( rq )
-    node2 = helper2.parse( rq )
-    sol1 = helper1.get_solutions( node1 )
-    sol2 = helper2.get_solutions( node2 )
+    helper1 = RQLHelper(schema, Resolver=ETypeResolver  )
+    helper2 = RQLHelper(schema, Resolver=ETypeResolver2 )
+    node1 = helper1.parse(rq )
+    node2 = helper2.parse(rq )
+    sol1 = helper1.get_solutions(node1 )
+    sol2 = helper2.get_solutions(node2 )
     return helper1, helper2, node1, node2, sol1, sol2
 
 if len(sys.argv)<2:
@@ -62,6 +62,6 @@ for l in open(sys.argv[1]):
     helper1, helper2, node1, node2, sol1, sol2 = analyze_rq(l)
     an1 = helper1._rql_analyser
     an2 = helper2._rql_analyser
-    if not cmp_sol( sol1, sol2 ):
+    if not cmp_sol(sol1, sol2 ):
         break
     

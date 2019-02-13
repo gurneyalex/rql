@@ -62,7 +62,7 @@ class RQLGenTC(unittest.TestCase):
         """tests select with e_type, attributes, sort, and group
         """
         rql = self.rql_generator.select('Person',
-                                        ( ('X','work_for','S'),
+                                        (('X','work_for','S'),
                                           ('S','name','"Logilab"'),
                                           ('X','firstname','F'),
                                           ('X','surname','S') ),
@@ -76,7 +76,7 @@ class RQLGenTC(unittest.TestCase):
     def test_where(self):
         """tests the where() method behaviour
         """
-        rql = self.rql_generator.where(( ('X','work_for','S'),
+        rql = self.rql_generator.where((('X','work_for','S'),
                                          ('S','name','"Logilab"'),
                                          ('X','firstname','F'),
                                          ('X','surname','S') ) )

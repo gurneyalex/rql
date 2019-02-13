@@ -562,16 +562,16 @@ class Hercule(runtime.Parser):
             while self._peek('ADD_OP', 'QMARK', 'r"\\)"', "','", 'SORT_DESC', 'SORT_ASC', 'CMP_OP', 'R_TYPE', "'IN'", 'GROUPBY', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', 'WITH', "';'", 'AND', 'OR', context=_context) == 'ADD_OP':
                 ADD_OP = self._scan('ADD_OP', context=_context)
                 expr_mul = self.expr_mul(S, _context)
-                node = MathExpression( ADD_OP, node, expr_mul )
+                node = MathExpression(ADD_OP, node, expr_mul )
             return node
         else: # == 'UNARY_OP'
             UNARY_OP = self._scan('UNARY_OP', context=_context)
             expr_mul = self.expr_mul(S, _context)
-            node = UnaryExpression( UNARY_OP, expr_mul )
+            node = UnaryExpression(UNARY_OP, expr_mul )
             while self._peek('ADD_OP', 'QMARK', 'r"\\)"', "','", 'SORT_DESC', 'SORT_ASC', 'CMP_OP', 'R_TYPE', "'IN'", 'GROUPBY', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', 'WITH', "';'", 'AND', 'OR', context=_context) == 'ADD_OP':
                 ADD_OP = self._scan('ADD_OP', context=_context)
                 expr_mul = self.expr_mul(S, _context)
-                node = MathExpression( ADD_OP, node, expr_mul )
+                node = MathExpression(ADD_OP, node, expr_mul )
             return node
 
     def expr_mul(self, S, _parent=None):
@@ -581,7 +581,7 @@ class Hercule(runtime.Parser):
         while self._peek('MUL_OP', 'ADD_OP', 'QMARK', 'r"\\)"', "','", 'SORT_DESC', 'SORT_ASC', 'CMP_OP', 'R_TYPE', "'IN'", 'GROUPBY', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', 'WITH', "';'", 'AND', 'OR', context=_context) == 'MUL_OP':
             MUL_OP = self._scan('MUL_OP', context=_context)
             expr_pow = self.expr_pow(S, _context)
-            node = MathExpression( MUL_OP, node, expr_pow)
+            node = MathExpression(MUL_OP, node, expr_pow)
         return node
 
     def expr_pow(self, S, _parent=None):
@@ -591,7 +591,7 @@ class Hercule(runtime.Parser):
         while self._peek('POW_OP', 'MUL_OP', 'ADD_OP', 'QMARK', 'r"\\)"', "','", 'SORT_DESC', 'SORT_ASC', 'CMP_OP', 'R_TYPE', "'IN'", 'GROUPBY', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', 'WITH', "';'", 'AND', 'OR', context=_context) == 'POW_OP':
             POW_OP = self._scan('POW_OP', context=_context)
             expr_base = self.expr_base(S, _context)
-            node = MathExpression( MUL_OP, node, expr_base)
+            node = MathExpression(MUL_OP, node, expr_base)
         return node
 
     def expr_base(self, S, _parent=None):

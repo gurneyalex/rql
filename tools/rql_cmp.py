@@ -49,8 +49,8 @@ for l in f:
     x1 = cparse(l, builder)
     x2 = parse(l)
     l = l.strip()
-    d1 = make_canon_dict( x1 )
-    d2 = make_canon_dict( x2 )
+    d1 = make_canon_dict(x1 )
+    d2 = make_canon_dict(x2 )
     t = d1==d2
     print('%s : "%s"' % (t,l))
     if not t:
