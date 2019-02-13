@@ -41,9 +41,9 @@ def make_canon_dict(rql_tree, verbose=0):
     """Return a canonical representation of the request as a dictionnary."""
     allvars = {}
     canon = {
-        'all_variables' : allvars,
-        'selected' : [],
-        'restriction' : {},
+        'all_variables': allvars,
+        'selected': [],
+        'restriction': {},
         }
 
     canon = RQLCanonizer().visit(rql_tree, canon)

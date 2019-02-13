@@ -54,7 +54,7 @@ if sys.version_info < (3,):
     ETYPE_PYOBJ_MAP[long] = 'Int'
     ETYPE_PYOBJ_MAP[unicode] = 'String'
 
-KEYWORD_MAP = {'NOW' : datetime.now,
+KEYWORD_MAP = {'NOW': datetime.now,
                'TODAY': date.today}
 
 

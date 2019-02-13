@@ -22,20 +22,20 @@ from rql.nodes import *
 from rql.stmts import *
 
 builder = {
-    "Constant" : Constant,
-    "Function" : Function,
-    "Relation" : Relation,
-    "Comparison" : Comparison,
-    "And" : AND,
-    "Or" : OR,
-    "VariableRef" : VariableRef,
-    "Insert" : Insert,
-    "Select" : Select,
-    "Delete" : Delete,
-    "Update" : Update,
-    "MathExpression" : MathExpression,
-    "Sort" : Sort,
-    "SortTerm" : SortTerm,
+    "Constant": Constant,
+    "Function": Function,
+    "Relation": Relation,
+    "Comparison": Comparison,
+    "And": AND,
+    "Or": OR,
+    "VariableRef": VariableRef,
+    "Insert": Insert,
+    "Select": Select,
+    "Delete": Delete,
+    "Update": Update,
+    "MathExpression": MathExpression,
+    "Sort": Sort,
+    "SortTerm": SortTerm,
 }
 
 

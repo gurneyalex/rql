@@ -26,20 +26,20 @@ from rql.stmts import *
 from pprint import pprint
 
 builder = {
-    "Constant" : Constant,
-    "Function" : Function,
-    "Relation" : Relation,
-    "Comparison" : Comparison,
-    "And" : AND,
-    "Or" : OR,
-    "VariableRef" : VariableRef,
-    "Insert" : Insert,
-    "Select" : Select,
-    "Delete" : Delete,
-    "Update" : Update,
-    "MathExpression" : MathExpression,
-    "Sort" : Sort,
-    "Sortterm" : SortTerm,
+    "Constant": Constant,
+    "Function": Function,
+    "Relation": Relation,
+    "Comparison": Comparison,
+    "And": AND,
+    "Or": OR,
+    "VariableRef": VariableRef,
+    "Insert": Insert,
+    "Select": Select,
+    "Delete": Delete,
+    "Update": Update,
+    "MathExpression": MathExpression,
+    "Sort": Sort,
+    "Sortterm": SortTerm,
 }
 
 
