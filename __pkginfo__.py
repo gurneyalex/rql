@@ -44,7 +44,9 @@ classifiers = [
     'Topic :: Software Development :: Libraries :: Python Modules',
 ]
 
-import os.path as osp, subprocess, sys
+import os.path as osp
+import subprocess
+import sys
 from distutils.core import Extension
 
 include_dirs = []
