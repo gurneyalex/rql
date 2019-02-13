@@ -134,10 +134,10 @@ _EQ = 2
 _EQV = 3
 
 OPSYM={
-    _AND:"and",
-    _OR:"or",
-    _EQ:"eq",
-    _EQV:"eqv"
+    _AND: "and",
+    _OR: "or",
+    _EQ: "eq",
+    _EQV: "eqv"
 }
 
 
@@ -225,7 +225,7 @@ class GecodeCSPProblem(object):
         # maps integer->value
         self.all_values = list(self.all_values)
         # maps value->integer
-        self.values = dict([(v,i) for i,v in enumerate(self.all_values)])
+        self.values = dict([(v, i) for i, v in enumerate(self.all_values)])
         #print(self.values)
         #print(self.domains)
         for var_name in self.ivariables:

@@ -81,6 +81,6 @@ setup(
     tests_require=pkginfo.get('tests_require'),
     scripts=pkginfo.get('scripts', []),
     ext_modules=pkginfo.get('ext_modules'),
-    cmdclass={'build_ext':MyBuildExt},
+    cmdclass={'build_ext': MyBuildExt},
     **kwargs
 )

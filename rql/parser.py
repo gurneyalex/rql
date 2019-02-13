@@ -103,8 +103,8 @@ class HerculeScanner(runtime.Scanner):
         ('SUBSTITUTE', re.compile('%\\([A-Za-z_0-9]+\\)s')),
     ]
 
-    def __init__(self, str,*args,**kw):
-        runtime.Scanner.__init__(self,None,{'\\s+':None,'/\\*(?:[^*]|\\*(?!/))*\\*/':None,},str,*args,**kw)
+    def __init__(self, str, *args, **kw):
+        runtime.Scanner.__init__(self, None, {'\\s+': None, '/\\*(?:[^*]|\\*(?!/))*\\*/': None, }, str, *args, **kw)
 
 
 class Hercule(runtime.Parser):

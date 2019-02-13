@@ -53,7 +53,7 @@ include_dirs = []
 
 
 def gecode_version():
-    version = [3,3,1]
+    version = [3, 3, 1]
     if osp.exists('data/gecode_version.cc'):
         try:
             subprocess.check_call(['g++', '-o', 'gecode_version', 'data/gecode_version.cc'])
@@ -65,7 +65,7 @@ def gecode_version():
     return version
 
 
-def encode_version(a,b,c):
+def encode_version(a, b, c):
     return ((a<<16)+(b<<8)+c)
 
 
@@ -74,7 +74,7 @@ GECODE_VERSION = encode_version(*gecode_version())
 if sys.platform != 'win32':
     ext_modules = [Extension('rql.rql_solve',
                              ['rql/gecode_solver.cpp'],
-                             libraries=['gecodeint', 'gecodekernel', 'gecodesearch',],
+                             libraries=['gecodeint', 'gecodekernel', 'gecodesearch', ],
                              extra_compile_args=['-DGE_VERSION=%s' % GECODE_VERSION],
                              )
                    ]
