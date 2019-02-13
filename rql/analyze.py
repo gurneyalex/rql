@@ -177,7 +177,6 @@ class GecodeCSPProblem(object):
         print("Variables:", self.variables)
         print("Values:", self.values)
 
-
     def pretty_print_ops(self, ops):
         if ops[0] in (_AND, _OR):
             res = [OPSYM[ops[0]], '(' ]

@@ -169,12 +169,10 @@ class RQLCanonizer(object):
             var = var.variable
             canon['all_variables'][var][1].append(expr_reminder)
 
-
     def visit_relation(self, relation, canon):
         key = '%s%s' % (relation.r_type, relation._not)
         r_list = canon['restriction'].setdefault(key, [])
         self.manage_relation(relation, canon, r_list)
-
 
     def visit_comparison(self, comparison, canon):
         """do nothing for this node type"""

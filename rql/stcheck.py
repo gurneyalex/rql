@@ -204,7 +204,6 @@ class RQLSTChecker(object):
             fromvar = var
         return True
 
-
     def visit_insert(self, insert, state):
         self._visit_selectedterm(insert, state)
     def leave_insert(self, node, state):

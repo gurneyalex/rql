@@ -72,7 +72,6 @@ class RQLGenerator(object):
             result.append(self.sortby(sorts))
         return '\n'.join(result)
 
-
     def where(self, nupplets):
         """Return a WHERE statement.
 
@@ -108,7 +107,6 @@ class RQLGenerator(object):
                 result.append(',')
         return ' '.join(result)
 
-
     def groupby(self, groups):
         """Return a GROUPBY statement.
 
@@ -121,7 +119,6 @@ class RQLGenerator(object):
         'GROUPBY F, S'
         """
         return 'GROUPBY %s' % ', '.join(groups)
-
 
     def sortby(self, sorts):
         """Return a SORTBY statement.
@@ -138,7 +135,6 @@ class RQLGenerator(object):
         'SORTBY F ASC, S DESC'
         """
         return 'SORTBY %s' % ', '.join(sorts)
-
 
     def insert(self, etype, attributes):
         """Return an INSERT statement.
@@ -157,7 +153,6 @@ class RQLGenerator(object):
                         for attr_name, attr_value in attributes] # .items()]
         return 'INSERT %s X: %s' % (etype, ', '.join(restrictions))
 
-
     def delete(self, etype, attributes):
         """Return a DELETE statement.
 
@@ -174,7 +169,6 @@ class RQLGenerator(object):
         restrictions = ['X %s "%s"' % (attr_name, attr_value)
                         for attr_name, attr_value in attributes] # .items()]
         return 'DELETE %s X where %s' % (etype, ', '.join(restrictions))
-
 
     def update(self, etype, old_descr, new_descr):
         """Return a SET statement.

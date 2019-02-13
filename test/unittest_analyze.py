@@ -58,7 +58,6 @@ class RelationSchema(ERSchema):
             for objtype in dest_types:
                 self.rdefs[(subjtype, objtype)] = mock(subject=subjtype, object=objtype, cardinality=self.card)
 
-
     def associations(self):
         return self.assoc_types
 
@@ -303,7 +302,6 @@ class AnalyzerClassTest(TestCase):
                                      {'X': 'Person', 'T': 'Eetype'},
                                      {'X': 'Student', 'T': 'Eetype'}])
 
-
     def test_not(self):
         node = self.helper.parse('Any X WHERE NOT X is Person')
         self.helper.compute_solutions(node, debug=DEBUG)
@@ -405,7 +403,6 @@ class AnalyzerClassTest(TestCase):
                             debug=DEBUG)
         sols = node.children[0].solutions
         self.assertCountEqual(sols, ALL_SOLS)
-
 
     def test_base_guess_3(self):
         node = self.helper.parse('Any Z GROUPBY Z WHERE X name Z')
@@ -542,13 +539,11 @@ class AnalyzerClassTest(TestCase):
         self.assertCountEqual(sols, [{'P': 'Person', 'S': 'Company', 'N': 'Int'},
                                      {'P': 'Student', 'S': 'Company', 'N': 'Int'}])
 
-
     def test_nonregr_not_u_ownedby_u(self):
         node = self.helper.parse('Any U WHERE NOT U owned_by U')
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = node.children[0].solutions
         self.assertCountEqual(sols, [{'U': 'Person'}])
-
 
     def test_selection_with_cast(self):
         node = self.helper.parse('Any X WHERE X name CAST(String, E), Y eid E, X owned_by Y')
@@ -564,7 +559,6 @@ class AnalyzerClassTest(TestCase):
         sols = node.solutions
         self.assertCountEqual(sols, [{'X': 'Person', 'Y': 'Company', 'E': 'Int'},
                                      {'X': 'Student', 'Y': 'Company', 'E': 'Int'}])
-
 
 
 if __name__ == '__main__':

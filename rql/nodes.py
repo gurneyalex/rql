@@ -894,7 +894,6 @@ class SortTerm(Node):
         return self.children[0]
 
 
-
 ###############################################################################
 
 class Referenceable(VisitableMixIn):
