@@ -288,7 +288,7 @@ class RQLSTChecker(object):
         pass
 
     def visit_and(self, et, state):
-        pass #assert len(et.children) == 2, len(et.children)
+        pass  # assert len(et.children) == 2, len(et.children)
 
     def leave_and(self, node, state):
         pass
@@ -411,19 +411,19 @@ class RQLSTChecker(object):
         #                                                       relation)
 
     def visit_comparison(self, comparison, state):
-        pass #assert len(comparison.children) in (1,2), len(comparison.children)
+        pass  # assert len(comparison.children) in (1,2), len(comparison.children)
 
     def leave_comparison(self, node, state):
         pass
 
     def visit_mathexpression(self, mathexpr, state):
-        pass #assert len(mathexpr.children) == 2, len(mathexpr.children)
+        pass  # assert len(mathexpr.children) == 2, len(mathexpr.children)
 
     def leave_mathexpression(self, node, state):
         pass
 
     def visit_unaryexpression(self, unaryexpr, state):
-        pass #assert len(unaryexpr.children) == 2, len(unaryexpr.children)
+        pass  # assert len(unaryexpr.children) == 2, len(unaryexpr.children)
 
     def leave_unaryexpression(self, node, state):
         pass

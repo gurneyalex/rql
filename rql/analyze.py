@@ -527,7 +527,7 @@ class ETypeResolver(object):
                     ptypes = totypes & rhsdomain
                     res.append([([lhsvar], [str(fromtype)]),
                                   ([rhsvar], list(ptypes))])
-                    if same_var and (fromtype in totypes): #ptypes ?
+                    if same_var and (fromtype in totypes):  # ptypes ?
                         var_types.append(fromtype)
             constraints.or_and(res)
             if same_var:
