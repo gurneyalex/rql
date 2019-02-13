@@ -307,7 +307,7 @@ class RQLSTChecker(object):
             lhs2, rhs2 = r2.get_variable_parts()
             try:
                 if (lhs1.variable is rhs2.variable and
-                    rhs1.variable is lhs2.variable):
+                        rhs1.variable is lhs2.variable):
                     ou.parent.replace(ou, r1)
                     for vref in r2.get_nodes(VariableRef):
                         vref.unregister_reference()
@@ -472,7 +472,7 @@ class RQLSTChecker(object):
         if constant.value not in self.schema:
             state.error('unknown entity type %s' % constant.value)
         if (isinstance(constant.parent, Function) and
-            constant.parent.name == 'CAST'):
+                constant.parent.name == 'CAST'):
             return
         rel = constant.relation()
         if rel is not None and rel.r_type in ('is', 'is_instance_of'):
