@@ -72,7 +72,7 @@ if sys.platform != 'win32':
                              ['rql/gecode_solver.cpp'],
                              libraries=['gecodeint', 'gecodekernel', 'gecodesearch',],
                              extra_compile_args=['-DGE_VERSION=%s' % GECODE_VERSION],
-                         )
+                             )
                    ]
 else:
     ext_modules = [Extension('rql.rql_solve',
@@ -84,8 +84,8 @@ else:
                                          ],
                               extra_compile_args=['/DGE_VERSION=%s' % GECODE_VERSION, '/EHsc'],
                               #extra_link_args=['-static-libgcc'],
-                              )
-                    ]
+                             )
+                   ]
 
 install_requires = [
     'logilab-common >= 0.47.0',
