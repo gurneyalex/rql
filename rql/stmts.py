@@ -149,7 +149,7 @@ class ScopeNode(BaseNode):
             for solution in solutions:
                 var.stinfo[key].add(solution[var.name])
         # for debugging
-        #for sol in solutions:
+        # for sol in solutions:
         #    for vname in sol:
         #        assert vname in self.defined_vars or vname in self.aliases
 
@@ -789,7 +789,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
 
     def remove_selected(self, var):
         """deletes var from selection variable"""
-        #assert isinstance(var, VariableRef)
+        # assert isinstance(var, VariableRef)
         index = self._var_index(var)
         if self.should_register_op:
             from rql.undo import UnselectVarOperation
@@ -924,7 +924,7 @@ class Delete(Statement, ScopeNode):
 
     def add_main_variable(self, etype, vref):
         """add a variable to the list of deleted variables"""
-        #if etype == 'Any':
+        # if etype == 'Any':
         #    raise BadRQLQuery('"Any" is not supported in DELETE statement')
         vref.parent = self
         self.main_variables.append((etype, vref))

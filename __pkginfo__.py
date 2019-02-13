@@ -87,7 +87,7 @@ else:
                                         'GecodeSupport-3-3-1-r-x86',
                                         ],
                              extra_compile_args=['/DGE_VERSION=%s' % GECODE_VERSION, '/EHsc'],
-                             #extra_link_args=['-static-libgcc'],
+                             # extra_link_args=['-static-libgcc'],
                              )
                    ]
 

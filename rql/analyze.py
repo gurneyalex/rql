@@ -42,7 +42,7 @@ except ImportError:
     from logilab.constraint import Repository, Solver, fd
 
     # Gecode solver not available
-#rql_solve = None # uncomment to force using logilab-constraint
+# rql_solve = None # uncomment to force using logilab-constraint
 
 
 class ConstraintCSPProblem(object):
@@ -68,10 +68,10 @@ class ConstraintCSPProblem(object):
         repo = Repository(self.domains.keys(), self.domains, self.get_constraints())
         solver = Solver(printer=self.printer)
         # used for timing
-        #import time
-        #t0=time.time()
+        # import time
+        # t0=time.time()
         sols = solver.solve(repo, verbose=(True or self.debug))
-        #print("RUNTIME:", time.time()-t0)
+        # print("RUNTIME:", time.time()-t0)
         return sols
 
     def add_var(self, name, values):
@@ -201,8 +201,8 @@ class GecodeCSPProblem(object):
         constraints = self.op
 
         # used for timing
-        #import time
-        #t0=time.time()
+        # import time
+        # t0=time.time()
 
         sols = rql_solve.solve(self.idx_domains, len(self.all_values), constraints)
         rql_sols = []
@@ -211,7 +211,7 @@ class GecodeCSPProblem(object):
             for var, val in zip(self.ivariables, s):
                 r[var] = self.all_values[val]
             rql_sols.append(r)
-        #print("RUNTIME:", time.time()-t0)
+        # print("RUNTIME:", time.time()-t0)
         return rql_sols
 
     def add_var(self, name, values):
@@ -226,8 +226,8 @@ class GecodeCSPProblem(object):
         self.all_values = list(self.all_values)
         # maps value->integer
         self.values = dict([(v, i) for i, v in enumerate(self.all_values)])
-        #print(self.values)
-        #print(self.domains)
+        # print(self.values)
+        # print(self.domains)
         for var_name in self.ivariables:
             val_domain = self.domains[var_name]
             idx_domain = [self.values[val] for val in val_domain]
@@ -289,7 +289,7 @@ if rql_solve is None:
 else:
     CSPProblem = GecodeCSPProblem
 
-#CSPProblem = ConstraintCSPProblem
+# CSPProblem = ConstraintCSPProblem
 
 
 class ETypeResolver(object):

@@ -30,7 +30,7 @@ from rql._exceptions import *
 
 
 __version__ = pkg_resources.get_distribution('rql').version
-#REQUIRED_TYPES = ['String', 'Float', 'Int', 'Boolean', 'Date']
+# REQUIRED_TYPES = ['String', 'Float', 'Int', 'Boolean', 'Date']
 
 
 class RQLHelper(object):
@@ -45,7 +45,7 @@ class RQLHelper(object):
     def __init__(self, schema, uid_func_mapping=None, special_relations=None,
                  resolver_class=None, backend=None):
         # chech schema
-        #for e_type in REQUIRED_TYPES:
+        # for e_type in REQUIRED_TYPES:
         #    if not schema.has_entity(e_type):
         #        raise MissingType(e_type)
         # create helpers
@@ -126,7 +126,7 @@ class RQLHelper(object):
 
         The tree is modified in-place.
         """
-        #print('simplify', rqlst.as_string())
+        # print('simplify', rqlst.as_string())
         if rqlst.TYPE == 'select':
             from rql import nodes
             for select in rqlst.children:

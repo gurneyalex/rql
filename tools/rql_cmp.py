@@ -45,7 +45,7 @@ builder = {
 
 f = file(sys.argv[1])
 for l in f:
-    #print(l, end="")
+    # print(l, end="")
     x1 = cparse(l, builder)
     x2 = parse(l)
     l = l.strip()
