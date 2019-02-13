@@ -240,7 +240,7 @@ def parse(rqlstring, print_errors=True):
             exc = RQLSyntaxError(stream.getvalue())
             exc.__traceback__ = sys.exc_info()[-1]
             raise exc
-        except ImportError: # duh?
+        except ImportError:  # duh?
             sys.stderr = out
             exc = RQLSyntaxError('Syntax Error', ex.msg, 'on line',
                                  1 + pinput.count('\n', 0, ex.pos))

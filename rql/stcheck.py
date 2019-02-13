@@ -141,7 +141,7 @@ class RQLSTChecker(object):
         pass
 
     def visit_select(self, node, state):
-        node.vargraph = {} # graph representing links between variable
+        node.vargraph = {}  # graph representing links between variable
         node.aggregated = set()
         self._visit_selectedterm(node, state)
 
@@ -180,7 +180,7 @@ class RQLSTChecker(object):
                             if self.has_unique_value_path(node, vname, vref.name):
                                 break
                         except KeyError:
-                            continue # unlinked variable (usually from a subquery)
+                            continue  # unlinked variable (usually from a subquery)
                     else:
                         msg = ('can\'t sort on variable %s which is linked to a'
                                ' variable in the selection but may have different'
@@ -301,7 +301,7 @@ class RQLSTChecker(object):
             r1type = r1.r_type
             r2type = r2.r_type
         except AttributeError:
-            return # can't be
+            return  # can't be
         if r1type == r2type and self.schema.rschema(r1type).symmetric:
             lhs1, rhs1 = r1.get_variable_parts()
             lhs2, rhs2 = r2.get_variable_parts()
@@ -618,7 +618,7 @@ class RQLSTAnnotator(object):
                     stinfo['typerel'] = None
         # shared references
         newvar.stinfo['constnode'] = var.stinfo['constnode']
-        if newvar.stmt.solutions: # solutions already computed
+        if newvar.stmt.solutions:  # solutions already computed
             newvar.stinfo['possibletypes'] = var.stinfo['possibletypes']
             for sol in newvar.stmt.solutions:
                 sol[newvar.name] = sol[var.name]

@@ -128,7 +128,7 @@ class ConstraintCSPProblem(object):
 
 
 # GECODE based constraint solver
-_AND = 0 # symbolic values
+_AND = 0  # symbolic values
 _OR = 1
 _EQ = 2
 _EQV = 3
@@ -167,7 +167,7 @@ class GecodeCSPProblem(object):
         self.variables = {}     # maps var name -> var index
         self.ivariables = []    # maps var index-> var name
         self.values = {}        # maps val name -> val index
-        self.all_values = set() # this gets turned into a list later
+        self.all_values = set()  # this gets turned into a list later
         self.idx_domains = []   # maps var index -> list of val index
         self.ivalues = {}       # only used for debugging
 
@@ -449,7 +449,7 @@ class ETypeResolver(object):
         if not (node.defined_vars or node.aliases):
             node.set_possible_types([{}])
             return
-        for subquery in node.with_: # resolve subqueries first
+        for subquery in node.with_:  # resolve subqueries first
             self.visit_union(subquery.query)
         constraints = self._init_stmt(node)
         for ca in node.aliases.values():
@@ -498,7 +498,7 @@ class ETypeResolver(object):
         if isinstance(rhs, nodes.Comparison):
             rhs = rhs.children[0]
         rschema = self.schema.rschema(rtype)
-        if isinstance(lhs, nodes.Constant): # lhs is a constant node (simplified tree)
+        if isinstance(lhs, nodes.Constant):  # lhs is a constant node (simplified tree)
             if not isinstance(rhs, nodes.VariableRef):
                 return None
             self._extract_constraint(constraints, rhs.name, lhs, rschema.objects)
