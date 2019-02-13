@@ -186,7 +186,7 @@ class CheckClassTest(unittest.TestCase):
 
             ('Any X WHERE EXISTS(X work_for Y, Y eid IN (12)) OR X eid IN (12)',
              'Any X WHERE (EXISTS(X work_for 12)) OR (X eid 12)'),
-            ):
+        ):
             with self.subTest(rql=rql):
                 self._test_rewrite(rql, expected)
 
