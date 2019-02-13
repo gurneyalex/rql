@@ -117,17 +117,17 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'goal', [])
         _token = self._peek('DELETE', 'INSERT', 'SET', 'r"\\("', 'DISTINCT', 'E_TYPE', context=_context)
         if _token == 'DELETE':
-            DELETE = self._scan('DELETE', context=_context)
+            self._scan('DELETE', context=_context)
             _delete = self._delete(Delete(), _context)
             self._scan("';'", context=_context)
             return _delete
         elif _token == 'INSERT':
-            INSERT = self._scan('INSERT', context=_context)
+            self._scan('INSERT', context=_context)
             _insert = self._insert(Insert(), _context)
             self._scan("';'", context=_context)
             return _insert
         elif _token == 'SET':
-            SET = self._scan('SET', context=_context)
+            self._scan('SET', context=_context)
             update = self.update(Set(), _context)
             self._scan("';'", context=_context)
             return update
@@ -140,20 +140,20 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, '_delete', [R])
         _token = self._peek('E_TYPE', 'VARIABLE', context=_context)
         if _token == 'VARIABLE':
-            decl_rels = self.decl_rels(R, _context)
-            where = self.where(R, _context)
-            having = self.having(R, _context)
+            self.decl_rels(R, _context)
+            self.where(R, _context)
+            self.having(R, _context)
             return R
         else:  # == 'E_TYPE'
-            decl_vars = self.decl_vars(R, _context)
-            where = self.where(R, _context)
-            having = self.having(R, _context)
+            self.decl_vars(R, _context)
+            self.where(R, _context)
+            self.having(R, _context)
             return R
 
     def _insert(self, R, _parent=None):
         _context = self.Context(_parent, self._scanner, '_insert', [R])
-        decl_vars = self.decl_vars(R, _context)
-        insert_rels = self.insert_rels(R, _context)
+        self.decl_vars(R, _context)
+        self.insert_rels(R, _context)
         return R
 
     def insert_rels(self, R, _parent=None):
@@ -161,18 +161,18 @@ class Hercule(runtime.Parser):
         _token = self._peek('":"', "';'", context=_context)
         if _token == '":"':
             self._scan('":"', context=_context)
-            decl_rels = self.decl_rels(R, _context)
-            where = self.where(R, _context)
-            having = self.having(R, _context)
+            self.decl_rels(R, _context)
+            self.where(R, _context)
+            self.having(R, _context)
             return R
         else:  # == "';'"
             pass
 
     def update(self, R, _parent=None):
         _context = self.Context(_parent, self._scanner, 'update', [R])
-        decl_rels = self.decl_rels(R, _context)
-        where = self.where(R, _context)
-        having = self.having(R, _context)
+        self.decl_rels(R, _context)
+        self.where(R, _context)
+        self.having(R, _context)
         return R
 
     def union(self, R, _parent=None):
@@ -188,7 +188,7 @@ class Hercule(runtime.Parser):
             self._scan('r"\\)"', context=_context)
             R.append(select)
             while self._peek('UNION', "';'", 'r"\\)"', context=_context) == 'UNION':
-                UNION = self._scan('UNION', context=_context)
+                self._scan('UNION', context=_context)
                 self._scan('r"\\("', context=_context)
                 select = self.select(Select(), _context)
                 self._scan('r"\\)"', context=_context)
@@ -199,24 +199,24 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'select', [S])
         _token = self._peek('DISTINCT', 'E_TYPE', context=_context)
         if _token == 'DISTINCT':
-            DISTINCT = self._scan('DISTINCT', context=_context)
-            select_ = self.select_(S, _context)
+            self._scan('DISTINCT', context=_context)
+            self.select_(S, _context)
             S.distinct = True
             return S
         else:  # == 'E_TYPE'
-            select_ = self.select_(S, _context)
+            self.select_(S, _context)
             return S
 
     def select_(self, S, _parent=None):
         _context = self.Context(_parent, self._scanner, 'select_', [S])
         E_TYPE = self._scan('E_TYPE', context=_context)
-        selection = self.selection(S, _context)
-        groupby = self.groupby(S, _context)
-        orderby = self.orderby(S, _context)
-        limit_offset = self.limit_offset(S, _context)
-        where = self.where(S, _context)
-        having = self.having(S, _context)
-        with_ = self.with_(S, _context)
+        self.selection(S, _context)
+        self.groupby(S, _context)
+        self.orderby(S, _context)
+        self.limit_offset(S, _context)
+        self.where(S, _context)
+        self.having(S, _context)
+        self.with_(S, _context)
         S.set_statement_type(E_TYPE)
         return S
 
@@ -233,7 +233,7 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'groupby', [S])
         _token = self._peek('GROUPBY', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', 'WITH', "';'", 'r"\\)"', context=_context)
         if _token == 'GROUPBY':
-            GROUPBY = self._scan('GROUPBY', context=_context)
+            self._scan('GROUPBY', context=_context)
             nodes = []
             expr_add = self.expr_add(S, _context)
             nodes.append(expr_add)
@@ -250,7 +250,7 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'having', [S])
         _token = self._peek('HAVING', 'WITH', "';'", 'r"\\)"', context=_context)
         if _token == 'HAVING':
-            HAVING = self._scan('HAVING', context=_context)
+            self._scan('HAVING', context=_context)
             logical_expr = self.logical_expr(S, _context)
             S.set_having([logical_expr])
         else:  # in ['WITH', "';'", 'r"\\)"']
@@ -260,7 +260,7 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'orderby', [S])
         _token = self._peek('ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', 'WITH', "';'", 'r"\\)"', context=_context)
         if _token == 'ORDERBY':
-            ORDERBY = self._scan('ORDERBY', context=_context)
+            self._scan('ORDERBY', context=_context)
             nodes = []
             sort_term = self.sort_term(S, _context)
             nodes.append(sort_term)
@@ -277,7 +277,7 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'with_', [S])
         _token = self._peek('WITH', 'r"\\)"', "';'", context=_context)
         if _token == 'WITH':
-            WITH = self._scan('WITH', context=_context)
+            self._scan('WITH', context=_context)
             nodes = []
             subquery = self.subquery(S, _context)
             nodes.append(subquery)
@@ -294,7 +294,7 @@ class Hercule(runtime.Parser):
         variables = self.variables(S, _context)
         node = SubQuery()
         node.set_aliases(variables)
-        BEING = self._scan('BEING', context=_context)
+        self._scan('BEING', context=_context)
         self._scan('r"\\("', context=_context)
         union = self.union(Union(), _context)
         self._scan('r"\\)"', context=_context)
@@ -311,10 +311,10 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'sort_meth', [])
         _token = self._peek('SORT_DESC', 'SORT_ASC', "','", 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', 'WITH', "';'", 'r"\\)"', context=_context)
         if _token == 'SORT_DESC':
-            SORT_DESC = self._scan('SORT_DESC', context=_context)
+            self._scan('SORT_DESC', context=_context)
             return 0
         elif _token == 'SORT_ASC':
-            SORT_ASC = self._scan('SORT_ASC', context=_context)
+            self._scan('SORT_ASC', context=_context)
             return 1
         else:
             return 1  # default to SORT_ASC
@@ -329,7 +329,7 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'limit', [R])
         _token = self._peek('LIMIT', 'OFFSET', 'WHERE', 'HAVING', 'WITH', "';'", 'r"\\)"', context=_context)
         if _token == 'LIMIT':
-            LIMIT = self._scan('LIMIT', context=_context)
+            self._scan('LIMIT', context=_context)
             INT = self._scan('INT', context=_context)
             R.set_limit(int(INT))
             return True
@@ -340,7 +340,7 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'offset', [R])
         _token = self._peek('OFFSET', 'WHERE', 'HAVING', 'WITH', "';'", 'r"\\)"', context=_context)
         if _token == 'OFFSET':
-            OFFSET = self._scan('OFFSET', context=_context)
+            self._scan('OFFSET', context=_context)
             INT = self._scan('INT', context=_context)
             R.set_offset(int(INT))
             return True
@@ -351,7 +351,7 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'where', [S])
         _token = self._peek('WHERE', 'HAVING', 'WITH', "';'", 'r"\\)"', context=_context)
         if _token == 'WHERE':
-            WHERE = self._scan('WHERE', context=_context)
+            self._scan('WHERE', context=_context)
             restriction = self.restriction(S, _context)
             S.set_where(restriction)
         else:  # in ['HAVING', 'WITH', "';'", 'r"\\)"']
@@ -372,7 +372,7 @@ class Hercule(runtime.Parser):
         rels_and = self.rels_and(S, _context)
         node = rels_and
         while self._peek('OR', "','", 'r"\\)"', 'HAVING', 'WITH', "';'", context=_context) == 'OR':
-            OR = self._scan('OR', context=_context)
+            self._scan('OR', context=_context)
             rels_and = self.rels_and(S, _context)
             node = Or(node, rels_and)
         return node
@@ -382,7 +382,7 @@ class Hercule(runtime.Parser):
         rels_not = self.rels_not(S, _context)
         node = rels_not
         while self._peek('AND', 'OR', "','", 'r"\\)"', 'HAVING', 'WITH', "';'", context=_context) == 'AND':
-            AND = self._scan('AND', context=_context)
+            self._scan('AND', context=_context)
             rels_not = self.rels_not(S, _context)
             node = And(node, rels_not)
         return node
@@ -391,7 +391,7 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'rels_not', [S])
         _token = self._peek('NOT', 'r"\\("', 'EXISTS', 'VARIABLE', context=_context)
         if _token == 'NOT':
-            NOT = self._scan('NOT', context=_context)
+            self._scan('NOT', context=_context)
             rel = self.rel(S, _context)
             return Not(rel)
         else:  # in ['r"\\("', 'EXISTS', 'VARIABLE']
@@ -425,7 +425,7 @@ class Hercule(runtime.Parser):
             rtype.set_optional(opt_right)
             return rtype
         else:  # == 'EXISTS'
-            EXISTS = self._scan('EXISTS', context=_context)
+            self._scan('EXISTS', context=_context)
             self._scan('r"\\("', context=_context)
             restriction = self.restriction(S, _context)
             self._scan('r"\\)"', context=_context)
@@ -440,7 +440,7 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'opt_left', [S])
         _token = self._peek('QMARK', 'R_TYPE', 'CMP_OP', "'IN'", context=_context)
         if _token == 'QMARK':
-            QMARK = self._scan('QMARK', context=_context)
+            self._scan('QMARK', context=_context)
             return 'left'
         else:  # in ['R_TYPE', 'CMP_OP', "'IN'"]
             pass
@@ -449,7 +449,7 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'opt_right', [S])
         _token = self._peek('QMARK', 'AND', 'OR', "','", 'r"\\)"', 'WITH', "';'", 'HAVING', context=_context)
         if _token == 'QMARK':
-            QMARK = self._scan('QMARK', context=_context)
+            self._scan('QMARK', context=_context)
             return 'right'
         else:  # in ['AND', 'OR', "','", 'r"\\)"', 'WITH', "';'", 'HAVING']
             pass
@@ -469,7 +469,7 @@ class Hercule(runtime.Parser):
         exprs_and = self.exprs_and(S, _context)
         node = exprs_and
         while self._peek('OR', "','", 'r"\\)"', 'WITH', "';'", context=_context) == 'OR':
-            OR = self._scan('OR', context=_context)
+            self._scan('OR', context=_context)
             exprs_and = self.exprs_and(S, _context)
             node = Or(node, exprs_and)
         return node
@@ -479,7 +479,7 @@ class Hercule(runtime.Parser):
         exprs_not = self.exprs_not(S, _context)
         node = exprs_not
         while self._peek('AND', 'OR', "','", 'r"\\)"', 'WITH', "';'", context=_context) == 'AND':
-            AND = self._scan('AND', context=_context)
+            self._scan('AND', context=_context)
             exprs_not = self.exprs_not(S, _context)
             node = And(node, exprs_not)
         return node
@@ -488,7 +488,7 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'exprs_not', [S])
         _token = self._peek('NOT', 'r"\\("', 'UNARY_OP', 'NULL', 'DATE', 'DATETIME', 'TRUE', 'FALSE', 'FLOAT', 'INT', 'STRING', 'SUBSTITUTE', 'VARIABLE', 'E_TYPE', 'FUNCTION', context=_context)
         if _token == 'NOT':
-            NOT = self._scan('NOT', context=_context)
+            self._scan('NOT', context=_context)
             balanced_expr = self.balanced_expr(S, _context)
             return Not(balanced_expr)
         else:
@@ -613,7 +613,7 @@ class Hercule(runtime.Parser):
         expr_base = self.expr_base(S, _context)
         node = expr_base
         while self._peek('POW_OP', 'MUL_OP', 'ADD_OP', 'QMARK', 'r"\\)"', "','", 'SORT_DESC', 'SORT_ASC', 'CMP_OP', 'R_TYPE', "'IN'", 'GROUPBY', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', 'WITH', "';'", 'AND', 'OR', context=_context) == 'POW_OP':
-            POW_OP = self._scan('POW_OP', context=_context)
+            self._scan('POW_OP', context=_context)
             expr_base = self.expr_base(S, _context)
             node = MathExpression(MUL_OP, node, expr_base)
         return node
@@ -683,7 +683,7 @@ class Hercule(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'const', [])
         _token = self._peek('NULL', 'DATE', 'DATETIME', 'TRUE', 'FALSE', 'FLOAT', 'INT', 'STRING', 'SUBSTITUTE', context=_context)
         if _token == 'NULL':
-            NULL = self._scan('NULL', context=_context)
+            self._scan('NULL', context=_context)
             return Constant(None, None)
         elif _token == 'DATE':
             DATE = self._scan('DATE', context=_context)
@@ -692,10 +692,10 @@ class Hercule(runtime.Parser):
             DATETIME = self._scan('DATETIME', context=_context)
             return Constant(DATETIME.upper(), 'Datetime')
         elif _token == 'TRUE':
-            TRUE = self._scan('TRUE', context=_context)
+            self._scan('TRUE', context=_context)
             return Constant(True, 'Boolean')
         elif _token == 'FALSE':
-            FALSE = self._scan('FALSE', context=_context)
+            self._scan('FALSE', context=_context)
             return Constant(False, 'Boolean')
         elif _token == 'FLOAT':
             FLOAT = self._scan('FLOAT', context=_context)

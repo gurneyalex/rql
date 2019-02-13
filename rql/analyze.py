@@ -365,10 +365,7 @@ class ETypeResolver(object):
         for cst in valnode.iget_nodes(nodes.Constant):
             assert cst.type
             if cst.type == 'Substitute':
-                eid = self.kwargs[cst.value]
                 self.deambiguifiers.add(cst.value)
-            else:
-                eid = cst.value
             cst.uidtype = self.uid_func(cst.eval(self.kwargs))
             types.add(cst.uidtype)
         return types
