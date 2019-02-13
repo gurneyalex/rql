@@ -321,6 +321,7 @@ class AnalyzerClassTest(TestCase):
 
     def test_uid_func_mapping(self):
         h = self.helper
+
         def type_from_uid(name):
             self.assertEqual(name, "Logilab")
             return 'Company'
@@ -346,6 +347,7 @@ class AnalyzerClassTest(TestCase):
 
     def test_non_regr_subjobj1(self):
         h = self.helper
+
         def type_from_uid(name):
             self.assertEqual(name, "Societe")
             return 'Eetype'
@@ -362,6 +364,7 @@ class AnalyzerClassTest(TestCase):
 
     def test_non_regr_subjobj2(self):
         h = self.helper
+
         def type_from_uid(name):
             self.assertEqual(name, "Societe")
             return 'Eetype'
@@ -371,6 +374,7 @@ class AnalyzerClassTest(TestCase):
         select = node.children[0]
         sols = select.solutions
         self.assertEqual(len(sols), 25)
+
         def var_sols(var):
             s = set()
             for sol in sols:
@@ -389,6 +393,7 @@ class AnalyzerClassTest(TestCase):
 
     def test_unusableuid_func_mapping(self):
         h = self.helper
+
         def type_from_uid(name):
             self.assertEqual(name, "Logilab")
             return 'Company'
