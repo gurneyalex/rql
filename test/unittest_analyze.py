@@ -95,71 +95,71 @@ class DummySchema(object):
                                       ('Company', ('Int',)),
                                       ('Address', ('Int',)),
                                       ('Eetype', ('Int',)),
-                                      )
-                                    ),
+                                    )
+                                   ),
             'creation_date' : RelationSchema((('Person', ('Datetime',)),
                                                 ('Student', ('Datetime',)),
                                                 ('Company', ('Datetime',)),
                                                 ('Address', ('Datetime',)),
                                                 ('Eetype', ('Datetime',)),
-                                                )
-                                    ),
+                                              )
+                                             ),
             'name' : RelationSchema((('Person', ('String',)),
                                        ('Student', ('String',)),
                                        ('Company', ('String',)),
-                                      )
+                                     )
                                     ),
             'firstname' : RelationSchema((('Person', ('String',)),
                                             ('Student', ('String',)),
-                                           )
-                                    ),
+                                          )
+                                         ),
             'work_for' : RelationSchema((('Person', ('Company',)),
                                            ('Student', ('Company',)),
-                                           ),
+                                         ),
                                          card='?*'),
             'is' : RelationSchema((('Person', ('Eetype',)),
                                      ('Student', ('Eetype',)),
                                      ('Company', ('Eetype',)),
                                      ('Address', ('Eetype',)),
                                      ('Eetype', ('Eetype',)),
-                                     )
-                                   ),
+                                   )
+                                  ),
             'is_instance_of' : RelationSchema((('Person', ('Eetype',)),
                                               ('Student', ('Eetype',)),
                                               ('Company', ('Eetype',)),
                                               ('Address', ('Eetype',)),
                                               ('Eetype', ('Eetype',)),
-                                              )
-                                            ),
+                                               )
+                                              ),
             'connait' : RelationSchema((('Person', ('Person',)),
                                          ('Student', ('Person',)),
                                          ('Student', ('Student',)),
                                          ('Person', ('Student',)),
-                                         ),
+                                        ),
                                         symmetric=True),
             'located' : RelationSchema((('Person', ('Address',)),
                                           ('Student', ('Address',)),
                                           ('Company', ('Address',)),
-                                         )
+                                        )
                                        ),
             'owned_by' : RelationSchema((('Person', ('Person',)),
                                            ('Student', ('Person',)),
                                            ('Company', ('Person',)),
                                            ('Eetype', ('Person',)),
-                                           )
-                                         ),
+                                         )
+                                        ),
             'identity' : RelationSchema((('Person', ('Person',)),
                                            ('Student', ('Student',)),
                                            ('Company', ('Company',)),
                                            ('Address', ('Address',)),
                                            ('Eetype', ('Eetype',)),
-                                      )
-                                    ),
+                                         )
+                                        ),
             'number' : RelationSchema((('Person', ('Int',)),
                                          ('Student', ('Int',)),
                                          ('Company', ('Float',)),
-                                      )
-                                    ),
+                                       )
+                                      ),
             }
         for rtype, rschema in self._relations.items():
             rschema.type = rtype
@@ -317,7 +317,7 @@ class AnalyzerClassTest(TestCase):
         self.assertCountEqual(sols, [{'X': 'Company', 'A': 'Address', 'P': 'Person'},
                                      {'X': 'Person', 'A': 'Address', 'P': 'Person'},
                                      {'X': 'Student', 'A': 'Address', 'P': 'Person'},
-                                    ])
+                                     ])
 
     def test_uid_func_mapping(self):
         h = self.helper
