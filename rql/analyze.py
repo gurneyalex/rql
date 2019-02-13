@@ -549,7 +549,7 @@ class ETypeResolver(object):
                 for specialization in self.schema.eschema(etype).specialized_by():
                     etypes.add(specialization.type)
         if relation.neged(strict=True):
-            etypes = frozenset(t for t in self._nonfinal_domain if not t in etypes)
+            etypes = frozenset(t for t in self._nonfinal_domain if t not in etypes)
 
         constraints.var_has_types(lhs.name, [str(t) for t in etypes])
 
