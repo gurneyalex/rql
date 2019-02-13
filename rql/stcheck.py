@@ -131,7 +131,7 @@ class RQLSTChecker(object):
         for select in node.children[1:]:
             if not len(select.selection) == nbselected:
                 state.error('when using union, all subqueries should have '
-                              'the same number of selected terms')
+                            'the same number of selected terms')
     def leave_union(self, node, state):
         pass
 
@@ -150,8 +150,8 @@ class RQLSTChecker(object):
                     state.add_var_info(vref.variable, VAR_SELECTED)
         for var in node.defined_vars.values():
             vinfo = state.var_info.get(var, 0)
-            if not (vinfo & VAR_HAS_REL) and (vinfo & VAR_HAS_TYPE_REL) \
-                   and not (vinfo & VAR_SELECTED):
+            if (not (vinfo & VAR_HAS_REL) and (vinfo & VAR_HAS_TYPE_REL)
+                    and not (vinfo & VAR_SELECTED)):
                 raise BadRQLQuery('unbound variable %s (%s)' % (var.name, selected))
         if node.groupby:
             # check that selected variables are used in groups
@@ -241,7 +241,7 @@ class RQLSTChecker(object):
                     subvref = select.selection[i]
                 except IndexError:
                     state.error('subquery "%s" has only %s selected terms, needs %s'
-                                  % (select, len(select.selection), len(node.aliases)))
+                                % (select, len(select.selection), len(node.aliases)))
                     continue
                 if isinstance(subvref, VariableRef):
                     trmap[subvref.name] = vref.name
@@ -573,8 +573,8 @@ class RQLSTAnnotator(object):
                 # partially processed
                 if rel in stinfo['rhsrelations']:
                     lhs, rhs = rel.get_parts()
-                    if vref is rhs.children[0] and \
-                           self.schema.rschema(rel.r_type).final:
+                    if (vref is rhs.children[0]
+                            and self.schema.rschema(rel.r_type).final):
                         update_attrvars(newvar, rel, lhs)
                         lhsvar = getattr(lhs, 'variable', None)
                         stinfo['attrvars'].remove((lhsvar, rel.r_type) )

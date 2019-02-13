@@ -202,10 +202,10 @@ class CheckClassTest(unittest.TestCase):
                             'WITH VF, VC, VCD BEING (Any VF, MAX(VC), VCD GROUPBY VF, VCD '
                             '                        WHERE VC connait VF, VC creation_date VCD)'))
         self.assertEqual(rqlst.children[0].vargraph,
-                          {'VCD': ['VC'], 'VF': ['VC'], 'S': ['VC'], 'VC': ['S', 'VF', 'VCD'],
-                           ('VC', 'S'): 'work_for',
-                           ('VC', 'VF'): 'connait',
-                           ('VC', 'VCD'): 'creation_date'})
+                         {'VCD': ['VC'], 'VF': ['VC'], 'S': ['VC'], 'VC': ['S', 'VF', 'VCD'],
+                          ('VC', 'S'): 'work_for',
+                          ('VC', 'VF'): 'connait',
+                          ('VC', 'VCD'): 'creation_date'})
         self.assertEqual(rqlst.children[0].aggregated, set(('VC',)))
 
 

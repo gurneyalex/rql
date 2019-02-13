@@ -69,8 +69,8 @@ class RQLGenTC(unittest.TestCase):
                                         ('X',),
                                         ('F ASC', 'S DESC'))
         self.assertEqual(rql, 'Person X\nWHERE X work_for S , S name "Logilab"'
-                          ' , X firstname F , X surname S\nGROUPBY X'
-                          '\nSORTBY F ASC, S DESC')
+                         ' , X firstname F , X surname S\nGROUPBY X'
+                         '\nSORTBY F ASC, S DESC')
                                         
         
     def test_where(self):
@@ -81,7 +81,7 @@ class RQLGenTC(unittest.TestCase):
                                          ('X','firstname','F'),
                                          ('X','surname','S') ) )
         self.assertEqual(rql, 'WHERE X work_for S , S name "Logilab" '
-                          ', X firstname F , X surname S')
+                         ', X firstname F , X surname S')
 
 
     def test_groupby(self):
@@ -104,7 +104,7 @@ class RQLGenTC(unittest.TestCase):
         rql = self.rql_generator.insert('Person', (('firstname', "Clark"),
                                                    ('lastname', "Kent")))
         self.assertEqual(rql, 'INSERT Person X: X firstname "Clark",'
-                          ' X lastname "Kent"')
+                         ' X lastname "Kent"')
         
         
     def test_update(self):
@@ -116,8 +116,8 @@ class RQLGenTC(unittest.TestCase):
                                         (('job', "superhero"),
                                          ('nick', "superman")))
         self.assertEqual(rql, 'SET X job "superhero", X nick "superman" '
-                          'WHERE X is "Person", X firstname "Clark", X '
-                          'lastname "Kent"')
+                         'WHERE X is "Person", X firstname "Clark", X '
+                         'lastname "Kent"')
 
 
     def test_delete(self):
@@ -127,7 +127,7 @@ class RQLGenTC(unittest.TestCase):
                                         (('firstname', "Clark"),
                                          ('lastname', "Kent")))
         self.assertEqual(rql, 'DELETE Person X where X firstname "Clark", '
-                          'X lastname "Kent"')
+                         'X lastname "Kent"')
         
 
 if __name__ == '__main__':
