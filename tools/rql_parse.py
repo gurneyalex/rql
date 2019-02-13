@@ -39,4 +39,4 @@ builder = {
 }
 
 
-v = rqlparse.parse("Any X where X eid 4;", builder )
+v = rqlparse.parse("Any X where X eid 4;", builder)

@@ -562,16 +562,16 @@ class Hercule(runtime.Parser):
             while self._peek('ADD_OP', 'QMARK', 'r"\\)"', "','", 'SORT_DESC', 'SORT_ASC', 'CMP_OP', 'R_TYPE', "'IN'", 'GROUPBY', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', 'WITH', "';'", 'AND', 'OR', context=_context) == 'ADD_OP':
                 ADD_OP = self._scan('ADD_OP', context=_context)
                 expr_mul = self.expr_mul(S, _context)
-                node = MathExpression(ADD_OP, node, expr_mul )
+                node = MathExpression(ADD_OP, node, expr_mul)
             return node
         else: # == 'UNARY_OP'
             UNARY_OP = self._scan('UNARY_OP', context=_context)
             expr_mul = self.expr_mul(S, _context)
-            node = UnaryExpression(UNARY_OP, expr_mul )
+            node = UnaryExpression(UNARY_OP, expr_mul)
             while self._peek('ADD_OP', 'QMARK', 'r"\\)"', "','", 'SORT_DESC', 'SORT_ASC', 'CMP_OP', 'R_TYPE', "'IN'", 'GROUPBY', 'ORDERBY', 'WHERE', 'LIMIT', 'OFFSET', 'HAVING', 'WITH', "';'", 'AND', 'OR', context=_context) == 'ADD_OP':
                 ADD_OP = self._scan('ADD_OP', context=_context)
                 expr_mul = self.expr_mul(S, _context)
-                node = MathExpression(ADD_OP, node, expr_mul )
+                node = MathExpression(ADD_OP, node, expr_mul)
             return node
 
     def expr_mul(self, S, _parent=None):

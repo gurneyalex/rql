@@ -61,7 +61,7 @@ class RQLGenTC(unittest.TestCase):
                                         (('X','work_for','S'),
                                           ('S','name','"Logilab"'),
                                           ('X','firstname','F'),
-                                          ('X','surname','S') ),
+                                          ('X','surname','S')),
                                         ('X',),
                                         ('F ASC', 'S DESC'))
         self.assertEqual(rql, 'Person X\nWHERE X work_for S , S name "Logilab"'
@@ -74,7 +74,7 @@ class RQLGenTC(unittest.TestCase):
         rql = self.rql_generator.where((('X','work_for','S'),
                                          ('S','name','"Logilab"'),
                                          ('X','firstname','F'),
-                                         ('X','surname','S') ) )
+                                         ('X','surname','S')))
         self.assertEqual(rql, 'WHERE X work_for S , S name "Logilab" '
                          ', X firstname F , X surname S')
 
