@@ -23,4 +23,3 @@ f = open(sys.argv[1])
 for l in f:
     parse(l)
     print(".", end="")
-

@@ -58,4 +58,3 @@ for l in f:
         pprint(d1)
         print("PYT",x2)
         pprint(d2)
-

@@ -209,5 +209,3 @@ class RQLVisitorHandler(object):
         pass
     def visit_constant(self, constant):
         pass
-
-

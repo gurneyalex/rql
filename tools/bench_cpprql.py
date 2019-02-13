@@ -50,4 +50,3 @@ for l in f:
     #print(l, end="")
     x = parse(l, builder)
     print(".", end="")
-

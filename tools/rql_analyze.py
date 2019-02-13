@@ -65,4 +65,3 @@ for l in open(sys.argv[1]):
     an2 = helper2._rql_analyser
     if not cmp_sol(sol1, sol2):
         break
-

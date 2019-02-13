@@ -1130,5 +1130,3 @@ class Set(Statement, ScopeNode):
         if self.having:
             new.set_having([sq.copy(new) for sq in self.having])
         return new
-
-
