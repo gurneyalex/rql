@@ -128,7 +128,7 @@ class Hercule(runtime.Parser):
             update = self.update(Set(), _context)
             self._scan("';'", context=_context)
             return update
-        else: # in ['r"\\("', 'DISTINCT', 'E_TYPE']
+        else:  # in ['r"\\("', 'DISTINCT', 'E_TYPE']
             union = self.union(Union(), _context)
             self._scan("';'", context=_context)
             return union
@@ -141,7 +141,7 @@ class Hercule(runtime.Parser):
             where = self.where(R, _context)
             having = self.having(R, _context)
             return R
-        else: # == 'E_TYPE'
+        else:  # == 'E_TYPE'
             decl_vars = self.decl_vars(R, _context)
             where = self.where(R, _context)
             having = self.having(R, _context)
@@ -162,7 +162,7 @@ class Hercule(runtime.Parser):
             where = self.where(R, _context)
             having = self.having(R, _context)
             return R
-        else: # == "';'"
+        else:  # == "';'"
             pass
 
     def update(self, R, _parent=None):
@@ -179,7 +179,7 @@ class Hercule(runtime.Parser):
             select = self.select(Select(), _context)
             R.append(select)
             return R
-        else: # == 'r"\\("'
+        else:  # == 'r"\\("'
             self._scan('r"\\("', context=_context)
             select = self.select(Select(), _context)
             self._scan('r"\\)"', context=_context)
@@ -200,7 +200,7 @@ class Hercule(runtime.Parser):
             select_ = self.select_(S, _context)
             S.distinct = True
             return S
-        else: # == 'E_TYPE'
+        else:  # == 'E_TYPE'
             select_ = self.select_(S, _context)
             return S
 
@@ -250,7 +250,7 @@ class Hercule(runtime.Parser):
             HAVING = self._scan('HAVING', context=_context)
             logical_expr = self.logical_expr(S, _context)
             S.set_having([logical_expr])
-        else: # in ['WITH', "';'", 'r"\\)"']
+        else:  # in ['WITH', "';'", 'r"\\)"']
             pass
 
     def orderby(self, S, _parent=None):
@@ -283,7 +283,7 @@ class Hercule(runtime.Parser):
                 subquery = self.subquery(S, _context)
                 nodes.append(subquery)
             S.set_with(nodes)
-        else: # in ['r"\\)"', "';'"]
+        else:  # in ['r"\\)"', "';'"]
             pass
 
     def subquery(self, S, _parent=None):
@@ -314,7 +314,7 @@ class Hercule(runtime.Parser):
             SORT_ASC = self._scan('SORT_ASC', context=_context)
             return 1
         else:
-            return 1 # default to SORT_ASC
+            return 1  # default to SORT_ASC
 
     def limit_offset(self, R, _parent=None):
         _context = self.Context(_parent, self._scanner, 'limit_offset', [R])
@@ -330,7 +330,7 @@ class Hercule(runtime.Parser):
             INT = self._scan('INT', context=_context)
             R.set_limit(int(INT))
             return True
-        else: # in ['OFFSET', 'WHERE', 'HAVING', 'WITH', "';'", 'r"\\)"']
+        else:  # in ['OFFSET', 'WHERE', 'HAVING', 'WITH', "';'", 'r"\\)"']
             pass
 
     def offset(self, R, _parent=None):
@@ -341,7 +341,7 @@ class Hercule(runtime.Parser):
             INT = self._scan('INT', context=_context)
             R.set_offset(int(INT))
             return True
-        else: # in ['WHERE', 'HAVING', 'WITH', "';'", 'r"\\)"']
+        else:  # in ['WHERE', 'HAVING', 'WITH', "';'", 'r"\\)"']
             pass
 
     def where(self, S, _parent=None):
@@ -351,7 +351,7 @@ class Hercule(runtime.Parser):
             WHERE = self._scan('WHERE', context=_context)
             restriction = self.restriction(S, _context)
             S.set_where(restriction)
-        else: # in ['HAVING', 'WITH', "';'", 'r"\\)"']
+        else:  # in ['HAVING', 'WITH', "';'", 'r"\\)"']
             pass
 
     def restriction(self, S, _parent=None):
@@ -391,7 +391,7 @@ class Hercule(runtime.Parser):
             NOT = self._scan('NOT', context=_context)
             rel = self.rel(S, _context)
             return Not(rel)
-        else: # in ['r"\\("', 'EXISTS', 'VARIABLE']
+        else:  # in ['r"\\("', 'EXISTS', 'VARIABLE']
             rel = self.rel(S, _context)
             return rel
 
@@ -401,7 +401,7 @@ class Hercule(runtime.Parser):
         if _token != 'r"\\("':
             rel_base = self.rel_base(S, _context)
             return rel_base
-        else: # == 'r"\\("'
+        else:  # == 'r"\\("'
             self._scan('r"\\("', context=_context)
             restriction = self.restriction(S, _context)
             self._scan('r"\\)"', context=_context)
@@ -421,7 +421,7 @@ class Hercule(runtime.Parser):
             rtype.append(expr)
             rtype.set_optional(opt_right)
             return rtype
-        else: # == 'EXISTS'
+        else:  # == 'EXISTS'
             EXISTS = self._scan('EXISTS', context=_context)
             self._scan('r"\\("', context=_context)
             restriction = self.restriction(S, _context)
@@ -439,7 +439,7 @@ class Hercule(runtime.Parser):
         if _token == 'QMARK':
             QMARK = self._scan('QMARK', context=_context)
             return 'left'
-        else: # in ['R_TYPE', 'CMP_OP', "'IN'"]
+        else:  # in ['R_TYPE', 'CMP_OP', "'IN'"]
             pass
 
     def opt_right(self, S, _parent=None):
@@ -448,7 +448,7 @@ class Hercule(runtime.Parser):
         if _token == 'QMARK':
             QMARK = self._scan('QMARK', context=_context)
             return 'right'
-        else: # in ['AND', 'OR', "','", 'r"\\)"', 'WITH', "';'", 'HAVING']
+        else:  # in ['AND', 'OR', "','", 'r"\\)"', 'WITH', "';'", 'HAVING']
             pass
 
     def logical_expr(self, S, _parent=None):
@@ -518,7 +518,7 @@ class Hercule(runtime.Parser):
             CMP_OP = self._scan('CMP_OP', context=_context)
             expr_add = self.expr_add(S, _context)
             return Comparison(CMP_OP.upper(), expr_add)
-        else: # == "'IN'"
+        else:  # == "'IN'"
             in_expr = self.in_expr(S, _context)
             return Comparison('=', in_expr)
 
@@ -585,7 +585,7 @@ class Hercule(runtime.Parser):
                 expr_mul = self.expr_mul(S, _context)
                 node = MathExpression(ADD_OP, node, expr_mul)
             return node
-        else: # == 'UNARY_OP'
+        else:  # == 'UNARY_OP'
             UNARY_OP = self._scan('UNARY_OP', context=_context)
             expr_mul = self.expr_mul(S, _context)
             node = UnaryExpression(UNARY_OP, expr_mul)
@@ -630,7 +630,7 @@ class Hercule(runtime.Parser):
         elif _token == 'FUNCTION':
             func = self.func(S, _context)
             return func
-        else: # == 'r"\\("'
+        else:  # == 'r"\\("'
             self._scan('r"\\("', context=_context)
             expr_add = self.expr_add(S, _context)
             self._scan('r"\\)"', context=_context)
@@ -703,7 +703,7 @@ class Hercule(runtime.Parser):
         elif _token == 'STRING':
             STRING = self._scan('STRING', context=_context)
             return Constant(unquote(STRING), 'String')
-        else: # == 'SUBSTITUTE'
+        else:  # == 'SUBSTITUTE'
             SUBSTITUTE = self._scan('SUBSTITUTE', context=_context)
             return Constant(SUBSTITUTE[2:-2], 'Substitute')
 

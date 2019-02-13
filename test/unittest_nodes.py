@@ -327,7 +327,7 @@ class NodesTest(TestCase):
 
     def test_recover_add_type_restriction_is_in(self):
         tree = self._parse('Any X WHERE X is IN(Person, Company), X name ILIKE "A%"')
-        annotator.annotate(tree) # needed to get typerel index
+        annotator.annotate(tree)  # needed to get typerel index
         tree.save_state()
         select = tree.children[0]
         x = next(select.get_selected_variables())
@@ -339,7 +339,7 @@ class NodesTest(TestCase):
 
     def test_recover_add_type_restriction_is_instance_of(self):
         tree = self._parse('Any X WHERE X is_instance_of IN(Person, Company), X name ILIKE "A%"')
-        annotator.annotate(tree) # needed to get typerel index
+        annotator.annotate(tree)  # needed to get typerel index
         tree.save_state()
         select = tree.children[0]
         x = next(select.get_selected_variables())

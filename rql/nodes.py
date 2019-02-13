@@ -230,7 +230,7 @@ class EditableMixIn(object):
                 istarget = typerel.children[1].children[0]
                 if isinstance(istarget, Constant):
                     etypes = (istarget.value,)
-                else: # Function (IN)
+                else:  # Function (IN)
                     etypes = [et.value for et in istarget.children]
                 if isinstance(etype, string_types):
                     restr_etypes = {etype}
@@ -420,14 +420,14 @@ class Exists(EditableMixIn, BaseNode):
 
     def ored(self, traverse_scope=False, _fromnode=None):
         if not traverse_scope:
-            if _fromnode is not None: # stop here
+            if _fromnode is not None:  # stop here
                 return False
             return self.parent.ored(traverse_scope, self)
         return self.parent.ored(traverse_scope, _fromnode)
 
     def neged(self, traverse_scope=False, _fromnode=None, strict=False):
         if not traverse_scope:
-            if _fromnode is not None: # stop here
+            if _fromnode is not None:  # stop here
                 return False
             return self.parent.neged(self)
         elif strict:
@@ -438,7 +438,7 @@ class Exists(EditableMixIn, BaseNode):
 class Relation(Node):
     """a RQL relation"""
     __slots__ = ('r_type', 'optional',
-                 '_q_sqltable', '_q_needcast') # XXX cubicweb specific
+                 '_q_sqltable', '_q_needcast')  # XXX cubicweb specific
 
     def __init__(self, r_type, optional=None):
         Node.__init__(self)
@@ -467,7 +467,7 @@ class Relation(Node):
             if self.optional in ('right', 'both'):
                 rhs += '?'
         except IndexError:
-            return repr(self) # not fully built relation
+            return repr(self)  # not fully built relation
         return '%s %s %s' % (lhs, self.r_type, rhs)
 
     def __repr__(self):
@@ -738,7 +738,7 @@ class Constant(HSMixin, LeafNode):
 
     def __init__(self, value, c_type, _uid=False, _uidtype=None):
         assert c_type in CONSTANT_TYPES, "Error got c_type="+repr(c_type)
-        LeafNode.__init__(self) # don't care about Node attributes
+        LeafNode.__init__(self)  # don't care about Node attributes
         self.value = value
         self.type = c_type
         # updated by the annotator/analyzer if necessary
@@ -787,7 +787,7 @@ class Constant(HSMixin, LeafNode):
     def eval(self, kwargs):
         if self.type == 'Substitute':
             return kwargs[self.value]
-        if self.type in ('Date', 'Datetime'): # TODAY, NOW
+        if self.type in ('Date', 'Datetime'):  # TODAY, NOW
             return KEYWORD_MAP[self.value]()
         return self.value
 
@@ -806,7 +806,7 @@ class VariableRef(HSMixin, LeafNode):
     __slots__ = ('variable', 'name')
 
     def __init__(self, variable, noautoref=None):
-        LeafNode.__init__(self) # don't care about Node attributes
+        LeafNode.__init__(self)  # don't care about Node attributes
         self.variable = variable
         self.name = variable.name
         if noautoref is None:
@@ -1092,7 +1092,7 @@ class Referenceable(VisitableMixIn):
 
 class ColumnAlias(Referenceable):
     __slots__ = ('colnum', 'query',
-                 '_q_sql', '_q_sqltable') # XXX cubicweb specific
+                 '_q_sql', '_q_sqltable')  # XXX cubicweb specific
 
     def __init__(self, alias, colnum, query=None):
         super(ColumnAlias, self).__init__(alias)
@@ -1134,7 +1134,7 @@ class Variable(Referenceable):
 
     collects information about a variable use in a syntax tree
     """
-    __slots__ = ('_q_invariant', '_q_sql', '_q_sqltable') # XXX ginco specific
+    __slots__ = ('_q_invariant', '_q_sql', '_q_sqltable')  # XXX ginco specific
 
     def __repr__(self):
         return '%s' % self.name

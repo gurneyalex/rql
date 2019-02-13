@@ -27,7 +27,7 @@ class SelectionManager(object):
     """Manage the operation stacks."""
 
     def __init__(self, selection):
-        self._selection = selection # The selection tree
+        self._selection = selection  # The selection tree
         self.op_list = []           # The operations we'll have to undo
         self.state_stack = []       # The save_state()'s index stack
 
@@ -167,7 +167,7 @@ class RemoveNodeOperation(NodeOperation):
         if self.index is None:
             if isinstance(parent, Select):
                 parent.where = self.node
-            else: # Exists
+            else:  # Exists
                 parent.query = self.node
             sibling = self.node
         if self.binary_remove:

@@ -151,7 +151,7 @@ class RQLGenerator(object):
         'INSERT Person X: X firstname "Clark", X lastname "Kent"'
         """
         restrictions = ['X %s "%s"' % (attr_name, attr_value)
-                        for attr_name, attr_value in attributes] # .items()]
+                        for attr_name, attr_value in attributes]  # .items()]
         return 'INSERT %s X: %s' % (etype, ', '.join(restrictions))
 
     def delete(self, etype, attributes):
@@ -168,7 +168,7 @@ class RQLGenerator(object):
         'DELETE Person X where X firstname "Clark", X lastname "Kent"'
         """
         restrictions = ['X %s "%s"' % (attr_name, attr_value)
-                        for attr_name, attr_value in attributes] # .items()]
+                        for attr_name, attr_value in attributes]  # .items()]
         return 'DELETE %s X where %s' % (etype, ', '.join(restrictions))
 
     def update(self, etype, old_descr, new_descr):

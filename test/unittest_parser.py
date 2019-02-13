@@ -43,9 +43,9 @@ BAD_SYNTAX_QUERIES = (
     'Any X GROUPBY X ORDERBY X WHERE X nom "toto" UNION Any X GROUPBY X ORDERBY X WHERE X firstname "toto";',
     '(Any X GROUPBY X WHERE X nom "toto") UNION (Any X GROUPBY X WHERE X firstname "toto") ORDERBY X;',
 
-    'Any X, X/Y FROM (Any SUM(X) WHERE X is Person) WHERE X is Person;', # missing AS for subquery
+    'Any X, X/Y FROM (Any SUM(X) WHERE X is Person) WHERE X is Person;',  # missing AS for subquery
 
-    'Any X, X/Y FROM (Any X WHERE X is) WHERE X is Person;', # missing AS for subquery
+    'Any X, X/Y FROM (Any X WHERE X is) WHERE X is Person;',  # missing AS for subquery
 
     )
 
@@ -107,7 +107,7 @@ SPEC_QUERIES = (
 
     "Any X, COUNT(B) GROUPBY X ORDERBY 1 WHERE B concerns X HAVING COUNT(B) > 2;",
 
-    'Any X, MAX(COUNT(B)) GROUPBY X WHERE B concerns X;', # syntaxically correct
+    'Any X, MAX(COUNT(B)) GROUPBY X WHERE B concerns X;',  # syntaxically correct
 
     'Any X WHERE X eid > 12;',
     'DELETE Any X WHERE X eid > 12;',

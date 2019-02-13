@@ -68,7 +68,7 @@ class undo_modification(object):
 
 class ScopeNode(BaseNode):
     solutions = ()   # list of possibles solutions for used variables
-    _varmaker = None # variable names generator, built when necessary
+    _varmaker = None  # variable names generator, built when necessary
     where = None     # where clause node
     having = ()      # XXX now a single node
     should_register_op = None
@@ -179,7 +179,7 @@ class Statement(object):
     # default values for optional instance attributes, set on the instance when
     # used
     schema = None     # ISchema
-    annotated = False # set by the annotator
+    annotated = False  # set by the annotator
 
     # navigation helper methods #############################################
 
@@ -637,7 +637,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         """
         if name in self.aliases:
             return self.aliases[name]
-        if colnum is not None: # take care, may be 0
+        if colnum is not None:  # take care, may be 0
             self.aliases[name] = calias = nodes.ColumnAlias(name, colnum)
             calias.stmt = self
             # alias may already have been used as a regular variable, replace it
@@ -767,7 +767,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
                 self.remove_sort_term(vref.parent)
             elif vref in self.groupby:
                 self.remove_group_term(vref)
-            else: # selected variable
+            else:  # selected variable
                 self.remove_selected(vref)
         # effective undefine operation
         if self.should_register_op:
@@ -868,7 +868,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
             try:
                 vref.register_reference()
             except AssertionError:
-                pass # already referenced
+                pass  # already referenced
         if self.should_register_op:
             from rql.undo import AddSortOperation
             self.undo_manager.add_operation(AddSortOperation(term))
