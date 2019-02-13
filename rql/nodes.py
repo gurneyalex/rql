@@ -1004,7 +1004,7 @@ class Referenceable(VisitableMixIn):
                 try:
                     lhstype = rel.children[0].get_type(solution, kwargs)
                     return schema.eschema(lhstype).destination(rel.r_type)
-                except: # CoertionError, AssertionError :(
+                except Exception:  # CoertionError, AssertionError :(
                     pass
         return 'Any'
 

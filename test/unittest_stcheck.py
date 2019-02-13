@@ -98,7 +98,7 @@ class CheckClassTest(unittest.TestCase):
     def _test(self, rql):
         try:
             self.assertRaises(BadRQLQuery, self.parse, rql)
-        except:
+        except Exception:
             print(rql)
             raise
 

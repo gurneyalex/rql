@@ -119,7 +119,7 @@ class ScopeNode(BaseNode):
         """
         try:
             return self.defined_vars[name]
-        except:
+        except Exception:
             self.defined_vars[name] = var = nodes.Variable(name)
             var.stmt = self
             return var
@@ -167,7 +167,7 @@ class ScopeNode(BaseNode):
                    if vref.stmt is self]
         try:
             _check_references(defined, varrefs)
-        except:
+        except Exception:
             print(repr(self))
             raise
         return True
