@@ -112,7 +112,7 @@ class RQLHelper(object):
                                         debug)
 
     def compute_all_solutions(self, rqlst, uid_func_mapping=None, kwargs=None,
-                          debug=False):
+                              debug=False):
         """compute syntax tree solutions with all types restriction (eg
         is/instance_of relations) ignored
         """
