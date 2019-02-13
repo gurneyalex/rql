@@ -445,11 +445,6 @@ class RQLSTChecker(object):
     def visit_variableref(self, variableref, state):
         #assert len(variableref.children)==0
         #assert not variableref.parent is variableref
-##         try:
-##             assert variableref.variable in variableref.root().defined_vars.values(), \
-##                    (variableref.root(), variableref.variable, variableref.root().defined_vars)
-##         except AttributeError:
-##             raise Exception((variableref.root(), variableref.variable))
         pass
 
     def leave_variableref(self, node, state):

@@ -137,9 +137,6 @@ class CheckClassTest(unittest.TestCase):
              'Any 12'),
             ('Any X,Y WHERE X eid 0, Y eid 1, X work_for Y',
              'Any 0,1 WHERE 0 work_for 1'),
-# no more supported, use outerjoin explicitly
-#            ('Any X,Y WHERE X work_for Y OR NOT X work_for Y', 'Any X,Y WHERE X? work_for Y?'),
-#            ('Any X,Y WHERE NOT X work_for Y OR X work_for Y', 'Any X,Y WHERE X? work_for Y?'),
             # test symmetric OR rewrite
             ("DISTINCT Any P WHERE P connait S OR S connait P, S name 'chouette'",
              'DISTINCT Any P WHERE P connait S, S name "chouette"'),

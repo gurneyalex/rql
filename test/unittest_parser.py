@@ -38,7 +38,6 @@ BAD_SYNTAX_QUERIES = (
     'INSERT Person X : X name "bidule" or X name "chouette";',
     'Any X WHERE "YO" related "UPI";',
     # FIXME: incorrect because X/Y are not bound, not a syntax error
-#    'SET X travaille Y;',
     "Personne P WHERE OFFSET 200;",
 
     'Any X GROUPBY X ORDERBY X WHERE X nom "toto" UNION Any X GROUPBY X ORDERBY X WHERE X firstname "toto";',
@@ -113,7 +112,6 @@ SPEC_QUERIES = (
     'Any X WHERE X eid > 12;',
     'DELETE Any X WHERE X eid > 12;',
 
-#    'Any X WHERE 5 in_state X;',
     '(Any X WHERE X eid > 12) UNION (Any X WHERE X eid < 23);',
     '(Any X WHERE X nom "toto") UNION (Any X WHERE X firstname "toto");',
     '(Any X GROUPBY X WHERE X nom "toto") UNION (Any X GROUPBY X ORDERBY X WHERE X firstname "toto");',
@@ -327,8 +325,6 @@ class ParserHercule(unittest.TestCase):
     def test_spec(self):
         """test all RQL string found in the specification and test they are well parsed"""
         for rql in SPEC_QUERIES:
-#            print("Orig:", rql)
-#            print("Resu:", rqltree)
             with self.subTest(rql=rql):
                 self.parse(rql, True)
 
