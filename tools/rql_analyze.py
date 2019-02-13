@@ -29,7 +29,7 @@ APP_NAME = "toto"
 
 schema = load_schema(SCHEMA_DIRECTORY, APP_NAME)
 
-#print(schema)
+# print(schema)
 
 
 def cmp_sol(sol1, sol2):

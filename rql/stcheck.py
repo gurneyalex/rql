@@ -94,7 +94,7 @@ class RQLSTChecker(object):
         self._visit(node, state)
         if state.errors:
             raise BadRQLQuery('%s\n** %s' % (node, '\n** '.join(state.errors)))
-        #if node.TYPE == 'select' and \
+        # if node.TYPE == 'select' and \
         #       not node.defined_vars and not node.get_restriction():
         #    result = []
         #    for term in node.selected_terms():
@@ -294,7 +294,7 @@ class RQLSTChecker(object):
         pass
 
     def visit_or(self, ou, state):
-        #assert len(ou.children) == 2, len(ou.children)
+        # assert len(ou.children) == 2, len(ou.children)
         # simplify Ored expression of a symmetric relation
         r1, r2 = ou.children[0], ou.children[1]
         try:
@@ -407,7 +407,7 @@ class RQLSTChecker(object):
 
     def leave_relation(self, relation, state):
         pass
-        #assert isinstance(lhs, VariableRef), '%s: %s' % (lhs.__class__,
+        # assert isinstance(lhs, VariableRef), '%s: %s' % (lhs.__class__,
         #                                                       relation)
 
     def visit_comparison(self, comparison, state):
@@ -448,19 +448,19 @@ class RQLSTChecker(object):
                        function.children[0].descr().aggregat:
                     state.error('can\'t nest aggregat functions')
             if funcdescr.name == 'IN':
-                #assert function.parent.operator == '='
+                # assert function.parent.operator == '='
                 if len(function.children) == 1:
                     function.parent.append(function.children[0])
                     function.parent.remove(function)
-                #else:
+                # else:
                 #    assert len(function.children) >= 1
 
     def leave_function(self, node, state):
         pass
 
     def visit_variableref(self, variableref, state):
-        #assert len(variableref.children)==0
-        #assert not variableref.parent is variableref
+        # assert len(variableref.children)==0
+        # assert not variableref.parent is variableref
         pass
 
     def leave_variableref(self, node, state):
@@ -496,7 +496,7 @@ class RQLSTAnnotator(object):
         self.special_relations = special_relations or {}
 
     def annotate(self, node):
-        #assert not node.annotated
+        # assert not node.annotated
         node.accept(self)
         node.annotated = True
 
@@ -646,7 +646,7 @@ class RQLSTAnnotator(object):
     visit_or = visit_and
 
     def visit_relation(self, relation, scope):
-        #assert relation.parent, repr(relation)
+        # assert relation.parent, repr(relation)
         lhs, rhs = relation.get_parts()
         # may be a constant once rqlst has been simplified
         lhsvar = getattr(lhs, 'variable', None)

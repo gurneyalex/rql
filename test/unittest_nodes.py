@@ -143,14 +143,14 @@ class NodesTest(TestCase):
         return self._parse(rql).children[0]
 
     def check_equal_but_not_same(self, tree1, tree2):
-        #d1 = tree1.__dict__.copy()
-        #del d1['parent']; del d1['children'] # parent and children are slots now
-        #d2 = tree2.__dict__.copy()
-        #del d2['parent']; del d2['children']
+        # d1 = tree1.__dict__.copy()
+        # del d1['parent']; del d1['children'] # parent and children are slots now
+        # d2 = tree2.__dict__.copy()
+        # del d2['parent']; del d2['children']
         self.assertNotEqual(id(tree1), id(tree2))
         self.assertTrue(tree1.is_equivalent(tree2))
-        #self.assertEqual(len(tree1.children), len(tree2.children))
-        #for i in range(len(tree1.children)):
+        # self.assertEqual(len(tree1.children), len(tree2.children))
+        # for i in range(len(tree1.children)):
         #    self.check_equal_but_not_same(tree1.children[i], tree2.children[i])
 
     # selection tests #########################################################
@@ -621,11 +621,11 @@ class NodesTest(TestCase):
         self.assertEqual(len(X.references()), 3)
         self.assertEqual(len(N.references()), 2)
         tree.schema = schema
-        #annotator.annotate(tree)
+        # annotator.annotate(tree)
         # XXX how to choose
         self.assertEqual(X.get_type(), 'Company')
         self.assertEqual(X.get_type({'X': 'Person'}), 'Person')
-        #self.assertEqual(N.get_type(), 'String')
+        # self.assertEqual(N.get_type(), 'String')
         self.assertEqual(X.get_description(0, lambda x, **k: x), 'Company, Person, Student')
         self.assertEqual(N.get_description(0, lambda x, **k: x), 'firstname, name')
         self.assertEqual(X.selected_index(), 0)

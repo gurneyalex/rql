@@ -47,6 +47,6 @@ if len(sys.argv) < 2:
 
 f = open(sys.argv[1])
 for l in f:
-    #print(l, end="")
+    # print(l, end="")
     x = parse(l, builder)
     print(".", end="")
