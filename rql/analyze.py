@@ -66,7 +66,7 @@ class ConstraintCSPProblem(object):
     def solve(self):
         repo = Repository(self.domains.keys(), self.domains, self.get_constraints())
         solver = Solver(printer=self.printer)
-        # used for timing 
+        # used for timing
         #import time
         #t0=time.time()
         sols = solver.solve(repo, verbose=(True or self.debug))
