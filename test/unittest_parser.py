@@ -347,7 +347,7 @@ class ParserRQLHelper(ParserHercule):
     def parse(self, string, print_errors=False):
         try:
             return parse(string, print_errors)
-        except:
+        except Exception:
             raise
 
 
