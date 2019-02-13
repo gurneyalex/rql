@@ -707,4 +707,3 @@ def update_attrvars(var, relation, lhs):
     # "main" attribute variable
     if var.stinfo['attrvar'] is None or not isinstance(relation.scope, Exists):
         var.stinfo['attrvar'] = lhsvar or lhs
-

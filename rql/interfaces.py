@@ -78,4 +78,3 @@ class IEntitySchema(Interface):
         """Return true if the entity is a final entity (ie cannot be used
         as subject of a relation).
         """
-
