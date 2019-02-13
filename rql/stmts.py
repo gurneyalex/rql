@@ -66,6 +66,7 @@ class ScopeNode(BaseNode):
     _varmaker = None # variable names generator, built when necessary
     where = None     # where clause node
     having = ()      # XXX now a single node
+    should_register_op = None
 
     def __init__(self):
         # dictionnary of defined variables in the original RQL syntax tree

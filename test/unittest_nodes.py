@@ -720,6 +720,10 @@ class NodesTest(TestCase):
         select.recover()
         self.assertEqual(select.as_string(), qs)
 
+    def test_undo_node_having_in_mutable(self):
+        sparse('DELETE Person X WHERE X name N HAVING MAX(X) > 1')
+        sparse('SET X name "foo" WHERE X is Person HAVING MAX(X) > 1')
+
 
 class GetNodesFunctionTest(TestCase):
     def test_known_values_1(self):
