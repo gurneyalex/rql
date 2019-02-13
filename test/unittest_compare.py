@@ -181,5 +181,6 @@ class RQLCompareClassTest(TestCase):
         r2 = "Note K WHERE K a_faire_par Y, K creation_date > today-10, not Y nom 'jphc' or not Y nom 'ludal';"
         self._compareNotEquivalent(r1, r2)
 
+
 if __name__ == '__main__':
     unittest_main()

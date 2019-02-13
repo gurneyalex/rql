@@ -201,6 +201,7 @@ class RQLGenerator(object):
         return 'SET %s WHERE %s' % (', '.join(new_restrictions),
                                     ', '.join(old_restrictions))
 
+
 RQLGENERATOR = RQLGenerator()
 
 def _test():
@@ -209,6 +210,7 @@ def _test():
     """
     import doctest, sys
     return doctest.testmod(sys.modules[__name__])
+
 
 if __name__ == "__main__":
     _test()
