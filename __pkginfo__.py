@@ -70,7 +70,7 @@ GECODE_VERSION = encode_version(*gecode_version())
 if sys.platform != 'win32':
     ext_modules = [Extension('rql.rql_solve',
                              ['rql/gecode_solver.cpp'],
-                              libraries=['gecodeint', 'gecodekernel', 'gecodesearch',],
+                             libraries=['gecodeint', 'gecodekernel', 'gecodesearch',],
                              extra_compile_args=['-DGE_VERSION=%s' % GECODE_VERSION],
                          )
                    ]

@@ -570,28 +570,28 @@ class NodesTest(TestCase):
 
         tree = parse("Person X")
         self.assertEqual(tree.as_string(),
-                          'Any X WHERE X is Person')
+                         'Any X WHERE X is Person')
 
         tree = parse(u"Any X WHERE X has_text 'héhé'")
         self.assertEqual(tree.as_string(),
-                          u'Any X WHERE X has_text "héhé"')
+                         u'Any X WHERE X has_text "héhé"')
         tree = parse(u"Any X WHERE X has_text %(text)s")
         self.assertEqual(tree.as_string({'text': u'héhé'}),
-                          u'Any X WHERE X has_text "héhé"')
+                         u'Any X WHERE X has_text "héhé"')
         tree = parse(u"Any X WHERE X has_text %(text)s")
         self.assertEqual(tree.as_string({'text': u'hé"hé'}),
-                          u'Any X WHERE X has_text "hé\\"hé"')
+                         u'Any X WHERE X has_text "hé\\"hé"')
         tree = parse(u"Any X WHERE X has_text %(text)s")
         self.assertEqual(tree.as_string({'text': u'hé"\'hé'}),
-                          u'Any X WHERE X has_text "hé\\"\'hé"')
+                         u'Any X WHERE X has_text "hé\\"\'hé"')
 
     def test_as_string_no_encoding(self):
         tree = parse(u"Any X WHERE X has_text 'héhé'")
         self.assertEqual(tree.as_string(),
-                          u'Any X WHERE X has_text "héhé"')
+                         u'Any X WHERE X has_text "héhé"')
         tree = parse(u"Any X WHERE X has_text %(text)s")
         self.assertEqual(tree.as_string(kwargs={'text': u'héhé'}),
-                          u'Any X WHERE X has_text "héhé"')
+                         u'Any X WHERE X has_text "héhé"')
 
     def test_as_string_now_today_null(self):
         tree = parse(u"Any X WHERE X name NULL")
@@ -740,7 +740,7 @@ class GetNodesFunctionTest(TestCase):
         for varref in varrefs:
             self.assertIsInstance(varref, nodes.VariableRef)
         self.assertEqual(sorted(x.name for x in varrefs),
-                          ['X', 'X', 'X', 'Y', 'Y'])
+                         ['X', 'X', 'X', 'Y', 'Y'])
 
     def test_iknown_values_1(self):
         tree = parse('Any X where X name "turlututu"').children[0]
@@ -756,7 +756,7 @@ class GetNodesFunctionTest(TestCase):
         for varref in varrefs:
             self.assertIsInstance(varref, nodes.VariableRef)
         self.assertEqual(sorted(x.name for x in varrefs),
-                          ['X', 'X', 'X', 'Y', 'Y'])
+                         ['X', 'X', 'X', 'Y', 'Y'])
 
 
 if __name__ == '__main__':
