@@ -248,7 +248,7 @@ def parse(rqlstring, print_errors=True):
             raise exc
     except NoMoreTokens:
         msg = 'Could not complete parsing; stopped around here: \n%s'
-        exc = RQLSyntaxError(msg  % parser._scanner)
+        exc = RQLSyntaxError(msg % parser._scanner)
         exc.__traceback__ = sys.exc_info()[-1]
         raise exc
 
