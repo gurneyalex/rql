@@ -31,10 +31,12 @@ from rql.stcheck import RQLSTAnnotator
 annotator = RQLSTAnnotator(schema, {})
 helper = RQLHelper(schema, None, {'eid': 'uid'})
 
+
 def sparse(rql):
     tree = helper.parse(rql)
     helper.compute_solutions(tree)
     return tree
+
 
 class EtypeFromPyobjTC(TestCase):
     def test_bool(self):

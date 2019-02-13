@@ -41,6 +41,7 @@ class RQLHelper(object):
       - variables type resolving
       - comparison of two queries
     """
+
     def __init__(self, schema, uid_func_mapping=None, special_relations=None,
                  resolver_class=None, backend=None):
         # chech schema
@@ -82,6 +83,7 @@ class RQLHelper(object):
 
     def get_backend(self):
         return self._checker.backend
+
     def set_backend(self, backend):
         self._checker.backend = backend
     backend = property(get_backend, set_backend)

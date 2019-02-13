@@ -20,6 +20,7 @@ from logilab.common.testlib import TestCase, SkipTest, unittest_main
 from rql import RQLHelper
 from unittest_analyze import RelationSchema, EntitySchema, DummySchema as BaseSchema
 
+
 class DummySchema(BaseSchema):
 
     def __init__(self):
@@ -33,6 +34,7 @@ class DummySchema(BaseSchema):
             self._relations[rel_name] = RelationSchema(rel_ent)
         self._relations['nom'] = self._relations['name']
         self._relations['prenom'] = self._relations['firstname']
+
 
 class RQLCompareClassTest(TestCase):
     """ Compare RQL strings """

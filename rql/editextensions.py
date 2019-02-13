@@ -21,12 +21,14 @@ __docformat__ = "restructuredtext en"
 
 from rql.nodes import Constant, Variable, VariableRef, Relation, make_relation
 
+
 def switch_selection(rqlst, new_var, old_var):
     """Switch the select variable from old_var (VariableRef instance) to
     new_var (Variable instance).
     """
     rqlst.remove_selected(old_var)
     rqlst.add_selected(new_var, 0)
+
 
 def add_main_restriction(rqlst, new_type, r_type, direction):
     """The result_tree must represent the same restriction as 'rqlst' and :
@@ -48,12 +50,14 @@ def add_main_restriction(rqlst, new_type, r_type, direction):
     rqlst.add_restriction(rel_rest)
     return new_var
 
+
 def remove_has_text_relation(node):
     """Remove has_text relation."""
     for rel in node.iget_nodes(Relation):
         if rel.r_type == 'has_text':
             node.remove_node(rel)
             return
+
 
 def get_vars_relations(node):
     """Return a dict with 'var_names' as keys, and the list of relations which

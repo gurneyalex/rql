@@ -48,6 +48,7 @@ else:
         """Extend build_ext command to pass through compilation error.
         In fact, if gecode extension fail, rql will use logilab.constraint
         """
+
         def run(self):
             try:
                 build_ext.build_ext.run(self)

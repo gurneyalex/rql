@@ -23,6 +23,7 @@ from rql import RQLHelper, TypeResolverException
 
 FINAL_ETYPES = ('String', 'Boolean', 'Int', 'Float', 'Date', 'Datetime')
 
+
 class ERSchema(object):
 
     def __cmp__(self, other):
@@ -80,6 +81,7 @@ class EntitySchema(ERSchema):
 
     def specialized_by(self):
         return self._specialized_by
+
 
 class DummySchema(object):
 
@@ -181,6 +183,7 @@ class DummySchema(object):
 
     def rschema(self, r_type):
         return self._relations[r_type]
+
     def eschema(self, e_type):
         return self._types[e_type]
 
@@ -200,6 +203,7 @@ class AnalyzerClassTest(TestCase):
     """check wrong queries arre correctly detected
     """
     eids = {10: 'Eetype'}
+
     def _type_from_eid(self, eid):
         return self.eids.get(eid, 'Person')
 

@@ -36,6 +36,7 @@ def _var_graphid(subvarname, trmap, select):
     except KeyError:
         return subvarname + str(id(select))
 
+
 def bloc_simplification(variable, term):
     try:
         variable.stinfo['blocsimplification'].add(term)
@@ -45,6 +46,7 @@ def bloc_simplification(variable, term):
 
 class GoTo(Exception):
     """Exception used to control the visit of the tree."""
+
     def __init__(self, node):
         self.node = node
 
@@ -53,6 +55,7 @@ VAR_SELECTED = 1
 VAR_HAS_TYPE_REL = 2
 VAR_HAS_UID_REL = 4
 VAR_HAS_REL = 8
+
 
 class STCheckState(object):
     def __init__(self):
@@ -68,6 +71,7 @@ class STCheckState(object):
             self.var_info[var] |= vi
         except KeyError:
             self.var_info[var] = vi
+
 
 class RQLSTChecker(object):
     """Check a RQL syntax tree for errors not detected on parsing.
@@ -132,6 +136,7 @@ class RQLSTChecker(object):
             if not len(select.selection) == nbselected:
                 state.error('when using union, all subqueries should have '
                             'the same number of selected terms')
+
     def leave_union(self, node, state):
         pass
 
@@ -206,16 +211,19 @@ class RQLSTChecker(object):
 
     def visit_insert(self, insert, state):
         self._visit_selectedterm(insert, state)
+
     def leave_insert(self, node, state):
         pass
 
     def visit_delete(self, delete, state):
         self._visit_selectedterm(delete, state)
+
     def leave_delete(self, node, state):
         pass
 
     def visit_set(self, update, state):
         self._visit_selectedterm(update, state)
+
     def leave_set(self, node, state):
         pass
 
@@ -223,6 +231,7 @@ class RQLSTChecker(object):
 
     def visit_exists(self, node, state):
         pass
+
     def leave_exists(self, node, state):
         pass
 
@@ -280,6 +289,7 @@ class RQLSTChecker(object):
 
     def visit_and(self, et, state):
         pass #assert len(et.children) == 2, len(et.children)
+
     def leave_and(self, node, state):
         pass
 
@@ -304,11 +314,13 @@ class RQLSTChecker(object):
                     raise GoTo(r1)
             except AttributeError:
                 pass
+
     def leave_or(self, node, state):
         pass
 
     def visit_not(self, not_, state):
         state.under_not.append(True)
+
     def leave_not(self, not_, state):
         state.under_not.pop()
         # NOT normalization
@@ -400,15 +412,19 @@ class RQLSTChecker(object):
 
     def visit_comparison(self, comparison, state):
         pass #assert len(comparison.children) in (1,2), len(comparison.children)
+
     def leave_comparison(self, node, state):
         pass
 
     def visit_mathexpression(self, mathexpr, state):
         pass #assert len(mathexpr.children) == 2, len(mathexpr.children)
+
     def leave_mathexpression(self, node, state):
         pass
+
     def visit_unaryexpression(self, unaryexpr, state):
         pass #assert len(unaryexpr.children) == 2, len(unaryexpr.children)
+
     def leave_unaryexpression(self, node, state):
         pass
 
@@ -691,6 +707,7 @@ class RQLSTAnnotator(object):
             var.stinfo['rhsrelations'].add(relation)
             if vref is rhs.children[0] and rschema.final:
                 update_attrvars(var, relation, lhs)
+
 
 def update_attrvars(var, relation, lhs):
     if var.stinfo['relations'] - var.stinfo['rhsrelations']:

@@ -22,6 +22,7 @@ from logilab.common.testlib import TestCase, unittest_main
 
 from rql import utils, nodes, parse
 
+
 class Visitor(utils.RQLVisitorHandler):
     def visit(self, node):
         node.accept(self)

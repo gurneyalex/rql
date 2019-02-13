@@ -40,6 +40,7 @@ from rql.utils import rqlvar_maker
 
 _MARKER = object()
 
+
 def _check_references(defined, varrefs):
     refs = {}
     for var in defined.values():
@@ -53,13 +54,17 @@ def _check_references(defined, varrefs):
             raise AssertionError('vref %r is not referenced (%r)' % (vref, vref.stmt))
     return True
 
+
 class undo_modification(object):
     def __init__(self, select):
         self.select = select
+
     def __enter__(self):
         self.select.save_state()
+
     def __exit__(self):
         self.select.recover()
+
 
 class ScopeNode(BaseNode):
     solutions = ()   # list of possibles solutions for used variables
@@ -226,6 +231,7 @@ class Union(Statement, Node):
         warn('offset is now a Select node attribute', DeprecationWarning,
              stacklevel=2)
         return self.children[-1].offset
+
     def set_offset(self, offset):
         if len(self.children) == 1:
             self.children[-1].set_offset(offset)
@@ -240,6 +246,7 @@ class Union(Statement, Node):
         warn('limit is now a Select node attribute', DeprecationWarning,
              stacklevel=2)
         return self.children[-1].limit
+
     def set_limit(self, limit):
         if len(self.children) == 1:
             self.children[-1].set_limit(limit)

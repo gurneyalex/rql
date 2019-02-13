@@ -51,6 +51,7 @@ from distutils.core import Extension
 
 include_dirs = []
 
+
 def gecode_version():
     version = [3,3,1]
     if osp.exists('data/gecode_version.cc'):
@@ -62,6 +63,7 @@ def gecode_version():
         except (EnvironmentError, subprocess.CalledProcessError):
             pass
     return version
+
 
 def encode_version(a,b,c):
     return ((a<<16)+(b<<8)+c)
