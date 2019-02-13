@@ -57,6 +57,7 @@ if sys.version_info < (3,):
 KEYWORD_MAP = {'NOW' : datetime.now,
                'TODAY': date.today}
 
+
 def etype_from_pyobj(value):
     """guess yams type from python value"""
     # note:
@@ -65,12 +66,14 @@ def etype_from_pyobj(value):
     #   __class__ attribute
     return ETYPE_PYOBJ_MAP[type(value)]
 
+
 def variable_ref(var):
     """get a VariableRef"""
     if isinstance(var, Variable):
         return VariableRef(var, noautoref=1)
     assert isinstance(var, VariableRef)
     return var
+
 
 def variable_refs(node):
     for vref in node.iget_nodes(VariableRef):
@@ -133,6 +136,7 @@ def make_relation(var, rel, rhsargs, rhsclass, operator='='):
     relation.append(VariableRef(var))
     relation.append(cmpop)
     return relation
+
 
 def make_constant_restriction(var, rtype, value, ctype, operator='='):
     if ctype is None:
@@ -252,6 +256,7 @@ class EditableMixIn(object):
 class SubQuery(BaseNode):
     """WITH clause"""
     __slots__ = ('aliases', 'query')
+
     def __init__(self, aliases=None, query=None):
         if aliases is not None:
             self.set_aliases(aliases)
@@ -277,9 +282,11 @@ class SubQuery(BaseNode):
     def as_string(self, kwargs=None):
         return '%s BEING (%s)' % (','.join(v.name for v in self.aliases),
                                   self.query.as_string(kwargs=kwargs))
+
     def __repr__(self):
         return '%s BEING (%s)' % (','.join(repr(v) for v in self.aliases),
                                   repr(self.query))
+
 
 class And(BinaryNode):
     """a logical AND node (binary)"""
@@ -289,6 +296,7 @@ class And(BinaryNode):
         """return the tree as an encoded rql string"""
         return '%s, %s' % (self.children[0].as_string(kwargs=kwargs),
                            self.children[1].as_string(kwargs=kwargs))
+
     def __repr__(self):
         return '%s AND %s' % (repr(self.children[0]), repr(self.children[1]))
 
@@ -320,6 +328,7 @@ class Or(BinaryNode):
 class Not(Node):
     """a logical NOT node (unary)"""
     __slots__ = ()
+
     def __init__(self, expr=None):
         Node.__init__(self)
         if expr is not None:
@@ -537,6 +546,7 @@ class Relation(Node):
 
 
 CMP_OPERATORS = frozenset(('=', '!=', '<', '<=', '>=', '>', 'ILIKE', 'LIKE', 'REGEXP'))
+
 
 class Comparison(HSMixin, Node):
     """handle comparisons:
@@ -969,6 +979,7 @@ class Referenceable(VisitableMixIn):
 
     def set_scope(self, scopenode):
         self._set_scope('scope', scopenode)
+
     def get_scope(self):
         return self.stinfo['scope']
     scope = property(get_scope, set_scope)
@@ -1082,6 +1093,7 @@ class Referenceable(VisitableMixIn):
 class ColumnAlias(Referenceable):
     __slots__ = ('colnum', 'query',
                  '_q_sql', '_q_sqltable') # XXX cubicweb specific
+
     def __init__(self, alias, colnum, query=None):
         super(ColumnAlias, self).__init__(alias)
         self.colnum = int(colnum)

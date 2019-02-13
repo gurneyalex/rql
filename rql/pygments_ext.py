@@ -16,6 +16,7 @@ from pygments.token import Punctuation, \
 
 __all__ = ['RqlLexer']
 
+
 class RqlLexer(RegexLexer):
     """
     Lexer for Relation Query Language.

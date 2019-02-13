@@ -31,6 +31,7 @@ schema = load_schema(SCHEMA_DIRECTORY, APP_NAME)
 
 #print(schema)
 
+
 def cmp_sol(sol1, sol2):
     ret = True
     for l in sol1:
@@ -42,6 +43,7 @@ def cmp_sol(sol1, sol2):
             ret = False
             print("Sol2", l)
     return ret
+
 
 def analyze_rq(rq):
     print("RQL:", rq)

@@ -24,6 +24,7 @@ from six.moves import range
 
 NOT = 1
 
+
 class RQLGenerator(object):
     """
     Helper class to generate RQL strings.
@@ -197,6 +198,7 @@ class RQLGenerator(object):
 
 
 RQLGENERATOR = RQLGenerator()
+
 
 def _test():
     """

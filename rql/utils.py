@@ -22,12 +22,15 @@ __docformat__ = "restructuredtext en"
 from rql._exceptions import BadRQLQuery
 
 UPPERCASE = u'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+
 def decompose_b26(index, table=UPPERCASE):
     """Return a letter (base-26) decomposition of index."""
     div, mod = divmod(index, 26)
     if div == 0:
         return table[mod]
     return decompose_b26(div-1) + table[mod]
+
 
 class rqlvar_maker(object):
     """Yields consistent RQL variable names.
@@ -38,6 +41,7 @@ class rqlvar_maker(object):
     """
     # NOTE: written a an iterator class instead of a simple generator to be
     #       picklable
+
     def __init__(self, stop=None, index=0, defined=None, aliases=None):
         self.index = index
         self.stop = stop
@@ -75,12 +79,14 @@ from logilab.database import SQL_FUNCTIONS_REGISTRY, FunctionDescr, CAST
 
 RQL_FUNCTIONS_REGISTRY = SQL_FUNCTIONS_REGISTRY.copy()
 
+
 @monkeypatch(FunctionDescr)
 def st_description(self, funcnode, mainindex, tr):
     return '%s(%s)' % (
         tr(self.name),
         ', '.join(sorted(child.get_description(mainindex, tr)
                          for child in iter_funcnode_variables(funcnode))))
+
 
 @monkeypatch(FunctionDescr)
 def st_check_backend(self, backend, funcnode):
@@ -92,9 +98,11 @@ def st_check_backend(self, backend, funcnode):
 def rql_return_type(self, funcnode):
     return self.rtype
 
+
 @monkeypatch(CAST)
 def st_description(self, funcnode, mainindex, tr):
     return self.rql_return_type(funcnode)
+
 
 @monkeypatch(CAST)
 def rql_return_type(self, funcnode):
@@ -108,9 +116,11 @@ def iter_funcnode_variables(funcnode):
         except AttributeError as ex:
             yield term
 
+
 def is_keyword(word):
     """Return true if the given word is a RQL keyword."""
     return word.upper() in KEYWORDS
+
 
 def common_parent(node1, node2):
     """return the first common parent between node1 and node2
@@ -131,13 +141,16 @@ def common_parent(node1, node2):
         node2 = node2.parent
     raise Exception('DUH!')
 
+
 def register_function(funcdef):
     RQL_FUNCTIONS_REGISTRY.register_function(funcdef)
     SQL_FUNCTIONS_REGISTRY.register_function(funcdef)
 
+
 def function_description(funcname):
     """Return the description (:class:`FunctionDescr`) for a RQL function."""
     return RQL_FUNCTIONS_REGISTRY.get_function(funcname)
+
 
 def quote(value):
     """Quote a string value."""
@@ -148,6 +161,7 @@ def quote(value):
         res.append(char)
     res.append('"')
     return ''.join(res)
+
 
 def uquote(value):
     """Quote a unicode string value."""
@@ -172,6 +186,7 @@ class VisitableMixIn(object):
         visit_method = getattr(visitor, 'leave_%s' % visit_id)
         return visit_method(self, *args, **kwargs)
 
+
 class RQLVisitorHandler(object):
     """Handler providing a dummy implementation of all callbacks necessary
     to visit a RQL syntax tree.
@@ -179,33 +194,45 @@ class RQLVisitorHandler(object):
 
     def visit_union(self, union):
         pass
+
     def visit_insert(self, insert):
         pass
+
     def visit_delete(self, delete):
         pass
+
     def visit_set(self, update):
         pass
 
     def visit_select(self, selection):
         pass
+
     def visit_sortterm(self, sortterm):
         pass
 
     def visit_and(self, et):
         pass
+
     def visit_or(self, ou):
         pass
+
     def visit_not(self, not_):
         pass
+
     def visit_relation(self, relation):
         pass
+
     def visit_comparison(self, comparison):
         pass
+
     def visit_mathexpression(self, mathexpression):
         pass
+
     def visit_function(self, function):
         pass
+
     def visit_variableref(self, variable):
         pass
+
     def visit_constant(self, constant):
         pass

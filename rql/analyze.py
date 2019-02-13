@@ -44,6 +44,7 @@ except ImportError:
     # Gecode solver not available
 #rql_solve = None # uncomment to force using logilab-constraint
 
+
 class ConstraintCSPProblem(object):
     def __init__(self):
         self.constraints = []
@@ -139,6 +140,7 @@ OPSYM={
     _EQV:"eqv"
 }
 
+
 class GecodeCSPProblem(object):
     """Builds an internal representation of the constraint
     that will be passed to the rql_solve module which implements
@@ -157,6 +159,7 @@ class GecodeCSPProblem(object):
     but it should be fixed anyways.
     When fixing that we should also replace string nodes by integers
     """
+
     def __init__(self):
         self.constraints = []
         self.op = [_AND]
@@ -552,22 +555,31 @@ class ETypeResolver(object):
 
     def visit_and(self, et, constraints):
         pass
+
     def visit_or(self, ou, constraints):
         pass
+
     def visit_not(self, et, constraints):
         pass
+
     def visit_comparison(self, comparison, constraints):
         pass
+
     def visit_mathexpression(self, mathexpression, constraints):
         pass
+
     def visit_function(self, function, constraints):
         pass
+
     def visit_variableref(self, variableref, constraints):
         pass
+
     def visit_constant(self, constant, constraints):
         pass
+
     def visit_keyword(self, keyword, constraints):
         pass
+
     def visit_exists(self, exists, constraints):
         pass
 

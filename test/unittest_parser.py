@@ -172,6 +172,7 @@ SPEC_QUERIES = (
     'Any U,G WHERE U login UL, G name GL, G is CWGroup HAVING UPPER(UL)?=UPPER(GL);',
     )
 
+
 class ParserHercule(unittest.TestCase):
     _syntaxerr = SyntaxError
 

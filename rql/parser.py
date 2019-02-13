@@ -51,6 +51,7 @@ import sys
 import re
 from yapps import runtime
 
+
 class HerculeScanner(runtime.Scanner):
     patterns = [
         ("'IN'", re.compile('IN')),
@@ -101,11 +102,14 @@ class HerculeScanner(runtime.Scanner):
         ('INT', re.compile('-?\\d+')),
         ('SUBSTITUTE', re.compile('%\\([A-Za-z_0-9]+\\)s')),
     ]
+
     def __init__(self, str,*args,**kw):
         runtime.Scanner.__init__(self,None,{'\\s+':None,'/\\*(?:[^*]|\\*(?!/))*\\*/':None,},str,*args,**kw)
 
+
 class Hercule(runtime.Parser):
     Context = runtime.Context
+
     def goal(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'goal', [])
         _token = self._peek('DELETE', 'INSERT', 'SET', 'r"\\("', 'DISTINCT', 'E_TYPE', context=_context)

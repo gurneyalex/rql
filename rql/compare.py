@@ -27,6 +27,7 @@ from six.moves import range
 
 from rql.nodes import VariableRef, Variable, Function, Relation, Comparison
 
+
 def compare_tree(request1, request2):
     """Compares 2 RQL requests.
 
@@ -34,6 +35,7 @@ def compare_tree(request1, request2):
     :return: True if both requests would return the same results.
     """
     return make_canon_dict(request1) == make_canon_dict(request2)
+
 
 def make_canon_dict(rql_tree, verbose=0):
     """Return a canonical representation of the request as a dictionnary."""
@@ -57,6 +59,7 @@ def make_canon_dict(rql_tree, verbose=0):
         pprint(canon)
     return canon
 
+
 def sort(canon_dict):
     """Remove the all_variables entry and sort other entries in place."""
     del canon_dict['all_variables']
@@ -64,8 +67,10 @@ def sort(canon_dict):
     for values in canon_dict['restriction'].values():
         values.sort()
 
+
 class SkipChildren(Exception):
     """Signal indicating to ignore the current child."""
+
 
 class RQLCanonizer(object):
     """Build a dictionnary which represents a RQL syntax tree."""
@@ -203,6 +208,7 @@ def make_lhs_reminder(lhs, canon):
     except (KeyError, IndexError):
         pass
     return ('=', lhs)
+
 
 def make_rhs_reminder(rhs, canon):
     """Return a reminder for a relation's right hand side

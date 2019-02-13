@@ -169,6 +169,7 @@ class Node(BaseNode):
         new_child.parent = self
         return old_child, self, i
 
+
 class BinaryNode(Node):
     __slots__ = ()
 

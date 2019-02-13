@@ -22,6 +22,7 @@ __docformat__ = "restructuredtext en"
 
 from logilab.common.interface import Interface
 
+
 class ISchema(Interface):
     """RQL expects some base types to exists: String, Float, Int, Boolean, Date
     and a base relation : is
@@ -70,6 +71,7 @@ class IRelationSchema(Interface):
     def objects(self):
         """Return a list of types which can be object of this relation.
         """
+
 
 class IEntitySchema(Interface):
     """Interface for Entity schema."""

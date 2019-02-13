@@ -22,6 +22,7 @@ from rql import parse
 from rql.nodes import Exists
 from rql.editextensions import *
 
+
 class RQLUndoTestCase(TestCase):
 
     def test_selected(self):
