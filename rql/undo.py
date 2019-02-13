@@ -286,6 +286,7 @@ class RemoveSelectOperation(AppendSelectOperation):
         """undo the operation on the union's children"""
         self.union.insert(self.origindex, self.select)
 
+
 __all__ = ('SelectionManager', 'MakeVarOperation', 'UndefineVarOperation',
            'SelectVarOperation', 'UnselectVarOperation', 'AddNodeOperation',
            'ReplaceNodeOperation', 'RemoveNodeOperation',

@@ -48,6 +48,7 @@ class GoTo(Exception):
     def __init__(self, node):
         self.node = node
 
+
 VAR_SELECTED = 1
 VAR_HAS_TYPE_REL = 2
 VAR_HAS_UID_REL = 4

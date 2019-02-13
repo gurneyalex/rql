@@ -251,4 +251,5 @@ def parse(rqlstring, print_errors=True):
         exc.__traceback__ = sys.exc_info()[-1]
         raise exc
 
+
 pyparse = parse

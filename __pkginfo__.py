@@ -64,6 +64,7 @@ def gecode_version():
 def encode_version(a,b,c):
     return ((a<<16)+(b<<8)+c)
 
+
 GECODE_VERSION = encode_version(*gecode_version())
 
 if sys.platform != 'win32':

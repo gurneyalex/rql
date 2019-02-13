@@ -129,5 +129,6 @@ class RQLGenTC(unittest.TestCase):
         self.assertEqual(rql, 'DELETE Person X where X firstname "Clark", '
                           'X lastname "Kent"')
         
+
 if __name__ == '__main__':
     unittest.main()

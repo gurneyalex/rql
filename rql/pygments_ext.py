@@ -43,5 +43,6 @@ class RqlLexer(RegexLexer):
         ],
     }
 
+
 _mapping.LEXERS['RqlLexer'] = ('rql.pygments_ext', 'RQL', ('rql',), ('*.rql',), ('text/x-rql',))
 

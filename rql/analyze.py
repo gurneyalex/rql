@@ -125,6 +125,7 @@ class ConstraintCSPProblem(object):
         expr = " or ".join(list(orred) )
         self.add_expr(tuple(variables), expr )
 
+
 # GECODE based constraint solver
 _AND = 0 # symbolic values
 _OR = 1
@@ -279,6 +280,7 @@ class GecodeCSPProblem(object):
                         anded.append(or2 )
             orred.append(anded)
         self.op.append(orred)
+
 
 if rql_solve is None:
     CSPProblem = ConstraintCSPProblem

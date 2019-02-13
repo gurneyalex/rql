@@ -185,6 +185,7 @@ class DummySchema(object):
     def eschema(self, e_type):
         return self._types[e_type]
 
+
 UNRESOLVABLE_QUERIES = (
     'Person X WHERE Y work_for X',
     'Person X WHERE X work_for Y, Y is Address',

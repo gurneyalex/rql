@@ -53,6 +53,7 @@ def analyze_rq(rq ):
     sol2 = helper2.get_solutions(node2 )
     return helper1, helper2, node1, node2, sol1, sol2
 
+
 if len(sys.argv)<2:
     print("Usage: rql_analyze.py file")
     sys.exit(1)
