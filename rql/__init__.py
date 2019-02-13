@@ -149,7 +149,7 @@ class RQLHelper(object):
                     rel = vref.relation()
                     if rel is None:
                         term = vref
-                        while not term.parent is select:
+                        while term.parent is not select:
                             term = term.parent
                         if any(term.is_equivalent(t) for t in select.selection):
                             rhs = copy_uid_node(select, rhs, vconsts)
