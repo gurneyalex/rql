@@ -168,7 +168,6 @@ class RQLSTChecker(object):
             # a selected variable with only ?1 cardinality selected
             selectidx = frozenset(vref.name for term in selected
                                   for vref in term.get_nodes(VariableRef))
-            schema = self.schema
             for sortterm in node.orderby:
                 for vref in sortterm.term.get_nodes(VariableRef):
                     if vref.name in selectidx:

@@ -113,7 +113,7 @@ def iter_funcnode_variables(funcnode):
     for term in funcnode.children:
         try:
             yield term.variable.stinfo['attrvar'] or term
-        except AttributeError as ex:
+        except AttributeError:
             yield term
 
 

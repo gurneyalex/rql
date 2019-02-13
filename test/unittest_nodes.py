@@ -447,7 +447,7 @@ class NodesTest(TestCase):
         self.assertEqual(select.offset, 10)
 
     def test_exists(self):
-        tree = self._simpleparse("Any X,N WHERE X is Person, X name N, EXISTS(X work_for Y)")
+        self._simpleparse("Any X,N WHERE X is Person, X name N, EXISTS(X work_for Y)")
 
     def test_copy(self):
         tree = self._parse("Any X,LOWER(Y) GROUPBY N ORDERBY N WHERE X is Person, X name N, X date >= TODAY")
