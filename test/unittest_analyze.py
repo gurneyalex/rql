@@ -91,7 +91,7 @@ class DummySchema(object):
                       'Eetype', 'Person', 'Company', 'Address', 'Student']:
             self._types[etype] = EntitySchema(etype)
         self._types['Person']._specialized_by = [self._types['Student']]
-        self._relations  = {
+        self._relations = {
             'eid' : RelationSchema((('Person', ('Int',)),
                                       ('Student', ('Int',)),
                                       ('Company', ('Int',)),
