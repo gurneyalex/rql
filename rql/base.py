@@ -99,7 +99,7 @@ class BaseNode(VisitableMixIn):
                 stack += node.children
 
     def is_equivalent(self, other):
-        if not other.__class__ is self.__class__:
+        if other.__class__ is not self.__class__:
             return False
         for i, child in enumerate(self.children):
             try:
@@ -175,9 +175,9 @@ class BinaryNode(Node):
 
     def __init__(self, lhs=None, rhs=None):
         Node.__init__(self)
-        if not lhs is None:
+        if lhs is not None:
             self.append(lhs)
-        if not rhs is None:
+        if rhs is not None:
             self.append(rhs)
 
     def remove(self, child):
