@@ -942,7 +942,7 @@ class Delete(Statement, ScopeNode):
     def __repr__(self):
         result = ['DELETE']
         if self.main_variables:
-            result.append(', '.join(['%r %r' %(etype, var)
+            result.append(', '.join(['%r %r' % (etype, var)
                                      for etype, var in self.main_variables]))
         if self.main_relations:
             if self.main_variables:
@@ -958,7 +958,7 @@ class Delete(Statement, ScopeNode):
         """return the tree as an encoded rql string"""
         result = ['DELETE']
         if self.main_variables:
-            result.append(', '.join(['%s %s' %(etype, var)
+            result.append(', '.join(['%s %s' % (etype, var)
                                      for etype, var in self.main_variables]))
         if self.main_relations:
             if self.main_variables:

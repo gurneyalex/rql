@@ -113,10 +113,10 @@ class ConstraintCSPProblem(object):
         for orred_expr in equalities:
             anded = set()
             for vars, types in orred_expr:
-                types=tuple(types)
+                types = tuple(types)
                 for t in types:
                     assert isinstance(t, string_types)
-                if len(types)==1:
+                if len(types) == 1:
                     anded.add('%s == "%s"' % ('=='.join(vars), types[0]))
                 else:
                     anded.add('%s in %s' % ('=='.join(vars), types))
@@ -133,7 +133,7 @@ _OR = 1
 _EQ = 2
 _EQV = 3
 
-OPSYM={
+OPSYM = {
     _AND: "and",
     _OR: "or",
     _EQ: "eq",
@@ -207,7 +207,7 @@ class GecodeCSPProblem(object):
         sols = rql_solve.solve(self.idx_domains, len(self.all_values), constraints)
         rql_sols = []
         for s in sols:
-            r={}
+            r = {}
             for var, val in zip(self.ivariables, s):
                 r[var] = self.all_values[val]
             rql_sols.append(r)
@@ -237,7 +237,7 @@ class GecodeCSPProblem(object):
         self.op.append([_EQ, self.variables[var], self.values[value]])
 
     def equal_vars(self, varnames):
-        if len(varnames)>1:
+        if len(varnames) > 1:
             self.op.append([_EQV] + [self.variables[v] for v in varnames])
 
     def var_has_type(self, var, etype):
@@ -273,7 +273,7 @@ class GecodeCSPProblem(object):
                 for t in types:
                     assert isinstance(t, string_types)
                 for var in vars:
-                    if len(types)==1:
+                    if len(types) == 1:
                         anded.append([_EQ, self.variables[var], self.values[types[0]]])
                     else:
                         or2 = [_OR]

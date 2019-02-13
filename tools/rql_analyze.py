@@ -56,7 +56,7 @@ def analyze_rq(rq):
     return helper1, helper2, node1, node2, sol1, sol2
 
 
-if len(sys.argv)<2:
+if len(sys.argv) < 2:
     print("Usage: rql_analyze.py file")
     sys.exit(1)
 
