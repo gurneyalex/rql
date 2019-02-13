@@ -80,14 +80,14 @@ if sys.platform != 'win32':
                    ]
 else:
     ext_modules = [Extension('rql.rql_solve',
-                              ['rql/gecode_solver.cpp'],
-                              libraries=['GecodeInt-3-3-1-r-x86',
-                                         'GecodeKernel-3-3-1-r-x86',
-                                         'GecodeSearch-3-3-1-r-x86',
-                                         'GecodeSupport-3-3-1-r-x86',
-                                         ],
-                              extra_compile_args=['/DGE_VERSION=%s' % GECODE_VERSION, '/EHsc'],
-                              #extra_link_args=['-static-libgcc'],
+                             ['rql/gecode_solver.cpp'],
+                             libraries=['GecodeInt-3-3-1-r-x86',
+                                        'GecodeKernel-3-3-1-r-x86',
+                                        'GecodeSearch-3-3-1-r-x86',
+                                        'GecodeSupport-3-3-1-r-x86',
+                                        ],
+                             extra_compile_args=['/DGE_VERSION=%s' % GECODE_VERSION, '/EHsc'],
+                             #extra_link_args=['-static-libgcc'],
                              )
                    ]
 
