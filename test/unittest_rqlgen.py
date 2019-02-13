@@ -41,7 +41,7 @@ class RQLGenTC(unittest.TestCase):
         """
         rql = self.rql_generator.select('Person')
         self.assertEqual(rql, 'Person X')
-        
+
     def test_select_group(self):
         """tests select with group
         """
@@ -67,7 +67,7 @@ class RQLGenTC(unittest.TestCase):
         self.assertEqual(rql, 'Person X\nWHERE X work_for S , S name "Logilab"'
                          ' , X firstname F , X surname S\nGROUPBY X'
                          '\nSORTBY F ASC, S DESC')
-                                        
+
     def test_where(self):
         """tests the where() method behaviour
         """
@@ -83,13 +83,13 @@ class RQLGenTC(unittest.TestCase):
         """
         rql = self.rql_generator.groupby(('F', 'S'))
         self.assertEqual(rql, 'GROUPBY F, S')
-        
+
     def test_sortby(self):
         """tests the sortby() method behaviour
         """
         rql = self.rql_generator.sortby(('F ASC', 'S DESC'))
         self.assertEqual(rql, 'SORTBY F ASC, S DESC')
-        
+
     def test_insert(self):
         """tests the insert() method behaviour
         """
@@ -97,7 +97,7 @@ class RQLGenTC(unittest.TestCase):
                                                    ('lastname', "Kent")))
         self.assertEqual(rql, 'INSERT Person X: X firstname "Clark",'
                          ' X lastname "Kent"')
-        
+
     def test_update(self):
         """tests the update() method behaviour
         """
@@ -118,7 +118,7 @@ class RQLGenTC(unittest.TestCase):
                                          ('lastname', "Kent")))
         self.assertEqual(rql, 'DELETE Person X where X firstname "Clark", '
                          'X lastname "Kent"')
-        
+
 
 if __name__ == '__main__':
     unittest.main()
