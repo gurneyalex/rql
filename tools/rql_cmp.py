@@ -19,7 +19,7 @@ from __future__ import print_function
 
 from rql.rqlparse import parse as cparse
 from rql import parse
-from rql.compare2 import compare_tree, RQLCanonizer, make_canon_dict
+from rql.compare2 import make_canon_dict
 import sys
 from rql.nodes import *
 from rql.stmts import *

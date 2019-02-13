@@ -23,7 +23,7 @@ from six import text_type, PY2
 from yapps.runtime import print_error, SyntaxError
 
 from rql.parser import Hercule, HerculeScanner
-from rql import BadRQLQuery, RQLSyntaxError, nodes, stmts, parse
+from rql import BadRQLQuery, RQLSyntaxError, nodes
 from rql import parse
 
 if PY2:

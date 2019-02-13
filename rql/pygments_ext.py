@@ -12,7 +12,7 @@ import re
 
 from pygments.lexer import RegexLexer, _mapping
 from pygments.token import Punctuation, \
-     Text, Comment, Operator, Keyword, Name, String, Number
+     Text, Operator, Keyword, Name, String, Number
 
 __all__ = ['RqlLexer']
 
