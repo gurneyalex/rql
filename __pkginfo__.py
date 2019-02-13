@@ -17,6 +17,12 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with rql. If not, see <http://www.gnu.org/licenses/>.
 """RQL packaging information."""
+
+import sys
+import subprocess
+import os.path as osp
+from distutils.core import Extension
+
 __docformat__ = "restructuredtext en"
 
 modname = "rql"
@@ -44,10 +50,6 @@ classifiers = [
     'Topic :: Software Development :: Libraries :: Python Modules',
 ]
 
-import os.path as osp
-import subprocess
-import sys
-from distutils.core import Extension
 
 include_dirs = []
 

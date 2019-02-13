@@ -15,18 +15,17 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with rql. If not, see <http://www.gnu.org/licenses/>.
-from __future__ import print_function
 
+from __future__ import print_function
 import six
+
+from rql import RQLHelper, BadRQLQuery, stmts, nodes
+from unittest_analyze import DummySchema
 
 if six.PY2:
     import unittest2 as unittest
 else:
     import unittest
-
-from rql import RQLHelper, BadRQLQuery, stmts, nodes
-
-from unittest_analyze import DummySchema
 
 BAD_QUERIES = (
     'Any X, Y GROUPBY X',

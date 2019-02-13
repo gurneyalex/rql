@@ -24,10 +24,10 @@ from datetime import date, datetime
 from logilab.common.testlib import TestCase, unittest_main
 
 from rql import nodes, stmts, parse, BadRQLQuery, RQLHelper, RQLException, CoercionError
+from rql.stcheck import RQLSTAnnotator
 
 from unittest_analyze import DummySchema
 schema = DummySchema()
-from rql.stcheck import RQLSTAnnotator
 annotator = RQLSTAnnotator(schema, {})
 helper = RQLHelper(schema, None, {'eid': 'uid'})
 

@@ -17,9 +17,12 @@
 # with rql. If not, see <http://www.gnu.org/licenses/>.
 """Miscellaneous utilities for RQL."""
 
-__docformat__ = "restructuredtext en"
+from logilab.database import SQL_FUNCTIONS_REGISTRY, FunctionDescr, CAST
+from logilab.common.decorators import monkeypatch
 
 from rql._exceptions import BadRQLQuery
+
+__docformat__ = "restructuredtext en"
 
 UPPERCASE = u'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
@@ -73,9 +76,6 @@ KEYWORDS = set(('INSERT', 'SET', 'DELETE',
                 'GROUPBY', 'HAVING', 'ORDERBY', 'ASC', 'DESC',
                 'LIMIT', 'OFFSET'))
 
-
-from logilab.common.decorators import monkeypatch
-from logilab.database import SQL_FUNCTIONS_REGISTRY, FunctionDescr, CAST
 
 RQL_FUNCTIONS_REGISTRY = SQL_FUNCTIONS_REGISTRY.copy()
 
