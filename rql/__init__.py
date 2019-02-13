@@ -128,7 +128,6 @@ class RQLHelper(object):
         """
         # print('simplify', rqlst.as_string())
         if rqlst.TYPE == 'select':
-            from rql import nodes
             for select in rqlst.children:
                 self._simplify(select)
 

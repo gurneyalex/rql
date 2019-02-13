@@ -31,7 +31,6 @@ from warnings import warn
 from six import integer_types
 from six.moves import range
 
-from logilab.common.decorators import cached
 from logilab.common.deprecation import deprecated
 
 from rql import BadRQLQuery, CoercionError, nodes

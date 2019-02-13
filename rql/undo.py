@@ -19,7 +19,7 @@
 
 __docformat__ = "restructuredtext en"
 
-from rql.nodes import Exists, VariableRef, Variable, BinaryNode
+from rql.nodes import Exists, VariableRef, BinaryNode
 from rql.stmts import Select
 
 

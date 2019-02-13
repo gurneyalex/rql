@@ -19,8 +19,7 @@ from __future__ import print_function
 
 from ginco.server.schema_readers import load_schema
 from rql import RQLHelper
-from rql.analyze import AltETypeResolver, Alt2ETypeResolver, ETypeResolver, ETypeResolver2
-from pprint import pprint
+from rql.analyze import ETypeResolver, ETypeResolver2
 import sys
 
 

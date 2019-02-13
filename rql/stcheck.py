@@ -19,15 +19,13 @@
 
 __docformat__ = "restructuredtext en"
 
-from itertools import chain
 from logilab.common.graph import has_path
 from logilab.database import UnknownFunction
 
 from rql._exceptions import BadRQLQuery
 from rql.utils import function_description
 from rql.nodes import (Relation, VariableRef, Constant, Not, Exists, Function,
-                       And, Variable, Comparison, variable_refs, make_relation)
-from rql.stmts import Union
+                       And, Comparison, variable_refs, make_relation)
 
 
 def _var_graphid(subvarname, trmap, select):

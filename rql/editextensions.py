@@ -19,7 +19,7 @@
 
 __docformat__ = "restructuredtext en"
 
-from rql.nodes import Constant, Variable, VariableRef, Relation, make_relation
+from rql.nodes import Constant, VariableRef, Relation, make_relation
 
 
 def switch_selection(rqlst, new_var, old_var):

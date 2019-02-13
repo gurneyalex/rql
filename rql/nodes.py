@@ -24,16 +24,14 @@ root nodes, defined in the `stmts` module.
 __docformat__ = "restructuredtext en"
 
 import sys
-from itertools import chain
 from decimal import Decimal
 from datetime import datetime, date, time, timedelta
-from time import localtime
 
 from six import string_types
 
 from rql import CoercionError, RQLException
 from rql.base import BaseNode, Node, BinaryNode, LeafNode
-from rql.utils import (function_description, quote, uquote, common_parent,
+from rql.utils import (function_description, uquote, common_parent,
                        VisitableMixIn)
 
 CONSTANT_TYPES = frozenset((None, 'Date', 'Datetime', 'Boolean', 'Float', 'Int',
