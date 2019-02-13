@@ -51,7 +51,7 @@ for l in f:
     l = l.strip()
     d1 = make_canon_dict(x1)
     d2 = make_canon_dict(x2)
-    t = d1==d2
+    t = d1 == d2
     print('%s : "%s"' % (t, l))
     if not t:
         print("CPP", x1)

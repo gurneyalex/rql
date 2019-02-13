@@ -40,7 +40,7 @@ builder = {
     "Sortterm" : SortTerm,
 }
 
-if len(sys.argv)<2:
+if len(sys.argv) < 2:
     print("Usage: bench_cpprql file")
     print("     file: a file containing rql queries")
     sys.exit(1)
