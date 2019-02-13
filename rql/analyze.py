@@ -85,13 +85,13 @@ class ConstraintCSPProblem(object):
     def get_constraints(self):
         return self.constraints
 
-    def add_expr( self, vars, expr ):
-        self.constraints.append( fd.make_expression( vars, expr ) )
+    def add_expr(self, vars, expr ):
+        self.constraints.append(fd.make_expression(vars, expr ) )
         self.scons.append(expr)
 
     def var_has_type(self, var, etype):
         assert isinstance(etype, string_types)
-        self.add_expr( (var,), '%s == %r' % (var, etype) )
+        self.add_expr((var,), '%s == %r' % (var, etype) )
 
     def var_has_types(self, var, etypes):
         etypes = tuple(etypes)
@@ -101,10 +101,10 @@ class ConstraintCSPProblem(object):
             cstr = '%s == "%s"' % (var, etypes[0])
         else:
             cstr = '%s in %s ' % (var, etypes)
-        self.add_expr( (var,), cstr)
+        self.add_expr((var,), cstr)
 
     def vars_have_same_types(self, varnames, types):
-        self.add_expr( varnames, '%s in %s' % ( '=='.join(varnames), types))
+        self.add_expr(varnames, '%s in %s' % ('=='.join(varnames), types))
 
     def or_and(self, equalities):
         orred = set()
@@ -116,14 +116,14 @@ class ConstraintCSPProblem(object):
                 for t in types:
                     assert isinstance(t, string_types)
                 if len(types)==1:
-                    anded.add( '%s == "%s"' % ( '=='.join(vars), types[0]) )
+                    anded.add('%s == "%s"' % ('=='.join(vars), types[0]) )
                 else:
-                    anded.add( '%s in %s' % ( '=='.join(vars), types) )
+                    anded.add('%s in %s' % ('=='.join(vars), types) )
                 for var in vars:
                     variables.add(var)
-            orred.add( '(' + ' and '.join( list(anded) ) + ')' )
-        expr = " or ".join( list(orred) )
-        self.add_expr( tuple(variables), expr )
+            orred.add('(' + ' and '.join(list(anded) ) + ')' )
+        expr = " or ".join(list(orred) )
+        self.add_expr(tuple(variables), expr )
 
 # GECODE based constraint solver
 _AND = 0 # symbolic values
@@ -158,7 +158,7 @@ class GecodeCSPProblem(object):
     """
     def __init__(self):
         self.constraints = []
-        self.op = [ _AND ]
+        self.op = [_AND ]
         self.domains = {}       # maps var name -> var value
         self.variables = {}     # maps var name -> var index
         self.ivariables = []    # maps var index-> var name
@@ -179,16 +179,16 @@ class GecodeCSPProblem(object):
 
     def pretty_print_ops(self, ops):
         if ops[0] in (_AND, _OR):
-            res = [ OPSYM[ops[0]], '(' ]
+            res = [OPSYM[ops[0]], '(' ]
             for op in ops[1:]:
                 res.append(self.pretty_print_ops(op))
                 res.append(',')
-            res.append( ')' )
+            res.append(')' )
             return "".join(res)
         elif ops[0] == _EQ:
             return "%s==%s" % (self.ivariables[ops[1]], self.ivalues[ops[2]])
         elif ops[0] == _EQV:
-            res = [ self.ivariables[k] for k in ops[1:] ]
+            res = [self.ivariables[k] for k in ops[1:] ]
             return '~='.join(res)
 
     def get_output(self):
@@ -201,7 +201,7 @@ class GecodeCSPProblem(object):
         #import time
         #t0=time.time()
 
-        sols = rql_solve.solve( self.idx_domains, len(self.all_values), constraints )
+        sols = rql_solve.solve(self.idx_domains, len(self.all_values), constraints )
         rql_sols = []
         for s in sols:
             r={}
@@ -213,7 +213,7 @@ class GecodeCSPProblem(object):
 
     def add_var(self, name, values):
         assert name not in self.variables
-        self.all_values.update( values )
+        self.all_values.update(values )
         self.variables[name] = len(self.variables)
         self.ivariables.append(name)
         self.domains[name] = values
@@ -222,61 +222,61 @@ class GecodeCSPProblem(object):
         # maps integer->value
         self.all_values = list(self.all_values)
         # maps value->integer
-        self.values = dict( [ (v,i) for i,v in enumerate(self.all_values)] )
+        self.values = dict([(v,i) for i,v in enumerate(self.all_values)] )
         #print(self.values)
         #print(self.domains)
         for var_name in self.ivariables:
             val_domain = self.domains[var_name]
-            idx_domain = [ self.values[val] for val in val_domain ]
-            self.idx_domains.append( idx_domain )
+            idx_domain = [self.values[val] for val in val_domain ]
+            self.idx_domains.append(idx_domain )
 
-    def and_eq( self, var, value ):
-        self.op.append( [_EQ, self.variables[var], self.values[value] ] )
+    def and_eq(self, var, value ):
+        self.op.append([_EQ, self.variables[var], self.values[value] ] )
 
     def equal_vars(self, varnames):
         if len(varnames)>1:
-            self.op.append( [ _EQV] + [ self.variables[v] for v in varnames ] )
+            self.op.append([_EQV] + [self.variables[v] for v in varnames ] )
 
     def var_has_type(self, var, etype):
-        self.and_eq( var, etype)
+        self.and_eq(var, etype)
 
     def var_has_types(self, var, etypes):
         for t in etypes:
             assert isinstance(t, string_types)
         if len(etypes) == 1:
-            self.and_eq( var, tuple(etypes)[0] )
+            self.and_eq(var, tuple(etypes)[0] )
         else:
-            orred = [ _OR ]
+            orred = [_OR ]
             for t in etypes:
                 try:
-                    orred.append( [ _EQ, self.variables[var], self.values[t] ] )
+                    orred.append([_EQ, self.variables[var], self.values[t] ] )
                 except KeyError:
                     # key error may be raised by self.values[t] if self.values
                     # reflects constraints from subqueries
                     continue
-            self.op.append( orred )
+            self.op.append(orred )
 
     def vars_have_same_types(self, varnames, types):
-        self.equal_vars( varnames )
+        self.equal_vars(varnames )
         for var in varnames:
-            self.var_has_types( var, types )
+            self.var_has_types(var, types )
 
     def or_and(self, equalities):
-        orred = [ _OR ]
+        orred = [_OR ]
         for orred_expr in equalities:
-            anded = [ _AND ]
+            anded = [_AND ]
             for vars, types in orred_expr:
-                self.equal_vars( vars )
+                self.equal_vars(vars )
                 for t in types:
                     assert isinstance(t, string_types)
                 for var in vars:
                     if len(types)==1:
-                        anded.append( [ _EQ, self.variables[var], self.values[types[0]] ] )
+                        anded.append([_EQ, self.variables[var], self.values[types[0]] ] )
                     else:
-                        or2 = [ _OR ]
+                        or2 = [_OR ]
                         for t in types:
-                            or2.append(  [_EQ, self.variables[var], self.values[t] ] )
-                        anded.append( or2 )
+                            or2.append([_EQ, self.variables[var], self.values[t] ] )
+                        anded.append(or2 )
             orred.append(anded)
         self.op.append(orred)
 
@@ -373,7 +373,7 @@ class ETypeResolver(object):
         pb = CSPProblem()
         # set domain for all the variables
         for var in node.defined_vars.values():
-            pb.add_var( var.name, self._base_domain )
+            pb.add_var(var.name, self._base_domain )
         # no variable short cut
         return pb
 
@@ -386,7 +386,7 @@ class ETypeResolver(object):
         else:
             alltypes = get_target_types()
         domain = constraints.domains[var]
-        constraints.var_has_types( var, [str(t) for t in alltypes if t in domain] )
+        constraints.var_has_types(var, [str(t) for t in alltypes if t in domain] )
 
     def visit(self, node, uid_func_mapping=None, kwargs=None, debug=False):
         # FIXME: not thread safe
@@ -418,7 +418,7 @@ class ETypeResolver(object):
                 continue
             assert etype in self.schema, etype
             var = variable.name
-            constraints.var_has_type( var, etype )
+            constraints.var_has_type(var, etype )
         for relation in node.main_relations:
             self._visit(relation, constraints)
         # get constraints from the restriction subtree
@@ -451,7 +451,7 @@ class ETypeResolver(object):
         for ca in node.aliases.values():
             etypes = set(stmt.selection[ca.colnum].get_type(sol, self.kwargs)
                          for stmt in ca.query.children for sol in stmt.solutions)
-            constraints.add_var( ca.name, etypes )
+            constraints.add_var(ca.name, etypes )
         constraints.end_domain_definition()
         if self.uid_func:
             # check rewritten uid const
@@ -470,7 +470,7 @@ class ETypeResolver(object):
                 # add constraint on real relation types if no restriction
                 types = [eschema.type for eschema in self.schema.entities()
                          if not eschema.final]
-                constraints.vars_have_same_types( varnames, types )
+                constraints.vars_have_same_types(varnames, types )
         self.solve(node, constraints)
 
     def visit_relation(self, relation, constraints):
@@ -489,7 +489,7 @@ class ETypeResolver(object):
             else:
                 etypes = self._uid_node_types(rhs)
             if etypes:
-                constraints.var_has_types( lhs.name, etypes )
+                constraints.var_has_types(lhs.name, etypes )
                 return None
         if isinstance(rhs, nodes.Comparison):
             rhs = rhs.children[0]
@@ -521,19 +521,19 @@ class ETypeResolver(object):
                 if fromtype in lhsdomain:
                     totypes = set(str(t) for t in toetypes)
                     ptypes = totypes & rhsdomain
-                    res.append( [ ([lhsvar], [str(fromtype)]),
+                    res.append([([lhsvar], [str(fromtype)]),
                                   ([rhsvar], list(ptypes)) ] )
                     if same_var and (fromtype in totypes): #ptypes ?
                         var_types.append(fromtype)
             constraints.or_and(res)
             if same_var:
-                constraints.var_has_types( lhsvar, var_types)
+                constraints.var_has_types(lhsvar, var_types)
         else:
             # XXX consider rhs.get_type?
             lhsdomain = constraints.domains[lhs.name]
             ptypes = [str(subj) for subj in rschema.subjects()
                       if subj in lhsdomain]
-            constraints.var_has_types( lhs.name, ptypes )
+            constraints.var_has_types(lhs.name, ptypes )
         return None
 
     def visit_type_restriction(self, relation, constraints):
@@ -547,7 +547,7 @@ class ETypeResolver(object):
         if relation.neged(strict=True):
             etypes = frozenset(t for t in self._nonfinal_domain if not t in etypes)
 
-        constraints.var_has_types( lhs.name, [ str(t) for t in etypes ] )
+        constraints.var_has_types(lhs.name, [str(t) for t in etypes ] )
 
     def visit_and(self, et, constraints):
         pass

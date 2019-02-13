@@ -40,7 +40,7 @@ CONSTANT_TYPES = frozenset((None, 'Date', 'Datetime', 'Boolean', 'Float', 'Int',
                             'String', 'Substitute', 'etype'))
 
 
-ETYPE_PYOBJ_MAP = { bool: 'Boolean',
+ETYPE_PYOBJ_MAP = {bool: 'Boolean',
                     int: 'Int',
                     float: 'Float',
                     Decimal: 'Decimal',

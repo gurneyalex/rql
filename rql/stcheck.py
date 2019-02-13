@@ -576,7 +576,7 @@ class RQLSTAnnotator(object):
                            self.schema.rschema(rel.r_type).final:
                         update_attrvars(newvar, rel, lhs)
                         lhsvar = getattr(lhs, 'variable', None)
-                        stinfo['attrvars'].remove( (lhsvar, rel.r_type) )
+                        stinfo['attrvars'].remove((lhsvar, rel.r_type) )
                         if stinfo['attrvar'] is lhsvar:
                             if stinfo['attrvars']:
                                 stinfo['attrvar'] = next(iter(stinfo['attrvars']))
@@ -705,7 +705,7 @@ def update_attrvars(var, relation, lhs):
     # where the `var` attribute variable is used
     lhsvar = getattr(lhs, 'variable', None)
     try:
-        var.stinfo['attrvars'].add( (lhsvar, relation.r_type) )
+        var.stinfo['attrvars'].add((lhsvar, relation.r_type) )
     except KeyError:
         var.stinfo['attrvars'] = set([(lhsvar, relation.r_type)])
     # give priority to variable which is not in an EXISTS as

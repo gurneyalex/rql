@@ -20,7 +20,7 @@
 __docformat__ = "restructuredtext en"
 
 modname = "rql"
-numversion = (0, 35, 0)
+numversion = (0, 35, 1)
 version = '.'.join(str(num) for num in numversion)
 
 license = 'LGPL'
@@ -74,7 +74,7 @@ if sys.platform != 'win32':
                          )
                    ]
 else:
-    ext_modules = [ Extension('rql.rql_solve',
+    ext_modules = [Extension('rql.rql_solve',
                               ['rql/gecode_solver.cpp'],
                               libraries=['GecodeInt-3-3-1-r-x86',
                                          'GecodeKernel-3-3-1-r-x86',
