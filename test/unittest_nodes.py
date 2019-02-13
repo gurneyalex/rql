@@ -547,7 +547,6 @@ class NodesTest(TestCase):
         self.assertEqual(len(tree.children), 2)
         self.assertIsInstance(tree.where, nodes.And)
 
-
     # deletion tests #########################################################
 
     def test_delete_1(self):
@@ -600,7 +599,6 @@ class NodesTest(TestCase):
         self.assertEqual(tree.as_string(), 'Any X WHERE X creation_date NOW')
         tree = parse(u"Any X WHERE X creation_date TODAY")
         self.assertEqual(tree.as_string(), 'Any X WHERE X creation_date TODAY')
-
 
     def test_get_type_is_in(self):
         tree = sparse("Any X WHERE X is IN (Person, Company)")

@@ -92,7 +92,6 @@ class RQLUndoTestCase(TestCase):
         # check references after recovering
         rqlst.check_references()
 
-
     def test_remove_exists(self):
         rqlst = parse('Any U,COUNT(P) GROUPBY U WHERE U is CWUser, P? patch_reviewer U, EXISTS(P in_state S AND S name "pouet")').children[0]
         orig = rqlst.as_string()

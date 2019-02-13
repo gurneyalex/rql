@@ -160,7 +160,6 @@ def uquote(value):
     return u''.join(res)
 
 
-
 class VisitableMixIn(object):
 
     def accept(self, visitor, *args, **kwargs):
