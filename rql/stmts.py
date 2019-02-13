@@ -667,7 +667,7 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
                     asol[var] = origsol[var]
                 for var in self.aliases:
                     asol[var] = origsol[var]
-                if not asol in newsolutions:
+                if asol not in newsolutions:
                     newsolutions.append(asol)
             self.solutions = newsolutions
 
