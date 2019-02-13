@@ -202,7 +202,8 @@ def _test():
     """
     Launch doctest
     """
-    import doctest, sys
+    import doctest
+    import sys
     return doctest.testmod(sys.modules[__name__])
 
 
