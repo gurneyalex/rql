@@ -24,6 +24,7 @@ __docformat__ = "restructuredtext en"
 
 if __name__ == '__main__':
     from sys import argv
+    from rql.parser import Hercule, HerculeScanner
 
     parser = Hercule(HerculeScanner(argv[1]))
     e_types = {}

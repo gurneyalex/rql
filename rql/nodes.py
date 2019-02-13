@@ -49,8 +49,8 @@ ETYPE_PYOBJ_MAP = {bool: 'Boolean',
                    timedelta: 'Interval',
                    }
 if sys.version_info < (3,):
-    ETYPE_PYOBJ_MAP[long] = 'Int'
-    ETYPE_PYOBJ_MAP[unicode] = 'String'
+    ETYPE_PYOBJ_MAP[long] = 'Int' # noqa
+    ETYPE_PYOBJ_MAP[unicode] = 'String' # noqa
 
 KEYWORD_MAP = {'NOW': datetime.now,
                'TODAY': date.today}
