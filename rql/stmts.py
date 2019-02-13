@@ -969,7 +969,7 @@ class Delete(Statement, ScopeNode):
             result.append('WHERE ' + self.where.as_string(kwargs=kwargs))
         if self.having:
             result.append('HAVING ' + ','.join(term.as_string(kwargs=kwargs)
-                                          for term in self.having))
+                                               for term in self.having))
         return ' '.join(result)
 
     def copy(self):

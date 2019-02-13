@@ -611,7 +611,7 @@ class NodesTest(TestCase):
 
     def test_subq_colalias_compat(self):
         tree = sparse('Any X ORDERBY N WHERE X creation_date <NOW WITH X,N BEING ('
-                     '(Any X,N WHERE X firstname N) UNION (Any X,N WHERE X name N, X is Company))')
+                      '(Any X,N WHERE X firstname N) UNION (Any X,N WHERE X name N, X is Company))')
         select = tree.children[0]
         select.save_state()
         select.remove_sort_term(select.orderby[0])

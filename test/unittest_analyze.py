@@ -127,10 +127,10 @@ class DummySchema(object):
                                    )
                                   ),
             'is_instance_of' : RelationSchema((('Person', ('Eetype',)),
-                                              ('Student', ('Eetype',)),
-                                              ('Company', ('Eetype',)),
-                                              ('Address', ('Eetype',)),
-                                              ('Eetype', ('Eetype',)),
+                                               ('Student', ('Eetype',)),
+                                               ('Company', ('Eetype',)),
+                                               ('Address', ('Eetype',)),
+                                               ('Eetype', ('Eetype',)),
                                                )
                                               ),
             'connait' : RelationSchema((('Person', ('Person',)),
@@ -345,7 +345,7 @@ class AnalyzerClassTest(TestCase):
         # substitute as rhs of the uid relation
         node = h.parse('Any X WHERE X name %(company)s')
         h.compute_solutions(node, uid_func_mapping, {'company': 'Logilab'},
-                        debug=DEBUG)
+                            debug=DEBUG)
         sols = node.children[0].solutions
         self.assertCountEqual(sols, [{'X': 'Company'}])
 
@@ -451,7 +451,7 @@ class AnalyzerClassTest(TestCase):
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = node.children[0].solutions
         self.assertCountEqual(sols, [{'P': 'Person', 'X': 'Person'},
-                                {'P': 'Student', 'X': 'Person'}])
+                                     {'P': 'Student', 'X': 'Person'}])
         self.helper.simplify(node)
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = node.children[0].solutions
