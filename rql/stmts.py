@@ -272,7 +272,8 @@ class Union(Statement, Node):
           returning a string
         """
         if tr is None:
-            tr = lambda x, **k: x
+            def tr(x, **k):
+                return x
         return [c.get_description(mainindex, tr) for c in self.children]
 
     # repr / as_string / copy #################################################
@@ -490,7 +491,8 @@ class Select(Statement, nodes.EditableMixIn, ScopeNode):
         if userepr:
             as_string = repr
         else:
-            as_string = lambda x: x.as_string(kwargs=kwargs)
+            def as_string(x):
+                return x.as_string(kwargs=kwargs)
         s = [','.join(as_string(term) for term in self.selection)]
         if self.groupby:
             s.append('GROUPBY ' + ','.join(as_string(term)
