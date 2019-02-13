@@ -207,7 +207,7 @@ def parse(rqlstring, print_errors=True):
     from rql.parser import Hercule, HerculeScanner
     # make sure rql string ends with a semi-colon
     rqlstring = rqlstring.strip()
-    if rqlstring and not rqlstring.endswith(';') :
+    if rqlstring and not rqlstring.endswith(';'):
         rqlstring += ';'
     # parse the RQL string
     parser = Hercule(HerculeScanner(rqlstring))

@@ -137,7 +137,7 @@ class Node(BaseNode):
     """Class for nodes of the tree which may have children (almost all...)"""
     __slots__ = ('children',)
 
-    def __init__(self) :
+    def __init__(self):
         self.parent = None
         self.children = []
 

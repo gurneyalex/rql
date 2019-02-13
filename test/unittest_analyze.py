@@ -92,76 +92,76 @@ class DummySchema(object):
             self._types[etype] = EntitySchema(etype)
         self._types['Person']._specialized_by = [self._types['Student']]
         self._relations = {
-            'eid' : RelationSchema((('Person', ('Int',)),
+            'eid': RelationSchema((('Person', ('Int',)),
                                       ('Student', ('Int',)),
                                       ('Company', ('Int',)),
                                       ('Address', ('Int',)),
                                       ('Eetype', ('Int',)),
-                                    )
-                                   ),
-            'creation_date' : RelationSchema((('Person', ('Datetime',)),
+                                   )
+                                  ),
+            'creation_date': RelationSchema((('Person', ('Datetime',)),
                                                 ('Student', ('Datetime',)),
                                                 ('Company', ('Datetime',)),
                                                 ('Address', ('Datetime',)),
                                                 ('Eetype', ('Datetime',)),
-                                              )
-                                             ),
-            'name' : RelationSchema((('Person', ('String',)),
+                                             )
+                                            ),
+            'name': RelationSchema((('Person', ('String',)),
                                        ('Student', ('String',)),
                                        ('Company', ('String',)),
-                                     )
-                                    ),
-            'firstname' : RelationSchema((('Person', ('String',)),
+                                    )
+                                   ),
+            'firstname': RelationSchema((('Person', ('String',)),
                                             ('Student', ('String',)),
-                                          )
-                                         ),
-            'work_for' : RelationSchema((('Person', ('Company',)),
+                                         )
+                                        ),
+            'work_for': RelationSchema((('Person', ('Company',)),
                                            ('Student', ('Company',)),
-                                         ),
+                                        ),
                                          card='?*'),
-            'is' : RelationSchema((('Person', ('Eetype',)),
+            'is': RelationSchema((('Person', ('Eetype',)),
                                      ('Student', ('Eetype',)),
                                      ('Company', ('Eetype',)),
                                      ('Address', ('Eetype',)),
                                      ('Eetype', ('Eetype',)),
-                                   )
-                                  ),
-            'is_instance_of' : RelationSchema((('Person', ('Eetype',)),
+                                  )
+                                 ),
+            'is_instance_of': RelationSchema((('Person', ('Eetype',)),
                                                ('Student', ('Eetype',)),
                                                ('Company', ('Eetype',)),
                                                ('Address', ('Eetype',)),
                                                ('Eetype', ('Eetype',)),
-                                               )
-                                              ),
-            'connait' : RelationSchema((('Person', ('Person',)),
+                                              )
+                                             ),
+            'connait': RelationSchema((('Person', ('Person',)),
                                          ('Student', ('Person',)),
                                          ('Student', ('Student',)),
                                          ('Person', ('Student',)),
-                                        ),
+                                       ),
                                         symmetric=True),
-            'located' : RelationSchema((('Person', ('Address',)),
+            'located': RelationSchema((('Person', ('Address',)),
                                           ('Student', ('Address',)),
                                           ('Company', ('Address',)),
-                                        )
-                                       ),
-            'owned_by' : RelationSchema((('Person', ('Person',)),
+                                       )
+                                      ),
+            'owned_by': RelationSchema((('Person', ('Person',)),
                                            ('Student', ('Person',)),
                                            ('Company', ('Person',)),
                                            ('Eetype', ('Person',)),
-                                         )
-                                        ),
-            'identity' : RelationSchema((('Person', ('Person',)),
+                                        )
+                                       ),
+            'identity': RelationSchema((('Person', ('Person',)),
                                            ('Student', ('Student',)),
                                            ('Company', ('Company',)),
                                            ('Address', ('Address',)),
                                            ('Eetype', ('Eetype',)),
-                                         )
-                                        ),
-            'number' : RelationSchema((('Person', ('Int',)),
+                                        )
+                                       ),
+            'number': RelationSchema((('Person', ('Int',)),
                                          ('Student', ('Int',)),
                                          ('Company', ('Float',)),
-                                       )
-                                      ),
+                                      )
+                                     ),
             }
         for rtype, rschema in self._relations.items():
             rschema.type = rtype

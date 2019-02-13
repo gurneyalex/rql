@@ -30,7 +30,7 @@ class RQLGenerator(object):
     Helper class to generate RQL strings.
     """
 
-    def select(self, etype, nupplets=(), groups=(), sorts=()) :
+    def select(self, etype, nupplets=(), groups=(), sorts=()):
         """
         Return a RQL selection query.
 
