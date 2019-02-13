@@ -52,9 +52,9 @@ for l in f:
     d1 = make_canon_dict(x1)
     d2 = make_canon_dict(x2)
     t = d1==d2
-    print('%s : "%s"' % (t,l))
+    print('%s : "%s"' % (t, l))
     if not t:
-        print("CPP",x1)
+        print("CPP", x1)
         pprint(d1)
-        print("PYT",x2)
+        print("PYT", x2)
         pprint(d2)

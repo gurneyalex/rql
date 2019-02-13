@@ -25,7 +25,7 @@ class DummySchema(BaseSchema):
 
     def __init__(self):
         super(DummySchema, self).__init__()
-        for etype in ['Note',]:
+        for etype in ['Note', ]:
             self._types[etype] = EntitySchema(etype)
         relations = [('a_faire_par', (('Note', ('Person',)),)),
                      ('creation_date', (('Note', ('Date',)),)),
@@ -45,13 +45,13 @@ class RQLCompareClassTest(TestCase):
     def setUp(self):
         self.h = RQLHelper(DummySchema(), None)
 
-    def _compareEquivalent(self,r1,r2):
+    def _compareEquivalent(self, r1, r2):
         """fails if the RQL strings r1 and r2 are equivalent"""
         self.skipTest('broken')
         self.failUnless(self.h.compare(r1, r2),
                         'r1: %s\nr2: %s' % (r1, r2))
 
-    def _compareNotEquivalent(self,r1,r2):
+    def _compareNotEquivalent(self, r1, r2):
         """fails if the RQL strings r1 and r2 are not equivalent"""
         self.failIf(self.h.compare(r1, r2),
                     'r1: %s\nr2: %s' % (r1, r2))
@@ -141,7 +141,7 @@ class RQLCompareClassTest(TestCase):
     def test_diff_request(self):
         r1 = "Any N, N2 WHERE N is Note, N2 is Note, N a_faire_par P1, P1 nom 'jphc', N2 a_faire_par P2, P2 nom 'ocy' ;"
         r2 = "Any X WHERE X is Note ;"
-        self._compareNotEquivalent(r1,r2)
+        self._compareNotEquivalent(r1, r2)
 
     def test_diff_request_and_or(self):
         r1 = "Note N WHERE N creation_date > today-10, N a_faire_par P, P nom 'jphc' or P nom 'ludal';"
