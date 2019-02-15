@@ -40,8 +40,14 @@ BAD_SYNTAX_QUERIES = (
     # FIXME: incorrect because X/Y are not bound, not a syntax error
     "Personne P WHERE OFFSET 200;",
 
-    'Any X GROUPBY X ORDERBY X WHERE X nom "toto" UNION Any X GROUPBY X ORDERBY X WHERE X firstname "toto";',
-    '(Any X GROUPBY X WHERE X nom "toto") UNION (Any X GROUPBY X WHERE X firstname "toto") ORDERBY X;',
+    (
+        'Any X GROUPBY X ORDERBY X WHERE X nom "toto" UNION Any X GROUPBY X '
+        'ORDERBY X WHERE X firstname "toto";'
+    ),
+    (
+        '(Any X GROUPBY X WHERE X nom "toto") UNION '
+        '(Any X GROUPBY X WHERE X firstname "toto") ORDERBY X;'
+    ),
 
     'Any X, X/Y FROM (Any SUM(X) WHERE X is Person) WHERE X is Person;',  # missing AS for subquery
 
@@ -70,9 +76,12 @@ BAD_QUERIES = (
 SPEC_QUERIES = (
     'Any X WHERE X eid 53;',
     'Any X WHERE X eid -53;',
-    "Document X WHERE X occurence_of F, F class C, C name 'Bande dessinée', X owned_by U, U login 'syt', X available true;",
-    u"Document X WHERE X occurence_of F, F class C, C name 'Bande dessinée', X owned_by U, U login 'syt', X available true;",
-    "Personne P WHERE P travaille_pour S, S nom 'Eurocopter', P interesse_par T, T nom 'formation';",
+    ("Document X WHERE X occurence_of F, F class C, C name 'Bande dessinée', "
+     "X owned_by U, U login 'syt', X available true;"),
+    (u"Document X WHERE X occurence_of F, F class C, C name 'Bande dessinée', "
+     "X owned_by U, U login 'syt', X available true;"),
+    ("Personne P WHERE P travaille_pour S, S nom 'Eurocopter', P interesse_par T, "
+     "T nom 'formation';"),
     "Note N WHERE N ecrit_le D, D day > (today -10), N ecrit_par P, P nom 'jphc' or P nom 'ocy';",
     "Personne P WHERE (P interesse_par T, T nom 'formation') or (P ville 'Paris');",
     "Any X ORDERBY S DESC WHERE X is Person, X firstname 'Anne', X surname S;",
@@ -96,7 +105,10 @@ SPEC_QUERIES = (
 
     # some additional cases
     'INSERT Person X : X name "bidule", Y workfor X WHERE Y name "logilab";',
-    'DISTINCT Any X,A,B,C,D ORDERBY A ASC WHERE P eid 41, X concerns P, P is Project, X is Story,X title A,X state B,X priority C,X cost D;',
+    (
+        'DISTINCT Any X,A,B,C,D ORDERBY A ASC WHERE P eid 41, X concerns P, '
+        'P is Project, X is Story,X title A,X state B,X priority C,X cost D;'
+    ),
     'Any X WHERE X has_text "2.12.0";',
     'Any X,A,B,C,D ORDERBY A ASC WHERE X concerns 41,X title A,X state B,X priority C,X cost D;',
 
@@ -114,7 +126,10 @@ SPEC_QUERIES = (
 
     '(Any X WHERE X eid > 12) UNION (Any X WHERE X eid < 23);',
     '(Any X WHERE X nom "toto") UNION (Any X WHERE X firstname "toto");',
-    '(Any X GROUPBY X WHERE X nom "toto") UNION (Any X GROUPBY X ORDERBY X WHERE X firstname "toto");',
+    (
+        '(Any X GROUPBY X WHERE X nom "toto") UNION '
+        '(Any X GROUPBY X ORDERBY X WHERE X firstname "toto");'
+    ),
 
     'Any X, X/Y WHERE X is Person WITH Y BEING (Any SUM(X) WHERE X is Person);',
     'Any Y, COUNT(X) GROUPBY Y WHERE X bla Y WITH Y BEING ((Person X) UNION (Document X));',
@@ -205,7 +220,10 @@ class ParserHercule(unittest.TestCase):
         self.assertEqual(isinstance(base, nodes.Or), 1)
         self.assertEqual(isinstance(base.children[0], nodes.And), 1)
         self.assertEqual(isinstance(base.children[1], nodes.Relation), 1)
-        self.assertEqual(str(tree), 'Any X WHERE (X firstname "lulu", X name "toto") OR (X name "tutu")')
+        self.assertEqual(
+            str(tree),
+            'Any X WHERE (X firstname "lulu", X name "toto") OR (X name "tutu")',
+        )
 
     def test_precedence_2(self):
         tree = self.parse("Any X WHERE X firstname 'lulu', X name 'toto' OR X name 'tutu';")
@@ -213,7 +231,10 @@ class ParserHercule(unittest.TestCase):
         self.assertEqual(isinstance(base, nodes.And), 1)
         self.assertEqual(isinstance(base.children[0], nodes.Relation), 1)
         self.assertEqual(isinstance(base.children[1], nodes.Or), 1)
-        self.assertEqual(str(tree), 'Any X WHERE X firstname "lulu", (X name "toto") OR (X name "tutu")')
+        self.assertEqual(
+            str(tree),
+            'Any X WHERE X firstname "lulu", (X name "toto") OR (X name "tutu")',
+        )
 
     def test_precedence_3(self):
         tree = self.parse("Any X WHERE X firstname 'lulu' AND (X name 'toto' or X name 'tutu');")
@@ -221,7 +242,10 @@ class ParserHercule(unittest.TestCase):
         self.assertEqual(isinstance(base, nodes.And), 1)
         self.assertEqual(isinstance(base.children[0], nodes.Relation), 1)
         self.assertEqual(isinstance(base.children[1], nodes.Or), 1)
-        self.assertEqual(str(tree), 'Any X WHERE X firstname "lulu", (X name "toto") OR (X name "tutu")')
+        self.assertEqual(
+            str(tree),
+            'Any X WHERE X firstname "lulu", (X name "toto") OR (X name "tutu")',
+        )
 
     def test_precedence_4(self):
         tree = self.parse("Any X WHERE X firstname 'lulu' OR X name 'toto' AND X name 'tutu';")
@@ -308,11 +332,15 @@ class ParserHercule(unittest.TestCase):
         self.assertEqual(related.optional, 'both')
 
     def test_exists(self):
-        tree = self.parse("Any X WHERE X firstname 'lulu',"
-                          "EXISTS (X owned_by U, U in_group G, G name 'lulufanclub' OR G name 'managers');")
-        self.assertEqual(tree.as_string(),
-                         'Any X WHERE X firstname "lulu", '
-                         'EXISTS(X owned_by U, U in_group G, (G name "lulufanclub") OR (G name "managers"))')
+        tree = self.parse(
+            "Any X WHERE X firstname 'lulu',"
+            "EXISTS (X owned_by U, U in_group G, G name 'lulufanclub' OR G name 'managers');"
+        )
+        self.assertEqual(
+            tree.as_string(),
+            'Any X WHERE X firstname "lulu", '
+            'EXISTS(X owned_by U, U in_group G, (G name "lulufanclub") OR (G name "managers"))',
+        )
         exists = tree.children[0].where.get_nodes(nodes.Exists)[0]
         self.assertTrue(exists.children[0].parent is exists)
         self.assertTrue(exists.parent)

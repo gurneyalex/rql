@@ -62,7 +62,7 @@ class RQLGenerator(object):
         ...            ('X','firstname','F'), ('X','surname','S') ),
         ...          sorts=('F ASC', 'S DESC')
         ...          )
-        'Person X\\nWHERE X work_for S , S name "Logilab" , X firstname F , X surname S\\nSORTBY F ASC, S DESC'
+        'Person X\\nWHERE X work_for S , S name "Logilab" , X firstname F , X surname S\\nSORTBY F ASC, S DESC' # noqa
         """
         result = [etype + ' X']
         if nupplets:
@@ -186,7 +186,7 @@ class RQLGenerator(object):
         >>> s = RQLGenerator()
         >>> s.update('Person', (('firstname', "Clark"), ('lastname', "Kent")),
         ...         (('job', "superhero"), ('nickname', "superman")))
-        'SET X job "superhero", X nickname "superman" WHERE X is "Person", X firstname "Clark", X lastname "Kent"'
+        'SET X job "superhero", X nickname "superman" WHERE X is "Person", X firstname "Clark", X lastname "Kent"' # noqa
         """
         old_restrictions = ['X is "%s"' % etype]
         old_restrictions += ['X %s "%s"' % (attr_name, attr_value)
