@@ -159,7 +159,9 @@ class RQLSTChecker(object):
         if node.groupby:
             # check that selected variables are used in groups
             for var in node.selection:
-                if isinstance(var, VariableRef) and not any(var.is_equivalent(g) for g in node.groupby):
+                if isinstance(var, VariableRef) and not any(
+                    var.is_equivalent(g) for g in node.groupby
+                ):
                     state.error('variable %s should be grouped' % var)
             for group in node.groupby:
                 self._check_selected(group, 'group', state)
@@ -539,8 +541,14 @@ class RQLSTAnnotator(object):
             # XXX node.having is a list of size 1
             assert len(node.having) == 1
             for term in node.having[0].get_nodes(Comparison):
-                lhsvariables = set(vref.variable for vref in term.children[0].get_nodes(VariableRef))
-                rhsvariables = set(vref.variable for vref in term.children[1].get_nodes(VariableRef))
+                lhsvariables = set(
+                    vref.variable
+                    for vref in term.children[0].get_nodes(VariableRef)
+                )
+                rhsvariables = set(
+                    vref.variable
+                    for vref in term.children[1].get_nodes(VariableRef)
+                )
                 for var in lhsvariables | rhsvariables:
                     var.stinfo.setdefault('having', []).append(term)
                 if vargraph is not None:
@@ -554,12 +562,16 @@ class RQLSTAnnotator(object):
                 if term.optional in ('left', 'both'):
                     for var in lhsvariables:
                         if var.stinfo['attrvar'] is not None:
-                            optcomps = var.stinfo['attrvar'].stinfo.setdefault('optcomparisons', set())
+                            optcomps = var.stinfo[
+                                'attrvar'
+                            ].stinfo.setdefault('optcomparisons', set())
                             optcomps.add(term)
                 if term.optional in ('right', 'both'):
                     for var in rhsvariables:
                         if var.stinfo['attrvar'] is not None:
-                            optcomps = var.stinfo['attrvar'].stinfo.setdefault('optcomparisons', set())
+                            optcomps = var.stinfo[
+                                'attrvar'
+                            ].stinfo.setdefault('optcomparisons', set())
                             optcomps.add(term)
 
     def rewrite_shared_optional(self, exists, var, identity_rel_scope=None):

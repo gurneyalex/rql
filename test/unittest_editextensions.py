@@ -93,13 +93,19 @@ class RQLUndoTestCase(TestCase):
         rqlst.check_references()
 
     def test_remove_exists(self):
-        rqlst = parse('Any U,COUNT(P) GROUPBY U WHERE U is CWUser, P? patch_reviewer U, EXISTS(P in_state S AND S name "pouet")').children[0]
+        rql_request = ('Any U,COUNT(P) GROUPBY U WHERE U is CWUser, '
+                       'P? patch_reviewer U, EXISTS(P in_state S AND '
+                       'S name "pouet")')
+        rqlst = parse(rql_request).children[0]
         orig = rqlst.as_string()
         rqlst.save_state()
         n = [r for r in rqlst.get_nodes(Exists)][0].query
         rqlst.remove_node(n)
         # check operations
-        self.assertEqual(rqlst.as_string(), 'Any U,COUNT(P) GROUPBY U WHERE U is CWUser, P? patch_reviewer U')
+        self.assertEqual(
+            rqlst.as_string(),
+            'Any U,COUNT(P) GROUPBY U WHERE U is CWUser, P? patch_reviewer U'
+        )
         # check references before recovering
         rqlst.check_references()
         rqlst.recover()

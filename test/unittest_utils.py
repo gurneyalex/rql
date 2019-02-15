@@ -46,7 +46,10 @@ class RQLHandlerClassTest(TestCase):
         self.visitor.visit(tree)
 
     def test_methods_3(self):
-        tree = parse('Set X nom "yo" WHERE X is Person', {'Person': nodes.Constant('Person', 'etype')})
+        tree = parse(
+            'Set X nom "yo" WHERE X is Person',
+            {'Person': nodes.Constant('Person', 'etype')},
+        )
         self.visitor.visit(tree)
 
     def test_methods_4(self):

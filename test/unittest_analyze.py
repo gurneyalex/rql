@@ -53,7 +53,9 @@ class RelationSchema(ERSchema):
         self.rdefs = {}
         for subjtype, dest_types in self.assoc_types:
             for objtype in dest_types:
-                self.rdefs[(subjtype, objtype)] = mock(subject=subjtype, object=objtype, cardinality=self.card)
+                self.rdefs[(subjtype, objtype)] = mock(
+                    subject=subjtype, object=objtype, cardinality=self.card
+                )
 
     def associations(self):
         return self.assoc_types
@@ -368,8 +370,12 @@ class AnalyzerClassTest(TestCase):
         def type_from_uid(name):
             self.assertEqual(name, "Societe")
             return 'Eetype'
+
         uid_func_mapping = {'name': type_from_uid}
-        node = h.parse('Any X WHERE X name "Societe", X is ISOBJ, ISSUBJ is X, X is_instance_of ISIOOBJ, ISIOSUBJ is_instance_of X')
+        node = h.parse(
+            'Any X WHERE X name "Societe", X is ISOBJ, ISSUBJ is X, '
+            'X is_instance_of ISIOOBJ, ISIOSUBJ is_instance_of X'
+        )
         h.compute_solutions(node, uid_func_mapping, debug=DEBUG)
         select = node.children[0]
         sols = select.solutions
@@ -380,16 +386,37 @@ class AnalyzerClassTest(TestCase):
             for sol in sols:
                 s.add(sol.get(var))
             return s
+
         self.assertEqual(var_sols('X'), set(('Eetype',)))
-        self.assertEqual(var_sols('X'), select.defined_vars['X'].stinfo['possibletypes'])
-        self.assertEqual(var_sols('ISSUBJ'), set(('Address', 'Company', 'Eetype', 'Person', 'Student')))
-        self.assertEqual(var_sols('ISSUBJ'), select.defined_vars['ISSUBJ'].stinfo['possibletypes'])
+        self.assertEqual(
+            var_sols('X'), select.defined_vars['X'].stinfo['possibletypes']
+        )
+        self.assertEqual(
+            var_sols('ISSUBJ'),
+            set(('Address', 'Company', 'Eetype', 'Person', 'Student')),
+        )
+        self.assertEqual(
+            var_sols('ISSUBJ'),
+            select.defined_vars['ISSUBJ'].stinfo['possibletypes'],
+        )
         self.assertEqual(var_sols('ISOBJ'), set(('Eetype',)))
-        self.assertEqual(var_sols('ISOBJ'), select.defined_vars['ISOBJ'].stinfo['possibletypes'])
-        self.assertEqual(var_sols('ISIOSUBJ'), set(('Address', 'Company', 'Eetype', 'Person', 'Student')))
-        self.assertEqual(var_sols('ISIOSUBJ'), select.defined_vars['ISIOSUBJ'].stinfo['possibletypes'])
+        self.assertEqual(
+            var_sols('ISOBJ'),
+            select.defined_vars['ISOBJ'].stinfo['possibletypes'],
+        )
+        self.assertEqual(
+            var_sols('ISIOSUBJ'),
+            set(('Address', 'Company', 'Eetype', 'Person', 'Student')),
+        )
+        self.assertEqual(
+            var_sols('ISIOSUBJ'),
+            select.defined_vars['ISIOSUBJ'].stinfo['possibletypes'],
+        )
         self.assertEqual(var_sols('ISIOOBJ'), set(('Eetype',)))
-        self.assertEqual(var_sols('ISIOOBJ'), select.defined_vars['ISIOOBJ'].stinfo['possibletypes'])
+        self.assertEqual(
+            var_sols('ISIOOBJ'),
+            select.defined_vars['ISIOOBJ'].stinfo['possibletypes'],
+        )
 
     def test_unusableuid_func_mapping(self):
         h = self.helper
@@ -454,10 +481,16 @@ class AnalyzerClassTest(TestCase):
         self.assertCountEqual(sols, [{'P': 'Person'}, {'P': 'Student'}])
 
     def test_union(self):
-        node = self.helper.parse('(Any P WHERE X eid 0, X is Person, NOT X connait P) UNION (Any E1 WHERE E2 work_for E1, E2 eid 2)')
+        node = self.helper.parse(
+            '(Any P WHERE X eid 0, X is Person, NOT X connait P) '
+            'UNION (Any E1 WHERE E2 work_for E1, E2 eid 2)'
+        )
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = node.children[0].solutions
-        self.assertCountEqual(sols, [{'P': 'Person', 'X': 'Person'}, {'P': 'Student', 'X': 'Person'}])
+        self.assertCountEqual(
+            sols,
+            [{'P': 'Person', 'X': 'Person'}, {'P': 'Student', 'X': 'Person'}],
+        )
         sols = node.children[1].solutions
         self.assertCountEqual(sols, [{'E1': 'Company', 'E2': 'Person'}])
         self.helper.simplify(node)
@@ -468,8 +501,10 @@ class AnalyzerClassTest(TestCase):
         self.assertCountEqual(sols, [{'E1': 'Company'}])
 
     def test_exists(self):
-        node = self.helper.parse("Any X WHERE X firstname 'lulu',"
-                                 "EXISTS (X owned_by U, U name 'lulufanclub' OR U name 'managers');")
+        node = self.helper.parse(
+            "Any X WHERE X firstname 'lulu',"
+            "EXISTS (X owned_by U, U name 'lulufanclub' OR U name 'managers');"
+        )
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = node.children[0].solutions
         self.assertCountEqual(sols, [{'X': 'Person',
@@ -513,13 +548,20 @@ class AnalyzerClassTest(TestCase):
         self.assertEqual(node.children[0].with_[0].query.children[0].solutions,
                          [{'X': 'Person', 'F': 'String'}])
         # auto-simplification
-        self.assertEqual(len(node.children[0].with_[0].query.children), 1)
-        self.assertEqual(node.as_string(), 'Any L,Y,F WHERE Y located L, Y is Person WITH Y,F BEING (Any X,F WHERE X is Person, X firstname F)')
-        self.assertEqual(node.children[0].with_[0].query.children[0].solutions,
-                         [{'X': 'Person', 'F': 'String'}])
+        self.assertEqual(
+            node.as_string(),
+            'Any L,Y,F WHERE Y located L, Y is Person WITH Y,F '
+            'BEING (Any X,F WHERE X is Person, X firstname F)',
+        )
+        self.assertEqual(
+            node.children[0].with_[0].query.children[0].solutions,
+            [{'X': 'Person', 'F': 'String'}],
+        )
 
     def test_insert(self):
-        node = self.helper.parse('INSERT Person X : X name "toto", X work_for Y WHERE Y name "logilab"')
+        node = self.helper.parse(
+            'INSERT Person X : X name "toto", X work_for Y WHERE Y name "logilab"'
+        )
         self.helper.compute_solutions(node, debug=DEBUG)
         sols = node.solutions
         self.assertCountEqual(sols, [{'X': 'Person', 'Y': 'Company'}])

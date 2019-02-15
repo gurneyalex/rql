@@ -95,7 +95,10 @@ class TypesRestrictionNodesTest(TestCase):
         select = tree.children[0]
         x = next(select.get_selected_variables())
         self.assertRaises(RQLException, select.add_type_restriction, x.variable, 'Babar')
-        self.assertEqual(tree.as_string(), 'Any X WHERE X is IN(Person, Company), X name ILIKE "A%"')
+        self.assertEqual(
+            tree.as_string(),
+            'Any X WHERE X is IN(Person, Company), X name ILIKE "A%"',
+        )
 
     def test_add_is_in_type_restriction_multiple(self):
         tree = self.parse("Any X WHERE X is IN(Person, Company, Student, Address), "
@@ -174,11 +177,18 @@ class NodesTest(TestCase):
         tree = self._parse("(Any X WHERE X is Person) UNION (Any X WHERE X is Company)")
         tree.save_state()
         tree.set_limit(10)
-        self.assertEqual(tree.as_string(), 'Any A LIMIT 10 WITH A BEING ((Any X WHERE X is Person) UNION (Any X WHERE X is Company))')
+        self.assertEqual(
+            tree.as_string(),
+            'Any A LIMIT 10 WITH A BEING '
+            '((Any X WHERE X is Person) UNION (Any X WHERE X is Company))',
+        )
         select = tree.children[0]
         self.assertEqual(select.limit, 10)
         tree.recover()
-        self.assertEqual(tree.as_string(), '(Any X WHERE X is Person) UNION (Any X WHERE X is Company)')
+        self.assertEqual(
+            tree.as_string(),
+            '(Any X WHERE X is Person) UNION (Any X WHERE X is Company)',
+        )
 
     def test_union_set_offset_1(self):
         tree = self._parse("Any X WHERE X is Person")
@@ -194,25 +204,43 @@ class NodesTest(TestCase):
 
     def test_union_set_offset_2(self):
         # not undoable set_offset since a new root has to be introduced
-        tree = self._parse("(Any X WHERE X is Person) UNION (Any X WHERE X is Company)")
+        tree = self._parse(
+            "(Any X WHERE X is Person) UNION (Any X WHERE X is Company)"
+        )
         tree.save_state()
         tree.set_offset(10)
         select = tree.children[0]
-        self.assertEqual(tree.as_string(), 'Any A OFFSET 10 WITH A BEING ((Any X WHERE X is Person) UNION (Any X WHERE X is Company))')
+        self.assertEqual(
+            tree.as_string(),
+            'Any A OFFSET 10 WITH A BEING '
+            '((Any X WHERE X is Person) UNION (Any X WHERE X is Company))',
+        )
         self.assertEqual(select.offset, 10)
         tree.recover()
-        self.assertEqual(tree.as_string(), '(Any X WHERE X is Person) UNION (Any X WHERE X is Company)')
+        self.assertEqual(
+            tree.as_string(),
+            '(Any X WHERE X is Person) UNION (Any X WHERE X is Company)',
+        )
 
     def test_union_undo_add_rel(self):
-        tree = self._parse("Any A WITH A BEING ((Any X WHERE X is Person) UNION (Any X WHERE X is Company))")
+        tree = self._parse(
+            "Any A WITH A BEING ((Any X WHERE X is Person) UNION (Any X WHERE X is Company))"
+        )
         tree.save_state()
         select = tree.children[0]
         var = select.make_variable()
         mainvar = select.selection[0].variable
         select.add_relation(mainvar, 'name', var)
-        self.assertEqual(tree.as_string(), 'Any A WHERE A name B WITH A BEING ((Any X WHERE X is Person) UNION (Any X WHERE X is Company))')
+        self.assertEqual(
+            tree.as_string(),
+            'Any A WHERE A name B WITH A BEING '
+            '((Any X WHERE X is Person) UNION (Any X WHERE X is Company))',
+        )
         tree.recover()
-        self.assertEqual(tree.as_string(), 'Any A WITH A BEING ((Any X WHERE X is Person) UNION (Any X WHERE X is Company))')
+        self.assertEqual(
+            tree.as_string(),
+            'Any A WITH A BEING ((Any X WHERE X is Person) UNION (Any X WHERE X is Company))',
+        )
 
     def test_select_set_limit(self):
         tree = self._simpleparse("Any X WHERE X is Person")
@@ -326,16 +354,24 @@ class NodesTest(TestCase):
         self.assertEqual(tree.as_string(), 'Any X,Y GROUPBY X,Y')
 
     def test_recover_add_type_restriction_is_in(self):
-        tree = self._parse('Any X WHERE X is IN(Person, Company), X name ILIKE "A%"')
+        tree = self._parse(
+            'Any X WHERE X is IN(Person, Company), X name ILIKE "A%"'
+        )
         annotator.annotate(tree)  # needed to get typerel index
         tree.save_state()
         select = tree.children[0]
         x = next(select.get_selected_variables())
         select.add_type_restriction(x.variable, 'Company')
-        self.assertEqual(tree.as_string(), 'Any X WHERE X is IN(Company), X name ILIKE "A%"')
+        self.assertEqual(
+            tree.as_string(),
+            'Any X WHERE X is IN(Company), X name ILIKE "A%"',
+        )
         tree.recover()
         tree.check_references()
-        self.assertEqual(tree.as_string(), 'Any X WHERE X is IN(Person, Company), X name ILIKE "A%"')
+        self.assertEqual(
+            tree.as_string(),
+            'Any X WHERE X is IN(Person, Company), X name ILIKE "A%"',
+        )
 
     def test_recover_add_type_restriction_is_instance_of(self):
         tree = self._parse('Any X WHERE X is_instance_of IN(Person, Company), X name ILIKE "A%"')
@@ -347,7 +383,10 @@ class NodesTest(TestCase):
         self.assertEqual(tree.as_string(), 'Any X WHERE X name ILIKE "A%", X is Company')
         tree.recover()
         tree.check_references()
-        self.assertEqual(tree.as_string(), 'Any X WHERE X is_instance_of IN(Person, Company), X name ILIKE "A%"')
+        self.assertEqual(
+            tree.as_string(),
+            'Any X WHERE X is_instance_of IN(Person, Company), X name ILIKE "A%"',
+        )
 
     def test_select_base_1(self):
         tree = self._parse("Any X WHERE X is Person")
@@ -450,7 +489,9 @@ class NodesTest(TestCase):
         self._simpleparse("Any X,N WHERE X is Person, X name N, EXISTS(X work_for Y)")
 
     def test_copy(self):
-        tree = self._parse("Any X,LOWER(Y) GROUPBY N ORDERBY N WHERE X is Person, X name N, X date >= TODAY")
+        tree = self._parse(
+            "Any X,LOWER(Y) GROUPBY N ORDERBY N WHERE X is Person, X name N, X date >= TODAY"
+        )
         select = stmts.Select()
         restriction = tree.children[0].where
         self.check_equal_but_not_same(restriction, restriction.copy(select))
@@ -486,7 +527,9 @@ class NodesTest(TestCase):
         self.assertEqual(dummy.get_variable_indices(), set([0]))
 
     def test_get_variable_indices_4(self):
-        dummy = self._parse("(Any X,XN WHERE X is EGroup, X name XN) UNION (Any C,CL WHERE C is EUser, C login CL)")
+        dummy = self._parse(
+            "(Any X,XN WHERE X is EGroup, X name XN) UNION (Any C,CL WHERE C is EUser, C login CL)"
+        )
         dummy.children[0].solutions = [{'X': 'EGroup', 'XN': 'String'}]
         dummy.children[1].solutions = [{'C': 'EUser', 'CL': 'String'}]
         self.assertEqual(dummy.get_variable_indices(), set([0]))
@@ -515,7 +558,9 @@ class NodesTest(TestCase):
         self.assertEqual(tree.main_variables[0][1].name, 'X')
 
     def test_insert_multi(self):
-        tree = self._parse('INSERT Person X, Person Y : X name "bidule", Y name "chouette", X friend Y')
+        tree = self._parse(
+            'INSERT Person X, Person Y : X name "bidule", Y name "chouette", X friend Y'
+        )
         # test specific attributes
         self.assertEqual(len(tree.main_relations), 3)
         for relation in tree.main_relations:
@@ -635,9 +680,14 @@ class NodesTest(TestCase):
     # non regression tests ####################################################
 
     def test_get_description_and_get_type(self):
-        tree = sparse("Any N,COUNT(X),NOW-D GROUPBY N WHERE X name N, X creation_date D;")
+        tree = sparse(
+            "Any N,COUNT(X),NOW-D GROUPBY N WHERE X name N, X creation_date D;"
+        )
         tree.schema = schema
-        self.assertEqual(tree.get_description(), [['name', 'COUNT(Company, Person, Student)', 'creation_date']])
+        self.assertEqual(
+            tree.get_description(),
+            [['name', 'COUNT(Company, Person, Student)', 'creation_date']],
+        )
         select = tree.children[0]
         self.assertEqual(select.selection[0].get_type(), 'Any')
         self.assertEqual(select.selection[1].get_type(), 'Int')
@@ -647,8 +697,12 @@ class NodesTest(TestCase):
     def test_date_arithmetic(self):
         minus_expr = sparse("Any D1-D2;").children[0].selection[0]
         plus_expr = sparse("Any D1+D2;").children[0].selection[0]
-        for d1t, d2t in itertools.combinations_with_replacement(['Date', 'Datetime', 'TZDatetime'], 2):
-            self.assertEqual(minus_expr.get_type({'D1': d1t, 'D2': d2t}), 'Interval')
+        for d1t, d2t in itertools.combinations_with_replacement(
+            ['Date', 'Datetime', 'TZDatetime'], 2
+        ):
+            self.assertEqual(
+                minus_expr.get_type({'D1': d1t, 'D2': d2t}), 'Interval'
+            )
             with self.assertRaises(CoercionError):
                 plus_expr.get_type({'D1': d1t, 'D2': d2t})
         for d1t in ('Date', 'Datetime', 'TZDatetime'):
@@ -669,11 +723,17 @@ class NodesTest(TestCase):
 
     def test_get_description_mainvar_objrel(self):
         tree = sparse('Any X,R,D,Y WHERE X work_for R, R creation_date D, Y owned_by X')
-        self.assertEqual(tree.get_description(0), [['Person', 'work_for', 'creation_date', 'owned_by_object']])
+        self.assertEqual(
+            tree.get_description(0),
+            [['Person', 'work_for', 'creation_date', 'owned_by_object']],
+        )
 
     def test_get_description_mainvar_symrel(self):
         tree = sparse('Any X,R,D,Y WHERE X work_for R, R creation_date D, Y connait X')
-        self.assertEqual(tree.get_description(0), [['Person, Student', 'work_for', 'creation_date', 'connait']])
+        self.assertEqual(
+            tree.get_description(0),
+            [['Person, Student', 'work_for', 'creation_date', 'connait']],
+        )
 
     def test_get_description_cast(self):
         tree = sparse('Any CAST(String, Y) WHERE X creation_date Y')

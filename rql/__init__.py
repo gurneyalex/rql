@@ -153,7 +153,11 @@ class RQLHelper(object):
                         if any(term.is_equivalent(t) for t in select.selection):
                             rhs = copy_uid_node(select, rhs, vconsts)
                             if vref is term:
-                                index = next(i for i, var in enumerate(select.selection) if vref.is_equivalent(var))
+                                index = next(
+                                    i
+                                    for i, var in enumerate(select.selection)
+                                    if vref.is_equivalent(var)
+                                )
                                 select.selection[index] = rhs
                                 rhs.parent = select
                             else:
@@ -220,7 +224,10 @@ def parse(rqlstring, print_errors=True):
                 if nb_lines > 5:
                     width = log(nb_lines, 10)+1
                     template = " %%%ii: %%s" % width
-                    rqlstring = '\n'.join(template % (idx + 1, line) for idx, line in enumerate(multi_lines_rql))
+                    rqlstring = '\n'.join(
+                        template % (idx + 1, line)
+                        for idx, line in enumerate(multi_lines_rql)
+                    )
 
                 msg = '%s\nat: %r\n%s' % (rqlstring, ex.pos,  ex.msg)
             else:
