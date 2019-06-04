@@ -1,3 +1,22 @@
+rql (0.35.1-1) UNRELEASED; urgency=medium
+
+  [ Denis Laxalde ]
+  * New upstream release.
+
+  [ Jérémy Bobbio ]
+  * Update Debian packaging:
+    - Depend on python-yapps and python3-yapps for YAPPS runtime.
+    - Use PYBUILD_NAME instead of debian/*.install files.
+    - Use python3-sphinx instead of obsolete Python 2 version.
+    - Always build Python 3 package.
+    - Run tests at build time and adds relevant packages to Build-Depends.
+    - Add superficial autopkgtest using autodep8.
+    - Add autopkgtest script to run unittest against installed packages.
+    - Add Vcs-Hg and Vcs-Browser fields.
+    - Update Standards-Version to 4.3.0.
+
+ -- Jérémy Bobbio <jeremy.bobbio@irq7.fr>  Tue, 04 Jun 2019 10:50:33 +0200
+
 rql (0.35.0-1) unstable; urgency=medium
 
   * new upstream release
