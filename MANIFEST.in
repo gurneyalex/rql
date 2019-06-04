@@ -17,3 +17,6 @@ include COPYING.LESSER
 include data/gecode_version.cc
 
 recursive-include tools *.py *.rql
+
+include tox.ini
+recursive-include test *.py

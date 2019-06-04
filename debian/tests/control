@@ -1,0 +1,4 @@
+Tests: unittest
+Depends:
+ @, @builddeps@,
+Restrictions: allow-stderr

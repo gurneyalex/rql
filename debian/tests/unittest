@@ -1,0 +1,15 @@
+#!/bin/sh
+
+set -e
+set -x
+
+### Setup tests
+
+cp -r test tox.ini "$AUTOPKGTEST_TMP"
+
+### Run tests
+
+for py in $(pyversions -r 2>/dev/null) $(py3versions -r 2>/dev/null); do
+	echo "Testing with $py:"
+	(cd "$AUTOPKGTEST_TMP" && $py -m pytest test)
+done

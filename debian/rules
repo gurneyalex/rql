@@ -1,13 +1,13 @@
 #!/usr/bin/make -f
 
-export RQL_FORCE_GECODE=1
+export PYBUILD_NAME = rql
+export PYBUILD_OPTION = --test-pytest
 
-ifeq (,$(shell py3versions -r 2>/dev/null))
-    py3k = -Npython3-rql
-endif
+# Always build C extension
+export RQL_FORCE_GECODE = 1
 
 %:
-	dh $@ --with python2,python3 --buildsystem pybuild $(py3k)
+	dh $@ --with python2,python3 --buildsystem pybuild
 
 override_dh_auto_build:
 	dh_auto_build
@@ -16,14 +16,3 @@ override_dh_auto_build:
 override_dh_auto_clean:
 	dh_auto_clean
 	$(MAKE) -C doc clean
-
-override_dh_auto_test:
-	# nothing
-
-# prevent dh_python2 from generating bogus deps on python-yapps (nonexistent)
-# or python-logilab-constraint (unnecessary with gecode)
-override_dh_python2:
-	dh_python2 --no-guessing-deps
-
-override_dh_python3:
-	dh_python3 --no-guessing-deps
