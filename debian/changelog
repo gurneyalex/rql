@@ -1,4 +1,4 @@
-rql (0.35.1-1) UNRELEASED; urgency=medium
+rql (0.35.2-1) unstable; urgency=medium
 
   [ Denis Laxalde ]
   * New upstream release.
@@ -15,7 +15,7 @@ rql (0.35.1-1) UNRELEASED; urgency=medium
     - Add Vcs-Hg and Vcs-Browser fields.
     - Update Standards-Version to 4.3.0.
 
- -- Jérémy Bobbio <jeremy.bobbio@irq7.fr>  Tue, 04 Jun 2019 10:50:33 +0200
+ -- Denis Laxalde <denis.laxalde@logilab.fr>  Wed, 26 Jun 2019 09:00:18 +0200
 
 rql (0.35.0-1) unstable; urgency=medium
 

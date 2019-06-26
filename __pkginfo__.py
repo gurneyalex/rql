@@ -26,7 +26,7 @@ from distutils.core import Extension
 __docformat__ = "restructuredtext en"
 
 modname = "rql"
-numversion = (0, 35, 1)
+numversion = (0, 35, 2)
 version = '.'.join(str(num) for num in numversion)
 
 license = 'LGPL'
